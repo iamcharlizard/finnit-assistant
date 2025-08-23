@@ -1,0 +1,608 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Account {
+  archived: Boolean!
+  balanceCurrent: Float!
+  createdAt: DateTime!
+  currency: String!
+  id: String!
+  metadata: String
+  name: String!
+  type: AccountType!
+  updatedAt: DateTime!
+  userId: String!
+}
+
+type AccountConnection {
+  edges: [AccountEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type AccountEdge {
+  cursor: String!
+  node: Account!
+}
+
+"""Account type"""
+enum AccountType {
+  cash
+  credit
+  debit
+  ewallet
+  savings
+}
+
+input AdjustBalanceInput {
+  accountId: String!
+  amount: Float!
+  description: String!
+}
+
+type Attachment {
+  extra: String
+  fileSize: Float
+  fileType: String!
+  fileUrl: String!
+  id: String!
+  transactionId: String!
+  uploadedAt: DateTime!
+}
+
+type AuthPayload {
+  accessToken: String!
+  refreshToken: String!
+  user: User!
+}
+
+type Budget {
+  amountTotal: Float
+  categories: [BudgetCategory!]!
+  createdAt: DateTime!
+  currency: String!
+  id: String!
+  month: Int!
+  userId: String!
+  year: Int!
+}
+
+type BudgetAlert {
+  budgeted: Float!
+  categoryId: String!
+  categoryName: String!
+  message: String!
+  percentage: Float!
+  severity: String!
+  spent: Float!
+}
+
+type BudgetCategory {
+  budgetId: String!
+  capAmount: Float!
+  categoryId: String!
+  id: String!
+}
+
+input BudgetCategoryInput {
+  capAmount: Float!
+  categoryId: String!
+}
+
+input BudgetFromTemplateInput {
+  month: Int!
+  templateBudgetId: String!
+  year: Int!
+}
+
+type BudgetSummary {
+  budgetId: String!
+  categoriesNearBudget: Int!
+  categoriesOverBudget: Int!
+  categoryCount: Int!
+  categoryUsage: [BudgetUsage!]!
+  month: Int!
+  overallPercentage: Float!
+  totalBudgeted: Float!
+  totalRemaining: Float!
+  totalSpent: Float!
+  year: Int!
+}
+
+type BudgetUsage {
+  budgeted: Float!
+  categoryId: String!
+  percentage: Float!
+  remaining: Float!
+  spent: Float!
+}
+
+type CashFlowProjection {
+  date: DateTime!
+  description: String!
+  projectedBalance: Float!
+}
+
+type Category {
+  children: [Category!]
+  createdAt: DateTime!
+  id: ID!
+  isDefault: Boolean!
+  name: String!
+  parent: Category
+  parentId: String
+  sortOrder: Float
+  userId: String
+}
+
+type CategoryExpense {
+  amount: Float!
+  categoryId: String!
+  categoryName: String!
+  percentage: Float!
+}
+
+type CategoryUsage {
+  averageAmount: Float!
+  categoryId: ID!
+  categoryName: String!
+  totalAmount: Float!
+  transactionCount: Int!
+}
+
+input CreateAccountInput {
+  currency: String!
+  initialBalance: Float!
+  metadata: String
+  name: String!
+  type: AccountType!
+}
+
+input CreateAttachmentInput {
+  extra: String
+  fileSize: Float
+  fileType: String!
+  fileUrl: String!
+  transactionId: String!
+}
+
+input CreateBudgetInput {
+  amountTotal: Float
+  categories: [BudgetCategoryInput!]!
+  currency: String!
+  month: Int!
+  year: Int!
+}
+
+input CreateCategoryInput {
+  name: String!
+  parentId: String
+  sortOrder: Float
+}
+
+input CreateDebtInput {
+  dueDate: DateTime
+  interestRateAnnual: Float
+  kind: DebtKind!
+  linkedAccountId: String
+  minPaymentAmount: Float
+  name: String!
+  principal: Float!
+  startDate: DateTime
+}
+
+input CreateDebtPaymentInput {
+  amount: Float!
+  date: DateTime!
+  debtId: String!
+  transactionId: String!
+}
+
+input CreateGoalInput {
+  currency: String!
+  dueDate: DateTime
+  name: String!
+  targetAmount: Float!
+}
+
+input CreateTransactionInput {
+  accountId: String!
+  amount: Float!
+  categoryId: String
+  currency: String!
+  description: String
+  isPending: Boolean
+  merchantName: String
+  txnDate: DateTime!
+  type: TransactionType!
+}
+
+input CreateTransferInput {
+  amount: Float!
+  description: String
+  fromAccountId: String!
+  toAccountId: String!
+  txnDate: DateTime
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Debt {
+  createdAt: DateTime!
+  dueDate: DateTime
+  id: ID!
+  interestRateAnnual: Float
+  kind: DebtKind!
+  linkedAccountId: String
+  minPaymentAmount: Float
+  monthlyPayment: Float
+  name: String!
+  principal: Float!
+  remainingBalance: Float!
+  startDate: DateTime
+  totalPaid: Float!
+  userId: String!
+}
+
+type DebtConnection {
+  edges: [DebtEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Float!
+}
+
+type DebtEdge {
+  cursor: String!
+  node: Debt!
+}
+
+enum DebtKind {
+  card
+  loan
+  other
+}
+
+type DebtPayment {
+  amount: Float!
+  date: DateTime!
+  debtId: String!
+  id: ID!
+  transactionId: String!
+}
+
+type DebtPayoffProjection {
+  currentBalance: Float!
+  debtId: String!
+  debtName: String!
+  monthlyPayment: Float!
+  payoffDate: DateTime!
+  totalInterest: Float!
+}
+
+type DebtSummary {
+  payoffProjections: [DebtPayoffProjection!]!
+  totalDebt: Float!
+  totalMonthlyPayments: Float!
+  totalPaid: Float!
+  totalRemaining: Float!
+}
+
+type Goal {
+  createdAt: DateTime!
+  currency: String!
+  currentAmount: Float!
+  dueDate: DateTime
+  id: String!
+  name: String!
+  targetAmount: Float!
+  userId: String!
+}
+
+type GoalProgress {
+  daysRemaining: Float!
+  goalId: String!
+  isCompleted: Boolean!
+  percentage: Float!
+  remaining: Float!
+}
+
+type MonthlyReport {
+  categoryBreakdown: [CategoryExpense!]!
+  currency: String!
+  month: Int!
+  netIncome: Float!
+  totalExpenses: Float!
+  totalIncome: Float!
+  year: Int!
+}
+
+type Mutation {
+  addTransactionAttachment(input: CreateAttachmentInput!): Attachment!
+  adjustAccountBalance(input: AdjustBalanceInput!): Account!
+  createAccount(input: CreateAccountInput!): Account!
+  createBudget(input: CreateBudgetInput!): Budget!
+  createBudgetFromTemplate(input: BudgetFromTemplateInput!): Budget!
+  createCategory(input: CreateCategoryInput!): Category!
+  createDebt(input: CreateDebtInput!): Debt!
+  createDebtPayment(input: CreateDebtPaymentInput!): DebtPayment!
+  createDefaultCategories: Boolean!
+  createGoal(input: CreateGoalInput!): Goal!
+  createTransaction(input: CreateTransactionInput!): Transaction!
+  createTransfer(input: CreateTransferInput!): Transfer!
+  deleteAccount(id: String!): Boolean!
+  deleteBudget(id: String!): Boolean!
+  deleteCategory(id: String!): Boolean!
+  deleteDebt(id: String!): Boolean!
+  deleteTransaction(id: String!): Boolean!
+  markAllNotificationsAsRead: Boolean!
+  markNotificationAsRead(id: String!): Boolean!
+  refreshToken(input: RefreshTokenInput!): AuthPayload!
+  removeTransactionAttachment(id: String!): Boolean!
+  requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
+  resetPassword(input: ResetPasswordInput!): Boolean!
+  signIn(input: SignInInput!): AuthPayload!
+  signUp(input: SignUpInput!): AuthPayload!
+  updateAccount(id: String!, input: UpdateAccountInput!): Account!
+  updateBudget(id: String!, input: UpdateBudgetInput!): Budget!
+  updateCategory(id: String!, input: UpdateCategoryInput!): Category!
+  updateDebt(id: String!, input: UpdateDebtInput!): Debt!
+  updateTransaction(id: String!, input: UpdateTransactionInput!): Transaction!
+  updateUser(input: UpdateUserInput!): User!
+}
+
+type Notification {
+  createdAt: DateTime!
+  id: String!
+  message: String!
+  relatedEntityId: String
+  relatedEntityType: String
+  scheduledAt: DateTime
+  sentAt: DateTime
+  status: NotificationStatus!
+  title: String!
+  type: NotificationType!
+  userId: String!
+}
+
+type NotificationConnection {
+  edges: [NotificationEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type NotificationEdge {
+  cursor: String!
+  node: Notification!
+}
+
+"""Notification status"""
+enum NotificationStatus {
+  dismissed
+  read
+  scheduled
+  sent
+}
+
+"""Notification type"""
+enum NotificationType {
+  budget
+  debt_due
+  recurring
+  summary
+}
+
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
+input PayoffStrategyInput {
+  debtIds: [String!]!
+  extraPayment: Float!
+  strategy: String!
+}
+
+type Query {
+  account(id: String!): Account!
+  accounts(after: String, archived: Boolean, before: String, first: Int, last: Int, type: AccountType): AccountConnection!
+  budget(id: String!): Budget!
+  budgetAlerts: [BudgetAlert!]!
+  budgetSummary(month: Float!, year: Float!): BudgetSummary!
+  budgetUsage(id: String!): [BudgetUsage!]!
+  budgets: [Budget!]!
+  cashFlowProjection(monthsAhead: Int! = 6): [CashFlowProjection!]!
+  categories: [Category!]!
+  category(id: String!): Category!
+  categoryUsage(dateFrom: DateTime, dateTo: DateTime): [CategoryUsage!]!
+  currentBudget: Budget
+  debt(id: String!): Debt!
+  debtSummary: DebtSummary!
+  debts(after: String, before: String, first: Int, includePayoffProjections: Boolean, kind: DebtKind, last: Int): DebtConnection!
+  goal(id: String!): Goal!
+  goalProgress(id: String!): GoalProgress!
+  goals: [Goal!]!
+  me: User!
+  monthlyReport(month: Int!, year: Int!): MonthlyReport!
+  notifications(after: String, first: Int, status: NotificationStatus): NotificationConnection!
+  payoffStrategy(input: PayoffStrategyInput!): [DebtPayoffProjection!]!
+  rootCategories: [Category!]!
+  suggestCategoryForMerchant(input: SuggestCategoryInput!): Category
+  transaction(id: String!): Transaction!
+  transactions(after: String, before: String, filters: TransactionFilters, first: Int, last: Int): TransactionConnection!
+  transfer(id: String!): Transfer!
+  transfers: [Transfer!]!
+  user(id: String!): User!
+  validateToken(token: String!): TokenValidationResult!
+  whatIfScenario(input: WhatIfInput!): WhatIfResult!
+}
+
+input RefreshTokenInput {
+  refreshToken: String!
+}
+
+input RequestPasswordResetInput {
+  email: String!
+}
+
+input ResetPasswordInput {
+  newPassword: String!
+  token: String!
+}
+
+input SignInInput {
+  email: String!
+  password: String!
+}
+
+input SignUpInput {
+  email: String!
+  name: String!
+  password: String!
+}
+
+type Subscription {
+  notificationAdded: Notification!
+}
+
+input SuggestCategoryInput {
+  merchantName: String!
+}
+
+type TokenValidationResult {
+  message: String
+  valid: Boolean!
+}
+
+type Transaction {
+  accountId: String!
+  amount: Float!
+  categoryId: String
+  createdAt: DateTime!
+  currency: String!
+  description: String
+  externalId: String
+  id: String!
+  isPending: Boolean!
+  isRecurringInstance: Boolean!
+  merchantName: String
+  source: TransactionSource!
+  txnDate: DateTime!
+  type: TransactionType!
+  updatedAt: DateTime!
+  userId: String!
+}
+
+type TransactionConnection {
+  edges: [TransactionEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type TransactionEdge {
+  cursor: String!
+  node: Transaction!
+}
+
+input TransactionFilters {
+  accountId: String
+  categoryId: String
+  endDate: DateTime
+  isPending: Boolean
+  search: String
+  source: TransactionSource
+  startDate: DateTime
+  type: TransactionType
+}
+
+"""Transaction source"""
+enum TransactionSource {
+  imported
+  manual
+  ocr
+  sms
+}
+
+"""Transaction type"""
+enum TransactionType {
+  adjustment
+  expense
+  income
+  transfer
+}
+
+type Transfer {
+  amount: Float!
+  createdAt: DateTime!
+  fromTxn: Transaction!
+  fromTxnId: String!
+  id: String!
+  toTxn: Transaction!
+  toTxnId: String!
+}
+
+input UpdateAccountInput {
+  archived: Boolean
+  metadata: String
+  name: String
+}
+
+input UpdateBudgetInput {
+  amountTotal: Float
+  categories: [BudgetCategoryInput!]
+}
+
+input UpdateCategoryInput {
+  name: String
+  parentId: String
+  sortOrder: Float
+}
+
+input UpdateDebtInput {
+  dueDate: DateTime
+  interestRateAnnual: Float
+  linkedAccountId: String
+  minPaymentAmount: Float
+  name: String
+}
+
+input UpdateTransactionInput {
+  amount: Float
+  categoryId: String
+  description: String
+  isPending: Boolean
+  merchantName: String
+  txnDate: DateTime
+}
+
+input UpdateUserInput {
+  email: String
+  name: String
+}
+
+type User {
+  createdAt: DateTime!
+  email: String!
+  id: String!
+  name: String!
+  updatedAt: DateTime!
+}
+
+input WhatIfInput {
+  monthlyExpenses: Float!
+  monthlyIncome: Float!
+  monthsToProject: Int!
+  scenarioName: String!
+  startDate: DateTime!
+}
+
+type WhatIfResult {
+  finalBalance: Float!
+  projections: [CashFlowProjection!]!
+  scenarioName: String!
+  totalSavings: Float!
+}

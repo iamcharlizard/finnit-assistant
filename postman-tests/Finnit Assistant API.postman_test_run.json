@@ -1,0 +1,1962 @@
+{
+	"id": "aee1d96d-bc05-4349-88e3-a9ddb9ecea66",
+	"name": "Finnit Assistant API",
+	"timestamp": "2025-08-23T11:30:10.602Z",
+	"collection_id": "41286027-c7b7a776-df0a-405f-8c82-0a485ce31363",
+	"folder_id": 0,
+	"environment_id": "41286027-5d698b37-d2a0-417d-a2e8-a9306b4ef4d5",
+	"totalPass": 47,
+	"delay": 0,
+	"persist": true,
+	"status": "finished",
+	"startedAt": "2025-08-23T11:30:09.369Z",
+	"totalFail": 33,
+	"results": [
+		{
+			"id": "9b65ed17-5231-488b-92f5-2f1aa1e87008",
+			"name": "Register User",
+			"url": "http://localhost:3000/graphql",
+			"time": 34,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				34
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "5314e45f-d87d-4812-97af-0f1a403ed7f8",
+			"name": "Login",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "8b2f118f-1d0c-42c5-9e79-50077f466002",
+			"name": "Refresh Token",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "162be271-77cc-4143-964d-54631344cca7",
+			"name": "Logout",
+			"url": "http://localhost:3000/graphql",
+			"time": 2,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				2
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "f2a4cbf6-2592-4f61-8eb2-8e137368c071",
+			"name": "Request Password Reset",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "1e689ee0-fce2-40c6-89a2-e8eeb608a0c1",
+			"name": "Validate Token",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "915cf6f6-283b-4a15-ad1e-ae9e6d325189",
+			"name": "Current User",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "c1f25bf7-8374-4d78-a1c6-1c9889d1e28f",
+			"name": "Get User Profile",
+			"url": "http://localhost:3000/graphql",
+			"time": 2,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				2
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "0808915c-01ea-4a59-865a-2f8386f123f6",
+			"name": "Update User Profile",
+			"url": "http://localhost:3000/graphql",
+			"time": 50,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				50
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "08bcde45-3fbd-4092-bf10-a606180b28eb",
+			"name": "Get All Accounts",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "6e22fbed-a3da-4940-b079-b0475954fd41",
+			"name": "Get Account by ID",
+			"url": "http://localhost:3000/graphql",
+			"time": 2,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				2
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "1d488070-b3e1-43fd-88cb-c804ba664610",
+			"name": "Create Account",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "87598630-765a-4f4a-9042-b53228d4b008",
+			"name": "Update Account",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "c6e292a9-911a-4bfc-ba57-8c681c672ce2",
+			"name": "Archive Account",
+			"url": "http://localhost:3000/graphql",
+			"time": 2,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				2
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "6b909843-035f-46a0-ba1d-09496ca47b7b",
+			"name": "Delete Account",
+			"url": "http://localhost:3000/graphql",
+			"time": 2,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				2
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "17ea00d0-5e2f-4348-8c11-0a6fbd625bf2",
+			"name": "Get All Transactions",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "b45997fb-c4c8-4eed-aa26-a334c67d1ac0",
+			"name": "Get Transaction by ID",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "9b2367a6-ab2d-4379-b991-f8bdeae1a8bc",
+			"name": "Create Transaction",
+			"url": "http://localhost:3000/graphql",
+			"time": 2,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				2
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "5b76bce2-c4d3-4d32-8d8b-e9410a22af81",
+			"name": "Update Transaction",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "3be61ea0-11ec-4095-a105-ddf981e20c7d",
+			"name": "Delete Transaction",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "fdf48313-987b-4d3e-bdbf-a8c15f0b2bf9",
+			"name": "Add Transaction Attachment",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "ed34d4ac-b61e-48c7-868a-2100cd49f8bb",
+			"name": "Remove Transaction Attachment",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "c36ff0ab-1bff-430b-86a4-5912b30b9666",
+			"name": "Get All Transfers",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "f2f2d4c1-b9d4-474f-8bc6-50e0d975d937",
+			"name": "Get Transfer by ID",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "d37f5e38-61ee-41f1-a123-e40863c86653",
+			"name": "Create Transfer",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "237a91df-e109-4d54-9e33-8900216db21f",
+			"name": "Get All Categories",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Status code is 200": true,
+				"Response is valid GraphQL": false,
+				"Categories are returned as array": false,
+				"Each category has required fields": false,
+				"Category structure is valid": false,
+				"Response time is acceptable": true
+			},
+			"testPassFailCounts": {
+				"Status code is 200": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response is valid GraphQL": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Categories are returned as array": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Each category has required fields": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Category structure is valid": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Response time is acceptable": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				3
+			],
+			"allTests": [
+				{
+					"Status code is 200": true,
+					"Response is valid GraphQL": false,
+					"Categories are returned as array": false,
+					"Each category has required fields": false,
+					"Category structure is valid": false,
+					"Response time is acceptable": true
+				}
+			]
+		},
+		{
+			"id": "ec75816a-80e9-426b-889a-01ca3e0fa25a",
+			"name": "Get User Categories",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {
+				"Status code is 200": false,
+				"Response is valid GraphQL": false,
+				"User categories are returned as array": false,
+				"User-specific categories validation": false,
+				"Authorization is required": true,
+				"Response time is acceptable": true
+			},
+			"testPassFailCounts": {
+				"Status code is 200": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Response is valid GraphQL": {
+					"pass": 0,
+					"fail": 1
+				},
+				"User categories are returned as array": {
+					"pass": 0,
+					"fail": 1
+				},
+				"User-specific categories validation": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Authorization is required": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response time is acceptable": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				4
+			],
+			"allTests": [
+				{
+					"Status code is 200": false,
+					"Response is valid GraphQL": false,
+					"User categories are returned as array": false,
+					"User-specific categories validation": false,
+					"Authorization is required": true,
+					"Response time is acceptable": true
+				}
+			]
+		},
+		{
+			"id": "bfa7a456-daea-4d3e-815a-6fa141b30807",
+			"name": "Get Root Categories",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Status code is 200": true,
+				"Response is valid GraphQL": false,
+				"Root categories are returned as array": false,
+				"Root categories have no parent": false,
+				"Each root category has valid structure": false,
+				"Root categories may have children": false,
+				"Response time is acceptable": true
+			},
+			"testPassFailCounts": {
+				"Status code is 200": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response is valid GraphQL": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Root categories are returned as array": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Root categories have no parent": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Each root category has valid structure": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Root categories may have children": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Response time is acceptable": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				4
+			],
+			"allTests": [
+				{
+					"Status code is 200": true,
+					"Response is valid GraphQL": false,
+					"Root categories are returned as array": false,
+					"Root categories have no parent": false,
+					"Each root category has valid structure": false,
+					"Root categories may have children": false,
+					"Response time is acceptable": true
+				}
+			]
+		},
+		{
+			"id": "13fe8f31-d356-4f58-b937-1a8067f15d6e",
+			"name": "Get Category by ID",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {
+				"Status code is 200": false,
+				"Response is valid GraphQL": false,
+				"Category ID parameter is provided": false,
+				"Category details are returned correctly": true,
+				"Category relationships are valid": true,
+				"Handle non-existent category gracefully": true,
+				"Response time is acceptable": true
+			},
+			"testPassFailCounts": {
+				"Status code is 200": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Response is valid GraphQL": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Category ID parameter is provided": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Category details are returned correctly": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Category relationships are valid": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Handle non-existent category gracefully": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response time is acceptable": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				4
+			],
+			"allTests": [
+				{
+					"Status code is 200": false,
+					"Response is valid GraphQL": false,
+					"Category ID parameter is provided": false,
+					"Category details are returned correctly": true,
+					"Category relationships are valid": true,
+					"Handle non-existent category gracefully": true,
+					"Response time is acceptable": true
+				}
+			]
+		},
+		{
+			"id": "b0fbfc56-d497-4ab8-901f-5bd0babc082c",
+			"name": "Create Category",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Status code is 200": true,
+				"Response is valid GraphQL": false,
+				"Category creation input validation": true,
+				"Created category has required fields": true,
+				"Category parent relationship validation": true,
+				"Save category ID for subsequent tests": true,
+				"Validate creation timestamp": true,
+				"Handle validation errors appropriately": true,
+				"Response time is acceptable": true
+			},
+			"testPassFailCounts": {
+				"Status code is 200": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response is valid GraphQL": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Category creation input validation": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Created category has required fields": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Category parent relationship validation": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Save category ID for subsequent tests": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Validate creation timestamp": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Handle validation errors appropriately": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response time is acceptable": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				3
+			],
+			"allTests": [
+				{
+					"Status code is 200": true,
+					"Response is valid GraphQL": false,
+					"Category creation input validation": true,
+					"Created category has required fields": true,
+					"Category parent relationship validation": true,
+					"Save category ID for subsequent tests": true,
+					"Validate creation timestamp": true,
+					"Handle validation errors appropriately": true,
+					"Response time is acceptable": true
+				}
+			]
+		},
+		{
+			"id": "ae570f7d-a6ff-4f85-adc3-b587a103fa9f",
+			"name": "Update Category",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Status code is 200": true,
+				"Response is valid GraphQL": false,
+				"Update input validation": false,
+				"Updated category maintains integrity": true,
+				"Category ID remains unchanged after update": true,
+				"Updated fields reflect changes": true,
+				"Parent relationship validation on update": true,
+				"Handle update errors gracefully": true,
+				"Response time is acceptable": true
+			},
+			"testPassFailCounts": {
+				"Status code is 200": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response is valid GraphQL": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Update input validation": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Updated category maintains integrity": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Category ID remains unchanged after update": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Updated fields reflect changes": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Parent relationship validation on update": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Handle update errors gracefully": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response time is acceptable": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				3
+			],
+			"allTests": [
+				{
+					"Status code is 200": true,
+					"Response is valid GraphQL": false,
+					"Update input validation": false,
+					"Updated category maintains integrity": true,
+					"Category ID remains unchanged after update": true,
+					"Updated fields reflect changes": true,
+					"Parent relationship validation on update": true,
+					"Handle update errors gracefully": true,
+					"Response time is acceptable": true
+				}
+			]
+		},
+		{
+			"id": "7a6a8908-dc4a-4bd4-9769-3f7dc2a39873",
+			"name": "Delete Category",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Status code is 200": true,
+				"Response is valid GraphQL": false,
+				"Delete input validation": false,
+				"Delete operation returns boolean result": true,
+				"Handles deletion of non-existent category": false,
+				"Prevents deletion of categories with transactions": true,
+				"Prevents deletion of default categories": true,
+				"Authorization is required": true,
+				"Clean up environment variables on successful deletion": true,
+				"Response time is acceptable": true
+			},
+			"testPassFailCounts": {
+				"Status code is 200": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response is valid GraphQL": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Delete input validation": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Delete operation returns boolean result": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Handles deletion of non-existent category": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Prevents deletion of categories with transactions": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Prevents deletion of default categories": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Authorization is required": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Clean up environment variables on successful deletion": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response time is acceptable": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				3
+			],
+			"allTests": [
+				{
+					"Status code is 200": true,
+					"Response is valid GraphQL": false,
+					"Delete input validation": false,
+					"Delete operation returns boolean result": true,
+					"Handles deletion of non-existent category": false,
+					"Prevents deletion of categories with transactions": true,
+					"Prevents deletion of default categories": true,
+					"Authorization is required": true,
+					"Clean up environment variables on successful deletion": true,
+					"Response time is acceptable": true
+				}
+			]
+		},
+		{
+			"id": "fa838b0c-a3b2-4980-8466-c163f1904770",
+			"name": "Get Category Usage",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Status code is 200": true,
+				"Response is valid GraphQL": false,
+				"Category usage is returned as array": false,
+				"Date range parameters are valid": true,
+				"Each usage entry has required fields": false,
+				"Total amounts are valid numbers": false,
+				"Transaction counts are positive integers": false,
+				"Usage data is sorted properly": false,
+				"Response time is acceptable": true
+			},
+			"testPassFailCounts": {
+				"Status code is 200": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response is valid GraphQL": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Category usage is returned as array": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Date range parameters are valid": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Each usage entry has required fields": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Total amounts are valid numbers": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Transaction counts are positive integers": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Usage data is sorted properly": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Response time is acceptable": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				3
+			],
+			"allTests": [
+				{
+					"Status code is 200": true,
+					"Response is valid GraphQL": false,
+					"Category usage is returned as array": false,
+					"Date range parameters are valid": true,
+					"Each usage entry has required fields": false,
+					"Total amounts are valid numbers": false,
+					"Transaction counts are positive integers": false,
+					"Usage data is sorted properly": false,
+					"Response time is acceptable": true
+				}
+			]
+		},
+		{
+			"id": "452c28ae-6ad3-41eb-990d-0f46dd517827",
+			"name": "Suggest Category",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Status code is 200": true,
+				"Response is valid GraphQL": true,
+				"Input validation for suggestion": false,
+				"Suggestion result validation": true,
+				"Handles no suggestion gracefully": true,
+				"Optional merchant name parameter handling": true,
+				"AI suggestion quality check": true,
+				"Confidence score validity": true,
+				"Response time is acceptable for AI processing": true
+			},
+			"testPassFailCounts": {
+				"Status code is 200": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response is valid GraphQL": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Input validation for suggestion": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Suggestion result validation": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Handles no suggestion gracefully": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Optional merchant name parameter handling": {
+					"pass": 1,
+					"fail": 0
+				},
+				"AI suggestion quality check": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Confidence score validity": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response time is acceptable for AI processing": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				3
+			],
+			"allTests": [
+				{
+					"Status code is 200": true,
+					"Response is valid GraphQL": true,
+					"Input validation for suggestion": false,
+					"Suggestion result validation": true,
+					"Handles no suggestion gracefully": true,
+					"Optional merchant name parameter handling": true,
+					"AI suggestion quality check": true,
+					"Confidence score validity": true,
+					"Response time is acceptable for AI processing": true
+				}
+			]
+		},
+		{
+			"id": "e1d402cc-2bb9-4d0d-a37a-3516da98035e",
+			"name": "Create Default Categories",
+			"url": "http://localhost:3000/graphql",
+			"time": 2,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"Status code is 200": true,
+				"Response is valid GraphQL": false,
+				"Default categories creation returns boolean": false,
+				"Authorization is required": true,
+				"Operation is idempotent": false,
+				"Handles existing default categories gracefully": true,
+				"Response time is acceptable for bulk operation": true,
+				"Default categories should be created for new user": false
+			},
+			"testPassFailCounts": {
+				"Status code is 200": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response is valid GraphQL": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Default categories creation returns boolean": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Authorization is required": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Operation is idempotent": {
+					"pass": 0,
+					"fail": 1
+				},
+				"Handles existing default categories gracefully": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Response time is acceptable for bulk operation": {
+					"pass": 1,
+					"fail": 0
+				},
+				"Default categories should be created for new user": {
+					"pass": 0,
+					"fail": 1
+				}
+			},
+			"times": [
+				2
+			],
+			"allTests": [
+				{
+					"Status code is 200": true,
+					"Response is valid GraphQL": false,
+					"Default categories creation returns boolean": false,
+					"Authorization is required": true,
+					"Operation is idempotent": false,
+					"Handles existing default categories gracefully": true,
+					"Response time is acceptable for bulk operation": true,
+					"Default categories should be created for new user": false
+				}
+			]
+		},
+		{
+			"id": "3c602e1b-188c-40b7-9510-91e454958f58",
+			"name": "Get All Budgets",
+			"url": "http://localhost:3000/graphql",
+			"time": 2,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				2
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "50803ecd-0125-402c-9953-87637d1823d4",
+			"name": "Get Budget by ID",
+			"url": "http://localhost:3000/graphql",
+			"time": 2,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				2
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "19b72ade-a3cc-41b3-807c-f5e7b0ba3bb8",
+			"name": "Get Budget Usage",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "f7f5fd98-06a6-4360-b569-e8131ebf285c",
+			"name": "Get Current Budget",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "be42cce4-dbab-4d28-b203-3ee8a586ba07",
+			"name": "Get Budget Summary",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "b2d4f935-0fb1-4480-819e-5f2712df7b26",
+			"name": "Get Budget Alerts",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "7f05a9e9-649c-4255-8526-90ad4f1e7817",
+			"name": "Create Budget",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "0fee7d66-a8ba-4eb7-89ee-fb728604f958",
+			"name": "Update Budget",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "2cb73402-2aa4-4438-9241-55a6a4e7d7c3",
+			"name": "Delete Budget",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "26baac70-8393-4284-a407-03a2f1952158",
+			"name": "Copy Budget from Previous Month",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "d1d0565b-7e0c-4e9b-a680-3365fb3d1f50",
+			"name": "Get All Goals",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "55d4e6b5-4f5e-4497-8bb4-94fd240b077d",
+			"name": "Get Goal by ID",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "eb433496-0884-4a6f-978e-92a7c1f100ea",
+			"name": "Get Goal Progress",
+			"url": "http://localhost:3000/graphql",
+			"time": 6,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				6
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "f9041cb6-4a46-4a09-8555-707037f23dc2",
+			"name": "Create Goal",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "bee910f6-9fb1-4f17-adec-c0eff557b40c",
+			"name": "Get All Debts",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "edada408-dc0d-418d-8406-41025e1acfc3",
+			"name": "Get Debt by ID",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "f18e30a6-83cf-4ea0-95fa-ee073aa70c91",
+			"name": "Get Debt Summary",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "bc3ea150-3fa2-48cb-a64b-ce6c8b188655",
+			"name": "Get Debt Payoff Projections",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "51a1a909-a315-4f76-9cf9-8aaca4a65049",
+			"name": "Create Debt",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "51d5c3fd-50ca-4cdf-a954-f5f59bbcc809",
+			"name": "Update Debt",
+			"url": "http://localhost:3000/graphql",
+			"time": 2,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				2
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "bc563596-72f4-458e-82b2-7785d9fcefc8",
+			"name": "Delete Debt",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "b78dd9bc-574f-4547-8437-c2a45891b753",
+			"name": "Record Debt Payment",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "5c720674-d1b3-462b-b3b2-91820d4c3b83",
+			"name": "Get All Notifications",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "f4b163d5-97f9-4921-8ea4-37e5ea898293",
+			"name": "Mark Notification as Read",
+			"url": "http://localhost:3000/graphql",
+			"time": 2,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				2
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "963ab4b4-8da1-4ccf-ac43-fbef75f4918d",
+			"name": "Mark All Notifications as Read",
+			"url": "http://localhost:3000/graphql",
+			"time": 3,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				3
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "eca564d0-dd08-4113-9739-2cc685e1cad6",
+			"name": "Get Monthly Report",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "e36439e1-327e-4491-baa5-7e5e6a27bd96",
+			"name": "Get Cash Flow Projection",
+			"url": "http://localhost:3000/graphql",
+			"time": 5,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				5
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "b1d07511-51c6-461d-8d6a-6e30d042ba5e",
+			"name": "What-If Analysis",
+			"url": "http://localhost:3000/graphql",
+			"time": 6,
+			"responseCode": {
+				"code": 400,
+				"name": "Bad Request"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				6
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "2edf9278-970d-450d-9ece-f3848f1bf87e",
+			"name": "Health Check",
+			"url": "http://localhost:3000/",
+			"time": 2,
+			"responseCode": {
+				"code": 404,
+				"name": "Not Found"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				2
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "749ef5fc-c0a7-4fd8-9cbd-95310b7c5637",
+			"name": "GraphQL Schema Introspection",
+			"url": "http://localhost:3000/graphql",
+			"time": 4,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				4
+			],
+			"allTests": [
+				{}
+			]
+		}
+	],
+	"count": 1,
+	"totalTime": 286,
+	"collection": {
+		"requests": [
+			{
+				"id": "9b65ed17-5231-488b-92f5-2f1aa1e87008",
+				"method": "POST"
+			},
+			{
+				"id": "5314e45f-d87d-4812-97af-0f1a403ed7f8",
+				"method": "POST"
+			},
+			{
+				"id": "8b2f118f-1d0c-42c5-9e79-50077f466002",
+				"method": "POST"
+			},
+			{
+				"id": "162be271-77cc-4143-964d-54631344cca7",
+				"method": "POST"
+			},
+			{
+				"id": "f2a4cbf6-2592-4f61-8eb2-8e137368c071",
+				"method": "POST"
+			},
+			{
+				"id": "1e689ee0-fce2-40c6-89a2-e8eeb608a0c1",
+				"method": "POST"
+			},
+			{
+				"id": "915cf6f6-283b-4a15-ad1e-ae9e6d325189",
+				"method": "POST"
+			},
+			{
+				"id": "c1f25bf7-8374-4d78-a1c6-1c9889d1e28f",
+				"method": "POST"
+			},
+			{
+				"id": "0808915c-01ea-4a59-865a-2f8386f123f6",
+				"method": "POST"
+			},
+			{
+				"id": "08bcde45-3fbd-4092-bf10-a606180b28eb",
+				"method": "POST"
+			},
+			{
+				"id": "6e22fbed-a3da-4940-b079-b0475954fd41",
+				"method": "POST"
+			},
+			{
+				"id": "1d488070-b3e1-43fd-88cb-c804ba664610",
+				"method": "POST"
+			},
+			{
+				"id": "87598630-765a-4f4a-9042-b53228d4b008",
+				"method": "POST"
+			},
+			{
+				"id": "c6e292a9-911a-4bfc-ba57-8c681c672ce2",
+				"method": "POST"
+			},
+			{
+				"id": "6b909843-035f-46a0-ba1d-09496ca47b7b",
+				"method": "POST"
+			},
+			{
+				"id": "17ea00d0-5e2f-4348-8c11-0a6fbd625bf2",
+				"method": "POST"
+			},
+			{
+				"id": "b45997fb-c4c8-4eed-aa26-a334c67d1ac0",
+				"method": "POST"
+			},
+			{
+				"id": "9b2367a6-ab2d-4379-b991-f8bdeae1a8bc",
+				"method": "POST"
+			},
+			{
+				"id": "5b76bce2-c4d3-4d32-8d8b-e9410a22af81",
+				"method": "POST"
+			},
+			{
+				"id": "3be61ea0-11ec-4095-a105-ddf981e20c7d",
+				"method": "POST"
+			},
+			{
+				"id": "fdf48313-987b-4d3e-bdbf-a8c15f0b2bf9",
+				"method": "POST"
+			},
+			{
+				"id": "ed34d4ac-b61e-48c7-868a-2100cd49f8bb",
+				"method": "POST"
+			},
+			{
+				"id": "c36ff0ab-1bff-430b-86a4-5912b30b9666",
+				"method": "POST"
+			},
+			{
+				"id": "f2f2d4c1-b9d4-474f-8bc6-50e0d975d937",
+				"method": "POST"
+			},
+			{
+				"id": "d37f5e38-61ee-41f1-a123-e40863c86653",
+				"method": "POST"
+			},
+			{
+				"id": "237a91df-e109-4d54-9e33-8900216db21f",
+				"method": "POST"
+			},
+			{
+				"id": "ec75816a-80e9-426b-889a-01ca3e0fa25a",
+				"method": "POST"
+			},
+			{
+				"id": "bfa7a456-daea-4d3e-815a-6fa141b30807",
+				"method": "POST"
+			},
+			{
+				"id": "13fe8f31-d356-4f58-b937-1a8067f15d6e",
+				"method": "POST"
+			},
+			{
+				"id": "b0fbfc56-d497-4ab8-901f-5bd0babc082c",
+				"method": "POST"
+			},
+			{
+				"id": "ae570f7d-a6ff-4f85-adc3-b587a103fa9f",
+				"method": "POST"
+			},
+			{
+				"id": "7a6a8908-dc4a-4bd4-9769-3f7dc2a39873",
+				"method": "POST"
+			},
+			{
+				"id": "fa838b0c-a3b2-4980-8466-c163f1904770",
+				"method": "POST"
+			},
+			{
+				"id": "452c28ae-6ad3-41eb-990d-0f46dd517827",
+				"method": "POST"
+			},
+			{
+				"id": "e1d402cc-2bb9-4d0d-a37a-3516da98035e",
+				"method": "POST"
+			},
+			{
+				"id": "3c602e1b-188c-40b7-9510-91e454958f58",
+				"method": "POST"
+			},
+			{
+				"id": "50803ecd-0125-402c-9953-87637d1823d4",
+				"method": "POST"
+			},
+			{
+				"id": "19b72ade-a3cc-41b3-807c-f5e7b0ba3bb8",
+				"method": "POST"
+			},
+			{
+				"id": "f7f5fd98-06a6-4360-b569-e8131ebf285c",
+				"method": "POST"
+			},
+			{
+				"id": "be42cce4-dbab-4d28-b203-3ee8a586ba07",
+				"method": "POST"
+			},
+			{
+				"id": "b2d4f935-0fb1-4480-819e-5f2712df7b26",
+				"method": "POST"
+			},
+			{
+				"id": "7f05a9e9-649c-4255-8526-90ad4f1e7817",
+				"method": "POST"
+			},
+			{
+				"id": "0fee7d66-a8ba-4eb7-89ee-fb728604f958",
+				"method": "POST"
+			},
+			{
+				"id": "2cb73402-2aa4-4438-9241-55a6a4e7d7c3",
+				"method": "POST"
+			},
+			{
+				"id": "26baac70-8393-4284-a407-03a2f1952158",
+				"method": "POST"
+			},
+			{
+				"id": "d1d0565b-7e0c-4e9b-a680-3365fb3d1f50",
+				"method": "POST"
+			},
+			{
+				"id": "55d4e6b5-4f5e-4497-8bb4-94fd240b077d",
+				"method": "POST"
+			},
+			{
+				"id": "eb433496-0884-4a6f-978e-92a7c1f100ea",
+				"method": "POST"
+			},
+			{
+				"id": "f9041cb6-4a46-4a09-8555-707037f23dc2",
+				"method": "POST"
+			},
+			{
+				"id": "bee910f6-9fb1-4f17-adec-c0eff557b40c",
+				"method": "POST"
+			},
+			{
+				"id": "edada408-dc0d-418d-8406-41025e1acfc3",
+				"method": "POST"
+			},
+			{
+				"id": "f18e30a6-83cf-4ea0-95fa-ee073aa70c91",
+				"method": "POST"
+			},
+			{
+				"id": "bc3ea150-3fa2-48cb-a64b-ce6c8b188655",
+				"method": "POST"
+			},
+			{
+				"id": "51a1a909-a315-4f76-9cf9-8aaca4a65049",
+				"method": "POST"
+			},
+			{
+				"id": "51d5c3fd-50ca-4cdf-a954-f5f59bbcc809",
+				"method": "POST"
+			},
+			{
+				"id": "bc563596-72f4-458e-82b2-7785d9fcefc8",
+				"method": "POST"
+			},
+			{
+				"id": "b78dd9bc-574f-4547-8437-c2a45891b753",
+				"method": "POST"
+			},
+			{
+				"id": "5c720674-d1b3-462b-b3b2-91820d4c3b83",
+				"method": "POST"
+			},
+			{
+				"id": "f4b163d5-97f9-4921-8ea4-37e5ea898293",
+				"method": "POST"
+			},
+			{
+				"id": "963ab4b4-8da1-4ccf-ac43-fbef75f4918d",
+				"method": "POST"
+			},
+			{
+				"id": "eca564d0-dd08-4113-9739-2cc685e1cad6",
+				"method": "POST"
+			},
+			{
+				"id": "e36439e1-327e-4491-baa5-7e5e6a27bd96",
+				"method": "POST"
+			},
+			{
+				"id": "b1d07511-51c6-461d-8d6a-6e30d042ba5e",
+				"method": "POST"
+			},
+			{
+				"id": "2edf9278-970d-450d-9ece-f3848f1bf87e",
+				"method": "GET"
+			},
+			{
+				"id": "749ef5fc-c0a7-4fd8-9cbd-95310b7c5637",
+				"method": "POST"
+			}
+		]
+	}
+}

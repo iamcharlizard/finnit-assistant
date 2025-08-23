@@ -9,6 +9,7 @@ import {
 } from './dto/report.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { User } from '../../common/types/models/user.model';
 
 @Resolver()
 @UseGuards(JwtAuthGuard)
@@ -17,7 +18,7 @@ export class ReportsResolver {
 
   @Query(() => MonthlyReport)
   async monthlyReport(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('year', { type: () => Int }) year: number,
     @Args('month', { type: () => Int }) month: number,
   ): Promise<MonthlyReport> {
@@ -26,15 +27,16 @@ export class ReportsResolver {
 
   @Query(() => [CashFlowProjection])
   async cashFlowProjection(
-    @CurrentUser() user: any,
-    @Args('monthsAhead', { type: () => Int, defaultValue: 6 }) monthsAhead: number,
+    @CurrentUser() user: User,
+    @Args('monthsAhead', { type: () => Int, defaultValue: 6 })
+    monthsAhead: number,
   ): Promise<CashFlowProjection[]> {
     return this.reportsService.getCashFlowProjection(user.id, monthsAhead);
   }
 
   @Query(() => WhatIfResult)
   async whatIfScenario(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('input') input: WhatIfInput,
   ): Promise<WhatIfResult> {
     return this.reportsService.runWhatIfScenario(user.id, input);

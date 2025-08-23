@@ -1,53 +1,33 @@
-import { ObjectType, Field, InputType, registerEnumType, ArgsType, Int } from '@nestjs/graphql';
-import { IsString, IsEnum, IsDecimal, IsOptional, IsBoolean, IsNumber, Min, Max } from 'class-validator';
-import { Connection, Edge } from '../../../common/types/pagination.types';
+import { ObjectType, InputType, Field, ArgsType, Int } from '@nestjs/graphql';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
+import {
+  Connection,
+  Edge,
+  PageInfo,
+} from '../../../common/types/pagination.types';
 import { AccountType } from '@finnit/database';
+// Importamos el tipo para TypeScript, pero definimos el modelo aquí para GraphQL
+import { Account } from '../../../common/types/models/account.model';
 
-registerEnumType(AccountType, {
-  name: 'AccountType',
-  description: 'Account type',
-});
-
-@ObjectType()
-export class Account {
-  @Field()
-  id: string;
-
-  @Field()
-  userId: string;
-
-  @Field(() => AccountType)
-  type: AccountType;
-
-  @Field()
-  name: string;
-
-  @Field()
-  currency: string;
-
-  @Field()
-  balanceCurrent: number;
-
-  @Field({ nullable: true })
-  metadata?: any;
-
-  @Field()
-  archived: boolean;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-}
+// ============================================================================
+// CONNECTION TYPES
+// ============================================================================
 
 @ObjectType()
 export class AccountEdge implements Edge<Account> {
-  @Field(() => Account)
-  node: Account;
+  @Field(() => Account, { description: 'The account node' })
+  node!: Account;
 
-  @Field()
-  cursor: string;
+  @Field(() => String, { description: 'Cursor for pagination' })
+  cursor!: string;
 }
 
 @ObjectType()
@@ -55,8 +35,8 @@ export class AccountConnection implements Connection<Account> {
   @Field(() => [AccountEdge])
   edges: AccountEdge[];
 
-  @Field()
-  pageInfo: any;
+  @Field(() => PageInfo)
+  pageInfo: PageInfo;
 
   @Field(() => Int)
   totalCount: number;
@@ -82,7 +62,7 @@ export class CreateAccountInput {
 
   @Field({ nullable: true })
   @IsOptional()
-  metadata?: any;
+  metadata?: string;
 }
 
 @InputType()
@@ -99,7 +79,7 @@ export class UpdateAccountInput {
 
   @Field({ nullable: true })
   @IsOptional()
-  metadata?: any;
+  metadata?: string;
 }
 
 @InputType()

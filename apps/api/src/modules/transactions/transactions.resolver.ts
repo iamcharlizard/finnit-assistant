@@ -12,6 +12,7 @@ import {
 } from './dto/transaction.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { User } from '../../common/types/models/user.model';
 
 @Resolver(() => Transaction)
 @UseGuards(JwtAuthGuard)
@@ -20,7 +21,7 @@ export class TransactionsResolver {
 
   @Query(() => TransactionConnection)
   async transactions(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args() args: TransactionsArgs,
   ): Promise<TransactionConnection> {
     return this.transactionsService.findMany(user.id, args);
@@ -28,7 +29,7 @@ export class TransactionsResolver {
 
   @Query(() => Transaction)
   async transaction(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<Transaction> {
     return this.transactionsService.findById(id, user.id);
@@ -36,7 +37,7 @@ export class TransactionsResolver {
 
   @Mutation(() => Transaction)
   async createTransaction(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('input') input: CreateTransactionInput,
   ): Promise<Transaction> {
     return this.transactionsService.create(user.id, input);
@@ -44,7 +45,7 @@ export class TransactionsResolver {
 
   @Mutation(() => Transaction)
   async updateTransaction(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('id') id: string,
     @Args('input') input: UpdateTransactionInput,
   ): Promise<Transaction> {
@@ -53,7 +54,7 @@ export class TransactionsResolver {
 
   @Mutation(() => Boolean)
   async deleteTransaction(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<boolean> {
     return this.transactionsService.delete(id, user.id);
@@ -61,7 +62,7 @@ export class TransactionsResolver {
 
   @Mutation(() => Attachment)
   async addTransactionAttachment(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('input') input: CreateAttachmentInput,
   ): Promise<Attachment> {
     return this.transactionsService.addAttachment(user.id, input);
@@ -69,7 +70,7 @@ export class TransactionsResolver {
 
   @Mutation(() => Boolean)
   async removeTransactionAttachment(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<boolean> {
     return this.transactionsService.removeAttachment(id, user.id);

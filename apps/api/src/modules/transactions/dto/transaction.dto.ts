@@ -1,15 +1,26 @@
-import { ObjectType, Field, InputType, registerEnumType, ArgsType, Int } from '@nestjs/graphql';
-import { 
-  IsString, 
-  IsEnum, 
-  IsNumber, 
-  IsOptional, 
-  IsBoolean, 
-  IsDateString, 
-  Min, 
-  Max 
+import {
+  ObjectType,
+  Field,
+  InputType,
+  registerEnumType,
+  ArgsType,
+  Int,
+} from '@nestjs/graphql';
+import {
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  IsDateString,
+  Min,
+  Max,
 } from 'class-validator';
-import { Connection, Edge } from '../../../common/types/pagination.types';
+import {
+  Connection,
+  Edge,
+  PageInfo,
+} from '../../../common/types/pagination.types';
 import { TransactionType, TransactionSource } from '@finnit/database';
 
 registerEnumType(TransactionType, {
@@ -87,8 +98,8 @@ export class TransactionConnection implements Connection<Transaction> {
   @Field(() => [TransactionEdge])
   edges: TransactionEdge[];
 
-  @Field()
-  pageInfo: any;
+  @Field(() => PageInfo)
+  pageInfo: PageInfo;
 
   @Field(() => Int)
   totalCount: number;
@@ -264,7 +275,7 @@ export class Attachment {
   fileSize?: number;
 
   @Field({ nullable: true })
-  extra?: any;
+  extra?: string;
 
   @Field()
   uploadedAt: Date;
@@ -291,5 +302,5 @@ export class CreateAttachmentInput {
 
   @Field({ nullable: true })
   @IsOptional()
-  extra?: any;
+  extra?: string;
 }

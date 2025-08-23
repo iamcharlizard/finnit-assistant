@@ -1,14 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../services/prisma.service';
-import { 
-  Budget, 
-  CreateBudgetInput, 
+import {
+  Budget,
+  CreateBudgetInput,
   UpdateBudgetInput,
-  BudgetUsage, 
+  BudgetUsage,
   BudgetSummary,
-  BudgetAlert 
+  BudgetAlert,
 } from './dto/budget.dto';
-import { NotFoundError, ConflictError, BudgetExceededError } from '../../common/exceptions/graphql-error.exception';
+import {
+  NotFoundError,
+  ConflictError,
+} from '../../common/exceptions/graphql-error.exception';
+import { Prisma } from '@finnit/database';
 
 @Injectable()
 export class BudgetsService {
@@ -51,7 +55,7 @@ export class BudgetsService {
       orderBy: [{ year: 'desc' }, { month: 'desc' }],
     });
 
-    return budgets.map(this.mapBudget);
+    return budgets.map((budget) => this.mapBudget(budget));
   }
 
   async findById(id: string, userId: string): Promise<Budget> {
@@ -114,7 +118,11 @@ export class BudgetsService {
     return usage;
   }
 
-  async update(id: string, userId: string, input: UpdateBudgetInput): Promise<Budget> {
+  async update(
+    id: string,
+    userId: string,
+    input: UpdateBudgetInput,
+  ): Promise<Budget> {
     const existingBudget = await this.prisma.budget.findFirst({
       where: { id, userId },
     });
@@ -125,7 +133,7 @@ export class BudgetsService {
 
     return await this.prisma.$transaction(async (tx) => {
       // Update budget
-      const updatedBudget = await tx.budget.update({
+      await tx.budget.update({
         where: { id },
         data: {
           amountTotal: input.amountTotal,
@@ -180,10 +188,10 @@ export class BudgetsService {
     const currentMonth = now.getMonth() + 1;
 
     const budget = await this.prisma.budget.findFirst({
-      where: { 
-        userId, 
-        year: currentYear, 
-        month: currentMonth 
+      where: {
+        userId,
+        year: currentYear,
+        month: currentMonth,
       },
       include: { categories: true },
     });
@@ -191,7 +199,11 @@ export class BudgetsService {
     return budget ? this.mapBudget(budget) : null;
   }
 
-  async getBudgetSummary(userId: string, year: number, month: number): Promise<BudgetSummary> {
+  async getBudgetSummary(
+    userId: string,
+    year: number,
+    month: number,
+  ): Promise<BudgetSummary> {
     const budget = await this.prisma.budget.findFirst({
       where: { userId, year, month },
       include: { categories: true },
@@ -205,7 +217,10 @@ export class BudgetsService {
     const endDate = new Date(year, month, 0);
 
     // Calculate total budgeted amount
-    const totalBudgeted = budget.categories.reduce((sum, cat) => sum + Number(cat.capAmount), 0);
+    const totalBudgeted = budget.categories.reduce(
+      (sum, cat) => sum + Number(cat.capAmount),
+      0,
+    );
 
     // Calculate total spent
     const totalSpentResult = await this.prisma.transaction.aggregate({
@@ -222,17 +237,20 @@ export class BudgetsService {
 
     const totalSpent = Number(totalSpentResult._sum.amount || 0);
     const totalRemaining = totalBudgeted - totalSpent;
-    const overallPercentage = totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0;
+    const overallPercentage =
+      totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0;
 
     // Get category-wise usage
     const categoryUsage = await this.getBudgetUsage(budget.id, userId);
-    
+
     // Find categories over budget
-    const categoriesOverBudget = categoryUsage.filter(usage => usage.percentage > 100);
-    
+    const categoriesOverBudget = categoryUsage.filter(
+      (usage) => usage.percentage > 100,
+    );
+
     // Find categories near budget (80-100%)
-    const categoriesNearBudget = categoryUsage.filter(usage => 
-      usage.percentage >= 80 && usage.percentage <= 100
+    const categoriesNearBudget = categoryUsage.filter(
+      (usage) => usage.percentage >= 80 && usage.percentage <= 100,
     );
 
     return {
@@ -257,7 +275,7 @@ export class BudgetsService {
 
     const budget = await this.prisma.budget.findFirst({
       where: { userId, year: currentYear, month: currentMonth },
-      include: { 
+      include: {
         categories: {
           include: {
             category: true,
@@ -300,10 +318,12 @@ export class BudgetsService {
           budgeted,
           spent: spentAmount,
           percentage: Math.round(percentage * 100) / 100,
-          severity: percentage >= 100 ? 'high' : percentage >= 90 ? 'medium' : 'low',
-          message: percentage >= 100 
-            ? `Budget exceeded by ${spentAmount - budgeted}` 
-            : `${Math.round((100 - percentage) * 100) / 100}% of budget remaining`,
+          severity:
+            percentage >= 100 ? 'high' : percentage >= 90 ? 'medium' : 'low',
+          message:
+            percentage >= 100
+              ? `Budget exceeded by ${spentAmount - budgeted}`
+              : `${Math.round((100 - percentage) * 100) / 100}% of budget remaining`,
         });
       }
     }
@@ -315,7 +335,7 @@ export class BudgetsService {
     userId: string,
     categoryId: string,
     amount: number,
-    transactionDate: Date
+    transactionDate: Date,
   ): Promise<{ allowed: boolean; warning?: string }> {
     const year = transactionDate.getFullYear();
     const month = transactionDate.getMonth() + 1;
@@ -372,10 +392,10 @@ export class BudgetsService {
   }
 
   async createBudgetFromTemplate(
-    userId: string, 
-    templateBudgetId: string, 
-    year: number, 
-    month: number
+    userId: string,
+    templateBudgetId: string,
+    year: number,
+    month: number,
   ): Promise<Budget> {
     // Check if budget already exists for this month/year
     const existing = await this.prisma.budget.findFirst({
@@ -415,7 +435,13 @@ export class BudgetsService {
     return this.mapBudget(budget);
   }
 
-  private mapBudget(budget: any): Budget {
+  private mapBudget(
+    budget: Prisma.BudgetGetPayload<{
+      include: {
+        categories: true;
+      };
+    }>,
+  ): Budget {
     return {
       id: budget.id,
       userId: budget.userId,
@@ -424,12 +450,15 @@ export class BudgetsService {
       currency: budget.currency,
       amountTotal: budget.amountTotal ? Number(budget.amountTotal) : undefined,
       createdAt: budget.createdAt,
-      categories: budget.categories?.map((cat: any) => ({
-        id: cat.id,
-        budgetId: cat.budgetId,
-        categoryId: cat.categoryId,
-        capAmount: Number(cat.capAmount),
-      })) || [],
+      categories:
+        budget.categories?.map(
+          (cat: Prisma.BUDGET_CATEGORYGetPayload<Record<string, never>>) => ({
+            id: cat.id,
+            budgetId: cat.budgetId,
+            categoryId: cat.categoryId,
+            capAmount: Number(cat.capAmount),
+          }),
+        ) || [],
     };
   }
 }

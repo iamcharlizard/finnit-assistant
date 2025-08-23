@@ -1,14 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../services/prisma.service';
-import { 
-  Goal, 
-  CreateGoalInput, 
+import {
+  Goal,
+  CreateGoalInput,
   UpdateGoalInput,
-  GoalProgress, 
+  GoalProgress,
   CreateGoalContributionInput,
-  GoalContribution 
+  GoalContribution,
 } from './dto/goal.dto';
-import { NotFoundError, ValidationError, GoalAlreadyReachedError } from '../../common/exceptions/graphql-error.exception';
+import {
+  NotFoundError,
+  ValidationError,
+  GoalAlreadyReachedError,
+} from '../../common/exceptions/graphql-error.exception';
+import { Prisma } from '@finnit/database';
 
 @Injectable()
 export class GoalsService {
@@ -34,7 +39,7 @@ export class GoalsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return goals.map(this.mapGoal);
+    return goals.map((goal) => this.mapGoal(goal));
   }
 
   async findById(id: string, userId: string): Promise<Goal> {
@@ -60,7 +65,8 @@ export class GoalsService {
 
     const targetAmount = Number(goal.targetAmount);
     const currentAmount = Number(goal.currentAmount);
-    const percentage = targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0;
+    const percentage =
+      targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0;
     const remaining = targetAmount - currentAmount;
 
     let daysRemaining: number | undefined = undefined;
@@ -80,7 +86,11 @@ export class GoalsService {
     };
   }
 
-  async update(id: string, userId: string, input: UpdateGoalInput): Promise<Goal> {
+  async update(
+    id: string,
+    userId: string,
+    input: UpdateGoalInput,
+  ): Promise<Goal> {
     const existingGoal = await this.prisma.goal.findFirst({
       where: { id, userId },
     });
@@ -108,7 +118,9 @@ export class GoalsService {
     }
 
     if (goal.contributions.length > 0) {
-      throw new ValidationError('Cannot delete goal with existing contributions');
+      throw new ValidationError(
+        'Cannot delete goal with existing contributions',
+      );
     }
 
     await this.prisma.goal.delete({
@@ -118,7 +130,10 @@ export class GoalsService {
     return true;
   }
 
-  async addContribution(userId: string, input: CreateGoalContributionInput): Promise<GoalContribution> {
+  async addContribution(
+    userId: string,
+    input: CreateGoalContributionInput,
+  ): Promise<GoalContribution> {
     const goal = await this.prisma.goal.findFirst({
       where: { id: input.goalId, userId },
     });
@@ -168,7 +183,10 @@ export class GoalsService {
     });
   }
 
-  async getContributions(goalId: string, userId: string): Promise<GoalContribution[]> {
+  async getContributions(
+    goalId: string,
+    userId: string,
+  ): Promise<GoalContribution[]> {
     const goal = await this.prisma.goal.findFirst({
       where: { id: goalId, userId },
     });
@@ -182,12 +200,17 @@ export class GoalsService {
       orderBy: { date: 'desc' },
     });
 
-    return contributions.map(this.mapGoalContribution);
+    return contributions.map((contribution) =>
+      this.mapGoalContribution(contribution),
+    );
   }
 
-  async removeContribution(contributionId: string, userId: string): Promise<boolean> {
+  async removeContribution(
+    contributionId: string,
+    userId: string,
+  ): Promise<boolean> {
     const contribution = await this.prisma.goalContribution.findFirst({
-      where: { 
+      where: {
         id: contributionId,
         goal: { userId },
       },
@@ -219,9 +242,9 @@ export class GoalsService {
   }
 
   async getGoalProjection(
-    goalId: string, 
-    userId: string, 
-    monthlyContribution: number
+    goalId: string,
+    userId: string,
+    monthlyContribution: number,
   ): Promise<{ completionDate: Date | null; monthsRemaining: number | null }> {
     const goal = await this.prisma.goal.findFirst({
       where: { id: goalId, userId },
@@ -287,20 +310,27 @@ export class GoalsService {
     for (const goal of goals) {
       const targetAmount = Number(goal.targetAmount);
       const currentAmount = Number(goal.currentAmount);
-      const progress = targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0;
+      const progress =
+        targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0;
 
       totalGoalsAmount += targetAmount;
       totalSavedAmount += currentAmount;
       totalProgress += progress;
 
       // Goals due soon (within 30 days)
-      if (goal.dueDate && goal.dueDate <= thirtyDaysFromNow && currentAmount < targetAmount) {
+      if (
+        goal.dueDate &&
+        goal.dueDate <= thirtyDaysFromNow &&
+        currentAmount < targetAmount
+      ) {
         goalsDueSoon.push(this.mapGoal(goal));
       }
 
       // Goals at risk (less than 50% complete with less than 60 days remaining)
       if (goal.dueDate && progress < 50) {
-        const daysRemaining = Math.ceil((goal.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const daysRemaining = Math.ceil(
+          (goal.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+        );
         if (daysRemaining <= 60 && daysRemaining > 0) {
           goalsAtRisk.push(this.mapGoal(goal));
         }
@@ -309,7 +339,7 @@ export class GoalsService {
 
     const averageProgress = totalProgress / goals.length;
     const remainingAmount = totalGoalsAmount - totalSavedAmount;
-    
+
     // Simple recommendation: spread remaining amount over 12 months
     const recommendedMonthlyContribution = remainingAmount / 12;
 
@@ -317,30 +347,35 @@ export class GoalsService {
       totalGoalsAmount,
       totalSavedAmount,
       averageProgress: Math.round(averageProgress * 100) / 100,
-      recommendedMonthlyContribution: Math.max(0, recommendedMonthlyContribution),
+      recommendedMonthlyContribution: Math.max(
+        0,
+        recommendedMonthlyContribution,
+      ),
       goalsDueSoon,
       goalsAtRisk,
     };
   }
 
-  private mapGoal(goal: any): Goal {
+  private mapGoal(goal: Prisma.GoalGetPayload<Record<string, never>>): Goal {
     return {
       id: goal.id,
       userId: goal.userId,
       name: goal.name,
       targetAmount: Number(goal.targetAmount),
-      dueDate: goal.dueDate,
+      dueDate: goal.dueDate || undefined,
       currentAmount: Number(goal.currentAmount),
       currency: goal.currency,
       createdAt: goal.createdAt,
     };
   }
 
-  private mapGoalContribution(contribution: any): GoalContribution {
+  private mapGoalContribution(
+    contribution: Prisma.GoalContributionGetPayload<Record<string, never>>,
+  ): GoalContribution {
     return {
       id: contribution.id,
       goalId: contribution.goalId,
-      transactionId: contribution.transactionId,
+      transactionId: contribution.transactionId || undefined,
       amount: Number(contribution.amount),
       date: contribution.date,
     };

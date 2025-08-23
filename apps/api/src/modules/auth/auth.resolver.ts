@@ -9,10 +9,10 @@ import {
   RequestPasswordResetInput,
   ResetPasswordInput,
   TokenValidationResult,
-  User,
 } from './dto/auth.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { User } from '../../common/types/models/user.model';
 
 @Resolver()
 export class AuthResolver {
@@ -29,7 +29,9 @@ export class AuthResolver {
   }
 
   @Mutation(() => AuthPayload)
-  async refreshToken(@Args('input') input: RefreshTokenInput): Promise<AuthPayload> {
+  async refreshToken(
+    @Args('input') input: RefreshTokenInput,
+  ): Promise<AuthPayload> {
     return this.authService.refreshToken(input);
   }
 
@@ -41,18 +43,22 @@ export class AuthResolver {
   }
 
   @Mutation(() => Boolean)
-  async resetPassword(@Args('input') input: ResetPasswordInput): Promise<boolean> {
+  async resetPassword(
+    @Args('input') input: ResetPasswordInput,
+  ): Promise<boolean> {
     return this.authService.resetPassword(input);
   }
 
   @Query(() => TokenValidationResult)
-  async validateToken(@Args('token') token: string): Promise<TokenValidationResult> {
+  async validateToken(
+    @Args('token') token: string,
+  ): Promise<TokenValidationResult> {
     return this.authService.validateToken(token);
   }
 
   @Query(() => User)
   @UseGuards(JwtAuthGuard)
-  async me(@CurrentUser() user: any): Promise<User> {
-    return this.authService.getCurrentUser(user.id);
+  me(@CurrentUser() user: User): User {
+    return user;
   }
 }

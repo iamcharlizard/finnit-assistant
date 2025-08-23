@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../services/prisma.service';
-import { User, UpdateUserInput } from './dto/user.dto';
-import { NotFoundError, ConflictError } from '../../common/exceptions/graphql-error.exception';
+import { UpdateUserInput } from './dto/user.dto';
+import {
+  NotFoundError,
+  ConflictError,
+} from '../../common/exceptions/graphql-error.exception';
+import { User } from '../../common/types/models/user.model';
 
 @Injectable()
 export class UsersService {

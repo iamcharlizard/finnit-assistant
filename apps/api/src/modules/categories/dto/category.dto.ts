@@ -1,5 +1,13 @@
-import { ObjectType, Field, InputType, ID, Float, Int } from '@nestjs/graphql';
-import { IsString, IsOptional, IsBoolean, IsNumber, IsDateString } from 'class-validator';
+import {
+  ObjectType,
+  Field,
+  InputType,
+  ArgsType,
+  ID,
+  Float,
+  Int,
+} from '@nestjs/graphql';
+import { IsString, IsOptional, IsNumber, IsDateString } from 'class-validator';
 
 @ObjectType()
 export class Category {
@@ -84,7 +92,7 @@ export class CategoryUsage {
   averageAmount: number;
 }
 
-@InputType()
+@ArgsType()
 export class CategoryUsageArgs {
   @Field({ nullable: true })
   @IsOptional()

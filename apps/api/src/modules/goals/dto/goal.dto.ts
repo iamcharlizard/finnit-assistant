@@ -1,5 +1,11 @@
 import { ObjectType, Field, InputType } from '@nestjs/graphql';
-import { IsString, IsNumber, IsOptional, IsDateString, Min } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsDateString,
+  Min,
+} from 'class-validator';
 
 @ObjectType()
 export class Goal {

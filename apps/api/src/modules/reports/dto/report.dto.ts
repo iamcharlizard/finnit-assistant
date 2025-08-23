@@ -1,5 +1,5 @@
 import { ObjectType, Field, InputType, Int } from '@nestjs/graphql';
-import { IsString, IsNumber, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsNumber, IsDateString } from 'class-validator';
 
 @ObjectType()
 export class MonthlyReport {

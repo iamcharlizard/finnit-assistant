@@ -15,6 +15,7 @@ import {
 } from './dto/debt.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { User } from '../../common/types/models/user.model';
 
 @Resolver(() => Debt)
 @UseGuards(JwtAuthGuard)
@@ -23,28 +24,25 @@ export class DebtsResolver {
 
   @Query(() => DebtConnection)
   async debts(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args() args: DebtsArgs,
   ): Promise<DebtConnection> {
     return this.debtsService.findMany(user.id, args);
   }
 
   @Query(() => Debt)
-  async debt(
-    @CurrentUser() user: any,
-    @Args('id') id: string,
-  ): Promise<Debt> {
+  async debt(@CurrentUser() user: User, @Args('id') id: string): Promise<Debt> {
     return this.debtsService.findById(id, user.id);
   }
 
   @Query(() => DebtSummary)
-  async debtSummary(@CurrentUser() user: any): Promise<DebtSummary> {
+  async debtSummary(@CurrentUser() user: User): Promise<DebtSummary> {
     return this.debtsService.getDebtSummary(user.id);
   }
 
   @Query(() => [DebtPayoffProjection])
   async payoffStrategy(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('input') input: PayoffStrategyInput,
   ): Promise<DebtPayoffProjection[]> {
     return this.debtsService.calculatePayoffStrategy(user.id, input);
@@ -52,7 +50,7 @@ export class DebtsResolver {
 
   @Mutation(() => Debt)
   async createDebt(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('input') input: CreateDebtInput,
   ): Promise<Debt> {
     return this.debtsService.create(user.id, input);
@@ -60,7 +58,7 @@ export class DebtsResolver {
 
   @Mutation(() => Debt)
   async updateDebt(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('id') id: string,
     @Args('input') input: UpdateDebtInput,
   ): Promise<Debt> {
@@ -69,7 +67,7 @@ export class DebtsResolver {
 
   @Mutation(() => Boolean)
   async deleteDebt(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<boolean> {
     return this.debtsService.delete(id, user.id);
@@ -77,7 +75,7 @@ export class DebtsResolver {
 
   @Mutation(() => DebtPayment)
   async createDebtPayment(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('input') input: CreateDebtPaymentInput,
   ): Promise<DebtPayment> {
     return this.debtsService.createPayment(user.id, input);

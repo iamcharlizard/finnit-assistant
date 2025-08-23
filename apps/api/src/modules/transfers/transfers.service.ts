@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../services/prisma.service';
+import type {
+  Transfer as PrismaTransfer,
+  Transaction as PrismaTransaction,
+} from '@finnit/database';
 import { Transfer, CreateTransferInput } from './dto/transfer.dto';
-import { 
-  NotFoundError, 
-  ValidationError, 
+import {
+  NotFoundError,
+  ValidationError,
   InsufficientBalanceError,
   TransferSameAccountError,
 } from '../../common/exceptions/graphql-error.exception';
@@ -38,7 +42,9 @@ export class TransfersService {
 
     // Check if source account has sufficient balance
     if (Number(fromAccount.balanceCurrent) < input.amount) {
-      throw new InsufficientBalanceError('Insufficient balance in source account');
+      throw new InsufficientBalanceError(
+        'Insufficient balance in source account',
+      );
     }
 
     // Check currency compatibility (simplified - in production, you'd handle exchange rates)
@@ -116,6 +122,9 @@ export class TransfersService {
         },
       });
 
+      if (!completeTransfer) {
+        throw new Error('Transfer not found after creation');
+      }
       return this.mapTransfer(completeTransfer);
     });
   }
@@ -151,10 +160,15 @@ export class TransfersService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return transfers.map(this.mapTransfer);
+    return transfers.map((transfer) => this.mapTransfer(transfer));
   }
 
-  private mapTransfer(transfer: any): Transfer {
+  private mapTransfer(
+    transfer: PrismaTransfer & {
+      fromTxn: PrismaTransaction;
+      toTxn: PrismaTransaction;
+    },
+  ): Transfer {
     return {
       id: transfer.id,
       fromTxnId: transfer.fromTxnId,
@@ -165,17 +179,17 @@ export class TransfersService {
         id: transfer.fromTxn.id,
         userId: transfer.fromTxn.userId,
         accountId: transfer.fromTxn.accountId,
-        categoryId: transfer.fromTxn.categoryId,
+        categoryId: transfer.fromTxn.categoryId ?? undefined,
         type: transfer.fromTxn.type,
         amount: Number(transfer.fromTxn.amount),
         currency: transfer.fromTxn.currency,
         txnDate: transfer.fromTxn.txnDate,
-        description: transfer.fromTxn.description,
-        merchantName: transfer.fromTxn.merchantName,
+        description: transfer.fromTxn.description ?? undefined,
+        merchantName: transfer.fromTxn.merchantName ?? undefined,
         isPending: transfer.fromTxn.isPending,
         isRecurringInstance: transfer.fromTxn.isRecurringInstance,
         source: transfer.fromTxn.source,
-        externalId: transfer.fromTxn.externalId,
+        externalId: transfer.fromTxn.externalId ?? undefined,
         createdAt: transfer.fromTxn.createdAt,
         updatedAt: transfer.fromTxn.updatedAt,
       },
@@ -183,17 +197,17 @@ export class TransfersService {
         id: transfer.toTxn.id,
         userId: transfer.toTxn.userId,
         accountId: transfer.toTxn.accountId,
-        categoryId: transfer.toTxn.categoryId,
+        categoryId: transfer.toTxn.categoryId ?? undefined,
         type: transfer.toTxn.type,
         amount: Number(transfer.toTxn.amount),
         currency: transfer.toTxn.currency,
         txnDate: transfer.toTxn.txnDate,
-        description: transfer.toTxn.description,
-        merchantName: transfer.toTxn.merchantName,
+        description: transfer.toTxn.description ?? undefined,
+        merchantName: transfer.toTxn.merchantName ?? undefined,
         isPending: transfer.toTxn.isPending,
         isRecurringInstance: transfer.toTxn.isRecurringInstance,
         source: transfer.toTxn.source,
-        externalId: transfer.toTxn.externalId,
+        externalId: transfer.toTxn.externalId ?? undefined,
         createdAt: transfer.toTxn.createdAt,
         updatedAt: transfer.toTxn.updatedAt,
       },

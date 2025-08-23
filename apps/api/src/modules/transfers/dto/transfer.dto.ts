@@ -1,5 +1,11 @@
 import { ObjectType, Field, InputType } from '@nestjs/graphql';
-import { IsString, IsNumber, Min, IsOptional, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  Min,
+  IsOptional,
+  IsDateString,
+} from 'class-validator';
 import { Transaction } from '../../transactions/dto/transaction.dto';
 
 @ObjectType()

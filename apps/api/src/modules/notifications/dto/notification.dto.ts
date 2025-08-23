@@ -1,6 +1,16 @@
-import { ObjectType, Field, registerEnumType, ArgsType, Int } from '@nestjs/graphql';
+import {
+  ObjectType,
+  Field,
+  registerEnumType,
+  ArgsType,
+  Int,
+} from '@nestjs/graphql';
 import { IsOptional, IsNumber, Min, Max, IsString } from 'class-validator';
-import { Connection, Edge } from '../../../common/types/pagination.types';
+import {
+  Connection,
+  Edge,
+  PageInfo,
+} from '../../../common/types/pagination.types';
 import { NotificationType, NotificationStatus } from '@finnit/database';
 
 registerEnumType(NotificationType, {
@@ -63,8 +73,8 @@ export class NotificationConnection implements Connection<Notification> {
   @Field(() => [NotificationEdge])
   edges: NotificationEdge[];
 
-  @Field()
-  pageInfo: any;
+  @Field(() => PageInfo)
+  pageInfo: PageInfo;
 
   @Field(() => Int)
   totalCount: number;

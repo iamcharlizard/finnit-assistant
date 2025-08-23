@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TransactionsService } from './transactions.service';
 import { PrismaService } from '../../services/prisma.service';
-import { NotFoundError, ValidationError } from '../../common/exceptions/graphql-error.exception';
+import {
+  NotFoundError,
+  ValidationError,
+} from '../../common/exceptions/graphql-error.exception';
 import { TransactionType, TransactionSource } from '@finnit/database';
 import { PaginationUtil } from '../../common/utils/pagination.util';
 
@@ -19,7 +22,7 @@ describe('TransactionsService', () => {
     type: 'cash',
     name: 'Test Account',
     currency: 'USD',
-    balanceCurrent: 1000.00,
+    balanceCurrent: 1000.0,
   };
 
   const mockCategory = {
@@ -35,7 +38,7 @@ describe('TransactionsService', () => {
     accountId: mockAccountId,
     categoryId: mockCategoryId,
     type: TransactionType.expense,
-    amount: 100.00,
+    amount: 100.0,
     currency: 'USD',
     txnDate: new Date('2024-01-01'),
     description: 'Test transaction',
@@ -96,7 +99,7 @@ describe('TransactionsService', () => {
       accountId: mockAccountId,
       categoryId: mockCategoryId,
       type: TransactionType.expense,
-      amount: 50.00,
+      amount: 50.0,
       currency: 'USD',
       txnDate: new Date('2024-01-01'),
       description: 'Test expense',
@@ -112,7 +115,9 @@ describe('TransactionsService', () => {
       const createdTransaction = { ...mockTransaction, ...createInput };
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          transaction: { create: jest.fn().mockResolvedValue(createdTransaction) },
+          transaction: {
+            create: jest.fn().mockResolvedValue(createdTransaction),
+          },
           account: { update: jest.fn() },
         };
         const result = await callback(mockTx);
@@ -129,17 +134,16 @@ describe('TransactionsService', () => {
       expect(prismaService.category.findFirst).toHaveBeenCalledWith({
         where: {
           id: mockCategoryId,
-          OR: [
-            { userId: mockUserId },
-            { userId: null, isDefault: true },
-          ],
+          OR: [{ userId: mockUserId }, { userId: null, isDefault: true }],
         },
       });
-      expect(result).toEqual(expect.objectContaining({
-        id: createdTransaction.id,
-        type: createdTransaction.type,
-        amount: Number(createdTransaction.amount),
-      }));
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: createdTransaction.id,
+          type: createdTransaction.type,
+          amount: Number(createdTransaction.amount),
+        }),
+      );
     });
 
     it('should create transaction without category when not provided', async () => {
@@ -150,10 +154,12 @@ describe('TransactionsService', () => {
 
       prismaService.account.findFirst.mockResolvedValue(mockAccount);
       const createdTransaction = { ...mockTransaction, categoryId: null };
-      
+
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          transaction: { create: jest.fn().mockResolvedValue(createdTransaction) },
+          transaction: {
+            create: jest.fn().mockResolvedValue(createdTransaction),
+          },
           account: { update: jest.fn() },
         };
         return callback(mockTx);
@@ -173,15 +179,22 @@ describe('TransactionsService', () => {
 
       const suggestedCategory = { id: 'suggested-category', name: 'Suggested' };
       prismaService.account.findFirst.mockResolvedValue(mockAccount);
-      
+
       // Mock the suggestCategoryForMerchant method
-      jest.spyOn(service as any, 'suggestCategoryForMerchant').mockResolvedValue(suggestedCategory);
+      jest
+        .spyOn(service as any, 'suggestCategoryForMerchant')
+        .mockResolvedValue(suggestedCategory);
       prismaService.category.findFirst.mockResolvedValue(suggestedCategory);
 
-      const createdTransaction = { ...mockTransaction, categoryId: suggestedCategory.id };
+      const createdTransaction = {
+        ...mockTransaction,
+        categoryId: suggestedCategory.id,
+      };
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          transaction: { create: jest.fn().mockResolvedValue(createdTransaction) },
+          transaction: {
+            create: jest.fn().mockResolvedValue(createdTransaction),
+          },
           account: { update: jest.fn() },
         };
         return callback(mockTx);
@@ -193,7 +206,7 @@ describe('TransactionsService', () => {
       // Assert
       expect(service['suggestCategoryForMerchant']).toHaveBeenCalledWith(
         mockUserId,
-        inputWithoutCategory.merchantName
+        inputWithoutCategory.merchantName,
       );
     });
 
@@ -202,7 +215,9 @@ describe('TransactionsService', () => {
       prismaService.account.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.create(mockUserId, createInput)).rejects.toThrow(NotFoundError);
+      await expect(service.create(mockUserId, createInput)).rejects.toThrow(
+        NotFoundError,
+      );
       expect(prismaService.$transaction).not.toHaveBeenCalled();
     });
 
@@ -212,7 +227,9 @@ describe('TransactionsService', () => {
       prismaService.category.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.create(mockUserId, createInput)).rejects.toThrow(NotFoundError);
+      await expect(service.create(mockUserId, createInput)).rejects.toThrow(
+        NotFoundError,
+      );
       expect(prismaService.$transaction).not.toHaveBeenCalled();
     });
 
@@ -225,11 +242,16 @@ describe('TransactionsService', () => {
       let capturedBalanceChange: number | undefined;
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          transaction: { create: jest.fn().mockResolvedValue({ ...mockTransaction, type: TransactionType.income }) },
-          account: { 
+          transaction: {
+            create: jest.fn().mockResolvedValue({
+              ...mockTransaction,
+              type: TransactionType.income,
+            }),
+          },
+          account: {
             update: jest.fn().mockImplementation((data) => {
               capturedBalanceChange = data.data.balanceCurrent.increment;
-            })
+            }),
           },
         };
         return callback(mockTx);
@@ -251,10 +273,10 @@ describe('TransactionsService', () => {
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
           transaction: { create: jest.fn().mockResolvedValue(mockTransaction) },
-          account: { 
+          account: {
             update: jest.fn().mockImplementation((data) => {
               capturedBalanceChange = data.data.balanceCurrent.increment;
-            })
+            }),
           },
         };
         return callback(mockTx);
@@ -278,11 +300,13 @@ describe('TransactionsService', () => {
 
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          transaction: { create: jest.fn().mockResolvedValue(pendingTransaction) },
-          account: { 
+          transaction: {
+            create: jest.fn().mockResolvedValue(pendingTransaction),
+          },
+          account: {
             update: jest.fn().mockImplementation(() => {
               accountUpdateCalled = true;
-            })
+            }),
           },
         };
         return callback(mockTx);
@@ -297,7 +321,10 @@ describe('TransactionsService', () => {
   });
 
   describe('findMany', () => {
-    const mockTransactions = [mockTransaction, { ...mockTransaction, id: 'transaction-2' }];
+    const mockTransactions = [
+      mockTransaction,
+      { ...mockTransaction, id: 'transaction-2' },
+    ];
 
     it('should return paginated transactions', async () => {
       // Arrange
@@ -306,8 +333,16 @@ describe('TransactionsService', () => {
       prismaService.transaction.count.mockResolvedValue(2);
 
       jest.spyOn(PaginationUtil, 'createConnection').mockReturnValue({
-        edges: mockTransactions.map(txn => ({ node: service['mapTransaction'](txn), cursor: 'cursor' })),
-        pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
+        edges: mockTransactions.map((txn) => ({
+          node: service['mapTransaction'](txn),
+          cursor: 'cursor',
+        })),
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
         totalCount: 2,
       });
 
@@ -342,13 +377,20 @@ describe('TransactionsService', () => {
       prismaService.transaction.findMany.mockResolvedValue([mockTransaction]);
       prismaService.transaction.count.mockResolvedValue(1);
 
-      jest.spyOn(service as any, 'applyFilters').mockImplementation((where, filters) => {
-        Object.assign(where, filters);
-      });
+      jest
+        .spyOn(service as any, 'applyFilters')
+        .mockImplementation((where, filters) => {
+          Object.assign(where, filters);
+        });
 
       jest.spyOn(PaginationUtil, 'createConnection').mockReturnValue({
         edges: [],
-        pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
         totalCount: 1,
       });
 
@@ -358,7 +400,7 @@ describe('TransactionsService', () => {
       // Assert
       expect(service['applyFilters']).toHaveBeenCalledWith(
         { userId: mockUserId },
-        args.filters
+        args.filters,
       );
     });
 
@@ -371,7 +413,12 @@ describe('TransactionsService', () => {
       jest.spyOn(PaginationUtil, 'decodeCursor').mockReturnValue('cursor-123');
       jest.spyOn(PaginationUtil, 'createConnection').mockReturnValue({
         edges: [],
-        pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: null,
+          endCursor: null,
+        },
         totalCount: 1,
       });
 
@@ -401,7 +448,9 @@ describe('TransactionsService', () => {
           },
         ],
       };
-      prismaService.transaction.findFirst.mockResolvedValue(transactionWithAttachments);
+      prismaService.transaction.findFirst.mockResolvedValue(
+        transactionWithAttachments,
+      );
 
       // Act
       const result = await service.findById(mockTransaction.id, mockUserId);
@@ -419,7 +468,9 @@ describe('TransactionsService', () => {
       prismaService.transaction.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.findById('non-existent', mockUserId)).rejects.toThrow(NotFoundError);
+      await expect(
+        service.findById('non-existent', mockUserId),
+      ).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -432,22 +483,33 @@ describe('TransactionsService', () => {
 
     it('should successfully update manual transaction', async () => {
       // Arrange
-      const manualTransaction = { ...mockTransaction, source: TransactionSource.manual };
+      const manualTransaction = {
+        ...mockTransaction,
+        source: TransactionSource.manual,
+      };
       const updatedTransaction = { ...manualTransaction, ...updateInput };
-      
+
       prismaService.transaction.findFirst.mockResolvedValue(manualTransaction);
-      prismaService.category.findFirst.mockResolvedValue({ id: 'new-category-id' });
+      prismaService.category.findFirst.mockResolvedValue({
+        id: 'new-category-id',
+      });
 
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          transaction: { update: jest.fn().mockResolvedValue(updatedTransaction) },
+          transaction: {
+            update: jest.fn().mockResolvedValue(updatedTransaction),
+          },
           account: { update: jest.fn() },
         };
         return callback(mockTx);
       });
 
       // Act
-      const result = await service.update(mockTransaction.id, mockUserId, updateInput);
+      const result = await service.update(
+        mockTransaction.id,
+        mockUserId,
+        updateInput,
+      );
 
       // Assert
       expect(result.description).toBe(updateInput.description);
@@ -456,11 +518,18 @@ describe('TransactionsService', () => {
 
     it('should throw ValidationError for imported transactions', async () => {
       // Arrange
-      const importedTransaction = { ...mockTransaction, source: TransactionSource.imported };
-      prismaService.transaction.findFirst.mockResolvedValue(importedTransaction);
+      const importedTransaction = {
+        ...mockTransaction,
+        source: TransactionSource.imported,
+      };
+      prismaService.transaction.findFirst.mockResolvedValue(
+        importedTransaction,
+      );
 
       // Act & Assert
-      await expect(service.update(mockTransaction.id, mockUserId, updateInput)).rejects.toThrow(ValidationError);
+      await expect(
+        service.update(mockTransaction.id, mockUserId, updateInput),
+      ).rejects.toThrow(ValidationError);
     });
 
     it('should throw NotFoundError when transaction not found', async () => {
@@ -468,26 +537,35 @@ describe('TransactionsService', () => {
       prismaService.transaction.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.update('non-existent', mockUserId, updateInput)).rejects.toThrow(NotFoundError);
+      await expect(
+        service.update('non-existent', mockUserId, updateInput),
+      ).rejects.toThrow(NotFoundError);
     });
 
     it('should handle amount updates with balance recalculation', async () => {
       // Arrange
-      const amountUpdateInput = { ...updateInput, amount: 150.00 };
-      const manualTransaction = { ...mockTransaction, source: TransactionSource.manual };
-      const updatedTransaction = { ...manualTransaction, amount: 150.00 };
-      
+      const amountUpdateInput = { ...updateInput, amount: 150.0 };
+      const manualTransaction = {
+        ...mockTransaction,
+        source: TransactionSource.manual,
+      };
+      const updatedTransaction = { ...manualTransaction, amount: 150.0 };
+
       prismaService.transaction.findFirst.mockResolvedValue(manualTransaction);
-      prismaService.category.findFirst.mockResolvedValue({ id: 'new-category-id' });
+      prismaService.category.findFirst.mockResolvedValue({
+        id: 'new-category-id',
+      });
 
       let balanceAdjustment: number | undefined;
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          transaction: { update: jest.fn().mockResolvedValue(updatedTransaction) },
-          account: { 
+          transaction: {
+            update: jest.fn().mockResolvedValue(updatedTransaction),
+          },
+          account: {
             update: jest.fn().mockImplementation((data) => {
               balanceAdjustment = data.data.balanceCurrent.increment;
-            })
+            }),
           },
         };
         return callback(mockTx);
@@ -506,7 +584,10 @@ describe('TransactionsService', () => {
   describe('delete', () => {
     it('should successfully delete manual transaction with balance adjustment', async () => {
       // Arrange
-      const manualTransaction = { ...mockTransaction, source: TransactionSource.manual };
+      const manualTransaction = {
+        ...mockTransaction,
+        source: TransactionSource.manual,
+      };
       prismaService.transaction.findFirst.mockResolvedValue(manualTransaction);
 
       prismaService.$transaction.mockImplementation(async (callback) => {
@@ -526,11 +607,18 @@ describe('TransactionsService', () => {
 
     it('should throw ValidationError for imported transactions', async () => {
       // Arrange
-      const importedTransaction = { ...mockTransaction, source: TransactionSource.imported };
-      prismaService.transaction.findFirst.mockResolvedValue(importedTransaction);
+      const importedTransaction = {
+        ...mockTransaction,
+        source: TransactionSource.imported,
+      };
+      prismaService.transaction.findFirst.mockResolvedValue(
+        importedTransaction,
+      );
 
       // Act & Assert
-      await expect(service.delete(mockTransaction.id, mockUserId)).rejects.toThrow(ValidationError);
+      await expect(
+        service.delete(mockTransaction.id, mockUserId),
+      ).rejects.toThrow(ValidationError);
     });
 
     it('should throw NotFoundError when transaction not found', async () => {
@@ -538,29 +626,31 @@ describe('TransactionsService', () => {
       prismaService.transaction.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.delete('non-existent', mockUserId)).rejects.toThrow(NotFoundError);
+      await expect(service.delete('non-existent', mockUserId)).rejects.toThrow(
+        NotFoundError,
+      );
     });
 
     it('should reverse balance change when deleting transaction', async () => {
       // Arrange
-      const expenseTransaction = { 
-        ...mockTransaction, 
+      const expenseTransaction = {
+        ...mockTransaction,
         type: TransactionType.expense,
-        amount: 100.00,
+        amount: 100.0,
         source: TransactionSource.manual,
         isPending: false,
       };
-      
+
       prismaService.transaction.findFirst.mockResolvedValue(expenseTransaction);
 
       let balanceAdjustment: number | undefined;
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
           transaction: { delete: jest.fn() },
-          account: { 
+          account: {
             update: jest.fn().mockImplementation((data) => {
               balanceAdjustment = data.data.balanceCurrent.increment;
-            })
+            }),
           },
         };
         return callback(mockTx);
@@ -571,27 +661,27 @@ describe('TransactionsService', () => {
 
       // Assert
       // Deleting expense should add back the amount to balance (positive)
-      expect(balanceAdjustment).toBe(100.00);
+      expect(balanceAdjustment).toBe(100.0);
     });
 
     it('should not adjust balance for pending transactions', async () => {
       // Arrange
-      const pendingTransaction = { 
-        ...mockTransaction, 
+      const pendingTransaction = {
+        ...mockTransaction,
         source: TransactionSource.manual,
         isPending: true,
       };
-      
+
       prismaService.transaction.findFirst.mockResolvedValue(pendingTransaction);
 
       let accountUpdateCalled = false;
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
           transaction: { delete: jest.fn() },
-          account: { 
+          account: {
             update: jest.fn().mockImplementation(() => {
               accountUpdateCalled = true;
-            })
+            }),
           },
         };
         return callback(mockTx);
@@ -671,14 +761,17 @@ describe('TransactionsService', () => {
       // Arrange
       const merchantName = 'Starbucks';
       const suggestedCategory = { id: 'food-category', name: 'Food & Dining' };
-      
+
       prismaService.transaction.findFirst.mockResolvedValue({
         categoryId: suggestedCategory.id,
         category: suggestedCategory,
       } as any);
 
       // Act
-      const result = await service['suggestCategoryForMerchant'](mockUserId, merchantName);
+      const result = await service['suggestCategoryForMerchant'](
+        mockUserId,
+        merchantName,
+      );
 
       // Assert
       expect(prismaService.transaction.findFirst).toHaveBeenCalledWith({
@@ -698,7 +791,10 @@ describe('TransactionsService', () => {
       prismaService.transaction.findFirst.mockResolvedValue(null);
 
       // Act
-      const result = await service['suggestCategoryForMerchant'](mockUserId, 'Unknown Merchant');
+      const result = await service['suggestCategoryForMerchant'](
+        mockUserId,
+        'Unknown Merchant',
+      );
 
       // Assert
       expect(result).toBeNull();
@@ -718,7 +814,9 @@ describe('TransactionsService', () => {
 
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          transaction: { create: jest.fn().mockResolvedValue(largeAmountInput) },
+          transaction: {
+            create: jest.fn().mockResolvedValue(largeAmountInput),
+          },
           account: { update: jest.fn() },
         };
         return callback(mockTx);
@@ -740,16 +838,20 @@ describe('TransactionsService', () => {
     it('should handle concurrent transaction creation', async () => {
       // Arrange
       prismaService.account.findFirst.mockResolvedValue(mockAccount);
-      prismaService.$transaction.mockRejectedValue(new Error('Transaction conflict'));
+      prismaService.$transaction.mockRejectedValue(
+        new Error('Transaction conflict'),
+      );
 
       // Act & Assert
-      await expect(service.create(mockUserId, {
-        accountId: mockAccountId,
-        type: TransactionType.expense,
-        amount: 100.00,
-        currency: 'USD',
-        txnDate: new Date(),
-      })).rejects.toThrow('Transaction conflict');
+      await expect(
+        service.create(mockUserId, {
+          accountId: mockAccountId,
+          type: TransactionType.expense,
+          amount: 100.0,
+          currency: 'USD',
+          txnDate: new Date(),
+        }),
+      ).rejects.toThrow('Transaction conflict');
     });
 
     it('should validate category belongs to user or is default', async () => {
@@ -777,7 +879,7 @@ describe('TransactionsService', () => {
         accountId: mockAccountId,
         categoryId: globalDefaultCategory.id,
         type: TransactionType.expense,
-        amount: 100.00,
+        amount: 100.0,
         currency: 'USD',
         txnDate: new Date(),
       });
@@ -786,10 +888,7 @@ describe('TransactionsService', () => {
       expect(prismaService.category.findFirst).toHaveBeenCalledWith({
         where: {
           id: globalDefaultCategory.id,
-          OR: [
-            { userId: mockUserId },
-            { userId: null, isDefault: true },
-          ],
+          OR: [{ userId: mockUserId }, { userId: null, isDefault: true }],
         },
       });
     });

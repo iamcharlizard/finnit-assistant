@@ -1,23 +1,6 @@
 import { ObjectType, Field, InputType } from '@nestjs/graphql';
 import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator';
-
-@ObjectType()
-export class User {
-  @Field()
-  id: string;
-
-  @Field()
-  name: string;
-
-  @Field()
-  email: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-}
+import { User } from '../../../common/types/models/user.model';
 
 @ObjectType()
 export class AuthPayload {

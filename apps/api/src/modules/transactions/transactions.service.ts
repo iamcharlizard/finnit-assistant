@@ -10,15 +10,22 @@ import {
   Attachment,
   CreateAttachmentInput,
 } from './dto/transaction.dto';
-import { NotFoundError, ValidationError } from '../../common/exceptions/graphql-error.exception';
+import {
+  NotFoundError,
+  ValidationError,
+} from '../../common/exceptions/graphql-error.exception';
 import { PaginationUtil } from '../../common/utils/pagination.util';
 import { TransactionSource } from '@finnit/database';
+import { Prisma } from '@finnit/database';
 
 @Injectable()
 export class TransactionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(userId: string, input: CreateTransactionInput): Promise<Transaction> {
+  async create(
+    userId: string,
+    input: CreateTransactionInput,
+  ): Promise<Transaction> {
     // Validate account belongs to user
     const account = await this.prisma.account.findFirst({
       where: { id: input.accountId, userId },
@@ -31,7 +38,10 @@ export class TransactionsService {
     // Auto-categorize if no category provided but merchant name exists
     let categoryId = input.categoryId;
     if (!categoryId && input.merchantName) {
-      const suggestedCategory = await this.suggestCategoryForMerchant(userId, input.merchantName);
+      const suggestedCategory = await this.suggestCategoryForMerchant(
+        userId,
+        input.merchantName,
+      );
       categoryId = suggestedCategory?.id;
     }
 
@@ -40,10 +50,7 @@ export class TransactionsService {
       const category = await this.prisma.category.findFirst({
         where: {
           id: categoryId,
-          OR: [
-            { userId },
-            { userId: null, isDefault: true },
-          ],
+          OR: [{ userId }, { userId: null, isDefault: true }],
         },
       });
 
@@ -72,7 +79,8 @@ export class TransactionsService {
 
       // Update account balance if not pending
       if (!transaction.isPending) {
-        const balanceChange = input.type === 'income' ? input.amount : -input.amount;
+        const balanceChange =
+          input.type === 'income' ? input.amount : -input.amount;
         await tx.account.update({
           where: { id: input.accountId },
           data: {
@@ -87,9 +95,12 @@ export class TransactionsService {
     });
   }
 
-  async findMany(userId: string, args: TransactionsArgs): Promise<TransactionConnection> {
-    const where: any = { userId };
-    
+  async findMany(
+    userId: string,
+    args: TransactionsArgs,
+  ): Promise<TransactionConnection> {
+    const where: Prisma.TransactionWhereInput = { userId };
+
     if (args.filters) {
       this.applyFilters(where, args.filters);
     }
@@ -97,7 +108,7 @@ export class TransactionsService {
     // Handle cursor pagination
     const limit = args.first || args.last || 20;
     let cursor: any = undefined;
-    
+
     if (args.after) {
       const decodedCursor = PaginationUtil.decodeCursor(args.after);
       cursor = { id: { gt: decodedCursor } };
@@ -107,7 +118,7 @@ export class TransactionsService {
     }
 
     const transactions = await this.prisma.transaction.findMany({
-      where: { ...where, ...cursor },
+      where: { ...where, ...cursor } as Prisma.TransactionWhereInput,
       take: limit,
       orderBy: { txnDate: 'desc' },
     });
@@ -115,7 +126,7 @@ export class TransactionsService {
     const totalCount = await this.prisma.transaction.count({ where });
 
     return PaginationUtil.createConnection(
-      transactions.map(this.mapTransaction),
+      transactions.map((transaction) => this.mapTransaction(transaction)),
       args,
       totalCount,
       (transaction) => PaginationUtil.encodeCursor(transaction.id),
@@ -137,7 +148,11 @@ export class TransactionsService {
     return this.mapTransaction(transaction);
   }
 
-  async update(id: string, userId: string, input: UpdateTransactionInput): Promise<Transaction> {
+  async update(
+    id: string,
+    userId: string,
+    input: UpdateTransactionInput,
+  ): Promise<Transaction> {
     const existingTransaction = await this.prisma.transaction.findFirst({
       where: { id, userId },
     });
@@ -155,10 +170,7 @@ export class TransactionsService {
       const category = await this.prisma.category.findFirst({
         where: {
           id: input.categoryId,
-          OR: [
-            { userId },
-            { userId: null, isDefault: true },
-          ],
+          OR: [{ userId }, { userId: null, isDefault: true }],
         },
       });
 
@@ -170,12 +182,12 @@ export class TransactionsService {
     return await this.prisma.$transaction(async (tx) => {
       // Calculate balance adjustment if amount changed
       if (input.amount && input.amount !== Number(existingTransaction.amount)) {
-        const oldAmount = existingTransaction.type === 'income' 
-          ? Number(existingTransaction.amount) 
-          : -Number(existingTransaction.amount);
-        const newAmount = existingTransaction.type === 'income' 
-          ? input.amount 
-          : -input.amount;
+        const oldAmount =
+          existingTransaction.type === 'income'
+            ? Number(existingTransaction.amount)
+            : -Number(existingTransaction.amount);
+        const newAmount =
+          existingTransaction.type === 'income' ? input.amount : -input.amount;
         const balanceChange = newAmount - oldAmount;
 
         await tx.account.update({
@@ -217,24 +229,31 @@ export class TransactionsService {
     }
 
     if (transaction.transferFrom || transaction.transferTo) {
-      throw new ValidationError('Cannot delete transaction that is part of a transfer');
+      throw new ValidationError(
+        'Cannot delete transaction that is part of a transfer',
+      );
     }
 
     if (transaction.debtPayment) {
-      throw new ValidationError('Cannot delete transaction that is a debt payment');
+      throw new ValidationError(
+        'Cannot delete transaction that is a debt payment',
+      );
     }
 
     if (transaction.goalContributions.length > 0) {
-      throw new ValidationError('Cannot delete transaction that has goal contributions');
+      throw new ValidationError(
+        'Cannot delete transaction that has goal contributions',
+      );
     }
 
     await this.prisma.$transaction(async (tx) => {
       // Adjust account balance
       if (!transaction.isPending) {
-        const balanceChange = transaction.type === 'income' 
-          ? -Number(transaction.amount) 
-          : Number(transaction.amount);
-        
+        const balanceChange =
+          transaction.type === 'income'
+            ? -Number(transaction.amount)
+            : Number(transaction.amount);
+
         await tx.account.update({
           where: { id: transaction.accountId },
           data: {
@@ -254,7 +273,10 @@ export class TransactionsService {
     return true;
   }
 
-  async addAttachment(userId: string, input: CreateAttachmentInput): Promise<Attachment> {
+  async addAttachment(
+    userId: string,
+    input: CreateAttachmentInput,
+  ): Promise<Attachment> {
     // Validate transaction belongs to user
     const transaction = await this.prisma.transaction.findFirst({
       where: { id: input.transactionId, userId },
@@ -273,7 +295,7 @@ export class TransactionsService {
 
   async removeAttachment(id: string, userId: string): Promise<boolean> {
     const attachment = await this.prisma.attachment.findFirst({
-      where: { 
+      where: {
         id,
         transaction: { userId },
       },
@@ -291,13 +313,16 @@ export class TransactionsService {
     return true;
   }
 
-  async bulkCreate(userId: string, transactions: CreateTransactionInput[]): Promise<Transaction[]> {
+  async bulkCreate(
+    userId: string,
+    transactions: CreateTransactionInput[],
+  ): Promise<Transaction[]> {
     if (transactions.length === 0) {
       return [];
     }
 
     // Validate all accounts belong to user
-    const accountIds = [...new Set(transactions.map(t => t.accountId))];
+    const accountIds = [...new Set(transactions.map((t) => t.accountId))];
     const accounts = await this.prisma.account.findMany({
       where: { id: { in: accountIds }, userId },
     });
@@ -313,7 +338,10 @@ export class TransactionsService {
         // Auto-categorize if no category provided but merchant name exists
         let categoryId = input.categoryId;
         if (!categoryId && input.merchantName) {
-          const suggestedCategory = await this.suggestCategoryForMerchant(userId, input.merchantName);
+          const suggestedCategory = await this.suggestCategoryForMerchant(
+            userId,
+            input.merchantName,
+          );
           categoryId = suggestedCategory?.id;
         }
 
@@ -335,7 +363,8 @@ export class TransactionsService {
 
         // Update account balance if not pending
         if (!transaction.isPending) {
-          const balanceChange = input.type === 'income' ? input.amount : -input.amount;
+          const balanceChange =
+            input.type === 'income' ? input.amount : -input.amount;
           await tx.account.update({
             where: { id: input.accountId },
             data: {
@@ -353,7 +382,11 @@ export class TransactionsService {
     });
   }
 
-  async recategorizeTransaction(id: string, userId: string, categoryId: string): Promise<Transaction> {
+  async recategorizeTransaction(
+    id: string,
+    userId: string,
+    categoryId: string,
+  ): Promise<Transaction> {
     const transaction = await this.prisma.transaction.findFirst({
       where: { id, userId },
     });
@@ -366,10 +399,7 @@ export class TransactionsService {
     const category = await this.prisma.category.findFirst({
       where: {
         id: categoryId,
-        OR: [
-          { userId },
-          { userId: null, isDefault: true },
-        ],
+        OR: [{ userId }, { userId: null, isDefault: true }],
       },
     });
 
@@ -385,7 +415,11 @@ export class TransactionsService {
     return this.mapTransaction(updatedTransaction);
   }
 
-  async markAsPending(id: string, userId: string, isPending: boolean): Promise<Transaction> {
+  async markAsPending(
+    id: string,
+    userId: string,
+    isPending: boolean,
+  ): Promise<Transaction> {
     const transaction = await this.prisma.transaction.findFirst({
       where: { id, userId },
     });
@@ -397,10 +431,11 @@ export class TransactionsService {
     return await this.prisma.$transaction(async (tx) => {
       // Adjust account balance based on pending status change
       if (transaction.isPending !== isPending) {
-        const balanceChange = transaction.type === 'income' 
-          ? Number(transaction.amount) 
-          : -Number(transaction.amount);
-        
+        const balanceChange =
+          transaction.type === 'income'
+            ? Number(transaction.amount)
+            : -Number(transaction.amount);
+
         // If changing from pending to confirmed, add to balance
         // If changing from confirmed to pending, subtract from balance
         const adjustment = isPending ? -balanceChange : balanceChange;
@@ -425,10 +460,15 @@ export class TransactionsService {
   }
 
   async getTransactionSummary(
-    userId: string, 
-    dateFrom: Date, 
-    dateTo: Date
-  ): Promise<{ totalIncome: number; totalExpenses: number; netCashFlow: number; transactionCount: number }> {
+    userId: string,
+    dateFrom: Date,
+    dateTo: Date,
+  ): Promise<{
+    totalIncome: number;
+    totalExpenses: number;
+    netCashFlow: number;
+    transactionCount: number;
+  }> {
     const summary = await this.prisma.transaction.aggregate({
       where: {
         userId,
@@ -489,7 +529,10 @@ export class TransactionsService {
     };
   }
 
-  private async suggestCategoryForMerchant(userId: string, merchantName: string): Promise<{ id: string } | null> {
+  private async suggestCategoryForMerchant(
+    userId: string,
+    merchantName: string,
+  ): Promise<{ id: string } | null> {
     if (!merchantName) {
       return null;
     }
@@ -522,21 +565,27 @@ export class TransactionsService {
 
     for (const txn of similarTransactions) {
       if (txn.categoryId) {
-        categoryCount[txn.categoryId] = (categoryCount[txn.categoryId] || 0) + 1;
+        categoryCount[txn.categoryId] =
+          (categoryCount[txn.categoryId] || 0) + 1;
       }
     }
 
     // Find the most common category
     const mostCommonCategoryId = Object.keys(categoryCount).reduce(
-      (maxId, currentId) => 
-        categoryCount[currentId] > (categoryCount[maxId] || 0) ? currentId : maxId,
-      Object.keys(categoryCount)[0]
+      (maxId, currentId) =>
+        categoryCount[currentId] > (categoryCount[maxId] || 0)
+          ? currentId
+          : maxId,
+      Object.keys(categoryCount)[0],
     );
 
     return mostCommonCategoryId ? { id: mostCommonCategoryId } : null;
   }
 
-  private applyFilters(where: any, filters: TransactionFilters): void {
+  private applyFilters(
+    where: Prisma.TransactionWhereInput,
+    filters: TransactionFilters,
+  ): void {
     if (filters.accountId) {
       where.accountId = filters.accountId;
     }
@@ -575,35 +624,40 @@ export class TransactionsService {
     }
   }
 
-  private mapTransaction(transaction: any): Transaction {
+  private mapTransaction(
+    transaction: Prisma.TransactionGetPayload<Record<string, never>>,
+  ): Transaction {
     return {
       id: transaction.id,
       userId: transaction.userId,
       accountId: transaction.accountId,
-      categoryId: transaction.categoryId,
+      categoryId: transaction.categoryId || undefined,
       type: transaction.type,
       amount: Number(transaction.amount),
       currency: transaction.currency,
       txnDate: transaction.txnDate,
-      description: transaction.description,
-      merchantName: transaction.merchantName,
+      description: transaction.description || undefined,
+      merchantName: transaction.merchantName || undefined,
       isPending: transaction.isPending,
       isRecurringInstance: transaction.isRecurringInstance,
       source: transaction.source,
-      externalId: transaction.externalId,
+      externalId: transaction.externalId || undefined,
       createdAt: transaction.createdAt,
       updatedAt: transaction.updatedAt,
     };
   }
 
-  private mapAttachment(attachment: any): Attachment {
+  private mapAttachment(
+    attachment: Prisma.AttachmentGetPayload<Record<string, never>>,
+  ): Attachment {
     return {
       id: attachment.id,
       transactionId: attachment.transactionId,
       fileUrl: attachment.fileUrl,
       fileType: attachment.fileType,
-      fileSize: attachment.fileSize,
-      extra: attachment.extra,
+      fileSize: attachment.fileSize || undefined,
+      extra:
+        typeof attachment.extra === 'string' ? attachment.extra : undefined,
       uploadedAt: attachment.uploadedAt,
     };
   }

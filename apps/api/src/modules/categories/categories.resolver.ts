@@ -1,9 +1,17 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
-import { Category, CreateCategoryInput, UpdateCategoryInput, CategoryUsage, CategoryUsageArgs, SuggestCategoryInput } from './dto/category.dto';
+import {
+  Category,
+  CreateCategoryInput,
+  UpdateCategoryInput,
+  CategoryUsage,
+  CategoryUsageArgs,
+  SuggestCategoryInput,
+} from './dto/category.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { User } from '../../common/types/models/user.model';
 
 @Resolver(() => Category)
 @UseGuards(JwtAuthGuard)
@@ -11,18 +19,18 @@ export class CategoriesResolver {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Query(() => [Category])
-  async categories(@CurrentUser() user: any): Promise<Category[]> {
+  async categories(@CurrentUser() user: User): Promise<Category[]> {
     return this.categoriesService.findAll(user.id);
   }
 
   @Query(() => [Category])
-  async rootCategories(@CurrentUser() user: any): Promise<Category[]> {
+  async rootCategories(@CurrentUser() user: User): Promise<Category[]> {
     return this.categoriesService.findRootCategories(user.id);
   }
 
   @Query(() => Category)
   async category(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<Category> {
     return this.categoriesService.findById(id, user.id);
@@ -30,7 +38,7 @@ export class CategoriesResolver {
 
   @Mutation(() => Category)
   async createCategory(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('input') input: CreateCategoryInput,
   ): Promise<Category> {
     return this.categoriesService.create(user.id, input);
@@ -38,7 +46,7 @@ export class CategoriesResolver {
 
   @Mutation(() => Category)
   async updateCategory(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('id') id: string,
     @Args('input') input: UpdateCategoryInput,
   ): Promise<Category> {
@@ -47,7 +55,7 @@ export class CategoriesResolver {
 
   @Mutation(() => Boolean)
   async deleteCategory(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<boolean> {
     return this.categoriesService.delete(id, user.id);
@@ -55,22 +63,29 @@ export class CategoriesResolver {
 
   @Query(() => [CategoryUsage])
   async categoryUsage(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args() args: CategoryUsageArgs,
   ): Promise<CategoryUsage[]> {
-    return this.categoriesService.getCategoryUsage(user.id, args.dateFrom, args.dateTo);
+    return this.categoriesService.getCategoryUsage(
+      user.id,
+      args.dateFrom,
+      args.dateTo,
+    );
   }
 
   @Query(() => Category, { nullable: true })
   async suggestCategoryForMerchant(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('input') input: SuggestCategoryInput,
   ): Promise<Category | null> {
-    return this.categoriesService.suggestCategoryForMerchant(user.id, input.merchantName);
+    return this.categoriesService.suggestCategoryForMerchant(
+      user.id,
+      input.merchantName,
+    );
   }
 
   @Mutation(() => Boolean)
-  async createDefaultCategories(@CurrentUser() user: any): Promise<boolean> {
+  async createDefaultCategories(@CurrentUser() user: User): Promise<boolean> {
     await this.categoriesService.createDefaultCategories(user.id);
     return true;
   }

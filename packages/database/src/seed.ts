@@ -1,18 +1,17 @@
-import { prisma } from './client';
+// Importar y ejecutar el seed JavaScript
+import { execSync } from 'child_process';
+import { join } from 'path';
 
-async function main() {
-  // Create seed data
-  await prisma.user.create({
-    data: {
-      email: 'test@test.com',
-      passwordHash: 'test',
-      name: 'Test User',
-    },
+const seedPath = join(__dirname, '../prisma/seeders/seed.js');
+
+try {
+  console.log('🌱 Ejecutando seed desde TypeScript...');
+  execSync(`node ${seedPath} ${process.argv.slice(2).join(' ')}`, {
+    stdio: 'inherit',
+    cwd: process.cwd()
   });
+  console.log('✅ Seed completado exitosamente');
+} catch (error) {
+  console.error('❌ Error ejecutando seed:', error);
+  process.exit(1);
 }
-
-main()
-  .catch(console.error)
-  .finally(async () => {
-    await prisma.$disconnect();
-  });

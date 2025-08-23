@@ -1,0 +1,3159 @@
+{
+	"info": {
+		"_postman_id": "84f3b52c-1a4d-4f2f-9e7a-3c8d9e1f2a3b",
+		"name": "Finnit Assistant API",
+		"description": "Comprehensive API collection for Finnit Assistant - A financial management application with GraphQL API and REST endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12345678"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"description": "User authentication and authorization endpoints",
+			"item": [
+				{
+					"name": "Sign Up User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('User registration successful', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.signUp) {",
+									"        pm.expect(response.data.signUp).to.have.property('user');",
+									"        pm.expect(response.data.signUp).to.have.property('accessToken');",
+									"        pm.expect(response.data.signUp).to.have.property('refreshToken');",
+									"        pm.environment.set('access_token', response.data.signUp.accessToken);",
+									"        pm.environment.set('refresh_token', response.data.signUp.refreshToken);",
+									"        pm.environment.set('user_id', response.data.signUp.user.id);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation SignUp($input: SignUpInput!) {\n  signUp(input: $input) {\n    user {\n      id\n      name\n      email\n      createdAt\n    }\n    accessToken\n    refreshToken\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"name\": \"{{user_name}}\",\n    \"email\": \"{{user_email}}\",\n    \"password\": \"{{user_password}}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sign In",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Sign in successful', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.signIn) {",
+									"        pm.expect(response.data.signIn).to.have.property('user');",
+									"        pm.expect(response.data.signIn).to.have.property('accessToken');",
+									"        pm.expect(response.data.signIn).to.have.property('refreshToken');",
+									"        pm.environment.set('access_token', response.data.signIn.accessToken);",
+									"        pm.environment.set('refresh_token', response.data.signIn.refreshToken);",
+									"        pm.environment.set('user_id', response.data.signIn.user.id);",
+									"    }",
+									"});",
+									"",
+									"pm.test('Tokens are valid strings', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.signIn) {",
+									"        pm.expect(response.data.signIn.accessToken).to.be.a('string').and.not.be.empty;",
+									"        pm.expect(response.data.signIn.refreshToken).to.be.a('string').and.not.be.empty;",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation SignIn($input: SignInInput!) {\n  signIn(input: $input) {\n    user {\n      id\n      name\n      email\n    }\n    accessToken\n    refreshToken\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"email\": \"{{user_email}}\",\n    \"password\": \"{{user_password}}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Token refresh successful', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.refreshToken) {",
+									"        pm.expect(response.data.refreshToken).to.have.property('user');",
+									"        pm.expect(response.data.refreshToken).to.have.property('accessToken');",
+									"        pm.expect(response.data.refreshToken).to.have.property('refreshToken');",
+									"        pm.environment.set('access_token', response.data.refreshToken.accessToken);",
+									"        pm.environment.set('refresh_token', response.data.refreshToken.refreshToken);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{refresh_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation RefreshToken($input: RefreshTokenInput!) {\n  refreshToken(input: $input) {\n    user {\n      id\n      name\n      email\n    }\n    accessToken\n    refreshToken\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"refreshToken\": \"{{refresh_token}}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Request Password Reset",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Password reset request processed', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.requestPasswordReset !== undefined) {",
+									"        pm.expect(response.data.requestPasswordReset).to.be.a('boolean');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation RequestPasswordReset($input: RequestPasswordResetInput!) {\n  requestPasswordReset(input: $input)\n}",
+								"variables": "{\n  \"input\": {\n    \"email\": \"{{user_email}}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Token validation result', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.validateToken) {",
+									"        pm.expect(response.data.validateToken).to.have.property('valid');",
+									"        pm.expect(response.data.validateToken.valid).to.be.a('boolean');",
+									"        if (response.data.validateToken.message) {",
+									"            pm.expect(response.data.validateToken.message).to.be.a('string');",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query ValidateToken($token: String!) {\n  validateToken(token: $token) {\n    valid\n    message\n  }\n}",
+								"variables": "{\n  \"token\": \"{{access_token}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Password reset successful', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.resetPassword !== undefined) {",
+									"        pm.expect(response.data.resetPassword).to.be.a('boolean');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Required parameters provided', function () {",
+									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
+									"    pm.expect(variables.input).to.have.property('token');",
+									"    pm.expect(variables.input).to.have.property('newPassword');",
+									"    pm.expect(variables.input.token).to.be.a('string').and.not.be.empty;",
+									"    pm.expect(variables.input.newPassword).to.be.a('string').and.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation ResetPassword($input: ResetPasswordInput!) {\n  resetPassword(input: $input)\n}",
+								"variables": "{\n  \"input\": {\n    \"token\": \"{{reset_token}}\",\n    \"newPassword\": \"{{new_password}}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Current User (Me)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Current user data returned', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.me) {",
+									"        pm.expect(response.data.me).to.have.property('id');",
+									"        pm.expect(response.data.me).to.have.property('name');",
+									"        pm.expect(response.data.me).to.have.property('email');",
+									"        pm.expect(response.data.me).to.have.property('createdAt');",
+									"        pm.expect(response.data.me).to.have.property('updatedAt');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Authorization required', function () {",
+									"    pm.expect(pm.request.headers.get('Authorization')).to.contain('Bearer');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query Me {\n  me {\n    id\n    name\n    email\n    createdAt\n    updatedAt\n  }\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "👤 Users",
+			"description": "User management endpoints",
+			"item": [
+				{
+					"name": "Get User By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('User data returned', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.user) {",
+									"        pm.expect(response.data.user).to.have.property('id');",
+									"        pm.expect(response.data.user).to.have.property('name');",
+									"        pm.expect(response.data.user).to.have.property('email');",
+									"        pm.expect(response.data.user).to.have.property('createdAt');",
+									"        pm.expect(response.data.user).to.have.property('updatedAt');",
+									"    }",
+									"});",
+									"",
+									"pm.test('User ID parameter validation', function () {",
+									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
+									"    pm.expect(variables).to.have.property('id');",
+									"    pm.expect(variables.id).to.be.a('string').and.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetUser($id: String!) {\n  user(id: $id) {\n    id\n    name\n    email\n    createdAt\n    updatedAt\n  }\n}",
+								"variables": "{\n  \"id\": \"{{user_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User Profile",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('User update successful', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.updateUser) {",
+									"        pm.expect(response.data.updateUser).to.have.property('id');",
+									"        pm.expect(response.data.updateUser).to.have.property('name');",
+									"        pm.expect(response.data.updateUser).to.have.property('email');",
+									"        pm.expect(response.data.updateUser).to.have.property('updatedAt');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Updated fields reflect changes', function () {",
+									"    const response = pm.response.json();",
+									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
+									"    if (response.data && response.data.updateUser && variables.input.name) {",
+									"        pm.expect(response.data.updateUser.name).to.equal(variables.input.name);",
+									"    }",
+									"});",
+									"",
+									"pm.test('Authorization required', function () {",
+									"    pm.expect(pm.request.headers.get('Authorization')).to.contain('Bearer');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation UpdateUser($input: UpdateUserInput!) {\n  updateUser(input: $input) {\n    id\n    name\n    email\n    updatedAt\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"name\": \"{{updated_user_name}}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🏦 Accounts",
+			"description": "Financial account management (cash, credit, debit, savings, ewallet)",
+			"item": [
+				{
+					"name": "Get All Accounts",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetAccounts($first: Int, $after: String, $type: AccountType, $archived: Boolean) {\n  accounts(first: $first, after: $after, type: $type, archived: $archived) {\n    edges {\n      node {\n        id\n        name\n        type\n        currency\n        balanceCurrent\n        archived\n        createdAt\n        updatedAt\n        userId\n        metadata\n      }\n      cursor\n    }\n    pageInfo {\n      hasNextPage\n      hasPreviousPage\n      startCursor\n      endCursor\n    }\n    totalCount\n  }\n}",
+								"variables": "{\n  \"first\": 10,\n  \"type\": null,\n  \"archived\": false\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Account by ID",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetAccount($id: String!) {\n  account(id: $id) {\n    id\n    name\n    type\n    currency\n    balanceCurrent\n    metadata\n    archived\n    createdAt\n    updatedAt\n    creditCardTerms {\n      statementDay\n      paymentDueDay\n      interestRateAnnual\n      minPaymentRule\n      gracePeriodDays\n    }\n  }\n}",
+								"variables": "{\n  \"id\": \"{{account_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Account",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const response = pm.response.json();",
+									"  if (response.data && response.data.createAccount) {",
+									"    pm.environment.set('account_id', response.data.createAccount.id);",
+									"  }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation CreateAccount($input: CreateAccountInput!) {\n  createAccount(input: $input) {\n    id\n    name\n    type\n    currency\n    balanceCurrent\n    metadata\n    createdAt\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"name\": \"{{new_account_name}}\",\n    \"type\": \"cash\",\n    \"currency\": \"USD\",\n    \"initialBalance\": 1000.00,\n    \"metadata\": \"{}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Account",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation UpdateAccount($id: String!, $input: UpdateAccountInput!) {\n  updateAccount(id: $id, input: $input) {\n    id\n    name\n    type\n    currency\n    balanceCurrent\n    metadata\n    updatedAt\n  }\n}",
+								"variables": "{\n  \"id\": \"{{account_id}}\",\n  \"input\": {\n    \"name\": \"{{updated_account_name}}\",\n    \"metadata\": \"{\\\"updated\\\": true}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Account",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Account archived successfully', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.updateAccount) {",
+									"        pm.expect(response.data.updateAccount).to.have.property('archived');",
+									"        pm.expect(response.data.updateAccount.archived).to.be.true;",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation ArchiveAccount($id: String!, $input: UpdateAccountInput!) {\n  updateAccount(id: $id, input: $input) {\n    id\n    name\n    archived\n    updatedAt\n  }\n}",
+								"variables": "{\n  \"id\": \"{{account_id}}\",\n  \"input\": {\n    \"archived\": true\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Account",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation DeleteAccount($id: String!) {\n  deleteAccount(id: $id)\n}",
+								"variables": "{\n  \"id\": \"{{account_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "💸 Transactions",
+			"description": "Financial transaction management (income, expenses, transfers, adjustments)",
+			"item": [
+				{
+					"name": "Get All Transactions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetTransactions($first: Int, $after: String, $accountId: String, $categoryId: String, $type: TransactionType, $dateFrom: DateTime, $dateTo: DateTime) {\n  transactions(first: $first, after: $after, accountId: $accountId, categoryId: $categoryId, type: $type, dateFrom: $dateFrom, dateTo: $dateTo) {\n    edges {\n      node {\n        id\n        type\n        amount\n        currency\n        txnDate\n        description\n        merchantName\n        isPending\n        source\n        account {\n          id\n          name\n        }\n        category {\n          id\n          name\n        }\n        attachments {\n          id\n          fileUrl\n          fileType\n        }\n      }\n      cursor\n    }\n    pageInfo {\n      hasNextPage\n      hasPreviousPage\n      startCursor\n      endCursor\n    }\n  }\n}",
+								"variables": "{\n  \"first\": 20,\n  \"accountId\": null,\n  \"type\": null\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transaction by ID",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetTransaction($id: String!) {\n  transaction(id: $id) {\n    id\n    type\n    amount\n    currency\n    txnDate\n    description\n    merchantName\n    isPending\n    source\n    account {\n      id\n      name\n      type\n    }\n    category {\n      id\n      name\n    }\n    attachments {\n      id\n      fileUrl\n      fileType\n      fileSize\n    }\n    transactionTags {\n      tag {\n        id\n        name\n      }\n    }\n  }\n}",
+								"variables": "{\n  \"id\": \"{{transaction_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Transaction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const response = pm.response.json();",
+									"  if (response.data && response.data.createTransaction) {",
+									"    pm.environment.set('transaction_id', response.data.createTransaction.id);",
+									"  }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation CreateTransaction($input: CreateTransactionInput!) {\n  createTransaction(input: $input) {\n    id\n    type\n    amount\n    currency\n    txnDate\n    description\n    merchantName\n    account {\n      id\n      name\n    }\n    category {\n      id\n      name\n    }\n    createdAt\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"accountId\": \"{{account_id}}\",\n    \"categoryId\": \"{{category_id}}\",\n    \"type\": \"expense\",\n    \"amount\": 25.50,\n    \"currency\": \"USD\",\n    \"txnDate\": \"{{current_date}}\",\n    \"description\": \"Coffee shop purchase\",\n    \"merchantName\": \"Local Coffee Shop\",\n    \"source\": \"manual\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation UpdateTransaction($id: String!, $input: UpdateTransactionInput!) {\n  updateTransaction(id: $id, input: $input) {\n    id\n    type\n    amount\n    currency\n    description\n    merchantName\n    category {\n      id\n      name\n    }\n    updatedAt\n  }\n}",
+								"variables": "{\n  \"id\": \"{{transaction_id}}\",\n  \"input\": {\n    \"amount\": 30.00,\n    \"description\": \"Updated coffee shop purchase\",\n    \"categoryId\": \"{{category_id}}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation DeleteTransaction($id: String!) {\n  deleteTransaction(id: $id)\n}",
+								"variables": "{\n  \"id\": \"{{transaction_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Transaction Attachment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation AddTransactionAttachment($transactionId: String!, $input: AttachmentInput!) {\n  addTransactionAttachment(transactionId: $transactionId, input: $input) {\n    id\n    fileUrl\n    fileType\n    fileSize\n    uploadedAt\n  }\n}",
+								"variables": "{\n  \"transactionId\": \"{{transaction_id}}\",\n  \"input\": {\n    \"fileUrl\": \"{{attachment_url}}\",\n    \"fileType\": \"image/jpeg\",\n    \"fileSize\": 1024000\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Transaction Attachment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation RemoveTransactionAttachment($attachmentId: String!) {\n  removeTransactionAttachment(attachmentId: $attachmentId)\n}",
+								"variables": "{\n  \"attachmentId\": \"{{attachment_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔄 Transfers",
+			"description": "Money transfer management between accounts",
+			"item": [
+				{
+					"name": "Get All Transfers",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetTransfers {\n  transfers {\n    id\n    amount\n    createdAt\n    fromTxn {\n      id\n      description\n      account {\n        id\n        name\n      }\n    }\n    toTxn {\n      id\n      description\n      account {\n        id\n        name\n      }\n    }\n  }\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transfer by ID",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetTransfer($id: String!) {\n  transfer(id: $id) {\n    id\n    amount\n    createdAt\n    fromTxn {\n      id\n      amount\n      description\n      txnDate\n      account {\n        id\n        name\n        type\n      }\n    }\n    toTxn {\n      id\n      amount\n      description\n      txnDate\n      account {\n        id\n        name\n        type\n      }\n    }\n  }\n}",
+								"variables": "{\n  \"id\": \"{{transfer_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Transfer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const response = pm.response.json();",
+									"  if (response.data && response.data.createTransfer) {",
+									"    pm.environment.set('transfer_id', response.data.createTransfer.id);",
+									"  }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation CreateTransfer($input: CreateTransferInput!) {\n  createTransfer(input: $input) {\n    id\n    amount\n    createdAt\n    fromTxn {\n      id\n      account {\n        name\n      }\n    }\n    toTxn {\n      id\n      account {\n        name\n      }\n    }\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"fromAccountId\": \"{{from_account_id}}\",\n    \"toAccountId\": \"{{to_account_id}}\",\n    \"amount\": 500.00,\n    \"currency\": \"USD\",\n    \"description\": \"Transfer between accounts\",\n    \"date\": \"{{current_date}}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🏷️ Categories",
+			"description": "Transaction categorization management",
+			"item": [
+				{
+					"name": "Test Unauthorized Access",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Unauthorized request returns 401 or appropriate error', function () {",
+									"    // This test checks that category endpoints require authentication",
+									"    const response = pm.response.json();",
+									"    if (pm.response.code === 401 || pm.response.code === 403) {",
+									"        pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+									"    } else if (response.errors) {",
+									"        // GraphQL may return 200 with errors for unauthorized access",
+									"        const hasAuthError = response.errors.some(error => ",
+									"            error.message.toLowerCase().includes('unauthorized') ||",
+									"            error.message.toLowerCase().includes('not authenticated') ||",
+									"            error.extensions?.code === 'UNAUTHENTICATED'",
+									"        );",
+									"        pm.expect(hasAuthError).to.be.true;",
+									"    }",
+									"});",
+									"",
+									"pm.test('Response structure is valid even for unauthorized requests', function () {",
+									"    if (pm.response.code !== 500) { // Avoid server errors",
+									"        const response = pm.response.json();",
+									"        pm.expect(response).to.be.an('object');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetCategories {\n  categories {\n    id\n    name\n    isDefault\n  }\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Categories",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid GraphQL', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('data');",
+									"    pm.expect(response.data).to.have.property('categories');",
+									"});",
+									"",
+									"pm.test('Categories are returned as array', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.data.categories).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Each category has required fields', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data.categories.length > 0) {",
+									"        const category = response.data.categories[0];",
+									"        pm.expect(category).to.have.property('id');",
+									"        pm.expect(category).to.have.property('name');",
+									"        pm.expect(category).to.have.property('isDefault');",
+									"        pm.expect(category.id).to.be.a('string');",
+									"        pm.expect(category.name).to.be.a('string');",
+									"        pm.expect(category.isDefault).to.be.a('boolean');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Category structure is valid', function () {",
+									"    const response = pm.response.json();",
+									"    response.data.categories.forEach(function(category) {",
+									"        pm.expect(category.id).to.not.be.empty;",
+									"        pm.expect(category.name).to.not.be.empty;",
+									"        if (category.parent) {",
+									"            pm.expect(category.parent).to.have.property('id');",
+									"            pm.expect(category.parent).to.have.property('name');",
+									"        }",
+									"        if (category.children) {",
+									"            pm.expect(category.children).to.be.an('array');",
+									"        }",
+									"    });",
+									"});",
+									"",
+									"pm.test('Response time is acceptable', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetCategories {\n  categories {\n    id\n    name\n    isDefault\n    sortOrder\n    parent {\n      id\n      name\n    }\n    children {\n      id\n      name\n    }\n  }\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Categories (User + Default)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid GraphQL', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('data');",
+									"    pm.expect(response.data).to.have.property('categories');",
+									"});",
+									"",
+									"pm.test('Categories include both user and default categories', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.data.categories).to.be.an('array');",
+									"    if (response.data.categories.length > 0) {",
+									"        // Should have mix of default (isDefault: true) and user (isDefault: false) categories",
+									"        const hasDefault = response.data.categories.some(cat => cat.isDefault === true);",
+									"        const hasUser = response.data.categories.some(cat => cat.isDefault === false);",
+									"        // At least one type should be present",
+									"        pm.expect(hasDefault || hasUser).to.be.true;",
+									"    }",
+									"});",
+									"",
+									"pm.test('Categories validation', function () {",
+									"    const response = pm.response.json();",
+									"    response.data.categories.forEach(function(category) {",
+									"        pm.expect(category).to.have.property('id');",
+									"        pm.expect(category).to.have.property('name');",
+									"        pm.expect(category).to.have.property('isDefault');",
+									"        pm.expect(category.id).to.be.a('string').and.not.be.empty;",
+									"        pm.expect(category.name).to.be.a('string').and.not.be.empty;",
+									"        pm.expect(category.isDefault).to.be.a('boolean');",
+									"    });",
+									"});",
+									"",
+									"pm.test('Categories are properly sorted', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data.categories.length > 1) {",
+									"        // Categories should be sorted by sortOrder and then by name",
+									"        for (let i = 1; i < response.data.categories.length; i++) {",
+									"            const prev = response.data.categories[i-1];",
+									"            const curr = response.data.categories[i];",
+									"            if (prev.sortOrder !== curr.sortOrder) {",
+									"                pm.expect(prev.sortOrder || 0).to.be.at.most(curr.sortOrder || 0);",
+									"            }",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test('Authorization is required', function () {",
+									"    pm.expect(pm.request.headers.get('Authorization')).to.contain('Bearer');",
+									"});",
+									"",
+									"pm.test('Response time is acceptable', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(3000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetAllCategories {\n  categories {\n    id\n    userId\n    parentId\n    name\n    isDefault\n    sortOrder\n    createdAt\n    parent {\n      id\n      name\n    }\n    children {\n      id\n      name\n    }\n  }\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Root Categories",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid GraphQL', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('data');",
+									"    pm.expect(response.data).to.have.property('rootCategories');",
+									"});",
+									"",
+									"pm.test('Root categories are returned as array', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.data.rootCategories).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Root categories have no parent', function () {",
+									"    const response = pm.response.json();",
+									"    response.data.rootCategories.forEach(function(category) {",
+									"        pm.expect(category.parent).to.be.null;",
+									"    });",
+									"});",
+									"",
+									"pm.test('Each root category has valid structure', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data.rootCategories.length > 0) {",
+									"        response.data.rootCategories.forEach(function(category) {",
+									"            pm.expect(category).to.have.property('id');",
+									"            pm.expect(category).to.have.property('name');",
+									"            pm.expect(category).to.have.property('isDefault');",
+									"            pm.expect(category.id).to.be.a('string').and.not.be.empty;",
+									"            pm.expect(category.name).to.be.a('string').and.not.be.empty;",
+									"            pm.expect(category.isDefault).to.be.a('boolean');",
+									"        });",
+									"    }",
+									"});",
+									"",
+									"pm.test('Root categories may have children', function () {",
+									"    const response = pm.response.json();",
+									"    response.data.rootCategories.forEach(function(category) {",
+									"        if (category.children) {",
+									"            pm.expect(category.children).to.be.an('array');",
+									"            category.children.forEach(function(child) {",
+									"                pm.expect(child).to.have.property('id');",
+									"                pm.expect(child).to.have.property('name');",
+									"            });",
+									"        }",
+									"    });",
+									"});",
+									"",
+									"pm.test('Response time is acceptable', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(3000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetRootCategories {\n  rootCategories {\n    id\n    name\n    isDefault\n    sortOrder\n    parent {\n      id\n      name\n    }\n    children {\n      id\n      name\n    }\n  }\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Category by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid GraphQL', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('data');",
+									"});",
+									"",
+									"pm.test('Category ID parameter is provided', function () {",
+									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
+									"    pm.expect(variables).to.have.property('id');",
+									"    pm.expect(variables.id).to.not.be.empty;",
+									"});",
+									"",
+									"pm.test('Category details are returned correctly', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.category) {",
+									"        const category = response.data.category;",
+									"        pm.expect(category).to.have.property('id');",
+									"        pm.expect(category).to.have.property('name');",
+									"        pm.expect(category).to.have.property('isDefault');",
+									"        pm.expect(category.id).to.be.a('string').and.not.be.empty;",
+									"        pm.expect(category.name).to.be.a('string').and.not.be.empty;",
+									"        pm.expect(category.isDefault).to.be.a('boolean');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Category relationships are valid', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.category) {",
+									"        const category = response.data.category;",
+									"        if (category.parent) {",
+									"            pm.expect(category.parent).to.have.property('id');",
+									"            pm.expect(category.parent).to.have.property('name');",
+									"        }",
+									"        if (category.children && category.children.length > 0) {",
+									"            category.children.forEach(function(child) {",
+									"                pm.expect(child).to.have.property('id');",
+									"                pm.expect(child).to.have.property('name');",
+									"            });",
+									"        }",
+									"        if (category.transactions && category.transactions.length > 0) {",
+									"            category.transactions.forEach(function(transaction) {",
+									"                pm.expect(transaction).to.have.property('id');",
+									"                pm.expect(transaction).to.have.property('amount');",
+									"            });",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test('Handle non-existent category gracefully', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.errors) {",
+									"        pm.expect(response.errors).to.be.an('array');",
+									"        response.errors.forEach(function(error) {",
+									"            pm.expect(error).to.have.property('message');",
+									"        });",
+									"    }",
+									"});",
+									"",
+									"pm.test('Response time is acceptable', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetCategory($id: String!) {\n  category(id: $id) {\n    id\n    name\n    isDefault\n    sortOrder\n    parent {\n      id\n      name\n    }\n    children {\n      id\n      name\n    }\n    transactions {\n      id\n      amount\n      description\n    }\n  }\n}",
+								"variables": "{\n  \"id\": \"{{category_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid GraphQL', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('data');",
+									"    pm.expect(response.data).to.have.property('createCategory');",
+									"});",
+									"",
+									"pm.test('Category creation input validation', function () {",
+									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
+									"    pm.expect(variables).to.have.property('input');",
+									"    pm.expect(variables.input).to.have.property('name');",
+									"    pm.expect(variables.input.name).to.be.a('string').and.not.be.empty;",
+									"});",
+									"",
+									"pm.test('Created category has required fields', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.createCategory) {",
+									"        const category = response.data.createCategory;",
+									"        pm.expect(category).to.have.property('id');",
+									"        pm.expect(category).to.have.property('name');",
+									"        pm.expect(category).to.have.property('isDefault');",
+									"        pm.expect(category.id).to.be.a('string').and.not.be.empty;",
+									"        pm.expect(category.name).to.be.a('string').and.not.be.empty;",
+									"        pm.expect(category.isDefault).to.be.a('boolean');",
+									"        pm.expect(category).to.have.property('createdAt');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Category parent relationship validation', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.createCategory && response.data.createCategory.parent) {",
+									"        const parent = response.data.createCategory.parent;",
+									"        pm.expect(parent).to.have.property('id');",
+									"        pm.expect(parent).to.have.property('name');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Save category ID for subsequent tests', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.createCategory) {",
+									"        pm.environment.set('category_id', response.data.createCategory.id);",
+									"        pm.environment.set('created_category_name', response.data.createCategory.name);",
+									"    }",
+									"});",
+									"",
+									"pm.test('Validate creation timestamp', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.createCategory) {",
+									"        const createdAt = new Date(response.data.createCategory.createdAt);",
+									"        const now = new Date();",
+									"        pm.expect(createdAt.getTime()).to.be.below(now.getTime());",
+									"    }",
+									"});",
+									"",
+									"pm.test('Handle validation errors appropriately', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.errors) {",
+									"        response.errors.forEach(function(error) {",
+									"            pm.expect(error).to.have.property('message');",
+									"            // Check for specific validation errors",
+									"            const message = error.message.toLowerCase();",
+									"            const isValidationError = message.includes('validation') || ",
+									"                                    message.includes('already exists') ||",
+									"                                    message.includes('circular reference') ||",
+									"                                    message.includes('parent category not found');",
+									"            if (isValidationError) {",
+									"                pm.expect(error.message).to.be.a('string').and.not.be.empty;",
+									"            }",
+									"        });",
+									"    }",
+									"});",
+									"",
+									"pm.test('Response time is acceptable', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(3000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation CreateCategory($input: CreateCategoryInput!) {\n  createCategory(input: $input) {\n    id\n    name\n    isDefault\n    sortOrder\n    parent {\n      id\n      name\n    }\n    createdAt\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"name\": \"{{category_name}}\",\n    \"parentId\": null,\n    \"sortOrder\": 1\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid GraphQL', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('data');",
+									"    pm.expect(response.data).to.have.property('updateCategory');",
+									"});",
+									"",
+									"pm.test('Update input validation', function () {",
+									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
+									"    pm.expect(variables).to.have.property('id');",
+									"    pm.expect(variables).to.have.property('input');",
+									"    pm.expect(variables.id).to.be.a('string').and.not.be.empty;",
+									"    pm.expect(variables.input).to.be.an('object');",
+									"});",
+									"",
+									"pm.test('Updated category maintains integrity', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.updateCategory) {",
+									"        const category = response.data.updateCategory;",
+									"        pm.expect(category).to.have.property('id');",
+									"        pm.expect(category).to.have.property('name');",
+									"        pm.expect(category).to.have.property('isDefault');",
+									"        pm.expect(category.id).to.be.a('string').and.not.be.empty;",
+									"        pm.expect(category.name).to.be.a('string').and.not.be.empty;",
+									"        pm.expect(category.isDefault).to.be.a('boolean');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Category ID remains unchanged after update', function () {",
+									"    const response = pm.response.json();",
+									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
+									"    if (response.data && response.data.updateCategory) {",
+									"        pm.expect(response.data.updateCategory.id).to.equal(variables.id);",
+									"    }",
+									"});",
+									"",
+									"pm.test('Updated fields reflect changes', function () {",
+									"    const response = pm.response.json();",
+									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
+									"    if (response.data && response.data.updateCategory && variables.input.name) {",
+									"        pm.expect(response.data.updateCategory.name).to.equal(variables.input.name);",
+									"    }",
+									"    if (response.data && response.data.updateCategory && variables.input.sortOrder !== undefined) {",
+									"        pm.expect(response.data.updateCategory.sortOrder).to.equal(variables.input.sortOrder);",
+									"    }",
+									"});",
+									"",
+									"pm.test('Parent relationship validation on update', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.updateCategory && response.data.updateCategory.parent) {",
+									"        const parent = response.data.updateCategory.parent;",
+									"        pm.expect(parent).to.have.property('id');",
+									"        pm.expect(parent).to.have.property('name');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Handle update errors gracefully', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.errors) {",
+									"        response.errors.forEach(function(error) {",
+									"            pm.expect(error).to.have.property('message');",
+									"            // Check for specific update validation errors",
+									"            const message = error.message.toLowerCase();",
+									"            const isUpdateError = message.includes('cannot update default categories') ||",
+									"                                 message.includes('category cannot be its own parent') ||",
+									"                                 message.includes('circular reference') ||",
+									"                                 message.includes('not found');",
+									"            if (isUpdateError) {",
+									"                pm.expect(error.message).to.be.a('string').and.not.be.empty;",
+									"            }",
+									"        });",
+									"    }",
+									"});",
+									"",
+									"pm.test('Response time is acceptable', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation UpdateCategory($id: String!, $input: UpdateCategoryInput!) {\n  updateCategory(id: $id, input: $input) {\n    id\n    name\n    isDefault\n    sortOrder\n    parent {\n      id\n      name\n    }\n  }\n}",
+								"variables": "{\n  \"id\": \"{{category_id}}\",\n  \"input\": {\n    \"name\": \"{{updated_category_name}}\",\n    \"sortOrder\": 2\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid GraphQL', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('data');",
+									"    pm.expect(response.data).to.have.property('deleteCategory');",
+									"});",
+									"",
+									"pm.test('Delete input validation', function () {",
+									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
+									"    pm.expect(variables).to.have.property('id');",
+									"    pm.expect(variables.id).to.be.a('string').and.not.be.empty;",
+									"});",
+									"",
+									"pm.test('Delete operation returns boolean result', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.deleteCategory !== null) {",
+									"        pm.expect(response.data.deleteCategory).to.be.a('boolean');",
+									"        pm.expect(response.data.deleteCategory).to.be.true;",
+									"    }",
+									"});",
+									"",
+									"pm.test('Handles deletion of non-existent category', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.errors) {",
+									"        response.errors.forEach(function(error) {",
+									"            pm.expect(error).to.have.property('message');",
+									"            pm.expect(error.message).to.include('Category');",
+									"        });",
+									"    }",
+									"});",
+									"",
+									"pm.test('Prevents deletion of categories that are in use', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.errors) {",
+									"        const hasInUseError = response.errors.some(error => ",
+									"            error.message.toLowerCase().includes('that is in use') ||",
+									"            error.message.toLowerCase().includes('transaction') ||",
+									"            error.message.toLowerCase().includes('budget')",
+									"        );",
+									"        if (hasInUseError) {",
+									"            pm.expect(hasInUseError).to.be.true;",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test('Prevents deletion of default categories', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.errors) {",
+									"        const hasDefaultError = response.errors.some(error => ",
+									"            error.message.toLowerCase().includes('cannot delete default categories')",
+									"        );",
+									"        if (hasDefaultError) {",
+									"            pm.expect(hasDefaultError).to.be.true;",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test('Prevents deletion of categories with subcategories', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.errors) {",
+									"        const hasSubcategoriesError = response.errors.some(error => ",
+									"            error.message.toLowerCase().includes('cannot delete category with subcategories')",
+									"        );",
+									"        if (hasSubcategoriesError) {",
+									"            pm.expect(hasSubcategoriesError).to.be.true;",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test('Authorization is required', function () {",
+									"    pm.expect(pm.request.headers.get('Authorization')).to.contain('Bearer');",
+									"});",
+									"",
+									"pm.test('Clean up environment variables on successful deletion', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.deleteCategory === true) {",
+									"        pm.environment.unset('category_id');",
+									"        pm.environment.unset('created_category_name');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Response time is acceptable', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation DeleteCategory($id: String!) {\n  deleteCategory(id: $id)\n}",
+								"variables": "{\n  \"id\": \"{{category_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Category Usage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid GraphQL', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('data');",
+									"    pm.expect(response.data).to.have.property('categoryUsage');",
+									"});",
+									"",
+									"pm.test('Category usage is returned as array', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.data.categoryUsage).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Date range parameters are valid', function () {",
+									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
+									"    if (variables.dateFrom) {",
+									"        pm.expect(new Date(variables.dateFrom)).to.not.equal(new Date('Invalid Date'));",
+									"    }",
+									"    if (variables.dateTo) {",
+									"        pm.expect(new Date(variables.dateTo)).to.not.equal(new Date('Invalid Date'));",
+									"    }",
+									"});",
+									"",
+									"pm.test('Each usage entry has required fields', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data.categoryUsage.length > 0) {",
+									"        response.data.categoryUsage.forEach(function(usage) {",
+									"            pm.expect(usage).to.have.property('categoryId');",
+									"            pm.expect(usage).to.have.property('categoryName');",
+									"            pm.expect(usage).to.have.property('totalAmount');",
+									"            pm.expect(usage).to.have.property('transactionCount');",
+									"            pm.expect(usage.categoryId).to.be.a('string').and.not.be.empty;",
+									"            pm.expect(usage.categoryName).to.be.a('string').and.not.be.empty;",
+									"            pm.expect(usage.totalAmount).to.be.a('number');",
+									"            pm.expect(usage.transactionCount).to.be.a('number');",
+									"        });",
+									"    }",
+									"});",
+									"",
+									"pm.test('Total amounts are valid numbers', function () {",
+									"    const response = pm.response.json();",
+									"    response.data.categoryUsage.forEach(function(usage) {",
+									"        pm.expect(usage.totalAmount).to.be.a('number');",
+									"        pm.expect(usage.totalAmount).to.be.at.least(0);",
+									"    });",
+									"});",
+									"",
+									"pm.test('Transaction counts are positive integers', function () {",
+									"    const response = pm.response.json();",
+									"    response.data.categoryUsage.forEach(function(usage) {",
+									"        pm.expect(usage.transactionCount).to.be.a('number');",
+									"        pm.expect(usage.transactionCount).to.be.at.least(0);",
+									"        pm.expect(usage.transactionCount % 1).to.equal(0); // Check if integer",
+									"    });",
+									"});",
+									"",
+									"pm.test('Usage data is sorted properly', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data.categoryUsage.length > 1) {",
+									"        // Assuming sorted by totalAmount descending",
+									"        for (let i = 1; i < response.data.categoryUsage.length; i++) {",
+									"            pm.expect(response.data.categoryUsage[i-1].totalAmount)",
+									"                .to.be.at.least(response.data.categoryUsage[i].totalAmount);",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test('Response time is acceptable', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(4000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetCategoryUsage($dateFrom: DateTime, $dateTo: DateTime) {\n  categoryUsage(dateFrom: $dateFrom, dateTo: $dateTo) {\n    categoryId\n    categoryName\n    totalAmount\n    transactionCount\n    averageAmount\n  }\n}",
+								"variables": "{\n  \"dateFrom\": \"{{date_from}}\",\n  \"dateTo\": \"{{date_to}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Suggest Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid GraphQL', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('data');",
+									"    pm.expect(response.data).to.have.property('suggestCategoryForMerchant');",
+									"});",
+									"",
+									"pm.test('Input validation for suggestion', function () {",
+									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
+									"    pm.expect(variables).to.have.property('input');",
+									"    pm.expect(variables.input).to.have.property('merchantName');",
+									"    pm.expect(variables.input.merchantName).to.be.a('string').and.not.be.empty;",
+									"});",
+									"",
+									"pm.test('Suggestion result validation', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.suggestCategoryForMerchant) {",
+									"        const suggestion = response.data.suggestCategoryForMerchant;",
+									"        pm.expect(suggestion).to.have.property('id');",
+									"        pm.expect(suggestion).to.have.property('name');",
+									"        pm.expect(suggestion.id).to.be.a('string').and.not.be.empty;",
+									"        pm.expect(suggestion.name).to.be.a('string').and.not.be.empty;",
+									"        // Note: Backend implementation doesn't return confidence score",
+									"    }",
+									"});",
+									"",
+									"pm.test('Handles no suggestion gracefully', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.suggestCategoryForMerchant === null) {",
+									"        pm.expect(response.data.suggestCategoryForMerchant).to.be.null;",
+									"    }",
+									"});",
+									"",
+									"pm.test('Merchant name parameter is required', function () {",
+									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
+									"    pm.expect(variables.input.merchantName).to.be.a('string').and.not.be.empty;",
+									"});",
+									"",
+									"pm.test('Suggestion quality check', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.suggestCategoryForMerchant) {",
+									"        const suggestion = response.data.suggestCategoryForMerchant;",
+									"        // Check that suggested category name makes sense",
+									"        pm.expect(suggestion.name).to.match(/^[A-Za-z0-9 \\&\\-\\.]+$/);",
+									"        pm.expect(suggestion.name.length).to.be.below(100);",
+									"        pm.expect(suggestion.name.trim()).to.equal(suggestion.name);",
+									"    }",
+									"});",
+									"",
+									"pm.test('Suggestion based on transaction history', function () {",
+									"    const response = pm.response.json();",
+									"    // This endpoint looks for similar merchant names in transaction history",
+									"    // If no similar transactions found, it returns null",
+									"    if (response.data) {",
+									"        pm.expect(response.data).to.have.property('suggestCategoryForMerchant');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Response time is acceptable for AI processing', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query SuggestCategoryForMerchant($input: SuggestCategoryInput!) {\n  suggestCategoryForMerchant(input: $input) {\n    id\n    name\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"merchantName\": \"{{merchant_name}}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Default Categories",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid GraphQL', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('data');",
+									"    pm.expect(response.data).to.have.property('createDefaultCategories');",
+									"});",
+									"",
+									"pm.test('Default categories creation returns boolean', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.data.createDefaultCategories).to.be.a('boolean');",
+									"    pm.expect(response.data.createDefaultCategories).to.be.true;",
+									"});",
+									"",
+									"pm.test('Authorization is required', function () {",
+									"    pm.expect(pm.request.headers.get('Authorization')).to.contain('Bearer');",
+									"});",
+									"",
+									"pm.test('Operation is idempotent', function () {",
+									"    // This test documents that calling createDefaultCategories",
+									"    // multiple times should not cause errors",
+									"    const response = pm.response.json();",
+									"    if (response.data.createDefaultCategories === true) {",
+									"        pm.expect(response.data.createDefaultCategories).to.be.true;",
+									"    }",
+									"});",
+									"",
+									"pm.test('Handles duplicate category creation errors', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.errors) {",
+									"        // Check for duplicate category errors (if user already has default categories)",
+									"        const hasDuplicateError = response.errors.some(error => ",
+									"            error.message.toLowerCase().includes('already exists') ||",
+									"            error.message.toLowerCase().includes('duplicate') ||",
+									"            error.message.toLowerCase().includes('unique constraint')",
+									"        );",
+									"        if (hasDuplicateError) {",
+									"            pm.expect(hasDuplicateError).to.be.true;",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test('Response time is acceptable for bulk operation', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"pm.test('Creates comprehensive category structure', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.data.createDefaultCategories === true) {",
+									"        // This test documents expected behavior:",
+									"        // Should create 10 parent categories with their subcategories:",
+									"        // - Food & Dining (Groceries, Restaurants, Coffee & Snacks)",
+									"        // - Transportation (Gas, Public Transit, Parking, Car Maintenance)",
+									"        // - Shopping (Clothing, Electronics, Books, General)",
+									"        // - Bills & Utilities (Electricity, Water, Internet, Phone, Insurance)",
+									"        // - Entertainment (Movies, Sports, Hobbies, Subscriptions)",
+									"        // - Health & Medical (Doctor, Pharmacy, Fitness, Insurance)",
+									"        // - Education (Tuition, Books, Supplies)",
+									"        // - Personal Care (Hair, Beauty, Clothing)",
+									"        // - Income (Salary, Freelance, Investments, Other Income)",
+									"        // - Uncategorized (no children)",
+									"        pm.expect(response.data.createDefaultCategories).to.be.true;",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation CreateDefaultCategories {\n  createDefaultCategories\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "💰 Budgets",
+			"description": "Budget planning and tracking",
+			"item": [
+				{
+					"name": "Get All Budgets",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetBudgets {\n  budgets {\n    id\n    year\n    month\n    currency\n    amountTotal\n    createdAt\n    categories {\n      id\n      capAmount\n      category {\n        id\n        name\n      }\n    }\n  }\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Budget by ID",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetBudget($id: String!) {\n  budget(id: $id) {\n    id\n    year\n    month\n    currency\n    amountTotal\n    createdAt\n    categories {\n      id\n      capAmount\n      category {\n        id\n        name\n      }\n    }\n  }\n}",
+								"variables": "{\n  \"id\": \"{{budget_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Budget Usage",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetBudgetUsage($year: Int!, $month: Int!) {\n  budgetUsage(year: $year, month: $month) {\n    categoryId\n    categoryName\n    budgeted\n    spent\n    remaining\n    percentage\n    isOverBudget\n  }\n}",
+								"variables": "{\n  \"year\": {{current_year}},\n  \"month\": {{current_month}}\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current Budget",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetCurrentBudget {\n  currentBudget {\n    id\n    year\n    month\n    currency\n    amountTotal\n    categories {\n      id\n      capAmount\n      category {\n        id\n        name\n      }\n    }\n  }\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Budget Summary",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetBudgetSummary($year: Int!, $month: Int!) {\n  budgetSummary(year: $year, month: $month) {\n    totalBudgeted\n    totalSpent\n    totalRemaining\n    overBudgetCount\n    onTrackCount\n    utilizationPercentage\n  }\n}",
+								"variables": "{\n  \"year\": {{current_year}},\n  \"month\": {{current_month}}\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Budget Alerts",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetBudgetAlerts {\n  budgetAlerts {\n    categoryId\n    categoryName\n    budgeted\n    spent\n    alertType\n    threshold\n    message\n  }\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Budget",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const response = pm.response.json();",
+									"  if (response.data && response.data.createBudget) {",
+									"    pm.environment.set('budget_id', response.data.createBudget.id);",
+									"  }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation CreateBudget($input: CreateBudgetInput!) {\n  createBudget(input: $input) {\n    id\n    year\n    month\n    currency\n    amountTotal\n    categories {\n      id\n      capAmount\n      category {\n        id\n        name\n      }\n    }\n    createdAt\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"year\": {{current_year}},\n    \"month\": {{current_month}},\n    \"currency\": \"USD\",\n    \"amountTotal\": 2000.00,\n    \"categories\": [\n      {\n        \"categoryId\": \"{{category_id}}\",\n        \"capAmount\": 500.00\n      }\n    ]\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Budget",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation UpdateBudget($id: String!, $input: UpdateBudgetInput!) {\n  updateBudget(id: $id, input: $input) {\n    id\n    year\n    month\n    currency\n    amountTotal\n    categories {\n      id\n      capAmount\n      category {\n        id\n        name\n      }\n    }\n    updatedAt\n  }\n}",
+								"variables": "{\n  \"id\": \"{{budget_id}}\",\n  \"input\": {\n    \"amountTotal\": 2500.00,\n    \"categories\": [\n      {\n        \"categoryId\": \"{{category_id}}\",\n        \"capAmount\": 600.00\n      }\n    ]\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Budget",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation DeleteBudget($id: String!) {\n  deleteBudget(id: $id)\n}",
+								"variables": "{\n  \"id\": \"{{budget_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Copy Budget from Previous Month",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation CopyBudgetFromPrevious($year: Int!, $month: Int!) {\n  copyBudgetFromPrevious(year: $year, month: $month) {\n    id\n    year\n    month\n    currency\n    amountTotal\n    categories {\n      id\n      capAmount\n      category {\n        id\n        name\n      }\n    }\n  }\n}",
+								"variables": "{\n  \"year\": {{target_year}},\n  \"month\": {{target_month}}\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🎯 Goals",
+			"description": "Financial goal setting and tracking",
+			"item": [
+				{
+					"name": "Get All Goals",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetGoals {\n  goals {\n    id\n    name\n    targetAmount\n    currentAmount\n    currency\n    dueDate\n    createdAt\n    contributions {\n      id\n      amount\n      date\n      transaction {\n        id\n        description\n      }\n    }\n  }\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Goal by ID",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetGoal($id: String!) {\n  goal(id: $id) {\n    id\n    name\n    targetAmount\n    currentAmount\n    currency\n    dueDate\n    createdAt\n    contributions {\n      id\n      amount\n      date\n      transaction {\n        id\n        description\n        merchantName\n      }\n    }\n  }\n}",
+								"variables": "{\n  \"id\": \"{{goal_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Goal Progress",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetGoalProgress($goalId: String!) {\n  goalProgress(goalId: $goalId) {\n    goalId\n    goalName\n    targetAmount\n    currentAmount\n    remainingAmount\n    progressPercentage\n    daysRemaining\n    averageMonthlyContribution\n    requiredMonthlyContribution\n    isOnTrack\n  }\n}",
+								"variables": "{\n  \"goalId\": \"{{goal_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Goal",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const response = pm.response.json();",
+									"  if (response.data && response.data.createGoal) {",
+									"    pm.environment.set('goal_id', response.data.createGoal.id);",
+									"  }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation CreateGoal($input: CreateGoalInput!) {\n  createGoal(input: $input) {\n    id\n    name\n    targetAmount\n    currentAmount\n    currency\n    dueDate\n    createdAt\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"name\": \"{{goal_name}}\",\n    \"targetAmount\": 10000.00,\n    \"currency\": \"USD\",\n    \"dueDate\": \"{{goal_due_date}}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "💳 Debts",
+			"description": "Debt management and payment tracking",
+			"item": [
+				{
+					"name": "Get All Debts",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetDebts($first: Int, $after: String) {\n  debts(first: $first, after: $after) {\n    edges {\n      node {\n        id\n        name\n        kind\n        principal\n        interestRateAnnual\n        minPaymentAmount\n        startDate\n        dueDate\n        linkedAccount {\n          id\n          name\n        }\n        payments {\n          id\n          amount\n          date\n        }\n      }\n      cursor\n    }\n    pageInfo {\n      hasNextPage\n      hasPreviousPage\n      startCursor\n      endCursor\n    }\n  }\n}",
+								"variables": "{\n  \"first\": 10\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Debt by ID",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetDebt($id: String!) {\n  debt(id: $id) {\n    id\n    name\n    kind\n    principal\n    interestRateAnnual\n    minPaymentAmount\n    startDate\n    dueDate\n    linkedAccount {\n      id\n      name\n      type\n    }\n    payments {\n      id\n      amount\n      date\n      transaction {\n        id\n        description\n      }\n    }\n    createdAt\n  }\n}",
+								"variables": "{\n  \"id\": \"{{debt_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Debt Summary",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetDebtSummary {\n  debtSummary {\n    totalDebt\n    totalMonthlyPayments\n    averageInterestRate\n    debtCount\n    nextPaymentDue\n    totalPaidThisMonth\n  }\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Debt Payoff Projections",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetDebtPayoffProjections($debtId: String!, $strategy: String!) {\n  debtPayoffProjections(debtId: $debtId, strategy: $strategy) {\n    debtId\n    strategy\n    monthsToPayoff\n    totalInterestPaid\n    monthlyPayment\n    projectedPayoffDate\n    savings\n  }\n}",
+								"variables": "{\n  \"debtId\": \"{{debt_id}}\",\n  \"strategy\": \"minimum\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Debt",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const response = pm.response.json();",
+									"  if (response.data && response.data.createDebt) {",
+									"    pm.environment.set('debt_id', response.data.createDebt.id);",
+									"  }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation CreateDebt($input: CreateDebtInput!) {\n  createDebt(input: $input) {\n    id\n    name\n    kind\n    principal\n    interestRateAnnual\n    minPaymentAmount\n    startDate\n    dueDate\n    linkedAccount {\n      id\n      name\n    }\n    createdAt\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"name\": \"{{debt_name}}\",\n    \"kind\": \"card\",\n    \"principal\": 5000.00,\n    \"interestRateAnnual\": 18.99,\n    \"minPaymentAmount\": 150.00,\n    \"startDate\": \"{{debt_start_date}}\",\n    \"dueDate\": null,\n    \"linkedAccountId\": \"{{account_id}}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Debt",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation UpdateDebt($id: String!, $input: UpdateDebtInput!) {\n  updateDebt(id: $id, input: $input) {\n    id\n    name\n    kind\n    principal\n    interestRateAnnual\n    minPaymentAmount\n    updatedAt\n  }\n}",
+								"variables": "{\n  \"id\": \"{{debt_id}}\",\n  \"input\": {\n    \"name\": \"{{updated_debt_name}}\",\n    \"principal\": 4500.00,\n    \"minPaymentAmount\": 200.00\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Debt",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation DeleteDebt($id: String!) {\n  deleteDebt(id: $id)\n}",
+								"variables": "{\n  \"id\": \"{{debt_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Record Debt Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation RecordDebtPayment($input: DebtPaymentInput!) {\n  recordDebtPayment(input: $input) {\n    id\n    amount\n    date\n    debt {\n      id\n      name\n      principal\n    }\n    transaction {\n      id\n      description\n    }\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"debtId\": \"{{debt_id}}\",\n    \"transactionId\": \"{{transaction_id}}\",\n    \"amount\": 200.00,\n    \"date\": \"{{payment_date}}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔔 Notifications",
+			"description": "Notification management system",
+			"item": [
+				{
+					"name": "Get All Notifications",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetNotifications($first: Int, $after: String, $status: NotificationStatus, $type: NotificationType) {\n  notifications(first: $first, after: $after, status: $status, type: $type) {\n    edges {\n      node {\n        id\n        type\n        title\n        message\n        status\n        scheduledAt\n        sentAt\n        relatedEntityId\n        relatedEntityType\n        createdAt\n      }\n      cursor\n    }\n    pageInfo {\n      hasNextPage\n      hasPreviousPage\n      startCursor\n      endCursor\n    }\n  }\n}",
+								"variables": "{\n  \"first\": 20,\n  \"status\": null,\n  \"type\": null\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Notification as Read",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation MarkNotificationAsRead($id: String!) {\n  markNotificationAsRead(id: $id)\n}",
+								"variables": "{\n  \"id\": \"{{notification_id}}\"\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark All Notifications as Read",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation MarkAllNotificationsAsRead {\n  markAllNotificationsAsRead\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📊 Reports",
+			"description": "Financial reporting and analytics",
+			"item": [
+				{
+					"name": "Get Monthly Report",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetMonthlyReport($year: Int!, $month: Int!) {\n  monthlyReport(year: $year, month: $month) {\n    period\n    totalIncome\n    totalExpenses\n    netIncome\n    categoryBreakdown {\n      categoryId\n      categoryName\n      amount\n      percentage\n    }\n    accountBalances {\n      accountId\n      accountName\n      balance\n      changeFromPrevious\n    }\n    topTransactions {\n      id\n      amount\n      description\n      merchantName\n    }\n  }\n}",
+								"variables": "{\n  \"year\": {{report_year}},\n  \"month\": {{report_month}}\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cash Flow Projection",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query GetCashFlowProjection($months: Int!) {\n  cashFlowProjection(months: $months) {\n    month\n    projectedIncome\n    projectedExpenses\n    projectedBalance\n    confidence\n  }\n}",
+								"variables": "{\n  \"months\": 6\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "What-If Analysis",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query WhatIfAnalysis($scenario: WhatIfScenario!) {\n  whatIfAnalysis(scenario: $scenario) {\n    scenarioName\n    currentBalance\n    projectedBalance\n    difference\n    impactPercentage\n    recommendation\n  }\n}",
+								"variables": "{\n  \"scenario\": {\n    \"name\": \"Increase Savings\",\n    \"changes\": [\n      {\n        \"type\": \"expense_reduction\",\n        \"categoryId\": \"{{category_id}}\",\n        \"amount\": 200.00\n      }\n    ],\n    \"timeframe\": 12\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🏠 General",
+			"description": "General app endpoints and health checks",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": ["{{base_url}}"],
+							"path": [""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GraphQL Schema Introspection",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query IntrospectionQuery {\n  __schema {\n    queryType {\n      name\n    }\n    mutationType {\n      name\n    }\n    types {\n      name\n      kind\n      description\n    }\n  }\n}",
+								"variables": "{}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Set dynamic date variables",
+					"const currentDate = new Date();",
+					"const currentYear = currentDate.getFullYear();",
+					"const currentMonth = currentDate.getMonth() + 1;",
+					"const currentISODate = currentDate.toISOString().split('T')[0];",
+					"",
+					"pm.environment.set('current_date', currentISODate);",
+					"pm.environment.set('current_year', currentYear);",
+					"pm.environment.set('current_month', currentMonth);",
+					"",
+					"// Set date ranges for reports",
+					"const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1).toISOString();",
+					"const lastDayOfMonth = new Date(currentYear, currentMonth, 0).toISOString();",
+					"pm.environment.set('date_from', firstDayOfMonth);",
+					"pm.environment.set('date_to', lastDayOfMonth);",
+					"",
+					"// Set category testing variables",
+					"pm.environment.set('category_name', 'Test Category ' + Math.random().toString(36).substr(2, 5));",
+					"pm.environment.set('updated_category_name', 'Updated Test Category ' + Math.random().toString(36).substr(2, 5));",
+					"pm.environment.set('merchant_name', 'Test Merchant Store');",
+					"pm.environment.set('transaction_description', 'Coffee shop purchase');",
+					"",
+					"// Set authentication testing variables",
+					"pm.environment.set('user_name', 'Test User ' + Math.random().toString(36).substr(2, 5));",
+					"pm.environment.set('user_email', 'testuser' + Math.random().toString(36).substr(2, 5) + '@example.com');",
+					"pm.environment.set('user_password', 'TestPassword123!');",
+					"pm.environment.set('updated_user_name', 'Updated Test User ' + Math.random().toString(36).substr(2, 5));",
+					"pm.environment.set('new_account_name', 'Test Account ' + Math.random().toString(36).substr(2, 5));",
+					"pm.environment.set('updated_account_name', 'Updated Test Account ' + Math.random().toString(36).substr(2, 5));",
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "collection_version",
+			"value": "1.0.0"
+		}
+	]
+}

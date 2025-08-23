@@ -13,7 +13,10 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed:init": "prisma db seed",
-    "db:seed": "tsx src/seed.ts",
+    "db:seed": "prisma generate && node prisma/seeders/seed.js",
+    "db:seed:clean": "prisma generate && node prisma/seeders/seed.js --clean",
+    "db:reset": "prisma migrate reset --force",
+    "db:reset:seed": "prisma migrate reset --force && prisma generate && node prisma/seeders/seed.js",
     "db:seed:enhanced": "tsx scripts/enhanced-seed.ts",
     "db:generate": "prisma generate",
     "db:validate": "tsx scripts/validate-schema.ts",
@@ -25,7 +28,7 @@
     "studio": "prisma studio"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "prisma generate && node prisma/seeders/seed.js"
   },
   "devDependencies": {
     "@finnit/eslint-config": "*",

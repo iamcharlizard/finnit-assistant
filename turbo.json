@@ -21,6 +21,49 @@
       "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "db:migrate:dev": {
+      "cache": false
+    },
+    "db:migrate:deploy": {
+      "cache": false
+    },
+    "db:push": {
+      "cache": false
+    },
+    "db:seed": {
+      "cache": false
+    },
+    "db:seed:clean": {
+      "cache": false
+    },
+    "db:reset": {
+      "cache": false
+    },
+    "db:reset:seed": {
+      "cache": false
+    },
+    "db:seed:init": {
+      "cache": false
+    },
+    "db:seed:enhanced": {
+      "cache": false
+    },
+    "db:validate": {
+      "cache": false
+    },
+    "db:backup": {
+      "cache": false
+    },
+    "db:rollback": {
+      "cache": false
+    },
+    "studio": {
+      "cache": false,
+      "persistent": true
     }
   }
 }

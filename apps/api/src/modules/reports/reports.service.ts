@@ -12,7 +12,11 @@ import {
 export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getMonthlyReport(userId: string, year: number, month: number): Promise<MonthlyReport> {
+  async getMonthlyReport(
+    userId: string,
+    year: number,
+    month: number,
+  ): Promise<MonthlyReport> {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
@@ -59,7 +63,8 @@ export class ReportsService {
         });
 
         const amount = Number(expense._sum.amount || 0);
-        const percentage = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
+        const percentage =
+          totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
 
         categoryBreakdown.push({
           categoryId: expense.categoryId,
@@ -145,7 +150,10 @@ export class ReportsService {
     return projections;
   }
 
-  async runWhatIfScenario(userId: string, input: WhatIfInput): Promise<WhatIfResult> {
+  async runWhatIfScenario(
+    userId: string,
+    input: WhatIfInput,
+  ): Promise<WhatIfResult> {
     // Get current total balance
     const accounts = await this.prisma.account.findMany({
       where: { userId, archived: false },

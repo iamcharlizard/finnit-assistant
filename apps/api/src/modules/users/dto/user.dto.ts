@@ -1,23 +1,11 @@
-import { ObjectType, Field, InputType } from '@nestjs/graphql';
-import { IsString, IsEmail, MinLength, MaxLength, IsOptional } from 'class-validator';
-
-@ObjectType()
-export class User {
-  @Field()
-  id: string;
-
-  @Field()
-  name: string;
-
-  @Field()
-  email: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-}
+import { Field, InputType } from '@nestjs/graphql';
+import {
+  IsString,
+  IsEmail,
+  MinLength,
+  MaxLength,
+  IsOptional,
+} from 'class-validator';
 
 @InputType()
 export class UpdateUserInput {

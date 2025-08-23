@@ -1,16 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../services/prisma.service';
-import { 
-  Account, 
-  CreateAccountInput, 
-  UpdateAccountInput, 
+import {
+  CreateAccountInput,
+  UpdateAccountInput,
   AdjustBalanceInput,
   AccountConnection,
   AccountsArgs,
 } from './dto/account.dto';
-import { NotFoundError, ValidationError, ForbiddenError } from '../../common/exceptions/graphql-error.exception';
+import {
+  NotFoundError,
+  ValidationError,
+} from '../../common/exceptions/graphql-error.exception';
 import { PaginationUtil } from '../../common/utils/pagination.util';
 import { TransactionType, TransactionSource } from '@finnit/database';
+import { Prisma } from '@finnit/database';
+import { Account } from '../../common/types/models/account.model';
 
 @Injectable()
 export class AccountsService {
@@ -34,7 +38,10 @@ export class AccountsService {
         data: {
           userId,
           accountId: account.id,
-          type: input.initialBalance > 0 ? TransactionType.income : TransactionType.expense,
+          type:
+            input.initialBalance > 0
+              ? TransactionType.income
+              : TransactionType.expense,
           amount: Math.abs(input.initialBalance),
           currency: input.currency,
           txnDate: new Date(),
@@ -47,21 +54,24 @@ export class AccountsService {
     return this.mapAccount(account);
   }
 
-  async findMany(userId: string, args: AccountsArgs): Promise<AccountConnection> {
-    const where: any = { userId };
-    
+  async findMany(
+    userId: string,
+    args: AccountsArgs,
+  ): Promise<AccountConnection> {
+    const where: Prisma.AccountWhereInput = { userId };
+
     if (args.type) {
       where.type = args.type;
     }
-    
+
     if (args.archived !== undefined) {
       where.archived = args.archived;
     }
 
     // Handle cursor pagination
     const limit = args.first || args.last || 20;
-    let cursor: any = undefined;
-    
+    let cursor: Prisma.AccountWhereInput | undefined = undefined;
+
     if (args.after) {
       const decodedCursor = PaginationUtil.decodeCursor(args.after);
       cursor = { id: { gt: decodedCursor } };
@@ -71,7 +81,7 @@ export class AccountsService {
     }
 
     const accounts = await this.prisma.account.findMany({
-      where: { ...where, ...cursor },
+      where: { ...where, ...cursor } as Prisma.AccountWhereInput,
       take: limit,
       orderBy: { createdAt: 'desc' },
     });
@@ -79,7 +89,7 @@ export class AccountsService {
     const totalCount = await this.prisma.account.count({ where });
 
     return PaginationUtil.createConnection(
-      accounts.map(this.mapAccount),
+      accounts.map((account) => this.mapAccount(account)),
       args,
       totalCount,
       (account) => PaginationUtil.encodeCursor(account.id),
@@ -98,7 +108,11 @@ export class AccountsService {
     return this.mapAccount(account);
   }
 
-  async update(id: string, userId: string, input: UpdateAccountInput): Promise<Account> {
+  async update(
+    id: string,
+    userId: string,
+    input: UpdateAccountInput,
+  ): Promise<Account> {
     const existingAccount = await this.prisma.account.findFirst({
       where: { id, userId },
     });
@@ -115,7 +129,10 @@ export class AccountsService {
     return this.mapAccount(updatedAccount);
   }
 
-  async adjustBalance(userId: string, input: AdjustBalanceInput): Promise<Account> {
+  async adjustBalance(
+    userId: string,
+    input: AdjustBalanceInput,
+  ): Promise<Account> {
     const account = await this.prisma.account.findFirst({
       where: { id: input.accountId, userId },
     });
@@ -168,7 +185,9 @@ export class AccountsService {
     }
 
     if (account.transactions.length > 0) {
-      throw new ValidationError('Cannot delete account with existing transactions');
+      throw new ValidationError(
+        'Cannot delete account with existing transactions',
+      );
     }
 
     await this.prisma.account.delete({
@@ -178,7 +197,9 @@ export class AccountsService {
     return true;
   }
 
-  private mapAccount(account: any): Account {
+  private mapAccount(
+    account: Prisma.AccountGetPayload<Record<string, never>>,
+  ): Account {
     return {
       id: account.id,
       userId: account.userId,
@@ -186,7 +207,7 @@ export class AccountsService {
       name: account.name,
       currency: account.currency,
       balanceCurrent: Number(account.balanceCurrent),
-      metadata: account.metadata,
+      metadata: account.metadata as string | undefined,
       archived: account.archived,
       createdAt: account.createdAt,
       updatedAt: account.updatedAt,

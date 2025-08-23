@@ -130,6 +130,7 @@ model Account {
   debtsLinked         Debt[]               @relation("debt_linked_account")
   RecurringRule       RecurringRule[]
 
+  @@unique([userId, name])
   @@index([userId])
   @@index([userId, type])
 }
@@ -162,6 +163,7 @@ model Category {
   budgetCaps    BUDGET_CATEGORY[]
   RecurringRule RecurringRule[]
 
+  @@unique([userId, name], name: "category_user_name_unique")
   @@index([userId])
   @@index([parentId])
 }
@@ -198,6 +200,7 @@ model Transaction {
   transactionTags   TransactionTag[]
   importedMatches   ImportedTransaction[] @relation("imported_matched")
 
+  @@unique([userId, accountId, txnDate], name: "transaction_user_account_date_unique")
   @@index([userId, txnDate(sort: Desc)])
   @@index([userId, accountId, txnDate(sort: Desc)])
   @@index([source])
@@ -212,6 +215,8 @@ model Transfer {
 
   fromTxn Transaction @relation("transfer_from", fields: [fromTxnId], references: [id], onDelete: Restrict)
   toTxn   Transaction @relation("transfer_to", fields: [toTxnId], references: [id], onDelete: Restrict)
+
+  @@unique([fromTxnId, toTxnId])
 }
 
 model Attachment {
@@ -292,6 +297,8 @@ model Goal {
 
   user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   contributions GoalContribution[]
+
+  @@unique([userId, name])
 }
 
 model GoalContribution {
@@ -325,6 +332,7 @@ model Debt {
   payments      DebtPayment[]
   linkedAccount Account?      @relation("debt_linked_account", fields: [linkedAccountId], references: [id], onDelete: SetNull)
 
+  @@unique([userId, name])
   @@index([userId])
 }
 

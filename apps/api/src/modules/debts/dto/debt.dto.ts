@@ -1,7 +1,24 @@
-import { ObjectType, Field, InputType, ID, Float, registerEnumType } from '@nestjs/graphql';
-import { IsString, IsOptional, IsNumber, IsDateString, IsPositive, Min, Max } from 'class-validator';
+import {
+  ObjectType,
+  Field,
+  InputType,
+  ArgsType,
+  ID,
+  Float,
+  Int,
+  registerEnumType,
+} from '@nestjs/graphql';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsDateString,
+  IsPositive,
+  Min,
+  Max,
+} from 'class-validator';
 import { DebtKind } from '@finnit/database';
-import { PaginationArgs, PageInfo } from '../../../common/types/pagination.types';
+import { PageInfo } from '../../../common/types/pagination.types';
 
 registerEnumType(DebtKind, {
   name: 'DebtKind',
@@ -225,8 +242,32 @@ export class CreateDebtPaymentInput {
   date: Date;
 }
 
-@InputType()
-export class DebtsArgs extends PaginationArgs {
+@ArgsType()
+export class DebtsArgs {
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  first?: number;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  after?: string;
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  last?: number;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  before?: string;
+
   @Field(() => DebtKind, { nullable: true })
   @IsOptional()
   kind?: DebtKind;

@@ -1,16 +1,17 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
-import { 
-  Account, 
+import {
   AccountConnection,
-  CreateAccountInput, 
-  UpdateAccountInput, 
+  CreateAccountInput,
+  UpdateAccountInput,
   AdjustBalanceInput,
   AccountsArgs,
 } from './dto/account.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { User } from '../../common/types/models/user.model';
+import { Account } from '../../common/types/models/account.model';
 
 @Resolver(() => Account)
 @UseGuards(JwtAuthGuard)
@@ -19,7 +20,7 @@ export class AccountsResolver {
 
   @Query(() => AccountConnection)
   async accounts(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args() args: AccountsArgs,
   ): Promise<AccountConnection> {
     return this.accountsService.findMany(user.id, args);
@@ -27,7 +28,7 @@ export class AccountsResolver {
 
   @Query(() => Account)
   async account(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<Account> {
     return this.accountsService.findById(id, user.id);
@@ -35,7 +36,7 @@ export class AccountsResolver {
 
   @Mutation(() => Account)
   async createAccount(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('input') input: CreateAccountInput,
   ): Promise<Account> {
     return this.accountsService.create(user.id, input);
@@ -43,7 +44,7 @@ export class AccountsResolver {
 
   @Mutation(() => Account)
   async updateAccount(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('id') id: string,
     @Args('input') input: UpdateAccountInput,
   ): Promise<Account> {
@@ -52,7 +53,7 @@ export class AccountsResolver {
 
   @Mutation(() => Account)
   async adjustAccountBalance(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('input') input: AdjustBalanceInput,
   ): Promise<Account> {
     return this.accountsService.adjustBalance(user.id, input);
@@ -60,7 +61,7 @@ export class AccountsResolver {
 
   @Mutation(() => Boolean)
   async deleteAccount(
-    @CurrentUser() user: any,
+    @CurrentUser() user: User,
     @Args('id') id: string,
   ): Promise<boolean> {
     return this.accountsService.delete(id, user.id);

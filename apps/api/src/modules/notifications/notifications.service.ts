@@ -1,22 +1,30 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../services/prisma.service';
-import { Notification, NotificationConnection, NotificationsArgs } from './dto/notification.dto';
+import {
+  Notification,
+  NotificationConnection,
+  NotificationsArgs,
+} from './dto/notification.dto';
 import { PaginationUtil } from '../../common/utils/pagination.util';
+import { Prisma } from '@finnit/database';
 
 @Injectable()
 export class NotificationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findMany(userId: string, args: NotificationsArgs): Promise<NotificationConnection> {
-    const where: any = { userId };
-    
+  async findMany(
+    userId: string,
+    args: NotificationsArgs,
+  ): Promise<NotificationConnection> {
+    const where: Prisma.NotificationWhereInput = { userId };
+
     if (args.status) {
       where.status = args.status;
     }
 
     const limit = args.first || 20;
-    let cursor: any = undefined;
-    
+    let cursor: Prisma.NotificationWhereInput | undefined = undefined;
+
     if (args.after) {
       const decodedCursor = PaginationUtil.decodeCursor(args.after);
       cursor = { id: { gt: decodedCursor } };
@@ -31,7 +39,7 @@ export class NotificationsService {
     const totalCount = await this.prisma.notification.count({ where });
 
     return PaginationUtil.createConnection(
-      notifications.map(this.mapNotification),
+      notifications.map((notification) => this.mapNotification(notification)),
       args,
       totalCount,
       (notification) => PaginationUtil.encodeCursor(notification.id),
@@ -56,7 +64,9 @@ export class NotificationsService {
     return true;
   }
 
-  private mapNotification(notification: any): Notification {
+  private mapNotification(
+    notification: Prisma.NotificationGetPayload<Record<string, never>>,
+  ): Notification {
     return {
       id: notification.id,
       userId: notification.userId,
@@ -64,10 +74,10 @@ export class NotificationsService {
       title: notification.title,
       message: notification.message,
       status: notification.status,
-      scheduledAt: notification.scheduledAt,
-      sentAt: notification.sentAt,
-      relatedEntityId: notification.relatedEntityId,
-      relatedEntityType: notification.relatedEntityType,
+      scheduledAt: notification.scheduledAt || undefined,
+      sentAt: notification.sentAt || undefined,
+      relatedEntityId: notification.relatedEntityId || undefined,
+      relatedEntityType: notification.relatedEntityType || undefined,
       createdAt: notification.createdAt,
     };
   }

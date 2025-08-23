@@ -12,12 +12,13 @@ import {
   PayoffStrategyInput,
   DebtPayment,
 } from './dto/debt.dto';
-import { 
-  NotFoundError, 
-  ValidationError, 
-  DebtOverpaymentError 
+import {
+  NotFoundError,
+  ValidationError,
+  DebtOverpaymentError,
 } from '../../common/exceptions/graphql-error.exception';
 import { PaginationUtil } from '../../common/utils/pagination.util';
+import { Prisma } from '@finnit/database';
 
 @Injectable()
 export class DebtsService {
@@ -53,7 +54,7 @@ export class DebtsService {
   }
 
   async findMany(userId: string, args: DebtsArgs): Promise<DebtConnection> {
-    const where: any = { userId };
+    const where: Prisma.DebtWhereInput = { userId };
 
     if (args.kind) {
       where.kind = args.kind;
@@ -61,7 +62,7 @@ export class DebtsService {
 
     // Handle cursor pagination
     const limit = args.first || args.last || 20;
-    let cursor: any = undefined;
+    let cursor: Prisma.DebtWhereInput | undefined = undefined;
 
     if (args.after) {
       const decodedCursor = PaginationUtil.decodeCursor(args.after);
@@ -85,10 +86,13 @@ export class DebtsService {
     const totalCount = await this.prisma.debt.count({ where });
 
     const mappedDebts = await Promise.all(
-      debts.map(async (debt) => {
-        const totalPaid = debt.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+      debts.map((debt) => {
+        const totalPaid = debt.payments.reduce(
+          (sum, payment) => sum + Number(payment.amount),
+          0,
+        );
         return this.mapDebt(debt, debt.payments, totalPaid);
-      })
+      }),
     );
 
     return PaginationUtil.createConnection(
@@ -113,11 +117,18 @@ export class DebtsService {
       throw new NotFoundError('Debt not found');
     }
 
-    const totalPaid = debt.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+    const totalPaid = debt.payments.reduce(
+      (sum, payment) => sum + Number(payment.amount),
+      0,
+    );
     return this.mapDebt(debt, debt.payments, totalPaid);
   }
 
-  async update(id: string, userId: string, input: UpdateDebtInput): Promise<Debt> {
+  async update(
+    id: string,
+    userId: string,
+    input: UpdateDebtInput,
+  ): Promise<Debt> {
     const existingDebt = await this.prisma.debt.findFirst({
       where: { id, userId },
       include: { payments: true },
@@ -144,7 +155,10 @@ export class DebtsService {
       include: { payments: true },
     });
 
-    const totalPaid = updatedDebt.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+    const totalPaid = updatedDebt.payments.reduce(
+      (sum, payment) => sum + Number(payment.amount),
+      0,
+    );
     return this.mapDebt(updatedDebt, updatedDebt.payments, totalPaid);
   }
 
@@ -169,7 +183,10 @@ export class DebtsService {
     return true;
   }
 
-  async createPayment(userId: string, input: CreateDebtPaymentInput): Promise<DebtPayment> {
+  async createPayment(
+    userId: string,
+    input: CreateDebtPaymentInput,
+  ): Promise<DebtPayment> {
     const debt = await this.prisma.debt.findFirst({
       where: { id: input.debtId, userId },
       include: { payments: true },
@@ -189,11 +206,16 @@ export class DebtsService {
     }
 
     // Check if payment would exceed remaining debt
-    const totalPaid = debt.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+    const totalPaid = debt.payments.reduce(
+      (sum, payment) => sum + Number(payment.amount),
+      0,
+    );
     const remainingBalance = Number(debt.principal) - totalPaid;
 
     if (input.amount > remainingBalance) {
-      throw new DebtOverpaymentError(`Payment amount (${input.amount}) exceeds remaining debt balance (${remainingBalance})`);
+      throw new DebtOverpaymentError(
+        `Payment amount (${input.amount}) exceeds remaining debt balance (${remainingBalance})`,
+      );
     }
 
     const payment = await this.prisma.debtPayment.create({
@@ -223,16 +245,25 @@ export class DebtsService {
 
     for (const debt of debts) {
       const principal = Number(debt.principal);
-      const paidAmount = debt.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+      const paidAmount = debt.payments.reduce(
+        (sum, payment) => sum + Number(payment.amount),
+        0,
+      );
       const remainingBalance = principal - paidAmount;
-      const monthlyPayment = debt.minPaymentAmount ? Number(debt.minPaymentAmount) : 0;
+      const monthlyPayment = debt.minPaymentAmount
+        ? Number(debt.minPaymentAmount)
+        : 0;
 
       totalDebt += principal;
       totalPaid += paidAmount;
       totalMonthlyPayments += monthlyPayment;
 
       if (remainingBalance > 0 && monthlyPayment > 0) {
-        const projection = this.calculatePayoffProjection(debt, remainingBalance, monthlyPayment);
+        const projection = this.calculatePayoffProjection(
+          debt,
+          remainingBalance,
+          monthlyPayment,
+        );
         payoffProjections.push(projection);
       }
     }
@@ -242,13 +273,18 @@ export class DebtsService {
       totalPaid,
       totalRemaining: totalDebt - totalPaid,
       totalMonthlyPayments,
-      payoffProjections: payoffProjections.sort((a, b) => a.payoffDate.getTime() - b.payoffDate.getTime()),
+      payoffProjections: payoffProjections.sort(
+        (a, b) => a.payoffDate.getTime() - b.payoffDate.getTime(),
+      ),
     };
   }
 
-  async calculatePayoffStrategy(userId: string, input: PayoffStrategyInput): Promise<DebtPayoffProjection[]> {
+  async calculatePayoffStrategy(
+    userId: string,
+    input: PayoffStrategyInput,
+  ): Promise<DebtPayoffProjection[]> {
     const debts = await this.prisma.debt.findMany({
-      where: { 
+      where: {
         userId,
         id: { in: input.debtIds },
       },
@@ -260,19 +296,28 @@ export class DebtsService {
     }
 
     // Calculate remaining balances
-    const debtData = debts.map(debt => {
-      const paidAmount = debt.payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
-      const remainingBalance = Number(debt.principal) - paidAmount;
-      const monthlyPayment = debt.minPaymentAmount ? Number(debt.minPaymentAmount) : 0;
-      const interestRate = debt.interestRateAnnual ? Number(debt.interestRateAnnual) / 100 / 12 : 0;
+    const debtData = debts
+      .map((debt) => {
+        const paidAmount = debt.payments.reduce(
+          (sum, payment) => sum + Number(payment.amount),
+          0,
+        );
+        const remainingBalance = Number(debt.principal) - paidAmount;
+        const monthlyPayment = debt.minPaymentAmount
+          ? Number(debt.minPaymentAmount)
+          : 0;
+        const interestRate = debt.interestRateAnnual
+          ? Number(debt.interestRateAnnual) / 100 / 12
+          : 0;
 
-      return {
-        debt,
-        remainingBalance,
-        monthlyPayment,
-        interestRate,
-      };
-    }).filter(d => d.remainingBalance > 0);
+        return {
+          debt,
+          remainingBalance,
+          monthlyPayment,
+          interestRate,
+        };
+      })
+      .filter((d) => d.remainingBalance > 0);
 
     // Sort by strategy
     if (input.strategy === 'avalanche') {
@@ -285,12 +330,21 @@ export class DebtsService {
     const projections: DebtPayoffProjection[] = [];
     let remainingExtraPayment = input.extraPayment;
 
-    for (const { debt, remainingBalance, monthlyPayment, interestRate } of debtData) {
+    for (const {
+      debt,
+      remainingBalance,
+      monthlyPayment,
+      interestRate,
+    } of debtData) {
       const totalPayment = monthlyPayment + remainingExtraPayment;
-      
+
       // Calculate payoff time and interest
-      const months = this.calculateMonthsToPayoff(remainingBalance, totalPayment, interestRate);
-      const totalInterest = (totalPayment * months) - remainingBalance;
+      const months = this.calculateMonthsToPayoff(
+        remainingBalance,
+        totalPayment,
+        interestRate,
+      );
+      const totalInterest = totalPayment * months - remainingBalance;
       const payoffDate = new Date();
       payoffDate.setMonth(payoffDate.getMonth() + Math.ceil(months));
 
@@ -310,7 +364,11 @@ export class DebtsService {
     return projections;
   }
 
-  private calculateMonthsToPayoff(balance: number, payment: number, monthlyInterestRate: number): number {
+  private calculateMonthsToPayoff(
+    balance: number,
+    payment: number,
+    monthlyInterestRate: number,
+  ): number {
     if (monthlyInterestRate === 0) {
       return balance / payment;
     }
@@ -319,17 +377,33 @@ export class DebtsService {
       return 999; // Payment is too low to cover interest
     }
 
-    return Math.log(1 + (balance * monthlyInterestRate) / payment) / Math.log(1 + monthlyInterestRate);
+    return (
+      Math.log(1 + (balance * monthlyInterestRate) / payment) /
+      Math.log(1 + monthlyInterestRate)
+    );
   }
 
-  private calculatePayoffProjection(debt: any, remainingBalance: number, monthlyPayment: number): DebtPayoffProjection {
-    const interestRate = debt.interestRateAnnual ? Number(debt.interestRateAnnual) / 100 / 12 : 0;
-    const months = this.calculateMonthsToPayoff(remainingBalance, monthlyPayment, interestRate);
-    
+  private calculatePayoffProjection(
+    debt: Prisma.DebtGetPayload<Record<string, never>>,
+    remainingBalance: number,
+    monthlyPayment: number,
+  ): DebtPayoffProjection {
+    const interestRate = debt.interestRateAnnual
+      ? Number(debt.interestRateAnnual) / 100 / 12
+      : 0;
+    const months = this.calculateMonthsToPayoff(
+      remainingBalance,
+      monthlyPayment,
+      interestRate,
+    );
+
     const payoffDate = new Date();
     payoffDate.setMonth(payoffDate.getMonth() + Math.ceil(months));
-    
-    const totalInterest = Math.max(0, (monthlyPayment * months) - remainingBalance);
+
+    const totalInterest = Math.max(
+      0,
+      monthlyPayment * months - remainingBalance,
+    );
 
     return {
       debtId: debt.id,
@@ -341,7 +415,11 @@ export class DebtsService {
     };
   }
 
-  private mapDebt(debt: any, payments: any[], totalPaid: number): Debt {
+  private mapDebt(
+    debt: Prisma.DebtGetPayload<Record<string, never>>,
+    payments: Prisma.DebtPaymentGetPayload<Record<string, never>>[],
+    totalPaid: number,
+  ): Debt {
     const remainingBalance = Number(debt.principal) - totalPaid;
 
     return {
@@ -350,19 +428,27 @@ export class DebtsService {
       name: debt.name,
       kind: debt.kind,
       principal: Number(debt.principal),
-      interestRateAnnual: debt.interestRateAnnual ? Number(debt.interestRateAnnual) : undefined,
-      minPaymentAmount: debt.minPaymentAmount ? Number(debt.minPaymentAmount) : undefined,
-      startDate: debt.startDate,
-      dueDate: debt.dueDate,
-      linkedAccountId: debt.linkedAccountId,
+      interestRateAnnual: debt.interestRateAnnual
+        ? Number(debt.interestRateAnnual)
+        : undefined,
+      minPaymentAmount: debt.minPaymentAmount
+        ? Number(debt.minPaymentAmount)
+        : undefined,
+      startDate: debt.startDate || undefined,
+      dueDate: debt.dueDate || undefined,
+      linkedAccountId: debt.linkedAccountId || undefined,
       createdAt: debt.createdAt,
       remainingBalance: Math.max(0, remainingBalance),
       totalPaid,
-      monthlyPayment: debt.minPaymentAmount ? Number(debt.minPaymentAmount) : undefined,
+      monthlyPayment: debt.minPaymentAmount
+        ? Number(debt.minPaymentAmount)
+        : undefined,
     };
   }
 
-  private mapDebtPayment(payment: any): DebtPayment {
+  private mapDebtPayment(
+    payment: Prisma.DebtPaymentGetPayload<Record<string, never>>,
+  ): DebtPayment {
     return {
       id: payment.id,
       debtId: payment.debtId,

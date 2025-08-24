@@ -1,17 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../services/prisma.service';
-import type {
-  Transfer as PrismaTransfer,
-  Transaction as PrismaTransaction,
-} from '@finnit/database';
-import { Transfer, CreateTransferInput } from './dto/transfer.dto';
+
+import { CreateTransferInput } from './dto/transfer.dto';
+import { Transfer } from '../../common/types/models/transfer.model';
 import {
   NotFoundError,
   ValidationError,
   InsufficientBalanceError,
   TransferSameAccountError,
 } from '../../common/exceptions/graphql-error.exception';
-import { TransactionType, TransactionSource } from '@finnit/database';
+import {
+  TransactionType,
+  TransactionSource,
+  AccountType,
+} from '@finnit/database';
 
 @Injectable()
 export class TransfersService {
@@ -136,8 +138,16 @@ export class TransfersService {
         fromTxn: { userId },
       },
       include: {
-        fromTxn: true,
-        toTxn: true,
+        fromTxn: {
+          include: {
+            account: true,
+          },
+        },
+        toTxn: {
+          include: {
+            account: true,
+          },
+        },
       },
     });
 
@@ -154,8 +164,16 @@ export class TransfersService {
         fromTxn: { userId },
       },
       include: {
-        fromTxn: true,
-        toTxn: true,
+        fromTxn: {
+          include: {
+            account: true,
+          },
+        },
+        toTxn: {
+          include: {
+            account: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -163,53 +181,143 @@ export class TransfersService {
     return transfers.map((transfer) => this.mapTransfer(transfer));
   }
 
-  private mapTransfer(
-    transfer: PrismaTransfer & {
-      fromTxn: PrismaTransaction;
-      toTxn: PrismaTransaction;
-    },
-  ): Transfer {
-    return {
-      id: transfer.id,
-      fromTxnId: transfer.fromTxnId,
-      toTxnId: transfer.toTxnId,
-      amount: Number(transfer.amount),
-      createdAt: transfer.createdAt,
+  private mapTransfer(transfer: unknown): Transfer {
+    const t = transfer as {
+      id: string;
+      fromTxnId: string;
+      toTxnId: string;
+      amount: number;
+      createdAt: Date;
       fromTxn: {
-        id: transfer.fromTxn.id,
-        userId: transfer.fromTxn.userId,
-        accountId: transfer.fromTxn.accountId,
-        categoryId: transfer.fromTxn.categoryId ?? undefined,
-        type: transfer.fromTxn.type,
-        amount: Number(transfer.fromTxn.amount),
-        currency: transfer.fromTxn.currency,
-        txnDate: transfer.fromTxn.txnDate,
-        description: transfer.fromTxn.description ?? undefined,
-        merchantName: transfer.fromTxn.merchantName ?? undefined,
-        isPending: transfer.fromTxn.isPending,
-        isRecurringInstance: transfer.fromTxn.isRecurringInstance,
-        source: transfer.fromTxn.source,
-        externalId: transfer.fromTxn.externalId ?? undefined,
-        createdAt: transfer.fromTxn.createdAt,
-        updatedAt: transfer.fromTxn.updatedAt,
+        id: string;
+        userId: string;
+        accountId: string;
+        categoryId: string | null;
+        type: string;
+        amount: number;
+        currency: string;
+        txnDate: Date;
+        description: string | null;
+        merchantName: string | null;
+        isPending: boolean;
+        isRecurringInstance: boolean;
+        source: string;
+        externalId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        account: {
+          id: string;
+          userId: string;
+          type: string;
+          name: string;
+          currency: string;
+          balanceCurrent: number;
+          metadata: Record<string, unknown> | null;
+          archived: boolean;
+          createdAt: Date;
+          updatedAt: Date;
+        } | null;
+      };
+      toTxn: {
+        id: string;
+        userId: string;
+        accountId: string;
+        categoryId: string | null;
+        type: string;
+        amount: number;
+        currency: string;
+        txnDate: Date;
+        description: string | null;
+        merchantName: string | null;
+        isPending: boolean;
+        isRecurringInstance: boolean;
+        source: string;
+        externalId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        account: {
+          id: string;
+          userId: string;
+          type: string;
+          name: string;
+          currency: string;
+          balanceCurrent: number;
+          metadata: Record<string, unknown> | null;
+          archived: boolean;
+          createdAt: Date;
+          updatedAt: Date;
+        } | null;
+      };
+    };
+    return {
+      id: t.id,
+      fromTxnId: t.fromTxnId,
+      toTxnId: t.toTxnId,
+      amount: Number(t.amount),
+      createdAt: t.createdAt,
+      fromTxn: {
+        id: t.fromTxn.id,
+        userId: t.fromTxn.userId,
+        accountId: t.fromTxn.accountId,
+        categoryId: t.fromTxn.categoryId ?? undefined,
+        type: t.fromTxn.type,
+        amount: Number(t.fromTxn.amount),
+        currency: t.fromTxn.currency,
+        txnDate: t.fromTxn.txnDate,
+        description: t.fromTxn.description ?? undefined,
+        merchantName: t.fromTxn.merchantName ?? undefined,
+        isPending: t.fromTxn.isPending,
+        isRecurringInstance: t.fromTxn.isRecurringInstance,
+        source: t.fromTxn.source,
+        externalId: t.fromTxn.externalId ?? undefined,
+        createdAt: t.fromTxn.createdAt,
+        updatedAt: t.fromTxn.updatedAt,
+        account: t.fromTxn.account
+          ? {
+              id: t.fromTxn.account.id,
+              userId: t.fromTxn.account.userId,
+              type: t.fromTxn.account.type as AccountType,
+              name: t.fromTxn.account.name,
+              currency: t.fromTxn.account.currency,
+              balanceCurrent: Number(t.fromTxn.account.balanceCurrent),
+              metadata: t.fromTxn.account.metadata || undefined,
+              archived: t.fromTxn.account.archived,
+              createdAt: t.fromTxn.account.createdAt,
+              updatedAt: t.fromTxn.account.updatedAt,
+            }
+          : undefined,
       },
       toTxn: {
-        id: transfer.toTxn.id,
-        userId: transfer.toTxn.userId,
-        accountId: transfer.toTxn.accountId,
-        categoryId: transfer.toTxn.categoryId ?? undefined,
-        type: transfer.toTxn.type,
-        amount: Number(transfer.toTxn.amount),
-        currency: transfer.toTxn.currency,
-        txnDate: transfer.toTxn.txnDate,
-        description: transfer.toTxn.description ?? undefined,
-        merchantName: transfer.toTxn.merchantName ?? undefined,
-        isPending: transfer.toTxn.isPending,
-        isRecurringInstance: transfer.toTxn.isRecurringInstance,
-        source: transfer.toTxn.source,
-        externalId: transfer.toTxn.externalId ?? undefined,
-        createdAt: transfer.toTxn.createdAt,
-        updatedAt: transfer.toTxn.updatedAt,
+        id: t.toTxn.id,
+        userId: t.toTxn.userId,
+        accountId: t.toTxn.accountId,
+        categoryId: t.toTxn.categoryId ?? undefined,
+        type: t.toTxn.type,
+        amount: Number(t.toTxn.amount),
+        currency: t.toTxn.currency,
+        txnDate: t.toTxn.txnDate,
+        description: t.toTxn.description ?? undefined,
+        merchantName: t.toTxn.merchantName ?? undefined,
+        isPending: t.toTxn.isPending,
+        isRecurringInstance: t.toTxn.isRecurringInstance,
+        source: t.toTxn.source,
+        externalId: t.toTxn.externalId ?? undefined,
+        createdAt: t.toTxn.createdAt,
+        updatedAt: t.toTxn.updatedAt,
+        account: t.toTxn.account
+          ? {
+              id: t.toTxn.account.id,
+              userId: t.toTxn.account.userId,
+              type: t.toTxn.account.type as AccountType,
+              name: t.toTxn.account.name,
+              currency: t.toTxn.account.currency,
+              balanceCurrent: Number(t.toTxn.account.balanceCurrent),
+              metadata: t.toTxn.account.metadata || undefined,
+              archived: t.toTxn.account.archived,
+              createdAt: t.toTxn.account.createdAt,
+              updatedAt: t.toTxn.account.updatedAt,
+            }
+          : undefined,
       },
     };
   }

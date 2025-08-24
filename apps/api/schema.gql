@@ -6,9 +6,10 @@ type Account {
   archived: Boolean!
   balanceCurrent: Float!
   createdAt: DateTime!
+  creditCardTerms: CreditCardTerms
   currency: String!
   id: String!
-  metadata: String
+  metadata: AccountMetadata
   name: String!
   type: AccountType!
   updatedAt: DateTime!
@@ -29,6 +30,28 @@ type AccountEdge {
   node: Account!
 }
 
+type AccountMetadata {
+  accountNumber: String
+  bank: String
+  color: String
+  creditLimit: Float
+  icon: String
+  interestRate: Float
+  last4: String
+  provider: String
+}
+
+input AccountMetadataInput {
+  accountNumber: String
+  bank: String
+  color: String
+  creditLimit: Float
+  icon: String
+  interestRate: Float
+  last4: String
+  provider: String
+}
+
 """Account type"""
 enum AccountType {
   cash
@@ -45,12 +68,25 @@ input AdjustBalanceInput {
 }
 
 type Attachment {
+  """Additional metadata in JSON format"""
   extra: String
+
+  """File size in bytes"""
   fileSize: Float
+
+  """MIME type of the file (e.g., image/jpeg, application/pdf)"""
   fileType: String!
+
+  """URL where the file is stored"""
   fileUrl: String!
+
+  """Unique identifier for the attachment"""
   id: String!
+
+  """ID of the transaction this attachment belongs to"""
   transactionId: String!
+
+  """When the file was uploaded"""
   uploadedAt: DateTime!
 }
 
@@ -130,7 +166,7 @@ type CashFlowProjection {
 type Category {
   children: [Category!]
   createdAt: DateTime!
-  id: ID!
+  id: String!
   isDefault: Boolean!
   name: String!
   parent: Category
@@ -157,7 +193,7 @@ type CategoryUsage {
 input CreateAccountInput {
   currency: String!
   initialBalance: Float!
-  metadata: String
+  metadata: AccountMetadataInput
   name: String!
   type: AccountType!
 }
@@ -227,6 +263,16 @@ input CreateTransferInput {
   fromAccountId: String!
   toAccountId: String!
   txnDate: DateTime
+}
+
+type CreditCardTerms {
+  accountId: String!
+  gracePeriodDays: Float
+  interestRateAnnual: Float
+  minPaymentRule: String
+  paymentDueDay: Float!
+  statementDay: Float!
+  updatedAt: DateTime!
 }
 
 """
@@ -482,8 +528,11 @@ type TokenValidationResult {
 }
 
 type Transaction {
+  account: Account
   accountId: String!
   amount: Float!
+  attachments: [Attachment!]
+  category: Category
   categoryId: String
   createdAt: DateTime!
   currency: String!
@@ -493,9 +542,9 @@ type Transaction {
   isPending: Boolean!
   isRecurringInstance: Boolean!
   merchantName: String
-  source: TransactionSource!
+  source: String!
   txnDate: DateTime!
-  type: TransactionType!
+  type: String!
   updatedAt: DateTime!
   userId: String!
 }
@@ -550,7 +599,7 @@ type Transfer {
 
 input UpdateAccountInput {
   archived: Boolean
-  metadata: String
+  metadata: AccountMetadataInput
   name: String
 }
 

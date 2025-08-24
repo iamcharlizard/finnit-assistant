@@ -9,36 +9,6 @@ import {
 } from '@nestjs/graphql';
 import { IsString, IsOptional, IsNumber, IsDateString } from 'class-validator';
 
-@ObjectType()
-export class Category {
-  @Field(() => ID)
-  id: string;
-
-  @Field({ nullable: true })
-  userId?: string;
-
-  @Field({ nullable: true })
-  parentId?: string;
-
-  @Field()
-  name: string;
-
-  @Field()
-  isDefault: boolean;
-
-  @Field({ nullable: true })
-  sortOrder?: number;
-
-  @Field()
-  createdAt: Date;
-
-  @Field(() => [Category], { nullable: true })
-  children?: Category[];
-
-  @Field(() => Category, { nullable: true })
-  parent?: Category;
-}
-
 @InputType()
 export class CreateCategoryInput {
   @Field({ nullable: true })

@@ -1,4 +1,12 @@
-import { ObjectType, Field } from '@nestjs/graphql';
+import { ObjectType, Field, Int } from '@nestjs/graphql';
+import { Account } from './account.model';
+import { Category } from './category.model';
+import { Attachment } from './attachment.model';
+import {
+  Edge,
+  Connection,
+  PageInfo,
+} from '../../../common/types/pagination.types';
 
 @ObjectType()
 export class Transaction {
@@ -49,4 +57,34 @@ export class Transaction {
 
   @Field()
   updatedAt: Date;
+
+  @Field(() => Account, { nullable: true })
+  account?: Account;
+
+  @Field(() => Category, { nullable: true })
+  category?: Category;
+
+  @Field(() => [Attachment], { nullable: true })
+  attachments?: Attachment[];
+}
+
+@ObjectType()
+export class TransactionEdge implements Edge<Transaction> {
+  @Field(() => Transaction)
+  node: Transaction;
+
+  @Field()
+  cursor: string;
+}
+
+@ObjectType()
+export class TransactionConnection implements Connection<Transaction> {
+  @Field(() => [TransactionEdge])
+  edges: TransactionEdge[];
+
+  @Field(() => PageInfo)
+  pageInfo: PageInfo;
+
+  @Field(() => Int)
+  totalCount: number;
 }

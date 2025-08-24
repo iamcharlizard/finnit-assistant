@@ -1,13 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../services/prisma.service';
 import {
-  Transaction,
   CreateTransactionInput,
   UpdateTransactionInput,
-  TransactionConnection,
   TransactionsArgs,
   TransactionFilters,
-  Attachment,
   CreateAttachmentInput,
 } from './dto/transaction.dto';
 import {
@@ -17,6 +14,12 @@ import {
 import { PaginationUtil } from '../../common/utils/pagination.util';
 import { TransactionSource } from '@finnit/database';
 import { Prisma } from '@finnit/database';
+import { Attachment } from '../../common/types/models/attachment.model';
+import {
+  Transaction,
+  TransactionConnection,
+} from '../../common/types/models/transaction.model';
+import { AccountMetadata } from '../../common/types/models/account-metadata.model';
 
 @Injectable()
 export class TransactionsService {
@@ -121,6 +124,11 @@ export class TransactionsService {
       where: { ...where, ...cursor } as Prisma.TransactionWhereInput,
       take: limit,
       orderBy: { txnDate: 'desc' },
+      include: {
+        account: true,
+        category: true,
+        attachments: true,
+      },
     });
 
     const totalCount = await this.prisma.transaction.count({ where });
@@ -644,6 +652,67 @@ export class TransactionsService {
       externalId: transaction.externalId || undefined,
       createdAt: transaction.createdAt,
       updatedAt: transaction.updatedAt,
+    };
+  }
+
+  private mapTransactionWithRelations(
+    transaction: Prisma.TransactionGetPayload<{
+      include: { account: true; category: true; attachments: true };
+    }>,
+  ): Transaction {
+    return {
+      id: transaction.id,
+      userId: transaction.userId,
+      accountId: transaction.accountId,
+      categoryId: transaction.categoryId || undefined,
+      type: transaction.type,
+      amount: Number(transaction.amount),
+      currency: transaction.currency,
+      txnDate: transaction.txnDate,
+      description: transaction.description || undefined,
+      merchantName: transaction.merchantName || undefined,
+      isPending: transaction.isPending,
+      isRecurringInstance: transaction.isRecurringInstance,
+      source: transaction.source,
+      externalId: transaction.externalId || undefined,
+      createdAt: transaction.createdAt,
+      updatedAt: transaction.updatedAt,
+      account: transaction.account
+        ? {
+            id: transaction.account.id,
+            userId: transaction.account.userId,
+            type: transaction.account.type,
+            name: transaction.account.name,
+            currency: transaction.account.currency,
+            balanceCurrent: Number(transaction.account.balanceCurrent),
+            metadata: transaction.account.metadata as AccountMetadata,
+            archived: transaction.account.archived,
+            createdAt: transaction.account.createdAt,
+            updatedAt: transaction.account.updatedAt,
+          }
+        : undefined,
+      category: transaction.category
+        ? {
+            id: transaction.category.id,
+            userId: transaction.category.userId || undefined,
+            parentId: transaction.category.parentId || undefined,
+            name: transaction.category.name,
+            isDefault: transaction.category.isDefault,
+            sortOrder: transaction.category.sortOrder || undefined,
+            createdAt: transaction.category.createdAt,
+          }
+        : undefined,
+      attachments:
+        transaction.attachments?.map((attachment) => ({
+          id: attachment.id,
+          transactionId: attachment.transactionId,
+          fileUrl: attachment.fileUrl,
+          fileType: attachment.fileType,
+          fileSize: attachment.fileSize || undefined,
+          extra:
+            typeof attachment.extra === 'string' ? attachment.extra : undefined,
+          uploadedAt: attachment.uploadedAt,
+        })) || [],
     };
   }
 

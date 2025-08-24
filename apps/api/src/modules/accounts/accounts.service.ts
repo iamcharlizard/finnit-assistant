@@ -15,6 +15,10 @@ import { PaginationUtil } from '../../common/utils/pagination.util';
 import { TransactionType, TransactionSource } from '@finnit/database';
 import { Prisma } from '@finnit/database';
 import { Account } from '../../common/types/models/account.model';
+import {
+  AccountMetadata,
+  AccountMetadataInput,
+} from '../../common/types/models/account-metadata.model';
 
 @Injectable()
 export class AccountsService {
@@ -28,7 +32,8 @@ export class AccountsService {
         name: input.name,
         currency: input.currency,
         balanceCurrent: input.initialBalance,
-        metadata: input.metadata,
+        // @ts-expect-error - Prisma JSON type compatibility
+        metadata: this.convertMetadataToPrisma(input.metadata),
       },
     });
 
@@ -99,13 +104,16 @@ export class AccountsService {
   async findById(id: string, userId: string): Promise<Account> {
     const account = await this.prisma.account.findFirst({
       where: { id, userId },
+      include: {
+        creditCardTerms: true,
+      },
     });
 
     if (!account) {
       throw new NotFoundError('Account not found');
     }
 
-    return this.mapAccount(account);
+    return this.mapAccountWithCreditCardTerms(account);
   }
 
   async update(
@@ -123,7 +131,11 @@ export class AccountsService {
 
     const updatedAccount = await this.prisma.account.update({
       where: { id },
-      data: input,
+      data: {
+        ...input,
+        // @ts-expect-error - Prisma JSON type compatibility
+        metadata: this.convertMetadataToPrisma(input.metadata),
+      },
     });
 
     return this.mapAccount(updatedAccount);
@@ -197,6 +209,13 @@ export class AccountsService {
     return true;
   }
 
+  private convertMetadataToPrisma(
+    metadata?: AccountMetadataInput,
+  ): Record<string, unknown> | undefined {
+    if (!metadata) return undefined;
+    return metadata as Record<string, unknown>;
+  }
+
   private mapAccount(
     account: Prisma.AccountGetPayload<Record<string, never>>,
   ): Account {
@@ -207,10 +226,47 @@ export class AccountsService {
       name: account.name,
       currency: account.currency,
       balanceCurrent: Number(account.balanceCurrent),
-      metadata: account.metadata as string | undefined,
+      metadata: account.metadata
+        ? (account.metadata as AccountMetadata)
+        : undefined,
       archived: account.archived,
       createdAt: account.createdAt,
       updatedAt: account.updatedAt,
+    };
+  }
+
+  private mapAccountWithCreditCardTerms(
+    account: Prisma.AccountGetPayload<{
+      include: { creditCardTerms: true };
+    }>,
+  ): Account {
+    return {
+      id: account.id,
+      userId: account.userId,
+      type: account.type,
+      name: account.name,
+      currency: account.currency,
+      balanceCurrent: Number(account.balanceCurrent),
+      metadata: account.metadata
+        ? (account.metadata as AccountMetadata)
+        : undefined,
+      archived: account.archived,
+      createdAt: account.createdAt,
+      updatedAt: account.updatedAt,
+      creditCardTerms: account.creditCardTerms
+        ? {
+            accountId: account.creditCardTerms.accountId,
+            statementDay: account.creditCardTerms.statementDay,
+            paymentDueDay: account.creditCardTerms.paymentDueDay,
+            interestRateAnnual: account.creditCardTerms.interestRateAnnual
+              ? Number(account.creditCardTerms.interestRateAnnual)
+              : undefined,
+            minPaymentRule: account.creditCardTerms.minPaymentRule || undefined,
+            gracePeriodDays:
+              account.creditCardTerms.gracePeriodDays || undefined,
+            updatedAt: account.creditCardTerms.updatedAt,
+          }
+        : undefined,
     };
   }
 }

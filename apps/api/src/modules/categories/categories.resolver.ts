@@ -2,7 +2,6 @@ import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import {
-  Category,
   CreateCategoryInput,
   UpdateCategoryInput,
   CategoryUsage,
@@ -12,6 +11,7 @@ import {
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../../common/types/models/user.model';
+import { Category } from '../../common/types/models/category.model';
 
 @Resolver(() => Category)
 @UseGuards(JwtAuthGuard)

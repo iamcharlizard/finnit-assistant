@@ -1,4 +1,4 @@
-import { ObjectType, Field, InputType } from '@nestjs/graphql';
+import { InputType, Field } from '@nestjs/graphql';
 import {
   IsString,
   IsNumber,
@@ -6,31 +6,6 @@ import {
   IsOptional,
   IsDateString,
 } from 'class-validator';
-import { Transaction } from '../../transactions/dto/transaction.dto';
-
-@ObjectType()
-export class Transfer {
-  @Field()
-  id: string;
-
-  @Field()
-  fromTxnId: string;
-
-  @Field()
-  toTxnId: string;
-
-  @Field()
-  amount: number;
-
-  @Field()
-  createdAt: Date;
-
-  @Field(() => Transaction)
-  fromTxn: Transaction;
-
-  @Field(() => Transaction)
-  toTxn: Transaction;
-}
 
 @InputType()
 export class CreateTransferInput {

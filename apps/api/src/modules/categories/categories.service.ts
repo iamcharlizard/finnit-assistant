@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../services/prisma.service';
 import {
-  Category,
   CreateCategoryInput,
   UpdateCategoryInput,
   CategoryUsage,
@@ -11,6 +10,7 @@ import {
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import { Prisma } from '@finnit/database';
+import { Category } from '../../common/types/models/category.model';
 
 type CategoryWithRelations = Prisma.CategoryGetPayload<{
   include: {

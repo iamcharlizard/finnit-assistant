@@ -16,6 +16,7 @@ import {
 import { AccountType } from '@finnit/database';
 // Importamos el tipo para TypeScript, pero definimos el modelo aquí para GraphQL
 import { Account } from '../../../common/types/models/account.model';
+import { AccountMetadataInput } from '../../../common/types/models/account-metadata.model';
 
 // ============================================================================
 // CONNECTION TYPES
@@ -60,9 +61,9 @@ export class CreateAccountInput {
   @IsNumber()
   initialBalance: number;
 
-  @Field({ nullable: true })
+  @Field(() => AccountMetadataInput, { nullable: true })
   @IsOptional()
-  metadata?: string;
+  metadata?: AccountMetadataInput;
 }
 
 @InputType()
@@ -77,9 +78,9 @@ export class UpdateAccountInput {
   @IsBoolean()
   archived?: boolean;
 
-  @Field({ nullable: true })
+  @Field(() => AccountMetadataInput, { nullable: true })
   @IsOptional()
-  metadata?: string;
+  metadata?: AccountMetadataInput;
 }
 
 @InputType()

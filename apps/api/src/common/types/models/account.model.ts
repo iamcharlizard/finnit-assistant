@@ -1,5 +1,7 @@
 import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
 import { AccountType } from '@finnit/database';
+import { AccountMetadata } from './account-metadata.model';
+import { CreditCardTerms } from './credit-card-terms.model';
 
 registerEnumType(AccountType, {
   name: 'AccountType',
@@ -26,8 +28,8 @@ export class Account {
   @Field()
   balanceCurrent: number;
 
-  @Field({ nullable: true })
-  metadata?: string;
+  @Field(() => AccountMetadata, { nullable: true })
+  metadata?: AccountMetadata;
 
   @Field()
   archived: boolean;
@@ -37,4 +39,7 @@ export class Account {
 
   @Field()
   updatedAt: Date;
+
+  @Field(() => CreditCardTerms, { nullable: true })
+  creditCardTerms?: CreditCardTerms;
 }

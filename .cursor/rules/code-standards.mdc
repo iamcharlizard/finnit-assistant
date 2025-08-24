@@ -1,3 +1,6 @@
+---
+alwaysApply: true
+---
 # Code Standards
 
 ## Language Requirements
@@ -75,4 +78,4 @@
 - Include ARIA labels
 - Ensure keyboard navigation
 - Test with screen readers
-- Follow WCAG guidelines 
+- Follow WCAG guidelines

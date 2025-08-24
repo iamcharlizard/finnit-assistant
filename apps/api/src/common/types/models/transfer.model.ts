@@ -7,23 +7,20 @@ export class Transfer {
   id: string;
 
   @Field()
-  amount: number;
-
-  @Field()
   fromTxnId: string;
 
   @Field()
   toTxnId: string;
+
+  @Field()
+  amount: number;
+
+  @Field()
+  createdAt: Date;
 
   @Field(() => Transaction)
   fromTxn: Transaction;
 
   @Field(() => Transaction)
   toTxn: Transaction;
-
-  @Field({ nullable: true })
-  description?: string;
-
-  @Field()
-  createdAt: Date;
 }

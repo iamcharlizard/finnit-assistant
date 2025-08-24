@@ -1,5 +1,4 @@
 import {
-  ObjectType,
   Field,
   InputType,
   registerEnumType,
@@ -16,11 +15,6 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import {
-  Connection,
-  Edge,
-  PageInfo,
-} from '../../../common/types/pagination.types';
 import { TransactionType, TransactionSource } from '@finnit/database';
 
 registerEnumType(TransactionType, {
@@ -32,78 +26,6 @@ registerEnumType(TransactionSource, {
   name: 'TransactionSource',
   description: 'Transaction source',
 });
-
-@ObjectType()
-export class Transaction {
-  @Field()
-  id: string;
-
-  @Field()
-  userId: string;
-
-  @Field()
-  accountId: string;
-
-  @Field({ nullable: true })
-  categoryId?: string;
-
-  @Field(() => TransactionType)
-  type: TransactionType;
-
-  @Field()
-  amount: number;
-
-  @Field()
-  currency: string;
-
-  @Field()
-  txnDate: Date;
-
-  @Field({ nullable: true })
-  description?: string;
-
-  @Field({ nullable: true })
-  merchantName?: string;
-
-  @Field()
-  isPending: boolean;
-
-  @Field()
-  isRecurringInstance: boolean;
-
-  @Field(() => TransactionSource)
-  source: TransactionSource;
-
-  @Field({ nullable: true })
-  externalId?: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-}
-
-@ObjectType()
-export class TransactionEdge implements Edge<Transaction> {
-  @Field(() => Transaction)
-  node: Transaction;
-
-  @Field()
-  cursor: string;
-}
-
-@ObjectType()
-export class TransactionConnection implements Connection<Transaction> {
-  @Field(() => [TransactionEdge])
-  edges: TransactionEdge[];
-
-  @Field(() => PageInfo)
-  pageInfo: PageInfo;
-
-  @Field(() => Int)
-  totalCount: number;
-}
 
 @InputType()
 export class CreateTransactionInput {
@@ -255,30 +177,6 @@ export class TransactionsArgs {
   @Field(() => TransactionFilters, { nullable: true })
   @IsOptional()
   filters?: TransactionFilters;
-}
-
-@ObjectType()
-export class Attachment {
-  @Field()
-  id: string;
-
-  @Field()
-  transactionId: string;
-
-  @Field()
-  fileUrl: string;
-
-  @Field()
-  fileType: string;
-
-  @Field({ nullable: true })
-  fileSize?: number;
-
-  @Field({ nullable: true })
-  extra?: string;
-
-  @Field()
-  uploadedAt: Date;
 }
 
 @InputType()

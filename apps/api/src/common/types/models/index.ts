@@ -57,7 +57,11 @@ export { Transfer } from './transfer.model';
 // ============================================================================
 // ATTACHMENT MODELS
 // ============================================================================
-export { Attachment } from './attachment.model';
+export {
+  Attachment,
+  CreateAttachmentInput,
+  UpdateAttachmentInput,
+} from './attachment.model';
 
 // ============================================================================
 // REPORT MODELS

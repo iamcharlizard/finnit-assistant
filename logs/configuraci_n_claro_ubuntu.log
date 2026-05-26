@@ -1,0 +1,25 @@
+Los dos archivos están libres de errores TypeScript. Aquí está el resumen de lo implementado:
+
+---
+
+## Pantalla `configuraci_n_claro_ubuntu` — implementada
+
+### Archivos creados
+- `apps/finnit-app/screens/configuraci_n_claro_ubuntu.tsx` — screen completa
+- `apps/finnit-app/app/configuraci_n_claro_ubuntu.tsx` — route wrapper (solo re-export)
+
+### Estructura de la pantalla
+1. **TopAppBar** — "Finnit" con bell icon (existente)
+2. **Tarjeta de perfil** (FinnGlassView) — avatar circular con borde cian + glow, botón de edición, nombre/email, badges "Premium Member" y "Verified", CTA "Ver Portfolio"
+3. **Sección Cuenta** (GlassCard) — filas navegables: Perfil personal, Seguridad y privacidad, Notificaciones
+4. **Sección Preferencias** (GlassCard) — Moneda (cicla entre USD/EUR/MXN al tocar), toggle Modo oscuro (conectado a `setColorScheme`), Idioma estático
+5. **Sección Soporte** (GlassCard) — Centro de ayuda, Contactar soporte, badge de versión
+6. **Botón Cerrar sesión** — outline rojo, icono de logout
+7. **BottomNavBar** — `activeTab="settings"` (existente)
+
+### Decisiones de diseño
+- `FinnGlassView` para los cards (glassmorphism según DESIGN.md)
+- `FadeInUp` escalonado (0ms → 80ms → 160ms → 240ms → 320ms) para entradas
+- `setColorScheme` de nativewind para el toggle de dark mode funcional
+- Sin `useMemo`/`useCallback`/`React.memo` (React Compiler activo en SDK 56)
+- `// NW-FALLBACK` donde se usan `style={{}}` en lugar de `className`

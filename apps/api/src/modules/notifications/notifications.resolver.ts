@@ -65,6 +65,6 @@ export class NotificationsResolver {
     },
   })
   notificationAdded() {
-    return pubSub.asyncIterator('notificationAdded');
+    return pubSub.asyncIterableIterator('notificationAdded');
   }
 }

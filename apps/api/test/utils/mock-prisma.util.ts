@@ -136,7 +136,7 @@ export const resetAllMocks = (mockPrisma: MockPrismaService) => {
     if (typeof mockModel === 'object' && mockModel !== null) {
       Object.values(mockModel).forEach((mockMethod) => {
         if (typeof mockMethod === 'function') {
-          mockMethod.mockReset();
+          (mockMethod as jest.Mock).mockReset();
         }
       });
     }

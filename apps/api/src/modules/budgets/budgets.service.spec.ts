@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { BudgetsService } from './budgets.service';
 import { PrismaService } from '../../services/prisma.service';
 import { NotFoundError, ConflictError } from '../../common/exceptions/graphql-error.exception';
 
 describe('BudgetsService', () => {
   let service: BudgetsService;
-  let prismaService: jest.Mocked<PrismaService>;
+  let prismaService: DeepMockProxy<PrismaService>;
 
   const mockUserId = 'user-1';
   const mockBudgetId = 'budget-1';
@@ -34,40 +35,19 @@ describe('BudgetsService', () => {
   };
 
   beforeEach(async () => {
-    const mockPrismaService = {
-      budget: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        findFirst: jest.fn(),
-        findUnique: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-      },
-      bUDGET_CATEGORY: {
-        create: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-        upsert: jest.fn(),
-      },
-      transaction: {
-        aggregate: jest.fn(),
-        findMany: jest.fn(),
-      },
-      $transaction: jest.fn(),
-    };
+    prismaService = mockDeep<PrismaService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BudgetsService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: prismaService,
         },
       ],
     }).compile();
 
     service = module.get<BudgetsService>(BudgetsService);
-    prismaService = module.get(PrismaService);
 
     jest.clearAllMocks();
   });
@@ -172,7 +152,7 @@ describe('BudgetsService', () => {
 
     it('should create budget without total amount (null)', async () => {
       // Arrange
-      const inputWithoutTotal = { ...createInput };
+      const inputWithoutTotal: any = { ...createInput };
       delete inputWithoutTotal.amountTotal;
 
       prismaService.budget.findFirst.mockResolvedValue(null);
@@ -255,7 +235,7 @@ describe('BudgetsService', () => {
       prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
 
       // Act
-      const result = await service.findByMonth(mockUserId, 2024, 1);
+      const result = await (service as any).findByMonth(mockUserId, 2024, 1);
 
       // Assert
       expect(prismaService.budget.findFirst).toHaveBeenCalledWith({
@@ -271,7 +251,7 @@ describe('BudgetsService', () => {
       prismaService.budget.findFirst.mockResolvedValue(null);
 
       // Act
-      const result = await service.findByMonth(mockUserId, 2024, 12);
+      const result = await (service as any).findByMonth(mockUserId, 2024, 12);
 
       // Assert
       expect(result).toBeNull();
@@ -291,18 +271,18 @@ describe('BudgetsService', () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
       const updatedBudget = { ...mockBudget, amountTotal: updateInput.amountTotal };
-      
+
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          bUDGET_CATEGORY: { 
+          bUDGET_CATEGORY: {
             deleteMany: jest.fn(),
             createMany: jest.fn(),
           },
-          budget: { 
+          budget: {
             update: jest.fn().mockResolvedValue(updatedBudget),
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -323,13 +303,13 @@ describe('BudgetsService', () => {
     it('should handle category updates correctly', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
-      
+
       let deletedCategories: any;
       let createdCategories: any;
 
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          bUDGET_CATEGORY: { 
+          bUDGET_CATEGORY: {
             deleteMany: jest.fn().mockImplementation((data) => {
               deletedCategories = data;
             }),
@@ -337,11 +317,11 @@ describe('BudgetsService', () => {
               createdCategories = data;
             }),
           },
-          budget: { 
+          budget: {
             update: jest.fn().mockResolvedValue(mockBudget),
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -394,14 +374,14 @@ describe('BudgetsService', () => {
     it('should calculate budget usage for specific month', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
-      
+
       // Mock transaction aggregations
-      prismaService.transaction.aggregate
+      (prismaService.transaction.aggregate as jest.Mock)
         .mockResolvedValueOnce({ _sum: { amount: 1800.00 } }) // Total expenses
         .mockResolvedValueOnce({ _sum: { amount: 250.00 } }); // Category expenses
 
       // Act
-      const result = await service.calculateUsage(mockUserId, 2024, 1);
+      const result = await (service as any).calculateUsage(mockUserId, 2024, 1);
 
       // Assert
       expect(result).toEqual(expect.objectContaining({
@@ -428,7 +408,7 @@ describe('BudgetsService', () => {
       prismaService.budget.findFirst.mockResolvedValue(null);
 
       // Act
-      const result = await service.calculateUsage(mockUserId, 2024, 12);
+      const result = await (service as any).calculateUsage(mockUserId, 2024, 12);
 
       // Assert
       expect(result).toBeNull();
@@ -437,14 +417,14 @@ describe('BudgetsService', () => {
     it('should handle over-budget scenarios', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
-      
+
       // Mock over-budget spending
-      prismaService.transaction.aggregate
+      (prismaService.transaction.aggregate as jest.Mock)
         .mockResolvedValueOnce({ _sum: { amount: 2500.00 } }) // Total over budget
         .mockResolvedValueOnce({ _sum: { amount: 400.00 } }); // Category over budget
 
       // Act
-      const result = await service.calculateUsage(mockUserId, 2024, 1);
+      const result = await (service as any).calculateUsage(mockUserId, 2024, 1);
 
       // Assert
       expect(result!.totalSpent).toBe(2500.00);
@@ -457,13 +437,13 @@ describe('BudgetsService', () => {
       // Arrange
       const budgetWithoutTotal = { ...mockBudget, amountTotal: null };
       prismaService.budget.findFirst.mockResolvedValue(budgetWithoutTotal as any);
-      
-      prismaService.transaction.aggregate
+
+      (prismaService.transaction.aggregate as jest.Mock)
         .mockResolvedValueOnce({ _sum: { amount: 1500.00 } })
         .mockResolvedValueOnce({ _sum: { amount: 250.00 } });
 
       // Act
-      const result = await service.calculateUsage(mockUserId, 2024, 1);
+      const result = await (service as any).calculateUsage(mockUserId, 2024, 1);
 
       // Assert
       expect(result!.totalBudget).toBeNull();
@@ -496,10 +476,10 @@ describe('BudgetsService', () => {
         ],
       };
 
-      jest.spyOn(service, 'calculateUsage').mockResolvedValue(budgetUsage);
+      jest.spyOn(service as any, 'calculateUsage').mockResolvedValue(budgetUsage);
 
       // Act
-      const result = await service.getAlerts(mockUserId, 2024, 1, 85); // 85% threshold
+      const result = await (service as any).getAlerts(mockUserId, 2024, 1, 85); // 85% threshold
 
       // Assert
       expect(result).toHaveLength(2); // Total budget and category alerts
@@ -539,10 +519,10 @@ describe('BudgetsService', () => {
         ],
       };
 
-      jest.spyOn(service, 'calculateUsage').mockResolvedValue(overBudgetUsage);
+      jest.spyOn(service as any, 'calculateUsage').mockResolvedValue(overBudgetUsage);
 
       // Act
-      const result = await service.getAlerts(mockUserId, 2024, 1, 100);
+      const result = await (service as any).getAlerts(mockUserId, 2024, 1, 100);
 
       // Assert
       expect(result).toHaveLength(2);
@@ -575,10 +555,10 @@ describe('BudgetsService', () => {
         ],
       };
 
-      jest.spyOn(service, 'calculateUsage').mockResolvedValue(goodUsage);
+      jest.spyOn(service as any, 'calculateUsage').mockResolvedValue(goodUsage);
 
       // Act
-      const result = await service.getAlerts(mockUserId, 2024, 1, 80);
+      const result = await (service as any).getAlerts(mockUserId, 2024, 1, 80);
 
       // Assert
       expect(result).toHaveLength(0);
@@ -586,10 +566,10 @@ describe('BudgetsService', () => {
 
     it('should return empty array when no budget exists', async () => {
       // Arrange
-      jest.spyOn(service, 'calculateUsage').mockResolvedValue(null);
+      jest.spyOn(service as any, 'calculateUsage').mockResolvedValue(null);
 
       // Act
-      const result = await service.getAlerts(mockUserId, 2024, 12, 80);
+      const result = await (service as any).getAlerts(mockUserId, 2024, 12, 80);
 
       // Assert
       expect(result).toHaveLength(0);

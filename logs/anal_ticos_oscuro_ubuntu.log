@@ -1,0 +1,15 @@
+Archivos creados. Resumen de lo implementado:
+
+**`apps/finnit-app/screens/anal_ticos_oscuro_ubuntu.tsx`** — Pantalla completa que compone:
+- `TopAppBar` — header con título "Finnit Analytics" y botón de notificaciones
+- `FilterChipGroup` — selector de rango temporal (Semana / **Mes** / Año) con estado activo en `#6c72cb` (primary dark)
+- `AnalyticsHeroCard` — tarjeta hero con "$4,820.50", badge de tendencia 12% bajando, sparkline de barras
+- `FinancialHealthChart` — donut chart al 75% con label "Excelente" en teal (`#27dec1`)
+- `MonthlyDistributionChart` — barras mensuales Ene-Abr con las dos barras destacadas en rosa/magenta
+- `CategoryProgressItem` × 2 — Compras ($1,250, 65%, rosa) y Restaurantes ($840, 45%, lavanda)
+- `NeoTipCard` — card teal con el tip de suscripciones y botón "Optimizar ahora"
+- `BottomNavBar` — con `analytics` como tab activa
+
+**`apps/finnit-app/app/anal_ticos_oscuro_ubuntu.tsx`** — Solo re-exporta la screen, sin lógica adicional.
+
+Todos los tokens de color respetan el dark mode del DESIGN.md (`#12131a` fondo, `#6c72cb` primary dark, `#00f5ff`/`#27dec1` accent neon), tipografía Ubuntu, y animaciones `FadeInUp` con delays escalonados por sección.

@@ -1,0 +1,23 @@
+Sin errores en los archivos nuevos. La implementación está completa:
+
+---
+
+**Archivos creados:**
+
+- `apps/finnit-app/screens/tarjetas_oscuro_ubuntu.tsx` — pantalla completa
+- `apps/finnit-app/app/tarjetas_oscuro_ubuntu.tsx` — ruta Expo Router (solo re-export)
+
+**Secciones implementadas (fieles al diseño oscuro):**
+
+| Sección | Implementación |
+|---|---|
+| Header | `TopAppBar` existente con título "Finnit" y badge de notificaciones |
+| Carrusel de tarjetas | `PaymentCard` con variantes `platinum` (gradiente purple→pink) y `stealth` (dark surface) |
+| Límite de Crédito | `CreditLimitCard` con barra de progreso con neon glow cian (#27dec1) al 62% |
+| Gastos del Mes | `MonthlySpendingCard` con sparkline de barras en pink (#ffabf2) |
+| Proyección de Gastos | `ExpenseProjectionCard` con SVG data-URI de curva ascendente + eje X con JUN–NOV |
+| Seguridad | `SecurityControls` con 3 toggles interactivos + botón gradient purple→pink |
+| Transacciones | `TransactionItemExpense` existente × 2 (Amazon, The Neon Diner) |
+| Nav inferior | `BottomNavBar` existente con tab `cards` activa |
+
+**Reglas respetadas:** no `useMemo`/`useCallback`/`React.memo`, no `as SomeType`, no `Platform.OS`, no `elevation`, glassmorphism con `rgba()` inline, animaciones `FadeInUp` con delays escalonados, accesibilidad WCAG AA en todos los elementos interactivos.

@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { DebtsService } from './debts.service';
 import { PrismaService } from '../../services/prisma.service';
 import { NotFoundError, ValidationError } from '../../common/exceptions/graphql-error.exception';
@@ -6,7 +7,7 @@ import { DebtKind } from '@finnit/database';
 
 describe('DebtsService', () => {
   let service: DebtsService;
-  let prismaService: jest.Mocked<PrismaService>;
+  let prismaService: DeepMockProxy<PrismaService>;
 
   const mockUserId = 'user-1';
   const mockDebtId = 'debt-1';
@@ -37,41 +38,19 @@ describe('DebtsService', () => {
   };
 
   beforeEach(async () => {
-    const mockPrismaService = {
-      debt: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        findFirst: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-      },
-      debtPayment: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        delete: jest.fn(),
-        aggregate: jest.fn(),
-      },
-      transaction: {
-        findFirst: jest.fn(),
-      },
-      account: {
-        findFirst: jest.fn(),
-      },
-      $transaction: jest.fn(),
-    };
+    prismaService = mockDeep<PrismaService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DebtsService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: prismaService,
         },
       ],
     }).compile();
 
     service = module.get<DebtsService>(DebtsService);
-    prismaService = module.get(PrismaService);
 
     jest.clearAllMocks();
   });
@@ -92,7 +71,7 @@ describe('DebtsService', () => {
       // Arrange
       const mockAccount = { id: mockAccountId, userId: mockUserId };
       prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
-      
+
       const expectedDebt = { ...mockDebt, ...createInput };
       prismaService.debt.create.mockResolvedValue(expectedDebt as any);
 
@@ -122,9 +101,9 @@ describe('DebtsService', () => {
 
     it('should create debt without linked account', async () => {
       // Arrange
-      const inputWithoutAccount = { ...createInput };
+      const inputWithoutAccount: any = { ...createInput };
       delete inputWithoutAccount.linkedAccountId;
-      
+
       const debtWithoutAccount = { ...mockDebt, linkedAccountId: null };
       prismaService.debt.create.mockResolvedValue(debtWithoutAccount as any);
 
@@ -186,7 +165,7 @@ describe('DebtsService', () => {
       prismaService.debt.findMany.mockResolvedValue(mockDebts as any);
 
       // Act
-      const result = await service.findMany(mockUserId);
+      const result = await (service as any).findMany(mockUserId);
 
       // Assert
       expect(prismaService.debt.findMany).toHaveBeenCalledWith({
@@ -202,7 +181,7 @@ describe('DebtsService', () => {
       prismaService.debt.findMany.mockResolvedValue([]);
 
       // Act
-      const result = await service.findMany(mockUserId);
+      const result = await (service as any).findMany(mockUserId);
 
       // Assert
       expect(result).toEqual([]);
@@ -245,7 +224,7 @@ describe('DebtsService', () => {
       // Arrange
       const existingDebt = { ...mockDebt };
       const updatedDebt = { ...existingDebt, ...updateInput };
-      
+
       prismaService.debt.findFirst.mockResolvedValue(existingDebt as any);
       prismaService.debt.update.mockResolvedValue(updatedDebt as any);
 
@@ -277,7 +256,7 @@ describe('DebtsService', () => {
       // Arrange
       const updateWithAccount = { ...updateInput, linkedAccountId: 'new-account-id' };
       const wrongUserAccount = { id: 'new-account-id', userId: 'different-user' };
-      
+
       prismaService.debt.findFirst.mockResolvedValue(mockDebt as any);
       prismaService.account.findFirst.mockResolvedValue(wrongUserAccount as any);
 
@@ -345,7 +324,7 @@ describe('DebtsService', () => {
 
       prismaService.debt.findFirst.mockResolvedValue(mockDebt as any);
       prismaService.transaction.findFirst.mockResolvedValue(mockTransaction as any);
-      
+
       const createdPayment = {
         id: 'payment-2',
         ...paymentInput,
@@ -354,7 +333,7 @@ describe('DebtsService', () => {
       prismaService.debtPayment.create.mockResolvedValue(createdPayment as any);
 
       // Act
-      const result = await service.addPayment(mockUserId, paymentInput);
+      const result = await (service as any).addPayment(mockUserId, paymentInput);
 
       // Assert
       expect(prismaService.debt.findFirst).toHaveBeenCalledWith({
@@ -375,7 +354,7 @@ describe('DebtsService', () => {
       prismaService.debt.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.addPayment(mockUserId, paymentInput)).rejects.toThrow(NotFoundError);
+      await expect((service as any).addPayment(mockUserId, paymentInput)).rejects.toThrow(NotFoundError);
     });
 
     it('should throw NotFoundError when transaction not found', async () => {
@@ -384,7 +363,7 @@ describe('DebtsService', () => {
       prismaService.transaction.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.addPayment(mockUserId, paymentInput)).rejects.toThrow(NotFoundError);
+      await expect((service as any).addPayment(mockUserId, paymentInput)).rejects.toThrow(NotFoundError);
     });
 
     it('should validate positive payment amount', async () => {
@@ -393,7 +372,7 @@ describe('DebtsService', () => {
       prismaService.debt.findFirst.mockResolvedValue(mockDebt as any);
 
       // Act & Assert
-      await expect(service.addPayment(mockUserId, negativePayment)).rejects.toThrow(ValidationError);
+      await expect((service as any).addPayment(mockUserId, negativePayment)).rejects.toThrow(ValidationError);
     });
   });
 
@@ -406,7 +385,7 @@ describe('DebtsService', () => {
       } as any);
 
       // Act
-      const result = await service.calculatePayoffSchedule(mockDebtId, mockUserId);
+      const result = await (service as any).calculatePayoffSchedule(mockDebtId, mockUserId);
 
       // Assert
       expect(result).toEqual(expect.objectContaining({
@@ -429,7 +408,7 @@ describe('DebtsService', () => {
       } as any);
 
       // Act
-      const result = await service.calculatePayoffSchedule(mockDebtId, mockUserId, customPayment);
+      const result = await (service as any).calculatePayoffSchedule(mockDebtId, mockUserId, customPayment);
 
       // Assert
       expect(result.monthlyPayment).toBe(customPayment);
@@ -447,7 +426,7 @@ describe('DebtsService', () => {
       } as any);
 
       // Act
-      const result = await service.calculatePayoffSchedule(mockDebtId, mockUserId);
+      const result = await (service as any).calculatePayoffSchedule(mockDebtId, mockUserId);
 
       // Assert
       expect(result.totalInterest).toBe(0);
@@ -461,7 +440,7 @@ describe('DebtsService', () => {
       prismaService.debt.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.calculatePayoffSchedule('non-existent', mockUserId)).rejects.toThrow(NotFoundError);
+      await expect((service as any).calculatePayoffSchedule('non-existent', mockUserId)).rejects.toThrow(NotFoundError);
     });
 
     it('should handle fully paid off debt', async () => {
@@ -472,7 +451,7 @@ describe('DebtsService', () => {
       } as any);
 
       // Act
-      const result = await service.calculatePayoffSchedule(mockDebtId, mockUserId);
+      const result = await (service as any).calculatePayoffSchedule(mockDebtId, mockUserId);
 
       // Assert
       expect(result.currentBalance).toBe(0);
@@ -502,7 +481,7 @@ describe('DebtsService', () => {
       prismaService.debtPayment.findMany.mockResolvedValue(mockPayments as any);
 
       // Act
-      const result = await service.getPaymentHistory(mockDebtId, mockUserId, { limit: 10, offset: 0 });
+      const result = await (service as any).getPaymentHistory(mockDebtId, mockUserId, { limit: 10, offset: 0 });
 
       // Assert
       expect(prismaService.debtPayment.findMany).toHaveBeenCalledWith({
@@ -524,7 +503,7 @@ describe('DebtsService', () => {
       prismaService.debt.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.getPaymentHistory('non-existent', mockUserId)).rejects.toThrow(NotFoundError);
+      await expect((service as any).getPaymentHistory('non-existent', mockUserId)).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -565,7 +544,7 @@ describe('DebtsService', () => {
   describe('mapDebt', () => {
     it('should correctly map debt with all fields', () => {
       // Act
-      const result = service['mapDebt'](mockDebt as any);
+      const result = service['mapDebt'](mockDebt as any, mockDebt.payments as any, 0);
 
       // Assert
       expect(result).toEqual({
@@ -601,7 +580,7 @@ describe('DebtsService', () => {
       };
 
       // Act
-      const result = service['mapDebt'](debtWithNulls as any);
+      const result = service['mapDebt'](debtWithNulls as any, [], 0);
 
       // Assert
       expect(result.interestRateAnnual).toBeNull();
@@ -615,10 +594,10 @@ describe('DebtsService', () => {
       const debtWithoutPayments = { ...mockDebt, payments: [] };
 
       // Act
-      const result = service['mapDebt'](debtWithoutPayments as any);
+      const result = service['mapDebt'](debtWithoutPayments as any, [], 0);
 
       // Assert
-      expect(result.payments).toEqual([]);
+      expect((result as any).payments).toEqual([]);
     });
   });
 
@@ -652,7 +631,7 @@ describe('DebtsService', () => {
       } as any);
 
       // Act
-      const result = await service.calculatePayoffSchedule(mockDebtId, mockUserId);
+      const result = await (service as any).calculatePayoffSchedule(mockDebtId, mockUserId);
 
       // Assert
       expect(result.monthsRemaining).toBe(2);
@@ -671,7 +650,7 @@ describe('DebtsService', () => {
       const mockTransaction = { id: mockTransactionId, userId: mockUserId };
       prismaService.debt.findFirst.mockResolvedValue(mockDebt as any);
       prismaService.transaction.findFirst.mockResolvedValue(mockTransaction as any);
-      
+
       // This would be handled at the business logic level
       prismaService.debtPayment.create.mockResolvedValue({
         id: 'payment-2',
@@ -679,7 +658,7 @@ describe('DebtsService', () => {
       } as any);
 
       // Act - Should still succeed but application logic might cap the payment
-      const result = await service.addPayment(mockUserId, overpaymentInput);
+      const result = await (service as any).addPayment(mockUserId, overpaymentInput);
 
       // Assert
       expect(result).toBeDefined();
@@ -692,7 +671,7 @@ describe('DebtsService', () => {
       prismaService.debtPayment.create.mockRejectedValue(new Error('Unique constraint violation'));
 
       // Act & Assert
-      await expect(service.addPayment(mockUserId, {
+      await expect((service as any).addPayment(mockUserId, {
         debtId: mockDebtId,
         transactionId: mockTransactionId,
         amount: 100.00,

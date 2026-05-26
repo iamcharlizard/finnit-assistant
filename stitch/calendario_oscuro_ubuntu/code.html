@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Calendario de Pagos | Lumina Finance</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Manrope:wght@400;500;600;700&amp;family=Ubuntu:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .inner-glow-top {
+            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+        }
+        .neon-path {
+            filter: drop-shadow(0 0 8px rgba(39, 222, 193, 0.4));
+        }
+        .glass-card {
+            background: rgba(23, 24, 31, 0.6);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+        }
+        body {
+            background-color: #0b0c10;
+            color: #e3e1eb;
+            font-family: 'Ubuntu', sans-serif;
+        }
+        .ubuntu-font { font-family: 'Ubuntu', sans-serif; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-container": "#781e74",
+                      "inverse-primary": "#5055ac",
+                      "on-tertiary-fixed": "#00201a",
+                      "secondary": "#ffabf2",
+                      "primary-container": "#8389e3",
+                      "outline": "#908f9d",
+                      "on-tertiary-container": "#003028",
+                      "background": "#12131a",
+                      "primary-fixed": "#e0e0ff",
+                      "primary": "#bfc2ff",
+                      "secondary-fixed": "#ffd7f5",
+                      "on-primary-container": "#171c75",
+                      "on-tertiary-fixed-variant": "#005144",
+                      "on-primary-fixed": "#030469",
+                      "surface-variant": "#33343c",
+                      "surface-container-low": "#1a1b22",
+                      "on-secondary-fixed": "#380037",
+                      "on-secondary": "#5b005a",
+                      "on-surface-variant": "#c7c5d3",
+                      "on-secondary-fixed-variant": "#781e74",
+                      "error-container": "#93000a",
+                      "inverse-surface": "#e3e1eb",
+                      "surface-container": "#1e1f26",
+                      "tertiary": "#27dec1",
+                      "on-error": "#690005",
+                      "on-background": "#e3e1eb",
+                      "on-primary": "#1f247c",
+                      "secondary-fixed-dim": "#ffabf2",
+                      "inverse-on-surface": "#2f3037",
+                      "tertiary-fixed-dim": "#27dec1",
+                      "primary-fixed-dim": "#bfc2ff",
+                      "on-secondary-container": "#f890ec",
+                      "outline-variant": "#464651",
+                      "on-error-container": "#ffdad6",
+                      "surface-container-highest": "#33343c",
+                      "surface-container-lowest": "#0d0e14",
+                      "surface-bright": "#383940",
+                      "on-primary-fixed-variant": "#373d93",
+                      "surface-tint": "#bfc2ff",
+                      "on-tertiary": "#00382f",
+                      "tertiary-container": "#00a38c",
+                      "surface": "#12131a",
+                      "on-surface": "#e3e1eb",
+                      "surface-dim": "#12131a",
+                      "surface-container-high": "#292931",
+                      "error": "#ffb4ab",
+                      "tertiary-fixed": "#55fbdd"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "unit": "4px",
+                      "container-margin": "20px",
+                      "md": "16px",
+                      "sm": "8px",
+                      "xs": "4px",
+                      "xl": "32px",
+                      "gutter": "16px",
+                      "lg": "24px",
+                      "margin-mobile": "20px"
+              },
+              "fontFamily": {
+                      "ubuntu": ["Ubuntu", "sans-serif"],
+                      "body-sm": ["Manrope"],
+                      "headline-xl": ["Hanken Grotesk"],
+                      "numeric-lg": ["Hanken Grotesk"],
+                      "label-caps": ["Manrope"],
+                      "body-md": ["Manrope"],
+                      "headline-lg-mobile": ["Hanken Grotesk"],
+                      "headline-lg": ["Hanken Grotesk"]
+              },
+              "fontSize": {
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "numeric-lg": ["36px", {"lineHeight": "44px", "fontWeight": "500"}],
+                      "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 backdrop-blur-xl bg-surface/10 border-b border-white/10 inner-glow-top">
+<div class="flex justify-between items-center px-margin-mobile py-unit h-16 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-primary/30">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a young tech executive with soft cinematic lighting against a dark, blurred office background. The style is modern and high-definition, featuring deep blacks and subtle blue highlights that match a dark-mode UI aesthetic. The person has a friendly but confident expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmX6bB42ULRiN_m8uv2OxywMF-7bTOpz_TemhWbBegOzw2E7mjlIUju2BQoBSQVknvOnpKmJNKmdFvP4um8Wt5Ctkg2qr5zPBUOuho_dcxcOh-j5amMwG6TlXk9sUtUTHf4RG872qNVsC7MU548ghFsYRPbKPG-6GLe9qMmH0qMFT4KccuqhOtKakBzdLVm3CfeOGN9oJOD3NpmOp4f5BcgnSZ9hihWJZlRn8w_xYWvQ-MxSebxCJLoqde4X2n84car_uU7CslY-E"/>
+</div>
+<h1 class="font-ubuntu text-headline-lg-mobile font-headline-lg-mobile text-primary drop-shadow-[0_0_8px_rgba(191,194,255,0.5)]">Calendario</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-primary hover:bg-white/5 transition-colors active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<main class="pt-24 px-margin-mobile max-w-7xl mx-auto space-y-lg">
+<!-- Summary Section / Projected Savings -->
+<section class="glass-card p-lg rounded-xl relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-tertiary/10 blur-[60px] rounded-full"></div>
+<div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-md">
+<div>
+<span class="text-label-caps font-label-caps text-on-surface-variant uppercase tracking-widest">Ahorro Proyectado</span>
+<h2 class="font-ubuntu text-numeric-lg text-tertiary drop-shadow-[0_0_12px_rgba(39,222,193,0.3)]">$1,240.50</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Optimizando fechas de corte este mes</p>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-end">
+<span class="text-label-caps font-label-caps text-on-surface-variant">Eficiencia</span>
+<div class="flex items-center gap-2">
+<div class="w-24 h-2 bg-white/10 rounded-full overflow-hidden">
+<div class="w-[78%] h-full bg-tertiary shadow-[0_0_8px_rgba(39,222,193,0.6)]"></div>
+</div>
+<span class="font-ubuntu font-bold text-tertiary">78%</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+<!-- Monthly Calendar (8 columns on desktop) -->
+<section class="lg:col-span-8 glass-card p-md md:p-lg rounded-xl">
+<div class="flex justify-between items-center mb-lg">
+<h3 class="font-ubuntu text-headline-lg-mobile text-primary-fixed">Octubre 2023</h3>
+<div class="flex gap-2">
+<button class="p-2 rounded-lg hover:bg-white/5 text-on-surface-variant transition-colors"><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="p-2 rounded-lg hover:bg-white/5 text-on-surface-variant transition-colors"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+<div class="calendar-grid text-center text-label-caps font-label-caps text-on-surface-variant/60 mb-4">
+<div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div>
+</div>
+<div class="calendar-grid gap-2">
+<!-- Placeholder days -->
+<div class="aspect-square flex items-center justify-center text-on-surface-variant/20">25</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant/20">26</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant/20">27</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant/20">28</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant/20">29</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant/20">30</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">1</div>
+<!-- Calendar Items with neon indicators -->
+<div class="aspect-square flex flex-col items-center justify-center rounded-lg hover:bg-white/5 transition-all cursor-pointer relative group">
+<span class="text-body-md font-ubuntu">2</span>
+<div class="absolute bottom-2 flex gap-1">
+<div class="w-1 h-1 rounded-full bg-secondary shadow-[0_0_4px_rgba(255,171,242,1)]"></div>
+</div>
+</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">3</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">4</div>
+<div class="aspect-square flex flex-col items-center justify-center rounded-lg bg-primary/20 border border-primary/40 shadow-[0_0_15px_rgba(191,194,255,0.2)]">
+<span class="text-body-md font-ubuntu text-primary-fixed">5</span>
+</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">6</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">7</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">8</div>
+<!-- Row 2 -->
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">9</div>
+<div class="aspect-square flex flex-col items-center justify-center rounded-lg hover:bg-white/5 transition-all cursor-pointer relative group">
+<span class="text-body-md font-ubuntu">10</span>
+<div class="absolute bottom-2 flex gap-1">
+<div class="w-1 h-1 rounded-full bg-tertiary shadow-[0_0_4px_rgba(39,222,193,1)]"></div>
+</div>
+</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">11</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">12</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">13</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">14</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">15</div>
+<!-- Row 3 -->
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">16</div>
+<div class="aspect-square flex flex-col items-center justify-center rounded-lg hover:bg-white/5 transition-all cursor-pointer relative group">
+<span class="text-body-md font-ubuntu">17</span>
+<div class="absolute bottom-2 flex gap-1">
+<div class="w-1 h-1 rounded-full bg-secondary shadow-[0_0_4px_rgba(255,171,242,1)]"></div>
+</div>
+</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">18</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">19</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">20</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">21</div>
+<div class="aspect-square flex items-center justify-center text-on-surface-variant">22</div>
+</div>
+</section>
+<!-- Upcoming Payments (4 columns on desktop) -->
+<section class="lg:col-span-4 space-y-md">
+<div class="flex justify-between items-center px-2">
+<h3 class="font-ubuntu text-body-md font-bold text-on-surface">Próximos Pagos</h3>
+<span class="text-label-caps font-label-caps text-primary">Ver Todos</span>
+</div>
+<!-- Payment Card 1 -->
+<div class="glass-card p-md rounded-xl flex items-center justify-between border-l-4 border-l-secondary transition-transform active:scale-95 cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">subscriptions</span>
+</div>
+<div>
+<p class="font-ubuntu text-body-md font-bold">Netflix Premium</p>
+<p class="text-body-sm text-on-surface-variant">Mañana, 10 Oct</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-ubuntu font-bold text-secondary-fixed">$15.99</p>
+<span class="text-[10px] bg-secondary-container/40 text-secondary px-2 py-0.5 rounded-full uppercase font-bold">Auto</span>
+</div>
+</div>
+<!-- Payment Card 2 -->
+<div class="glass-card p-md rounded-xl flex items-center justify-between border-l-4 border-l-tertiary transition-transform active:scale-95 cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">electric_bolt</span>
+</div>
+<div>
+<p class="font-ubuntu text-body-md font-bold">Luz Eléctrica</p>
+<p class="text-body-sm text-on-surface-variant">15 Oct</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-ubuntu font-bold text-tertiary-fixed">$45.00</p>
+<span class="text-[10px] bg-tertiary-container/40 text-tertiary px-2 py-0.5 rounded-full uppercase font-bold">Pendiente</span>
+</div>
+</div>
+<!-- Payment Card 3 -->
+<div class="glass-card p-md rounded-xl flex items-center justify-between border-l-4 border-l-primary transition-transform active:scale-95 cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">apartment</span>
+</div>
+<div>
+<p class="font-ubuntu text-body-md font-bold">Renta Dpto</p>
+<p class="text-body-sm text-on-surface-variant">01 Nov</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-ubuntu font-bold text-primary-fixed">$850.00</p>
+<span class="text-[10px] bg-primary-container/40 text-primary px-2 py-0.5 rounded-full uppercase font-bold">Aviso</span>
+</div>
+</div>
+<!-- Add New Payment CTA -->
+<button class="w-full py-4 border-2 border-dashed border-white/10 rounded-xl flex items-center justify-center gap-2 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-all active:scale-95">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-ubuntu font-medium">Programar Nuevo Pago</span>
+</button>
+</section>
+</div>
+<!-- Analytical Insights (Mini Charts) -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg mt-lg pb-12">
+<div class="glass-card p-md rounded-xl flex items-center gap-md">
+<div class="w-12 h-12 rounded-full border-2 border-secondary/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">trending_down</span>
+</div>
+<div>
+<h4 class="text-label-caps font-label-caps text-on-surface-variant uppercase">Gasto recurrente</h4>
+<p class="font-ubuntu text-body-md font-bold text-on-surface">-12% vs mes anterior</p>
+</div>
+</div>
+<div class="glass-card p-md rounded-xl flex items-center gap-md">
+<div class="w-12 h-12 rounded-full border-2 border-tertiary/30 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">auto_fix_high</span>
+</div>
+<div>
+<h4 class="text-label-caps font-label-caps text-on-surface-variant uppercase">IA Sugerencia</h4>
+<p class="font-ubuntu text-body-md font-bold text-on-surface">Paga anual y ahorra $80</p>
+</div>
+</div>
+<div class="glass-card p-md rounded-xl flex items-center gap-md md:col-span-2 lg:col-span-1">
+<div class="w-12 h-12 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">shield</span>
+</div>
+<div>
+<h4 class="text-label-caps font-label-caps text-on-surface-variant uppercase">Seguridad</h4>
+<p class="font-ubuntu text-body-md font-bold text-on-surface">Fondos apartados para pagos</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-margin-mobile py-2 pb-safe bg-surface-container/20 backdrop-blur-xl rounded-t-xl border-t border-white/10 z-50">
+<button class="flex flex-col items-center justify-center text-on-surface-variant/60 p-3 hover:text-primary transition-all active:scale-90">
+<span class="material-symbols-outlined">home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant/60 p-3 hover:text-primary transition-all active:scale-90">
+<span class="material-symbols-outlined">analytics</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container/30 text-primary rounded-full p-3 shadow-[0_0_15px_rgba(191,194,255,0.3)] active:scale-90 transition-transform">
+<span class="material-symbols-outlined">add_circle</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary p-3 hover:text-primary transition-all active:scale-90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant/60 p-3 hover:text-primary transition-all active:scale-90">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</nav>
+<script>
+        // Simple micro-interaction for calendar items
+        document.querySelectorAll('.calendar-grid > div').forEach(item => {
+            item.addEventListener('click', function() {
+                if(this.classList.contains('cursor-pointer')) {
+                    // Visual feedback
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = 'scale(1)';
+                    }, 100);
+                }
+            });
+        });
+
+        // Add a subtle parallax mouse effect to the summary card
+        const card = document.querySelector('.glass-card.relative.overflow-hidden');
+        if(card) {
+            card.addEventListener('mousemove', (e) => {
+                const { left, top, width, height } = card.getBoundingClientRect();
+                const x = (e.clientX - left) / width;
+                const y = (e.clientY - top) / height;
+                
+                const glow = card.querySelector('.blur-\\[60px\\]');
+                glow.style.transform = `translate(${(x - 0.5) * 40}px, ${(y - 0.5) * 40}px)`;
+            });
+        }
+    </script>
+</body></html>

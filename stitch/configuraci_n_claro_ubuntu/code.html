@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FinVault - Configuración</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Ubuntu:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Ubuntu', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.04);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .neon-glow-teal {
+            box-shadow: 0 0 15px rgba(0, 220, 229, 0.3);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-fixed-dim": "#00dce5",
+                      "tertiary-fixed-dim": "#fface8",
+                      "inverse-on-surface": "#f0f1f2",
+                      "secondary-fixed-dim": "#ecb2ff",
+                      "on-primary": "#ffffff",
+                      "on-background": "#191c1d",
+                      "on-error": "#ffffff",
+                      "tertiary": "#ad009b",
+                      "surface-container": "#edeeef",
+                      "tertiary-fixed": "#ffd7f0",
+                      "error": "#ba1a1a",
+                      "surface-container-high": "#e7e8e9",
+                      "surface-dim": "#d9dadb",
+                      "tertiary-container": "#ffd0ef",
+                      "surface": "#f8f9fa",
+                      "on-surface": "#191c1d",
+                      "surface-tint": "#00696e",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-bright": "#f8f9fa",
+                      "on-primary-fixed-variant": "#004f53",
+                      "surface-container-highest": "#e1e3e4",
+                      "outline-variant": "#b9caca",
+                      "on-error-container": "#93000a",
+                      "on-secondary-container": "#fffbff",
+                      "secondary-fixed": "#f8d8ff",
+                      "on-primary-container": "#006c71",
+                      "primary": "#00696e",
+                      "primary-fixed": "#63f7ff",
+                      "background": "#f8f9fa",
+                      "primary-container": "#00f5ff",
+                      "outline": "#6a7a7b",
+                      "on-tertiary-container": "#b2009f",
+                      "secondary": "#9500ca",
+                      "on-tertiary-fixed": "#3a0033",
+                      "inverse-primary": "#00dce5",
+                      "secondary-container": "#bb00fc",
+                      "inverse-surface": "#2e3132",
+                      "error-container": "#ffdad6",
+                      "on-secondary-fixed-variant": "#74009f",
+                      "on-surface-variant": "#3a494a",
+                      "on-secondary": "#ffffff",
+                      "on-secondary-fixed": "#320047",
+                      "surface-container-low": "#f3f4f5",
+                      "surface-variant": "#e1e3e4",
+                      "on-tertiary-fixed-variant": "#840076",
+                      "on-primary-fixed": "#002021"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "unit": "8px",
+                      "container-max": "1200px",
+                      "margin-desktop": "40px",
+                      "margin-mobile": "20px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": ["Ubuntu", "sans-serif"],
+                      "headline-lg": ["Ubuntu", "sans-serif"],
+                      "body-md": ["Ubuntu", "sans-serif"],
+                      "label-sm": ["Ubuntu", "sans-serif"],
+                      "headline-xl": ["Ubuntu", "sans-serif"]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16 bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md border-b border-outline-variant/30 dark:border-outline/20">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="A professional and clean studio portrait of a young male professional with a friendly smile, set against a soft, neutral grey background. The lighting is bright and airy, reflecting a high-tech corporate aesthetic. The overall mood is approachable, modern, and reliable, consistent with a premium financial application user profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAJC6t1pHJ7oRXP2SK2NTakOac-Qyi19bkxSNyupJ2HterDGXSUgKV5DVeE9FARxJeuH9p3UHkPl8W8IubMIjDqTHuzqIjhiZxHAQ66CZ4vrfvfzkKSGyY2vPJ7SwW1dztCT56sckoYZ-06agHSAPEpMYAXE41NhxSaAra4R23MOku0Y_XHkBQfrKnyAFjF2GPg2d09JRK5o-U10yHHobl7_jAz88rEbDqAEqomRX2pgpS-JtMIIHLmFY5ogpdTZlZzojifd8ySps"/>
+</div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">FinVault</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-surface-container-high/50 transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined text-primary">notifications</span>
+</button>
+</div>
+</header>
+<main class="pt-24 px-margin-mobile max-w-container-max mx-auto">
+<!-- Profile Header Section -->
+<section class="mb-8">
+<div class="glass-card rounded-xl p-6 flex flex-col md:flex-row items-center gap-6">
+<div class="relative group">
+<div class="w-24 h-24 rounded-full overflow-hidden border-4 border-primary-container neon-glow-teal">
+<img alt="Large Profile" class="w-full h-full object-cover" data-alt="A high-quality close-up of a modern professional person, looking confident and smiling. The background is a blurred office environment with soft teal and white lighting, emphasizing a clean and luminous tech-forward brand identity. The image is crisp, with natural skin tones and a sense of professional success." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXrHDVKK9-JzLqWyHBDgSAVejx0733AJGwEyjtnZB_InysEXiwAEZYgCcVZKvv8fwHj8VcrhO3bUq8zpBxEPlQrH0LZBnPO7JcDNc5XCE5hS-ZB2hckpXJ-3JTA_zGapXIs5wfsQmQFNBChRsej7wK7-blGJDljkLnzvMVN9X6qT0GsBVGfUnV2Xt-thdc0yaNa99yn7gfvOwX4LMpDgFi7HVOhVHhb-gyxFmcB4fcNAbO9mPF-NsXBwDkJrcHdb7oK46_cUFaHBY"/>
+</div>
+<button class="absolute bottom-0 right-0 bg-primary text-on-primary p-1.5 rounded-full shadow-lg border-2 border-white">
+<span class="material-symbols-outlined text-sm">edit</span>
+</button>
+</div>
+<div class="text-center md:text-left flex-1">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Alex Rivera</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">alex.rivera@finvault.com</p>
+<div class="mt-3 flex flex-wrap justify-center md:justify-start gap-2">
+<span class="px-3 py-1 bg-primary text-on-primary rounded-full font-label-sm text-label-sm">Premium Member</span>
+<span class="px-3 py-1 bg-secondary text-on-secondary rounded-full font-label-sm text-label-sm">Verified</span>
+</div>
+</div>
+<button class="w-full md:w-auto px-6 py-3 bg-primary-fixed text-on-primary-fixed font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-sm">
+                    View Portfolio
+                </button>
+</div>
+</section>
+<!-- Bento Grid for Settings -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Account Options -->
+<div class="glass-card rounded-xl p-6 lg:col-span-1">
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined">person</span>
+                    Account
+                </h3>
+<div class="space-y-2">
+<button class="w-full flex items-center justify-between p-4 rounded-xl hover:bg-surface-container-high/50 transition-colors group">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">badge</span>
+<span class="font-body-md text-body-md">Personal Profile</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 rounded-xl hover:bg-surface-container-high/50 transition-colors group">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">security</span>
+<span class="font-body-md text-body-md">Security &amp; Privacy</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 rounded-xl hover:bg-surface-container-high/50 transition-colors group">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">notifications_active</span>
+<span class="font-body-md text-body-md">Notifications</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Preferences -->
+<div class="glass-card rounded-xl p-6 lg:col-span-1">
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined">tune</span>
+                    Preferences
+                </h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">payments</span>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md">Currency</span>
+<span class="text-xs text-on-surface-variant">USD - US Dollar</span>
+</div>
+</div>
+<select class="bg-transparent border-none font-label-sm text-label-sm text-primary font-bold focus:ring-0 cursor-pointer">
+<option>USD</option>
+<option>EUR</option>
+<option>MXN</option>
+</select>
+</div>
+<div class="flex items-center justify-between p-4">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">dark_mode</span>
+<span class="font-body-md text-body-md">Dark Mode</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between p-4">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">language</span>
+<span class="font-body-md text-body-md">Language</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-bold">English (US)</span>
+</div>
+</div>
+</div>
+<!-- Support & Feedback -->
+<div class="glass-card rounded-xl p-6 lg:col-span-1">
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined">support_agent</span>
+                    Support
+                </h3>
+<div class="space-y-2">
+<button class="w-full flex items-center justify-between p-4 rounded-xl hover:bg-surface-container-high/50 transition-colors group">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">help_center</span>
+<span class="font-body-md text-body-md">Help Center</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 rounded-xl hover:bg-surface-container-high/50 transition-colors group">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">chat_bubble</span>
+<span class="font-body-md text-body-md">Contact Support</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+<div class="mt-6 p-4 rounded-xl bg-primary-container/20 border border-primary-container/30">
+<p class="font-label-sm text-label-sm text-on-primary-container text-center">Version 2.4.1 (Stable Build)</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Logout Section -->
+<div class="mt-8 flex justify-center">
+<button class="flex items-center gap-2 px-8 py-3 rounded-full border border-error text-error font-bold hover:bg-error/5 transition-all active:scale-95">
+<span class="material-symbols-outlined">logout</span>
+                Logout from FinVault
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 pb-safe bg-surface/90 dark:bg-surface-dim/90 backdrop-blur-lg border-t border-outline-variant/30 dark:border-outline/20 rounded-t-xl shadow-lg dark:shadow-none">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container-highest/40 rounded-full transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm mt-1">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container-highest/40 rounded-full transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-sm text-label-sm mt-1">Analytics</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container-highest/40 rounded-full transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-label-sm text-label-sm mt-1">Add</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:bg-surface-container-highest/40 rounded-full transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined">credit_card</span>
+<span class="font-label-sm text-label-sm mt-1">Cards</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full px-4 py-1 transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-sm text-label-sm mt-1">Settings</span>
+</button>
+</nav>
+<script>
+        // Micro-interaction for smooth scrolling and active state simulations
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+
+        // Atmospheric mouse glow effect for glass cards
+        document.addEventListener('mousemove', (e) => {
+            const cards = document.querySelectorAll('.glass-card');
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+    </script>
+</body></html>

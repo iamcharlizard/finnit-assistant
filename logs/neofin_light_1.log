@@ -1,0 +1,22 @@
+Los dos archivos ya están implementados y son correctos. Déjame revisar la calidad de la implementación existente contra los requisitos del diseño.
+
+La pantalla `neofin_light_1` está completa con:
+
+**`apps/finnit-app/screens/neofin_light_1.tsx`** ✅
+- Fondo `#f8f9fa` (token `background` del tema claro)
+- Glassmorphism aplicado en la tarjeta de acciones rápidas (`rgba(255,255,255,0.85)` + `boxShadow`)
+- Tipografía Ubuntu en todas las variantes (`Ubuntu`, `Ubuntu Medium`, `Ubuntu Bold`)
+- Acento cian (`#00f5ff`, `#00696e`) en sparkline y chips activos
+- Bordes redondeados: 24px para cards (`BalanceCard`), `9999px` para chips y botones de categoría
+- Animaciones `FadeInUp` con delays escalonados (0ms → 60ms → 120ms → 180ms → 240ms)
+- Estados async con `useQuery` marcados como `TODO` correctamente en `lib/api/`
+- TypeScript estricto: tipos nombrados (`TabName`, `CategoryFilter`, `StatChipVariant`, `CategoryChipVariant`), no `any`
+- Sin `useMemo`/`useCallback` (compatible con React Compiler)
+- Accesibilidad: `accessibilityRole`, `accessibilityLabel`, `minHeight: 44` en todos los elementos touch
+- Comentarios `// NW-FALLBACK` donde se usa `style={{}}` en lugar de `className`
+- Usa componentes existentes: `TopAppBar`, `BottomNavBar`, `BalanceCard`, `QuickAction`, `TransactionItemIncome`, `TransactionItemExpense`, `LabelSm`
+
+**`apps/finnit-app/app/neofin_light_1.tsx`** ✅
+- Solo importa y re-exporta, sin lógica ni JSX adicional
+
+Ambos archivos están implementados fielmente al diseño NeoFin Light con la dirección estética de Finnit (glassmorphism, Ubuntu, cian como acento primario). No se requieren cambios.

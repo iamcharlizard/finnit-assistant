@@ -1,0 +1,73 @@
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import 'tailwindcss/utilities.css';
+
+@layer theme {
+  @theme {
+    /* Light mode (base values) */
+    --color-primary: #00f5ff;
+    --color-background: #f8f9fa;
+    --color-surface: #ffffff;
+    --color-on-background: #1a1b22;
+    --color-on-surface-variant: #5c6370;
+    --color-outline: #e0e0e0;
+    --color-accent-neon: #6c72cb;
+
+    /* Income / Expense semantic */
+    --color-income: #006688;
+    --color-expense: #ba1a1a;
+
+    /* Dark mode tokens */
+    --color-primary-dark: #6c72cb;
+    --color-background-dark: #12131a;
+    --color-surface-dark: #1a1b22;
+    --color-on-background-dark: #f8f9fa;
+    --color-on-surface-variant-dark: #a0a0a0;
+    --color-outline-dark: #2d2e38;
+    --color-accent-neon-dark: #00f5ff;
+
+    /* Typography */
+    --font-ubuntu: 'Ubuntu', sans-serif;
+    --font-ubuntu-medium: 'Ubuntu Medium', sans-serif;
+    --font-ubuntu-bold: 'Ubuntu Bold', sans-serif;
+
+    /* Type scale */
+    --text-display-lg: 36px;
+    --text-display-lg--line-height: 44px;
+    --text-headline-lg: 28px;
+    --text-headline-lg--line-height: 36px;
+    --text-title-lg: 22px;
+    --text-title-lg--line-height: 28px;
+    --text-body-md: 16px;
+    --text-body-md--line-height: 24px;
+    --text-label-sm: 12px;
+    --text-label-sm--line-height: 16px;
+
+    /* Border radius */
+    --radius-card: 24px;
+    --radius-button: 9999px;
+    --radius-chip: 12px;
+    --radius-input: 12px;
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-xxl: 48px;
+  }
+}
+
+@media ios {
+  :root {
+    --font-sans: system-ui;
+    --font-rounded: ui-rounded;
+  }
+}
+@media android {
+  :root {
+    --font-sans: normal;
+    --font-rounded: normal;
+  }
+}

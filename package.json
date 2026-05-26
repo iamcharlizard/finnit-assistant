@@ -6,21 +6,26 @@
     "dev": "turbo run dev",
     "start:api": "turbo run start:dev --filter=@finnit/api",
     "api:dev": "turbo run build --filter=@finnit/database && turbo run start:dev --filter=@finnit/api",
+    "app:start": "turbo run start --filter=finnit-app",
+    "app:ios": "turbo run ios --filter=finnit-app",
+    "app:ios:device": "pnpm --filter finnit-app run ios:device",
+    "app:android": "turbo run android --filter=finnit-app",
+    "app:web": "turbo run web --filter=finnit-app",
+    "db:migrate": "turbo run db:migrate:dev --filter=@finnit/database",
+    "db:migrate:deploy": "turbo run db:migrate:deploy --filter=@finnit/database",
+    "db:generate": "turbo run db:generate --filter=@finnit/database",
+    "db:seed": "turbo run db:seed --filter=@finnit/database",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
   },
   "devDependencies": {
-    "prettier": "^3.6.2",
-    "turbo": "^2.5.5",
-    "typescript": "5.8.3"
+    "prettier": "^3.8.3",
+    "turbo": "^2.9.14",
+    "typescript": "5.9.3"
   },
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "yarn@1.22.22",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
+  "packageManager": "pnpm@11.3.0"
 }

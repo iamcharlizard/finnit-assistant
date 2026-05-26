@@ -129,9 +129,9 @@ export class TestFixturesUtil {
 
     return {
       id: category.id,
-      userId: category.userId,
+      userId: category.userId as string,
       name: category.name,
-      parentId: category.parentId,
+      parentId: category.parentId ?? undefined,
     };
   }
 
@@ -165,12 +165,12 @@ export class TestFixturesUtil {
       id: transaction.id,
       userId: transaction.userId,
       accountId: transaction.accountId,
-      categoryId: transaction.categoryId,
+      categoryId: transaction.categoryId ?? undefined,
       type: transaction.type,
       amount: Number(transaction.amount),
       currency: transaction.currency,
       txnDate: transaction.txnDate,
-      description: transaction.description,
+      description: transaction.description ?? undefined,
     };
   }
 
@@ -228,7 +228,7 @@ export class TestFixturesUtil {
       targetAmount: Number(goal.targetAmount),
       currentAmount: Number(goal.currentAmount),
       currency: goal.currency,
-      dueDate: goal.dueDate,
+      dueDate: goal.dueDate ?? undefined,
     };
   }
 

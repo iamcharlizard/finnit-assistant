@@ -1,0 +1,27 @@
+Ambos archivos están correctos. Aquí un resumen de lo que fue implementado y las dos correcciones que apliqué:
+
+---
+
+## Pantalla `inicio_de_sesi_n_oscuro_ubuntu` — estado final
+
+La pantalla ya existía con una implementación sólida. Apliqué dos correcciones estructurales:
+
+### Correcciones aplicadas
+
+**1. `SafeAreaView` como raíz** (`screens/inicio_de_sesi_n_oscuro_ubuntu.tsx:3,69`)
+- Cambiado de `View` (react-native) a `SafeAreaView` (react-native-safe-area-context), consistente con la versión light mode y la regla del proyecto.
+
+**2. Blobs de fondo fuera del `ScrollView`** (líneas 70–95)
+- Los blobs de fondo ambientales con `position: 'absolute'` estaban dentro del `TwScrollView`, lo que los haría scrollear con el contenido. Ahora están como hijos directos del `SafeAreaView`, fijos en la pantalla.
+
+### Lo que ya estaba bien implementado
+- Discriminated union para estado del formulario (`idle | submitting | error | success`)
+- Glassmorphism card con `FinnGlassView` + `rgba(23, 31, 51, 0.82)` y `borderColor: rgba(255,255,255,0.1)`
+- Email field con ícono `@` y password con lock + toggle de visibilidad
+- Checkbox "Mantener sesión iniciada" con `accessibilityRole="checkbox"` y `accessibilityState`
+- CTA neon cyan `#00f5ff` con `boxShadow` glow
+- Íconos cross-platform: SF Symbols en iOS, MaterialIcons en Android (`process.env.EXPO_OS`)
+- Botones sociales Google + Apple con `MaterialCommunityIcons` en Android
+- Animaciones Reanimated v4: `FadeInDown` para brand, `FadeInUp` para card y footer
+- TODOs para autenticación real, API route y `expo-secure-store`
+- Archivo `app/inicio_de_sesi_n_oscuro_ubuntu.tsx` con solo re-export

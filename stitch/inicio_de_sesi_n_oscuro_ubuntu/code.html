@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeoFin - Bienvenido de nuevo</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#2d3449",
+                    "on-background": "#dae2fd",
+                    "on-secondary-fixed": "#23005b",
+                    "outline": "#849495",
+                    "on-surface": "#dae2fd",
+                    "on-primary-container": "#006970",
+                    "tertiary-fixed-dim": "#ffaedd",
+                    "inverse-surface": "#dae2fd",
+                    "on-primary": "#00363a",
+                    "on-error": "#690005",
+                    "secondary-container": "#7000ff",
+                    "on-primary-fixed-variant": "#004f54",
+                    "on-secondary": "#3c0090",
+                    "secondary": "#d1bcff",
+                    "surface": "#0b1326",
+                    "inverse-on-surface": "#283044",
+                    "on-secondary-container": "#ddcdff",
+                    "surface-container-high": "#222a3d",
+                    "on-tertiary": "#60004a",
+                    "on-error-container": "#ffdad6",
+                    "tertiary-container": "#ffcbe6",
+                    "secondary-fixed-dim": "#d1bcff",
+                    "inverse-primary": "#006970",
+                    "tertiary": "#fff3f6",
+                    "error-container": "#93000a",
+                    "primary-container": "#00f0ff",
+                    "surface-variant": "#2d3449",
+                    "error": "#ffb4ab",
+                    "background": "#0b1326",
+                    "on-primary-fixed": "#002022",
+                    "surface-container": "#171f33",
+                    "surface-container-lowest": "#060e20",
+                    "on-tertiary-container": "#b2008b",
+                    "on-secondary-fixed-variant": "#5700c9",
+                    "surface-container-low": "#131b2e",
+                    "on-tertiary-fixed-variant": "#880069",
+                    "primary-fixed-dim": "#00dbe9",
+                    "outline-variant": "#3b494b",
+                    "surface-tint": "#00dbe9",
+                    "primary-fixed": "#7df4ff",
+                    "on-tertiary-fixed": "#3b002c",
+                    "secondary-fixed": "#e9ddff",
+                    "surface-bright": "#31394d",
+                    "primary": "#dbfcff",
+                    "surface-dim": "#0b1326",
+                    "on-surface-variant": "#b9cacb",
+                    "tertiary-fixed": "#ffd8eb"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "gutter": "24px",
+                    "container-max": "1440px",
+                    "margin-desktop": "48px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Ubuntu"],
+                    "body-sm": ["Ubuntu"],
+                    "headline-lg": ["Ubuntu"],
+                    "body-lg": ["Ubuntu"],
+                    "display-lg": ["Ubuntu"],
+                    "label-md": ["Ubuntu"],
+                    "title-md": ["Ubuntu"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "500"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            background-color: #0b1326;
+            font-family: 'Ubuntu', sans-serif;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(23, 31, 51, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .neon-glow {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+        }
+        .neon-glow:hover {
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+        }
+        .input-glow:focus-within {
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            border-color: #00f0ff;
+        }
+        .bg-mesh {
+            background: radial-gradient(circle at 10% 20%, rgba(112, 0, 255, 0.15) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.1) 0%, transparent 40%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col justify-center items-center p-margin-mobile md:p-margin-desktop bg-mesh relative">
+<!-- Subtle Background Element -->
+<div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+<div class="absolute -top-[10%] -left-[5%] w-96 h-96 bg-secondary-container/10 rounded-full blur-[120px]"></div>
+<div class="absolute -bottom-[10%] -right-[5%] w-96 h-96 bg-primary-container/10 rounded-full blur-[120px]"></div>
+</div>
+<!-- Login Container -->
+<main class="w-full max-w-[440px] z-10">
+<!-- Brand Identity -->
+<div class="flex flex-col items-center mb-10">
+<div class="w-16 h-16 bg-primary-container rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(0,240,255,0.3)]">
+<span class="material-symbols-outlined text-on-primary-container text-[40px]" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-primary tracking-tight text-center">
+                Bienvenido de nuevo
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-2 text-center">
+                Gestiona tus activos digitales con precisión NeoFin.
+            </p>
+</div>
+<!-- Glassmorphism Login Card -->
+<div class="glass-panel p-8 rounded-3xl shadow-2xl">
+<form class="space-y-6" id="loginForm">
+<!-- Email Field -->
+<div class="space-y-2">
+<label class="font-label-md text-label-md text-on-surface-variant px-1" for="email">CORREO ELECTRÓNICO</label>
+<div class="relative group input-glow border border-white/10 rounded-xl transition-all duration-300 bg-surface-container-lowest/50">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-on-surface-variant group-focus-within:text-primary-container">
+<span class="material-symbols-outlined">alternate_email</span>
+</div>
+<input class="block w-full pl-12 pr-4 py-4 bg-transparent border-none rounded-xl text-on-surface font-body-lg placeholder:text-outline/50 focus:ring-0" id="email" name="email" placeholder="nombre@ejemplo.com" required="" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="space-y-2">
+<div class="flex justify-between items-end px-1">
+<label class="font-label-md text-label-md text-on-surface-variant" for="password">CONTRASEÑA</label>
+<a class="font-label-md text-label-md text-primary-container hover:opacity-80 transition-opacity" href="#">¿Olvidaste tu contraseña?</a>
+</div>
+<div class="relative group input-glow border border-white/10 rounded-xl transition-all duration-300 bg-surface-container-lowest/50">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-on-surface-variant group-focus-within:text-primary-container">
+<span class="material-symbols-outlined">lock</span>
+</div>
+<input class="block w-full pl-12 pr-12 py-4 bg-transparent border-none rounded-xl text-on-surface font-body-lg placeholder:text-outline/50 focus:ring-0" id="password" name="password" placeholder="••••••••" required="" type="password"/>
+<button class="absolute inset-y-0 right-0 pr-4 flex items-center text-on-surface-variant hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</div>
+</div>
+<!-- Remember Me -->
+<div class="flex items-center space-x-3 px-1">
+<input class="w-5 h-5 rounded border-white/10 bg-surface-container-highest text-primary-container focus:ring-primary-container/50" id="remember" type="checkbox"/>
+<label class="font-body-sm text-body-sm text-on-surface-variant select-none" for="remember">Mantener sesión iniciada</label>
+</div>
+<!-- Submit Button -->
+<button class="w-full bg-primary-container text-on-primary-container font-title-md text-title-md py-4 rounded-xl neon-glow transition-all active:scale-[0.98] duration-150 flex items-center justify-center space-x-2" type="submit">
+<span>Iniciar sesión</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</form>
+<!-- Divider -->
+<div class="relative my-10">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-white/10"></div>
+</div>
+<div class="relative flex justify-center text-label-md uppercase">
+<span class="px-4 bg-[#171f33] text-on-surface-variant">O continuar con</span>
+</div>
+</div>
+<!-- Social Logins -->
+<div class="grid grid-cols-2 gap-4">
+<button class="flex items-center justify-center space-x-2 py-3 border border-white/10 rounded-xl bg-surface-container-highest/30 hover:bg-surface-container-highest/60 transition-colors duration-200">
+<svg class="w-5 h-5" viewbox="0 0 24 24">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"></path>
+</svg>
+<span class="font-label-md text-label-md text-on-surface">Google</span>
+</button>
+<button class="flex items-center justify-center space-x-2 py-3 border border-white/10 rounded-xl bg-surface-container-highest/30 hover:bg-surface-container-highest/60 transition-colors duration-200">
+<svg class="w-5 h-5" viewbox="0 0 24 24">
+<path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C4.79 17.3 3.46 11.53 5.44 8.22c1-1.66 2.57-2.68 4.02-2.68 1.44 0 2.45.9 3.42.9 1.1 0 1.96-1.04 3.76-1.04 1.45 0 2.7.7 3.4 1.83-2.9 1.7-2.45 5.5.4 6.7-.65 1.64-1.5 3.28-3.39 6.35zM12.03 5.45c-.1 0-.21 0-.31-.02.08-2.52 2.1-4.63 4.54-4.43.23 2.62-2.18 4.6-4.23 4.45z" fill="currentColor"></path>
+</svg>
+<span class="font-label-md text-label-md text-on-surface">Apple</span>
+</button>
+</div>
+</div>
+<!-- Footer Links -->
+<p class="mt-8 text-center font-body-sm text-body-sm text-on-surface-variant">
+            ¿No tienes una cuenta? 
+            <a class="text-primary-container font-medium hover:underline transition-all" href="#">Regístrate ahora</a>
+</p>
+</main>
+<!-- Floating Graphic Elements (Ambient) -->
+<div class="fixed top-20 right-[15%] w-20 h-20 opacity-20 hidden lg:block">
+<span class="material-symbols-outlined text-[80px] text-primary" style="font-variation-settings: 'wght' 100;">data_saver_off</span>
+</div>
+<div class="fixed bottom-20 left-[15%] w-20 h-20 opacity-20 hidden lg:block">
+<span class="material-symbols-outlined text-[80px] text-secondary" style="font-variation-settings: 'wght' 100;">monitoring</span>
+</div>
+<script>
+        // Micro-interaction for the form submission
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalContent = btn.innerHTML;
+            
+            // Visual feedback
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span><span>Verificando...</span>';
+            btn.disabled = true;
+            btn.classList.add('opacity-80');
+            
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span><span>Acceso concedido</span>';
+                btn.classList.replace('bg-primary-container', 'bg-tertiary-container');
+                btn.classList.replace('text-on-primary-container', 'text-on-tertiary-container');
+                btn.classList.add('shadow-[0_0_20px_rgba(255,174,221,0.5)]');
+                
+                // Redirigir simulación
+                setTimeout(() => {
+                    alert('Navegando al Dashboard principal de NeoFin...');
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-80');
+                    btn.classList.replace('bg-tertiary-container', 'bg-primary-container');
+                    btn.classList.replace('text-on-tertiary-container', 'text-on-primary-container');
+                    btn.classList.remove('shadow-[0_0_20px_rgba(255,174,221,0.5)]');
+                }, 1000);
+            }, 1500);
+        });
+
+        // Focus ring enhancement script
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('border-primary-container');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.classList.remove('border-primary-container');
+            });
+        });
+    </script>
+</body></html>

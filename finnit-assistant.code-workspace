@@ -80,8 +80,14 @@
     "[json]": {
       "editor.defaultFormatter": "esbenp.prettier-vscode",
     },
-    "prettier.configPath": ".prettierrc",
-    "prettier.documentSelectors": ["**/*.{js,jsx,ts,tsx,json,mjs}"],
+    "prettier.configPath": ".prettierrc.json",
+    "prettier.prettierPath": "./node_modules/prettier",
+    "prettier.documentSelectors": [
+      "**/*.{js,jsx,ts,tsx,json,mjs,md}"
+    ],
+    "[markdown]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
   },
   "extensions": {
     "recommendations": [

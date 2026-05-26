@@ -1,0 +1,17 @@
+No TypeScript errors in the new files. Both files are clean.
+
+---
+
+Two files created:
+
+**`apps/finnit-app/screens/tarjetas_claro_ubuntu.tsx`** — full screen with:
+- `TopAppBar` + `BottomNavBar` with `cards` tab active
+- Horizontal card carousel using `BankPaymentCard` (platinum + virtual variants)
+- 2×2 bento quick-action grid (Bloquear, CVV Dinámico, Límites, Ajustes) — glassmorphism, per-item icon colors, CVV toggle with reveal
+- "Límites de Gasto" glass card — two progress bars with neon glow fills + 12-month bar chart with current month highlighted
+- "Centro de Seguridad" glass card — three interactive toggles (with custom track/thumb, accessible `role="switch"`)
+- "Actividad" glass card — four `TransactionItemExpense` entries with staggered `FadeInUp`
+- Promo card with `experimental_backgroundImage` gradient
+- Dark mode support throughout via `useColorScheme`
+
+**`apps/finnit-app/app/tarjetas_claro_ubuntu.tsx`** — thin route file, re-exports the screen only.

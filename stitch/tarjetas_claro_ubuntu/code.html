@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FinVault - Gestión de Tarjetas</title>
+<!-- Font & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&amp;family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "primary-fixed-dim": "#00dce5",
+                "tertiary-fixed-dim": "#fface8",
+                "inverse-on-surface": "#f0f1f2",
+                "secondary-fixed-dim": "#ecb2ff",
+                "on-primary": "#ffffff",
+                "on-background": "#191c1d",
+                "on-error": "#ffffff",
+                "tertiary": "#ad009b",
+                "surface-container": "#edeeef",
+                "tertiary-fixed": "#ffd7f0",
+                "error": "#ba1a1a",
+                "surface-container-high": "#e7e8e9",
+                "surface-dim": "#d9dadb",
+                "tertiary-container": "#ffd0ef",
+                "surface": "#f8f9fa",
+                "on-surface": "#191c1d",
+                "surface-tint": "#00696e",
+                "on-tertiary": "#ffffff",
+                "surface-container-lowest": "#ffffff",
+                "surface-bright": "#f8f9fa",
+                "on-primary-fixed-variant": "#004f53",
+                "surface-container-highest": "#e1e3e4",
+                "outline-variant": "#b9caca",
+                "on-error-container": "#93000a",
+                "on-secondary-container": "#fffbff",
+                "secondary-fixed": "#f8d8ff",
+                "on-primary-container": "#006c71",
+                "primary": "#00696e",
+                "primary-fixed": "#63f7ff",
+                "background": "#f8f9fa",
+                "primary-container": "#00f5ff",
+                "outline": "#6a7a7b",
+                "on-tertiary-container": "#b2009f",
+                "secondary": "#9500ca",
+                "on-tertiary-fixed": "#3a0033",
+                "inverse-primary": "#00dce5",
+                "secondary-container": "#bb00fc",
+                "inverse-surface": "#2e3132",
+                "error-container": "#ffdad6",
+                "on-secondary-fixed-variant": "#74009f",
+                "on-surface-variant": "#3a494a",
+                "on-secondary": "#ffffff",
+                "on-secondary-fixed": "#320047",
+                "surface-container-low": "#f3f4f5",
+                "surface-variant": "#e1e3e4",
+                "on-tertiary-fixed-variant": "#840076",
+                "on-primary-fixed": "#002021"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "unit": "8px",
+                "container-max": "1200px",
+                "margin-desktop": "40px",
+                "margin-mobile": "20px",
+                "gutter": "16px"
+            },
+            "fontFamily": {
+                "headline-lg-mobile": ["Ubuntu", "sans-serif"],
+                "headline-lg": ["Ubuntu", "sans-serif"],
+                "body-md": ["Ubuntu", "sans-serif"],
+                "label-sm": ["Ubuntu", "sans-serif"],
+                "headline-xl": ["Ubuntu", "sans-serif"]
+            },
+            "fontSize": {
+                "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Ubuntu', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.04);
+        }
+        .neon-glow-primary {
+            box-shadow: 0 0 15px rgba(0, 220, 229, 0.4);
+        }
+        .neon-glow-secondary {
+            box-shadow: 0 0 15px rgba(149, 0, 202, 0.4);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .bank-card-glass {
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        .bank-card-glass::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            transform: rotate(30deg);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen pb-24 md:pb-0 md:pt-16">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">FinVault</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container-high/50 transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-fixed">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a young entrepreneur with a friendly smile, clean-cut hair, and modern glasses. The lighting is bright and airy, reflecting a high-key professional studio setup. The background is a soft, out-of-focus modern office with glass partitions and hints of vibrant teal and white decor." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4M4y8dOw0Sy7_Zy-1d4pw32Z2OLIhIQ9IG7USdQNw_bVJU7ECy9ww51FGe9ANR1IAyqP1ASeDALkWwAn_ItxxYX1rfklk3U_m9mvbJmpKur5XATbMxDUkiiayCq-IS6QnaIWefH7VI4qcu_3ZrvLW9UIq-aoHjWhGX2e9VMVzyZZRdmDElvLwqfl2sOKvZVtz_aqy_3DRam0gcSIJVVIX1w5JvDCY96RdJs4A8tYwnfQi6bF1s97wd9HlGB5aqWuaE0olCUkK444"/>
+</div>
+</div>
+</header>
+<main class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-8 pt-24">
+<!-- Hero Section: Card Carousel -->
+<section class="mb-12">
+<div class="flex justify-between items-end mb-6">
+<div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Mis Tarjetas</h2>
+<p class="text-on-surface-variant font-body-md text-body-md">Gestiona tus plásticos y límites</p>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full flex items-center gap-2 hover:scale-95 duration-100 transition-transform font-label-md text-label-md neon-glow-primary">
+<span class="material-symbols-outlined">add</span>
+                    Nueva Tarjeta
+                </button>
+</div>
+<!-- Carousel Area -->
+<div class="flex gap-6 overflow-x-auto no-scrollbar pb-6 -mx-margin-mobile px-margin-mobile">
+<!-- Platinum Card -->
+<div class="min-w-[320px] md:min-w-[400px] h-[220px] md:h-[250px] bank-card-glass rounded-3xl p-6 flex flex-col justify-between shadow-xl relative group cursor-pointer transition-all hover:-translate-y-2">
+<div class="absolute top-0 right-0 p-4 opacity-20">
+<span class="material-symbols-outlined text-6xl">blur_on</span>
+</div>
+<div class="flex justify-between items-start">
+<div class="space-y-1">
+<p class="text-xs font-medium uppercase tracking-widest text-primary/80">Premium Platinum</p>
+<h3 class="font-headline-md text-xl font-bold text-primary">NeoFin Light</h3>
+</div>
+<span class="material-symbols-outlined text-4xl text-on-surface/60">contactless</span>
+</div>
+<div class="space-y-4">
+<p class="text-2xl font-mono tracking-[0.2em] text-on-surface">**** **** **** 8892</p>
+<div class="flex justify-between items-end">
+<div>
+<p class="text-[10px] uppercase text-on-surface-variant">Titular</p>
+<p class="font-medium">ALEXANDER VAULT</p>
+</div>
+<div>
+<p class="text-[10px] uppercase text-on-surface-variant">Expira</p>
+<p class="font-medium text-right">09/28</p>
+</div>
+<div class="h-8 w-12 bg-primary/20 rounded-md backdrop-blur-md flex items-center justify-center">
+<div class="w-6 h-6 rounded-full bg-primary/40 -mr-2"></div>
+<div class="w-6 h-6 rounded-full bg-secondary/40"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Secondary Card -->
+<div class="min-w-[320px] md:min-w-[400px] h-[220px] md:h-[250px] bg-secondary-container/30 backdrop-blur-xl border border-secondary-fixed/50 rounded-3xl p-6 flex flex-col justify-between shadow-xl relative group cursor-pointer transition-all hover:-translate-y-2">
+<div class="flex justify-between items-start">
+<div class="space-y-1">
+<p class="text-xs font-medium uppercase tracking-widest text-on-secondary-container/80">Virtual Daily</p>
+<h3 class="font-headline-md text-xl font-bold text-secondary">FinVault Go</h3>
+</div>
+<span class="material-symbols-outlined text-4xl text-secondary/60">visibility_off</span>
+</div>
+<div class="space-y-4">
+<p class="text-2xl font-mono tracking-[0.2em] text-on-secondary-container">**** **** **** 4410</p>
+<div class="flex justify-between items-end">
+<div>
+<p class="text-[10px] uppercase text-on-secondary-container/70">Saldo Virtual</p>
+<p class="font-medium">$12,450.00</p>
+</div>
+<div class="h-8 w-12 bg-secondary/20 rounded-md backdrop-blur-md flex items-center justify-center">
+<div class="w-6 h-6 rounded-full bg-secondary/40"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Content Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Left Column: Controls & Stats -->
+<div class="md:col-span-8 space-y-gutter">
+<!-- Quick Settings Bento -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="glass-card p-6 rounded-3xl flex flex-col items-center justify-center gap-3 text-center transition-transform hover:scale-105 group">
+<div class="w-12 h-12 rounded-full bg-error-container/50 flex items-center justify-center text-error group-hover:bg-error group-hover:text-on-error transition-colors">
+<span class="material-symbols-outlined">block</span>
+</div>
+<span class="font-label-md text-label-md">Bloquear</span>
+</div>
+<div class="glass-card p-6 rounded-3xl flex flex-col items-center justify-center gap-3 text-center transition-transform hover:scale-105 group" onclick="toggleCvv()">
+<div class="w-12 h-12 rounded-full bg-primary-container/50 flex items-center justify-center text-on-primary-container group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">refresh</span>
+</div>
+<span class="font-label-md text-label-md">CVV Dinámico</span>
+<div class="hidden text-xs font-mono font-bold bg-surface px-2 rounded mt-1" id="cvv-display">821</div>
+</div>
+<div class="glass-card p-6 rounded-3xl flex flex-col items-center justify-center gap-3 text-center transition-transform hover:scale-105 group">
+<div class="w-12 h-12 rounded-full bg-tertiary-container/50 flex items-center justify-center text-on-tertiary-container group-hover:bg-tertiary group-hover:text-on-tertiary transition-colors">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<span class="font-label-md text-label-md">Límites</span>
+</div>
+<div class="glass-card p-6 rounded-3xl flex flex-col items-center justify-center gap-3 text-center transition-transform hover:scale-105 group">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest/50 flex items-center justify-center text-on-surface group-hover:bg-on-surface group-hover:text-surface transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</div>
+<span class="font-label-md text-label-md">Ajustes</span>
+</div>
+</div>
+<!-- Spending Limits & Analytics -->
+<div class="glass-card p-8 rounded-[32px] space-y-8 relative overflow-hidden">
+<div class="flex justify-between items-center">
+<h3 class="font-headline-md text-xl font-bold">Límites de Gasto</h3>
+<span class="text-primary font-label-md text-label-md">Mensual</span>
+</div>
+<div class="space-y-6">
+<div class="space-y-2">
+<div class="flex justify-between font-label-sm text-label-sm uppercase tracking-wider">
+<span>Gastado este mes</span>
+<span class="text-on-surface">$3,420.50 / $8,000.00</span>
+</div>
+<div class="h-3 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary neon-glow-primary rounded-full" style="width: 42.7%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between font-label-sm text-label-sm uppercase tracking-wider">
+<span>Retiro en ATM</span>
+<span class="text-on-surface">$500.00 / $2,000.00</span>
+</div>
+<div class="h-3 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-secondary neon-glow-secondary rounded-full" style="width: 25%"></div>
+</div>
+</div>
+</div>
+<!-- Visual Chart (Mockup) -->
+<div class="pt-8 border-t border-outline-variant/20">
+<div class="flex justify-between items-end h-40 gap-2">
+<div class="w-full bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40 cursor-help" style="height: 40%"></div>
+<div class="w-full bg-primary/30 rounded-t-lg transition-all hover:bg-primary/50 cursor-help" style="height: 65%"></div>
+<div class="w-full bg-primary/25 rounded-t-lg transition-all hover:bg-primary/45 cursor-help" style="height: 50%"></div>
+<div class="w-full bg-primary/50 rounded-t-lg transition-all hover:bg-primary/70 cursor-help" style="height: 85%"></div>
+<div class="w-full bg-primary/10 rounded-t-lg transition-all hover:bg-primary/30 cursor-help" style="height: 30%"></div>
+<div class="w-full bg-primary/40 rounded-t-lg transition-all hover:bg-primary/60 cursor-help" style="height: 70%"></div>
+<div class="w-full bg-primary rounded-t-lg neon-glow-primary cursor-help" style="height: 95%"></div>
+<div class="w-full bg-surface-container-highest rounded-t-lg cursor-help" style="height: 10%"></div>
+<div class="w-full bg-surface-container-highest rounded-t-lg cursor-help" style="height: 10%"></div>
+<div class="w-full bg-surface-container-highest rounded-t-lg cursor-help" style="height: 10%"></div>
+<div class="w-full bg-surface-container-highest rounded-t-lg cursor-help" style="height: 10%"></div>
+<div class="w-full bg-surface-container-highest rounded-t-lg cursor-help" style="height: 10%"></div>
+</div>
+<div class="flex justify-between mt-4 text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter">
+<span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span><span class="text-primary">Jul</span><span>Ago</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dic</span>
+</div>
+<p class="mt-4 text-center font-label-sm text-label-sm text-on-surface-variant">Proyección anual basada en hábitos actuales</p>
+</div>
+</div>
+</div>
+<!-- Right Column: Recent Activity & Security -->
+<div class="md:col-span-4 space-y-gutter">
+<!-- Security Center -->
+<div class="glass-card p-6 rounded-[32px] border-l-4 border-primary">
+<h3 class="font-headline-md text-lg font-bold mb-6">Centro de Seguridad</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">language</span>
+<span class="font-body-md text-sm">Pagos Internacionales</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">shopping_cart</span>
+<span class="font-body-md text-sm">Compras Online</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">smartphone</span>
+<span class="font-body-md text-sm">Apple/Google Pay</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- Recent Transactions -->
+<div class="glass-card p-6 rounded-[32px]">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-lg font-bold">Actividad</h3>
+<a class="text-primary text-xs font-bold hover:underline" href="#">Ver todo</a>
+</div>
+<div class="space-y-5">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">local_cafe</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold">Starbucks Coffee</p>
+<p class="text-[10px] text-on-surface-variant">Hoy, 08:45 AM</p>
+</div>
+<span class="text-sm font-bold text-on-surface">-$12.50</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">shopping_bag</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold">Apple Store</p>
+<p class="text-[10px] text-on-surface-variant">Ayer, 04:20 PM</p>
+</div>
+<span class="text-sm font-bold text-on-surface">-$1,299.00</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary">subscriptions</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold">Netflix Subscription</p>
+<p class="text-[10px] text-on-surface-variant">24 Jul, 10:00 AM</p>
+</div>
+<span class="text-sm font-bold text-on-surface">-$15.99</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">fitness_center</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold">FitLife Gym</p>
+<p class="text-[10px] text-on-surface-variant">22 Jul, 07:15 AM</p>
+</div>
+<span class="text-sm font-bold text-on-surface">-$45.00</span>
+</div>
+</div>
+</div>
+<!-- Ad/Promo Card -->
+<div class="relative rounded-[32px] overflow-hidden group">
+<img alt="Card Promo" class="w-full h-48 object-cover transition-transform group-hover:scale-110" data-alt="A cinematic, low-angle shot of a futuristic sleek black titanium credit card hovering over a glass surface with neon blue and purple light reflections. The background is a blurred high-end urban apartment at night with soft city lights. The aesthetic is luxurious, modern, and tech-forward." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcOTMjiC8-ebbhJFOBer971g8BaUJpkHQgKVhqm9UG4oVo1FWVpmnt1MTFo8vQUiFkmSxPuvogQ3x-Sc4v2ZNuVJoFq9fb00OEE4CH2N0aG3m4fF-79fRTzgG7hehMq0zrA5Pp61GUTa3HIkGC5QjT0JdWAsdJhopSuU6lhIZbXctw_LzksIAy0F8comsHdMidCM_iS5y382U04eXB3GE_JFDejWgkWi7vYeeotf5qCtalkkiVhVDs5lEF2kUq9Pt-wckloszavyU"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 flex flex-col justify-end">
+<p class="text-white font-bold text-lg">Mejora a Gold</p>
+<p class="text-white/70 text-xs">Acceso a VIP Lounges y 5% Cashback</p>
+<button class="mt-4 bg-white text-black py-2 rounded-full text-xs font-bold w-max px-6">Saber más</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 pb-safe bg-surface/90 backdrop-blur-lg border-t border-outline-variant/30 md:hidden">
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-sm text-label-sm">Analytics</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1">
+<span class="material-symbols-outlined text-3xl">add_circle</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">credit_card</span>
+<span class="font-label-sm text-label-sm">Cards</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</div>
+</nav>
+<!-- Desktop Sidebar Placeholder (Simplified for single screen) -->
+<div class="hidden md:fixed md:left-0 md:top-16 md:h-full md:w-20 md:flex md:flex-col md:items-center md:py-8 md:gap-8 md:bg-surface md:border-r md:border-outline-variant/30">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors">home</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors">analytics</span>
+<span class="material-symbols-outlined text-primary bg-primary/10 p-3 rounded-2xl" style="font-variation-settings: 'FILL' 1;">credit_card</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors">person</span>
+<div class="mt-auto mb-20">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-error cursor-pointer transition-colors">logout</span>
+</div>
+</div>
+<script>
+        function toggleCvv() {
+            const display = document.getElementById('cvv-display');
+            display.classList.toggle('hidden');
+            if(!display.classList.contains('hidden')) {
+                // Shake effect
+                display.parentElement.classList.add('scale-95');
+                setTimeout(() => {
+                    display.parentElement.classList.remove('scale-95');
+                }, 100);
+            }
+        }
+
+        // Simple smooth scroll for carousel
+        const carousel = document.querySelector('.overflow-x-auto');
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        carousel.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startX = e.pageX - carousel.offsetLeft;
+            scrollLeft = carousel.scrollLeft;
+        });
+        carousel.addEventListener('mouseleave', () => {
+            isDown = false;
+        });
+        carousel.addEventListener('mouseup', () => {
+            isDown = false;
+        });
+        carousel.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - carousel.offsetLeft;
+            const walk = (x - startX) * 2;
+            carousel.scrollLeft = scrollLeft - walk;
+        });
+    </script>
+</body></html>

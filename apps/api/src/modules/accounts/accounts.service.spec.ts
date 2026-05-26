@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { AccountsService } from './accounts.service';
 import { PrismaService } from '../../services/prisma.service';
 import { NotFoundError, ValidationError, ForbiddenError } from '../../common/exceptions/graphql-error.exception';
@@ -7,7 +8,7 @@ import { PaginationUtil } from '../../common/utils/pagination.util';
 
 describe('AccountsService', () => {
   let service: AccountsService;
-  let prismaService: jest.Mocked<PrismaService>;
+  let prismaService: DeepMockProxy<PrismaService>;
 
   const mockUserId = 'user-1';
   const mockAccount = {
@@ -24,33 +25,19 @@ describe('AccountsService', () => {
   };
 
   beforeEach(async () => {
-    const mockPrismaService = {
-      account: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        findFirst: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-        count: jest.fn(),
-      },
-      transaction: {
-        create: jest.fn(),
-      },
-      $transaction: jest.fn(),
-    };
+    prismaService = mockDeep<PrismaService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AccountsService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: prismaService,
         },
       ],
     }).compile();
 
     service = module.get<AccountsService>(AccountsService);
-    prismaService = module.get(PrismaService);
 
     jest.clearAllMocks();
   });
@@ -71,7 +58,7 @@ describe('AccountsService', () => {
       prismaService.transaction.create.mockResolvedValue({} as any);
 
       // Act
-      const result = await service.create(mockUserId, createInput);
+      const result = await service.create(mockUserId, createInput as any);
 
       // Assert
       expect(prismaService.account.create).toHaveBeenCalledWith({
@@ -119,7 +106,7 @@ describe('AccountsService', () => {
       prismaService.account.create.mockResolvedValue(expectedAccount);
 
       // Act
-      await service.create(mockUserId, zeroBalanceInput);
+      await service.create(mockUserId, zeroBalanceInput as any);
 
       // Assert
       expect(prismaService.account.create).toHaveBeenCalled();
@@ -134,7 +121,7 @@ describe('AccountsService', () => {
       prismaService.transaction.create.mockResolvedValue({} as any);
 
       // Act
-      await service.create(mockUserId, negativeBalanceInput);
+      await service.create(mockUserId, negativeBalanceInput as any);
 
       // Assert
       expect(prismaService.transaction.create).toHaveBeenCalledWith({
@@ -150,7 +137,7 @@ describe('AccountsService', () => {
       prismaService.account.create.mockRejectedValue(new Error('Database error'));
 
       // Act & Assert
-      await expect(service.create(mockUserId, createInput)).rejects.toThrow('Database error');
+      await expect(service.create(mockUserId, createInput as any)).rejects.toThrow('Database error');
     });
   });
 
@@ -165,7 +152,7 @@ describe('AccountsService', () => {
 
       jest.spyOn(PaginationUtil, 'createConnection').mockReturnValue({
         edges: mockAccounts.map(acc => ({ node: service['mapAccount'](acc), cursor: 'cursor' })),
-        pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
+        pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: undefined, endCursor: undefined },
         totalCount: 2,
       });
 
@@ -189,7 +176,7 @@ describe('AccountsService', () => {
 
       jest.spyOn(PaginationUtil, 'createConnection').mockReturnValue({
         edges: [],
-        pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
+        pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: undefined, endCursor: undefined },
         totalCount: 1,
       });
 
@@ -212,7 +199,7 @@ describe('AccountsService', () => {
 
       jest.spyOn(PaginationUtil, 'createConnection').mockReturnValue({
         edges: [],
-        pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
+        pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: undefined, endCursor: undefined },
         totalCount: 0,
       });
 
@@ -236,7 +223,7 @@ describe('AccountsService', () => {
       jest.spyOn(PaginationUtil, 'decodeCursor').mockReturnValue('cursor-123');
       jest.spyOn(PaginationUtil, 'createConnection').mockReturnValue({
         edges: [],
-        pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
+        pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: undefined, endCursor: undefined },
         totalCount: 1,
       });
 
@@ -260,7 +247,7 @@ describe('AccountsService', () => {
       jest.spyOn(PaginationUtil, 'decodeCursor').mockReturnValue('cursor-456');
       jest.spyOn(PaginationUtil, 'createConnection').mockReturnValue({
         edges: [],
-        pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null },
+        pageInfo: { hasNextPage: false, hasPreviousPage: false, startCursor: undefined, endCursor: undefined },
         totalCount: 1,
       });
 
@@ -332,7 +319,7 @@ describe('AccountsService', () => {
       prismaService.account.update.mockResolvedValue(updatedAccount);
 
       // Act
-      const result = await service.update(mockAccount.id, mockUserId, updateInput);
+      const result = await service.update(mockAccount.id, mockUserId, updateInput as any);
 
       // Assert
       expect(prismaService.account.findFirst).toHaveBeenCalledWith({
@@ -351,7 +338,7 @@ describe('AccountsService', () => {
       prismaService.account.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.update('non-existent', mockUserId, updateInput)).rejects.toThrow(NotFoundError);
+      await expect(service.update('non-existent', mockUserId, updateInput as any)).rejects.toThrow(NotFoundError);
       expect(prismaService.account.update).not.toHaveBeenCalled();
     });
 
@@ -361,7 +348,7 @@ describe('AccountsService', () => {
       prismaService.account.update.mockRejectedValue(new Error('Update failed'));
 
       // Act & Assert
-      await expect(service.update(mockAccount.id, mockUserId, updateInput)).rejects.toThrow('Update failed');
+      await expect(service.update(mockAccount.id, mockUserId, updateInput as any)).rejects.toThrow('Update failed');
     });
   });
 
@@ -380,11 +367,11 @@ describe('AccountsService', () => {
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
           transaction: { create: jest.fn() },
-          account: { 
-            update: jest.fn().mockResolvedValue(updatedAccount) 
+          account: {
+            update: jest.fn().mockResolvedValue(updatedAccount)
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -406,11 +393,11 @@ describe('AccountsService', () => {
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
           transaction: { create: jest.fn() },
-          account: { 
-            update: jest.fn().mockResolvedValue(updatedAccount) 
+          account: {
+            update: jest.fn().mockResolvedValue(updatedAccount)
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -445,16 +432,16 @@ describe('AccountsService', () => {
       let capturedTransactionData: any;
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          transaction: { 
+          transaction: {
             create: jest.fn().mockImplementation((data) => {
               capturedTransactionData = data;
             })
           },
-          account: { 
-            update: jest.fn().mockResolvedValue(updatedAccount) 
+          account: {
+            update: jest.fn().mockResolvedValue(updatedAccount)
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -508,9 +495,9 @@ describe('AccountsService', () => {
 
     it('should throw ValidationError when account has transactions', async () => {
       // Arrange
-      const accountWithTransactions = { 
-        ...mockAccount, 
-        transactions: [{ id: 'txn-1' }] as any 
+      const accountWithTransactions = {
+        ...mockAccount,
+        transactions: [{ id: 'txn-1' }] as any
       };
       prismaService.account.findFirst.mockResolvedValue(accountWithTransactions);
 
@@ -572,9 +559,9 @@ describe('AccountsService', () => {
 
     it('should correctly convert Decimal balance to number', () => {
       // Arrange
-      const accountWithDecimal = { 
-        ...mockAccount, 
-        balanceCurrent: { toString: () => '1234.56' } as any 
+      const accountWithDecimal = {
+        ...mockAccount,
+        balanceCurrent: { toString: () => '1234.56' } as any
       };
 
       // Act
@@ -602,7 +589,7 @@ describe('AccountsService', () => {
           transaction: { create: jest.fn() },
           account: { update: jest.fn().mockResolvedValue(updatedAccount) },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act

@@ -1,0 +1,16 @@
+La implementación de `historial_claro_ubuntu` ya estaba completa y lista. Aquí el estado final:
+
+**`apps/finnit-app/screens/historial_claro_ubuntu.tsx`** — pantalla completa con:
+- `TopAppBar` con título "Finnit"
+- Barra de búsqueda con `magnifyingglass` + `TwTextInput`, filtra en tiempo real por nombre y categoría
+- `FilterChipGroup` con chips `Todo / Gastos / Ingresos / Inversión` (estado activo persistente)
+- Grupos de transacciones por fecha con `LabelSm` (uppercase + tracking) como cabecera
+- `TransactionItemExpense` y `TransactionItemIncome` para cada ítem, con el SF Symbol correcto por tipo
+- Estado vacío con ícono `tray` cuando no hay resultados
+- Animaciones `FadeInUp` con stagger de 60ms por ítem (Reanimated v4)
+- `BottomNavBar` con `activeTab="analytics"` (tab activo per diseño)
+- Soporte dark/light mode en toda la pantalla
+
+**`apps/finnit-app/app/historial_claro_ubuntu.tsx`** — re-exportación pura sin lógica adicional.
+
+Corrección aplicada: renombré `_delay` → `staggerMs` para eliminar el prefijo de "variable intencionalemente no usada" en una variable que sí se usa.

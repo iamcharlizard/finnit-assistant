@@ -1,0 +1,20 @@
+No hay errores en el nuevo archivo — todos los errores son pre-existentes en `node_modules` y en archivos no relacionados (`_layout.tsx`, `IconSymbol.tsx`, etc.). Ninguno menciona `historial_oscuro_ubuntu`.
+
+La implementación está completa:
+
+---
+
+**`apps/finnit-app/screens/historial_oscuro_ubuntu.tsx`** — pantalla completa con:
+- `TopAppBar` con título "Finnit"
+- Encabezado "Historial" + subtítulo con `FadeInUp`
+- Barra de búsqueda (misma estructura que la versión clara)
+- `FilterChipGroup` con Todos / Ingresos / Gastos / Inversiones
+- Grupos de transacciones con animación stagger usando `TransactionItemWithStatus`:
+  - Hoy: Apple Store (expense/Completado) · Transferencia Recibida (income/Vía SEPA)
+  - Ayer: Sushi Zen Master (pending/Pendiente) · Suscripción Netflix (failed/Fallida)
+- **Tarjeta "Gasto Mensual"** — glassmorphism oscuro `rgba(23,31,51,0.70)`, watermark de ícono, `$2,480.50`, barra de progreso al 75% con glow neon `#00f5ff`
+- **`NeoTipCard`** — tip de IA reutilizando el componente existente
+- **Tarjeta "Categorías Populares"** — glass card con filas de puntos de color (cyan/purple/pink)
+- `BottomNavBar` con `analytics` activo
+
+**`apps/finnit-app/app/historial_oscuro_ubuntu.tsx`** — solo re-exporta la screen, sin lógica.

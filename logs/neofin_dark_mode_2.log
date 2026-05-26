@@ -1,0 +1,28 @@
+Sin errores en la pantalla. La implementación está limpia.
+
+---
+
+## Resumen de la pantalla `neofin_dark_mode_2`
+
+La pantalla implementada es la vista de **Analíticas** del tema NeoFin Dark Mode 2, diferenciada intencionalmente del dashboard (`dark_mode_1`):
+
+### Componentes reutilizados (sin modificar)
+| Componente | Propósito |
+|---|---|
+| `AnalyticsHeroCard` | Hero con gasto total del período + sparkline de barras |
+| `FilterChipGroup` | Selector semana / mes / año |
+| `FinancialHealthChart` | Donut chart 75% con rating "Excelente" |
+| `MonthlyDistributionChart` | Barras de gastos por mes (Feb–May) |
+| `CategoryProgressItem` | 4 categorías con barra de progreso + icono |
+| `NeoTipCard` | Insight financiero con acción CTA |
+| `TransactionItemWithStatus` | 3 transacciones recientes con badge de estado |
+| `TopAppBar` / `BottomNavBar` | Nav estándar (tab `analytics` activo) |
+
+### Componente privado añadido
+- `SummaryMetric` — tarjeta compacta (Ingresos / Ahorro neto), con comentario `// TODO: evaluar si mover a ui/`
+
+### Diseño
+- Fondo `#12131a` + glow púrpura `rgba(191,194,255,0.14)` en gradiente vertical
+- Paleta: `#bfc2ff` (primary), `#ffabf2` (secondary pink), `#27dec1` (teal tertiary)
+- Glassmorphism en `SummaryMetric` y tarjetas de categoría
+- Animaciones `FadeIn`/`FadeInUp` escalonadas; los componentes con animación propia **no** se envuelven en `Animated.View` adicional

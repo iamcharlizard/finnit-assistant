@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { GoalsService } from './goals.service';
 import { PrismaService } from '../../services/prisma.service';
 import { NotFoundError, ValidationError } from '../../common/exceptions/graphql-error.exception';
 
 describe('GoalsService', () => {
   let service: GoalsService;
-  let prismaService: jest.Mocked<PrismaService>;
+  let prismaService: DeepMockProxy<PrismaService>;
 
   const mockUserId = 'user-1';
   const mockGoalId = 'goal-1';
@@ -32,38 +33,19 @@ describe('GoalsService', () => {
   };
 
   beforeEach(async () => {
-    const mockPrismaService = {
-      goal: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        findFirst: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-      },
-      goalContribution: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        delete: jest.fn(),
-        aggregate: jest.fn(),
-      },
-      transaction: {
-        findFirst: jest.fn(),
-      },
-      $transaction: jest.fn(),
-    };
+    prismaService = mockDeep<PrismaService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GoalsService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: prismaService,
         },
       ],
     }).compile();
 
     service = module.get<GoalsService>(GoalsService);
-    prismaService = module.get(PrismaService);
 
     jest.clearAllMocks();
   });
@@ -105,9 +87,9 @@ describe('GoalsService', () => {
 
     it('should create goal without due date', async () => {
       // Arrange
-      const inputWithoutDueDate = { ...createInput };
+      const inputWithoutDueDate: any = { ...createInput };
       delete inputWithoutDueDate.dueDate;
-      
+
       const goalWithoutDueDate = { ...mockGoal, dueDate: null };
       prismaService.goal.create.mockResolvedValue(goalWithoutDueDate as any);
 
@@ -198,7 +180,7 @@ describe('GoalsService', () => {
       // Arrange
       const existingGoal = { ...mockGoal };
       const updatedGoal = { ...existingGoal, ...updateInput };
-      
+
       prismaService.goal.findFirst.mockResolvedValue(existingGoal as any);
       prismaService.goal.update.mockResolvedValue(updatedGoal as any);
 
@@ -286,28 +268,28 @@ describe('GoalsService', () => {
       prismaService.goal.findFirst.mockResolvedValue(mockGoal as any);
       prismaService.transaction.findFirst.mockResolvedValue(mockTransaction as any);
 
-      const updatedGoal = { 
-        ...mockGoal, 
-        currentAmount: mockGoal.currentAmount + contributionInput.amount 
+      const updatedGoal = {
+        ...mockGoal,
+        currentAmount: mockGoal.currentAmount + contributionInput.amount
       };
 
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          goalContribution: { 
+          goalContribution: {
             create: jest.fn().mockResolvedValue({
               id: 'contribution-2',
               ...contributionInput,
             }),
           },
-          goal: { 
+          goal: {
             update: jest.fn().mockResolvedValue(updatedGoal),
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
-      const result = await service.addContribution(mockUserId, contributionInput);
+      const result = await service.addContribution(mockUserId, contributionInput) as any;
 
       // Assert
       expect(result.currentAmount).toBe(mockGoal.currentAmount + contributionInput.amount);
@@ -341,30 +323,30 @@ describe('GoalsService', () => {
 
     it('should handle contribution without transaction', async () => {
       // Arrange
-      const manualContribution = { ...contributionInput };
+      const manualContribution: any = { ...contributionInput };
       delete manualContribution.transactionId;
 
       prismaService.goal.findFirst.mockResolvedValue(mockGoal as any);
 
-      const updatedGoal = { 
-        ...mockGoal, 
-        currentAmount: mockGoal.currentAmount + contributionInput.amount 
+      const updatedGoal = {
+        ...mockGoal,
+        currentAmount: mockGoal.currentAmount + contributionInput.amount
       };
 
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          goalContribution: { 
+          goalContribution: {
             create: jest.fn().mockResolvedValue({
               id: 'contribution-3',
               ...manualContribution,
               transactionId: null,
             }),
           },
-          goal: { 
+          goal: {
             update: jest.fn().mockResolvedValue(updatedGoal),
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -389,25 +371,25 @@ describe('GoalsService', () => {
 
       prismaService.goalContribution.findFirst.mockResolvedValue(mockContribution as any);
 
-      const updatedGoal = { 
-        ...mockGoal, 
-        currentAmount: mockGoal.currentAmount - mockContribution.amount 
+      const updatedGoal = {
+        ...mockGoal,
+        currentAmount: mockGoal.currentAmount - mockContribution.amount
       };
 
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
-          goalContribution: { 
+          goalContribution: {
             delete: jest.fn(),
           },
-          goal: { 
+          goal: {
             update: jest.fn().mockResolvedValue(updatedGoal),
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
-      const result = await service.removeContribution(mockUserId, contributionId);
+      const result = await service.removeContribution(mockUserId, contributionId) as any;
 
       // Assert
       expect(result.currentAmount).toBe(mockGoal.currentAmount - mockContribution.amount);
@@ -443,7 +425,7 @@ describe('GoalsService', () => {
       prismaService.goal.findFirst.mockResolvedValue(mockGoal as any);
 
       // Act
-      const result = await service.calculateProgress(mockGoalId, mockUserId);
+      const result = await (service as any).calculateProgress(mockGoalId, mockUserId);
 
       // Assert
       expect(result).toEqual({
@@ -461,14 +443,14 @@ describe('GoalsService', () => {
 
     it('should handle completed goals', async () => {
       // Arrange
-      const completedGoal = { 
-        ...mockGoal, 
-        currentAmount: mockGoal.targetAmount 
+      const completedGoal = {
+        ...mockGoal,
+        currentAmount: mockGoal.targetAmount
       };
       prismaService.goal.findFirst.mockResolvedValue(completedGoal as any);
 
       // Act
-      const result = await service.calculateProgress(mockGoalId, mockUserId);
+      const result = await (service as any).calculateProgress(mockGoalId, mockUserId);
 
       // Assert
       expect(result.isCompleted).toBe(true);
@@ -482,7 +464,7 @@ describe('GoalsService', () => {
       prismaService.goal.findFirst.mockResolvedValue(goalWithoutDueDate as any);
 
       // Act
-      const result = await service.calculateProgress(mockGoalId, mockUserId);
+      const result = await (service as any).calculateProgress(mockGoalId, mockUserId);
 
       // Assert
       expect(result.daysRemaining).toBeNull();
@@ -495,7 +477,7 @@ describe('GoalsService', () => {
       prismaService.goal.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.calculateProgress('non-existent', mockUserId)).rejects.toThrow(NotFoundError);
+      await expect((service as any).calculateProgress('non-existent', mockUserId)).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -520,7 +502,7 @@ describe('GoalsService', () => {
       prismaService.goalContribution.findMany.mockResolvedValue(mockContributions as any);
 
       // Act
-      const result = await service.getContributions(mockGoalId, mockUserId, { limit: 10, offset: 0 });
+      const result = await (service as any).getContributions(mockGoalId, mockUserId, { limit: 10, offset: 0 });
 
       // Assert
       expect(prismaService.goalContribution.findMany).toHaveBeenCalledWith({
@@ -542,7 +524,7 @@ describe('GoalsService', () => {
       prismaService.goal.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.getContributions('non-existent', mockUserId)).rejects.toThrow(NotFoundError);
+      await expect((service as any).getContributions('non-existent', mockUserId)).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -590,7 +572,7 @@ describe('GoalsService', () => {
       const result = service['mapGoal'](goalWithoutContributions as any);
 
       // Assert
-      expect(result.contributions).toEqual([]);
+      expect((result as any).contributions).toEqual([]);
     });
   });
 
@@ -652,8 +634,8 @@ describe('GoalsService', () => {
 
       prismaService.goal.findFirst.mockResolvedValue(nearCompletionGoal as any);
 
-      const completedGoal = { 
-        ...nearCompletionGoal, 
+      const completedGoal = {
+        ...nearCompletionGoal,
         currentAmount: nearCompletionGoal.targetAmount // Cap at target
       };
 
@@ -662,11 +644,11 @@ describe('GoalsService', () => {
           goalContribution: { create: jest.fn() },
           goal: { update: jest.fn().mockResolvedValue(completedGoal) },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
-      const result = await service.addContribution(mockUserId, completingContribution);
+      const result = await service.addContribution(mockUserId, completingContribution) as any;
 
       // Assert
       expect(result.currentAmount).toBe(nearCompletionGoal.targetAmount);

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeoFin - Historial de Transacciones</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Ubuntu', sans-serif;
+            background-color: #0b1326;
+        }
+        .glass-card {
+            background: rgba(23, 31, 51, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+        }
+        .neon-glow-primary {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b1326;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d3449;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#2d3449",
+                        "on-background": "#dae2fd",
+                        "on-secondary-fixed": "#23005b",
+                        "outline": "#849495",
+                        "on-surface": "#dae2fd",
+                        "on-primary-container": "#006970",
+                        "tertiary-fixed-dim": "#ffaedd",
+                        "inverse-surface": "#dae2fd",
+                        "on-primary": "#00363a",
+                        "on-error": "#690005",
+                        "secondary-container": "#7000ff",
+                        "on-primary-fixed-variant": "#004f54",
+                        "on-secondary": "#3c0090",
+                        "secondary": "#d1bcff",
+                        "surface": "#0b1326",
+                        "inverse-on-surface": "#283044",
+                        "on-secondary-container": "#ddcdff",
+                        "surface-container-high": "#222a3d",
+                        "on-tertiary": "#60004a",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-container": "#ffcbe6",
+                        "secondary-fixed-dim": "#d1bcff",
+                        "inverse-primary": "#006970",
+                        "tertiary": "#fff3f6",
+                        "error-container": "#93000a",
+                        "primary-container": "#00f0ff",
+                        "surface-variant": "#2d3449",
+                        "error": "#ffb4ab",
+                        "background": "#0b1326",
+                        "on-primary-fixed": "#002022",
+                        "surface-container": "#171f33",
+                        "surface-container-lowest": "#060e20",
+                        "on-tertiary-container": "#b2008b",
+                        "on-secondary-fixed-variant": "#5700c9",
+                        "surface-container-low": "#131b2e",
+                        "on-tertiary-fixed-variant": "#880069",
+                        "primary-fixed-dim": "#00dbe9",
+                        "outline-variant": "#3b494b",
+                        "surface-tint": "#00dbe9",
+                        "primary-fixed": "#7df4ff",
+                        "on-tertiary-fixed": "#3b002c",
+                        "secondary-fixed": "#e9ddff",
+                        "surface-bright": "#31394d",
+                        "primary": "#dbfcff",
+                        "surface-dim": "#0b1326",
+                        "on-surface-variant": "#b9cacb",
+                        "tertiary-fixed": "#ffd8eb"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Ubuntu"],
+                        "body-sm": ["Ubuntu"],
+                        "headline-lg": ["Ubuntu"],
+                        "body-lg": ["Ubuntu"],
+                        "display-lg": ["Ubuntu"],
+                        "label-md": ["Ubuntu"],
+                        "title-md": ["Ubuntu"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background selection:bg-primary-container/30">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-xl border-b border-white/10 shadow-sm flex justify-between items-center px-4 h-16 md:px-margin-desktop">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-primary-container/30">
+<img alt="User profile photo" class="w-full h-full object-cover" data-alt="A professional close-up portrait of a tech executive with a neutral expression, set against a dark, blurred office background with subtle blue and cyan ambient lighting. The style is sleek and cinematic, featuring sharp focus on facial details and soft bokeh highlights that align with a high-end fintech app aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeDkjk-C8BTf5XHznEIbOJU0uX4XKUf3v4oGD3TW-UY9Qr6WdDPO1u7KEtmQNkr5sEwIiNJ9uR07Z18eJyAIBPaMxisKqS1ZS00qMrwSzQoBu4lm3ZKzxz7oM5FrsUcaj3DIpPw2Pi2sryzRu1ah8Qx57uLJGFRmmU19WPuc67li8PjVR06R4hW5bIdFraVu8lTjRobbJ7--fTIWciviBA0ewSVB-zmtESe5rFunvnbvIrU_frQFhBbxApuOjjAhZyMMi3rRxMeIY"/>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-primary-fixed-dim tracking-tight">NeoFin</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:opacity-80 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-4 md:px-margin-desktop max-w-[1440px] mx-auto min-h-screen">
+<!-- Header Section -->
+<section class="mb-8">
+<h2 class="font-headline-lg text-headline-lg text-primary mb-2">Historial</h2>
+<p class="font-body-sm text-on-surface-variant">Revisa y filtra todos tus movimientos financieros en tiempo real.</p>
+</section>
+<!-- Search and Filters -->
+<section class="mb-8 flex flex-col md:flex-row gap-4">
+<div class="relative flex-grow group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full bg-surface-container border border-white/10 rounded-xl py-3 pl-12 pr-4 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary-container/50 focus:ring-1 focus:ring-primary-container/50 transition-all" placeholder="Buscar transacción, comercio..." type="text"/>
+</div>
+<div class="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+<button class="flex items-center gap-2 bg-primary-container text-on-primary-container px-4 py-2 rounded-xl font-label-md text-label-md whitespace-nowrap active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                    Todos
+                </button>
+<button class="flex items-center gap-2 bg-surface-container text-on-surface-variant border border-white/5 px-4 py-2 rounded-xl font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-highest transition-colors">
+                    Ingresos
+                </button>
+<button class="flex items-center gap-2 bg-surface-container text-on-surface-variant border border-white/5 px-4 py-2 rounded-xl font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-highest transition-colors">
+                    Gastos
+                </button>
+<button class="flex items-center gap-2 bg-surface-container text-on-surface-variant border border-white/5 px-4 py-2 rounded-xl font-label-md text-label-md whitespace-nowrap hover:bg-surface-container-highest transition-colors">
+                    Inversiones
+                </button>
+</div>
+</section>
+<!-- Bento Layout Transactions -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Main List -->
+<div class="md:col-span-8 space-y-4">
+<p class="font-label-md text-label-md text-on-surface-variant/70 uppercase tracking-widest ml-1">Hoy, 24 de Octubre</p>
+<!-- Transaction Item 1 -->
+<div class="glass-card rounded-2xl p-4 flex items-center justify-between hover:bg-surface-container-highest/50 transition-all cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-primary-container/10 flex items-center justify-center text-primary-container border border-primary-container/20 group-hover:neon-glow-primary transition-all duration-300">
+<span class="material-symbols-outlined text-[28px]">shopping_cart</span>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">Apple Store</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Electrónica • 14:32</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-title-md text-title-md text-on-surface">-$1,299.00</p>
+<p class="font-label-md text-label-md text-primary-container">Completado</p>
+</div>
+</div>
+<!-- Transaction Item 2 -->
+<div class="glass-card rounded-2xl p-4 flex items-center justify-between hover:bg-surface-container-highest/50 transition-all cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-tertiary-container/10 flex items-center justify-center text-on-tertiary-container border border-tertiary-container/20 group-hover:shadow-[0_0_15px_rgba(255,174,221,0.2)] transition-all duration-300">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">Transferencia Recibida</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">De: Marcos Soler • 10:15</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-title-md text-title-md text-primary-fixed-dim">+$450.00</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Vía SEPA</p>
+</div>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant/70 uppercase tracking-widest ml-1 mt-8">Ayer, 23 de Octubre</p>
+<!-- Transaction Item 3 -->
+<div class="glass-card rounded-2xl p-4 flex items-center justify-between hover:bg-surface-container-highest/50 transition-all cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-secondary-container/10 flex items-center justify-center text-secondary border border-secondary-container/20 group-hover:shadow-[0_0_15px_rgba(209,188,255,0.2)] transition-all duration-300">
+<span class="material-symbols-outlined text-[28px]">restaurant</span>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">Sushi Zen Master</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Restaurantes • 21:05</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-title-md text-title-md text-on-surface">-$84.20</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Pendiente</p>
+</div>
+</div>
+<!-- Transaction Item 4 -->
+<div class="glass-card rounded-2xl p-4 flex items-center justify-between hover:bg-surface-container-highest/50 transition-all cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-error-container/10 flex items-center justify-center text-error border border-error-container/20 group-hover:shadow-[0_0_15px_rgba(255,180,171,0.2)] transition-all duration-300">
+<span class="material-symbols-outlined text-[28px]">warning</span>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">Suscripción Netflix</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Entretenimiento • 04:00</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-title-md text-title-md text-on-surface">-$15.99</p>
+<p class="font-label-md text-label-md text-error">Fallida</p>
+</div>
+</div>
+</div>
+<!-- Sidebar Stats / Insights (Asymmetric Layout) -->
+<div class="md:col-span-4 space-y-6">
+<div class="glass-card rounded-3xl p-6 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-[120px]">analytics</span>
+</div>
+<h3 class="font-title-md text-title-md text-primary mb-4">Gasto Mensual</h3>
+<div class="flex items-end gap-2 mb-2">
+<span class="font-display-lg text-display-lg">$2,480</span>
+<span class="font-body-lg text-body-lg text-on-surface-variant mb-2">.50</span>
+</div>
+<div class="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full w-[75%] neon-glow-primary"></div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-3">Has consumido el 75% de tu presupuesto.</p>
+</div>
+<div class="bg-primary-container rounded-3xl p-6 text-on-primary-container relative">
+<h3 class="font-title-md text-title-md font-bold mb-2">NeoAI Tip</h3>
+<p class="font-body-sm text-body-sm mb-4">"Tus gastos en tecnología han subido un 12% este mes. Considera revisar tus suscripciones activas."</p>
+<button class="bg-on-primary-container text-white px-4 py-2 rounded-xl font-label-md text-label-md w-full active:scale-95 transition-transform">Ver Análisis</button>
+</div>
+<div class="glass-card rounded-3xl p-6">
+<h3 class="font-title-md text-title-md text-on-surface mb-4">Categorías Populares</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary-container"></div>
+<span class="font-body-sm text-body-sm">Tecnología</span>
+</div>
+<span class="font-label-md text-label-md">45%</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<span class="font-body-sm text-body-sm">Alimentación</span>
+</div>
+<span class="font-label-md text-label-md">22%</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></div>
+<span class="font-body-sm text-body-sm">Ocio</span>
+</div>
+<span class="font-label-md text-label-md">18%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container/70 dark:bg-surface-container/70 backdrop-blur-xl border-t border-white/15 shadow-[0_-4px_20px_rgba(0,240,255,0.1)] flex justify-around items-center px-4 py-2 pb-safe md:px-margin-desktop">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full p-2 shadow-[0_0_15px_rgba(0,240,255,0.4)] transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-label-md text-label-md mt-1">Analytics</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-label-md text-label-md mt-1">Add</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined">credit_card</span>
+<span class="font-label-md text-label-md mt-1">Cards</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md mt-1">Settings</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Search highlight logic
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('.md\\:col-span-8 .glass-card').forEach(card => {
+                const text = card.innerText.toLowerCase();
+                if (text.includes(term)) {
+                    card.style.display = 'flex';
+                    card.style.opacity = '1';
+                } else {
+                    card.style.display = 'none';
+                    card.style.opacity = '0';
+                }
+            });
+        });
+    </script>
+</body></html>

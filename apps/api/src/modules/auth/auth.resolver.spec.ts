@@ -315,7 +315,7 @@ describe('AuthResolver', () => {
       authService.validateToken.mockResolvedValue(validResult);
 
       // Act
-      const result = await resolver.validateToken(tokenInput);
+      const result = await resolver.validateToken(tokenInput.token);
 
       // Assert
       expect(authService.validateToken).toHaveBeenCalledWith(tokenInput.token);
@@ -329,7 +329,7 @@ describe('AuthResolver', () => {
       authService.validateToken.mockResolvedValue(invalidResult);
 
       // Act
-      const result = await resolver.validateToken({ token: 'invalid-token' });
+      const result = await resolver.validateToken('invalid-token');
 
       // Assert
       expect(result).toEqual(invalidResult);
@@ -343,7 +343,7 @@ describe('AuthResolver', () => {
       authService.validateToken.mockResolvedValue(expiredResult);
 
       // Act
-      const result = await resolver.validateToken({ token: 'expired-token' });
+      const result = await resolver.validateToken('expired-token');
 
       // Assert
       expect(result.valid).toBe(false);
@@ -521,7 +521,7 @@ describe('AuthResolver', () => {
       authService.getCurrentUser.mockResolvedValue(mockUser);
 
       // Act
-      const result = await resolver.me(graphqlContext);
+      const result = await resolver.me(graphqlContext as any);
 
       // Assert
       expect(result).toEqual(mockUser);

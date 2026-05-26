@@ -1,8 +1,22 @@
 // prisma/seed.js
 const path = require('path');
+const fs = require('fs');
+
+// Load packages/database/.env so DATABASE_URL is available
+const envFile = path.join(__dirname, '../../.env');
+if (fs.existsSync(envFile)) {
+  for (const line of fs.readFileSync(envFile, 'utf-8').split('\n')) {
+    const m = /^([A-Z_][A-Z0-9_]*)=(.*)$/.exec(line.trim());
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["'](.*)["']$/, '$1');
+  }
+}
+
 const { PrismaClient } = require(path.join(__dirname, '../../generated/client'));
+const { PrismaPg } = require('@prisma/adapter-pg');
 const crypto = require('crypto');
-const prisma = new PrismaClient();
+
+const adapter = new PrismaPg({ connectionString: process.env['DATABASE_URL'] });
+const prisma = new PrismaClient({ adapter });
 
 // Función para generar hash de contraseña usando crypto nativo
 function hashPassword(password, salt = null) {

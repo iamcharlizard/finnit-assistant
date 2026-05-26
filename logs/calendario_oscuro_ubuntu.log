@@ -1,0 +1,12 @@
+Ambos archivos creados. Resumen de lo implementado:
+
+**`screens/calendario_oscuro_ubuntu.tsx`** — pantalla completa con:
+
+- **TopAppBar** reutilizado con título "Calendario"
+- **Ahorro Proyectado** — card de glass con orb decorativo cian, $1,240.50 con `textShadow` neon, barra de eficiencia al 78% con glow
+- **Calendario Octubre 2023** — grid 7 columnas con `flexWrap` + `useWindowDimensions` para celdas proporcionales; día 5 resaltado con glow púrpura; días 2/17 con dot rosa (`#ffabf2`) y día 10 con dot cian (`#00f5ff`); navegación con chevrons
+- **Próximos Pagos** — tres `PaymentItem` existentes (Netflix, Luz Eléctrica, Renta) con colores de icono según categoría; CTA "Programar Nuevo Pago" con borde dashed
+- **Insights** — tres `InsightCard` locales con ícono circular, label en caps y valor en Ubuntu Bold
+- **BottomNavBar** reutilizado, tab `cards` activo (más cercano al ícono de calendario del diseño)
+
+**`app/calendario_oscuro_ubuntu.tsx`** — sólo re-exporta el screen, sin lógica ni JSX adicional.

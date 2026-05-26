@@ -1,4 +1,5 @@
 import { PrismaClient } from '@finnit/database';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { execSync } from 'child_process';
 
 export class TestDatabaseUtil {
@@ -6,14 +7,10 @@ export class TestDatabaseUtil {
 
   static async setupTestDatabase(): Promise<PrismaClient> {
     if (!this.prisma) {
-      this.prisma = new PrismaClient({
-        datasources: {
-          db: {
-            url: process.env.DATABASE_URL,
-          },
-        },
+      const adapter = new PrismaPg({
+        connectionString: process.env['DATABASE_URL'],
       });
-
+      this.prisma = new PrismaClient({ adapter });
       await this.prisma.$connect();
     }
 
@@ -50,9 +47,6 @@ export class TestDatabaseUtil {
     return this.prisma;
   }
 
-  /**
-   * Run database migrations for testing
-   */
   static async runMigrations(): Promise<void> {
     try {
       execSync('npx prisma migrate deploy', {
@@ -65,13 +59,9 @@ export class TestDatabaseUtil {
     }
   }
 
-  /**
-   * Reset and seed the test database
-   */
   static async resetAndSeed(): Promise<void> {
     try {
       await this.cleanDatabase();
-      // Add seeding logic here if needed
     } catch (error) {
       console.error('Failed to reset and seed database:', error);
       throw error;

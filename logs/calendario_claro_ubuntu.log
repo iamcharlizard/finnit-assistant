@@ -1,0 +1,19 @@
+Zero errors in the new files. Both files are created:
+
+- **`apps/finnit-app/screens/calendario_claro_ubuntu.tsx`** — screen completo
+- **`apps/finnit-app/app/calendario_claro_ubuntu.tsx`** — ruta que re-exporta la screen
+
+Lo implementado, fiel al diseño de referencia:
+
+| Sección | Implementación |
+|---|---|
+| Header | "Calendario de Pagos" en teal bold 32px + subtítulo |
+| Tarjeta calendario | Glass card con navegación de mes, toggle MES/SEMANA, headers LUN-DOM, grid de 34 celdas (flexWrap 7 columnas) |
+| Día 3 | Borde teal + barra cyan (Alquiler) |
+| Día 10 | Borde purple + barra purple (Seguro) |
+| Día 12 | Ring doble + badge "HOY" + punto teal |
+| Proyecciones | 2 tarjetas side-by-side: Ahorro (progress bar 75%) + Gastos Fijos (trend ↓5%) |
+| Próximos Pagos | 3 `PaymentItem` reutilizados (pending/scheduled/paid) con stagger FadeInUp |
+| CTA | Tarjeta dashed border + botón "Agregar Pago" con glow teal |
+| Consejo AI | Tarjeta sutil con `sparkles` icon + texto tip |
+| Nav | `BottomNavBar` con `analytics` activo |

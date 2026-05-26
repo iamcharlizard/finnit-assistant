@@ -31,16 +31,20 @@
     "seed": "prisma generate && node prisma/seeders/seed.js"
   },
   "devDependencies": {
-    "@finnit/eslint-config": "*",
-    "@finnit/typescript-config": "*",
-    "eslint": "^8.57.0",
-    "prisma": "latest",
-    "rimraf": "^5.0.5",
-    "tsup": "^8.0.2",
-    "tsx": "4.19.1",
-    "typescript": "5.5.4"
+    "@finnit/eslint-config": "workspace:*",
+    "@finnit/typescript-config": "workspace:*",
+    "@types/node": "^22.15.3",
+    "eslint": "^10.4.0",
+    "prisma": "^7.8.0",
+    "rimraf": "^6.1.3",
+    "tsup": "^8.5.1",
+    "tsx": "4.22.3",
+    "typescript": "5.9.3"
   },
   "dependencies": {
-    "@prisma/client": "6.13.0"
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@prisma/client-runtime-utils": "^7.8.0",
+    "pg": "^8.21.0"
   }
 }

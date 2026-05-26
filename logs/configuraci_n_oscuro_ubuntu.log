@@ -1,0 +1,15 @@
+Sin errores en mis archivos. Los dos archivos están creados y tipan limpio.
+
+Los entregables:
+
+**`apps/finnit-app/screens/configuraci_n_oscuro_ubuntu.tsx`** — Componente completo con:
+- **Profile card**: avatar con ring degradado (purple→pink→teal), badge Premium, badge verificado, botón "Editar Perfil" con borde en `primary`
+- **Seguridad**: tarjeta glass con ícono `lock.shield.fill` teal, fila Biometría (toggle teal ON), fila Cambiar PIN (chevron)
+- **Apariencia**: tarjeta glass con ícono `paintbrush.fill` pink, Modo Oscuro (toggle pink ON), Fuente con label "Ubuntu"
+- **Notificaciones**: tarjeta glass ancha con Transacciones (toggle purple ON) y Resumen Semanal (toggle OFF)
+- **Cerrar Sesión**: botón con `experimental_backgroundImage` rojo translúcido + ícono SF Symbol
+- `BottomNavBar` con tab `settings` activo
+
+**`apps/finnit-app/app/configuraci_n_oscuro_ubuntu.tsx`** — Solo re-exporta la screen, sin lógica adicional.
+
+Patrones respetados: glassmorphism via `style={{}}` inline, `ToggleSwitch` como variante explícita (sin boolean props), `SymbolView` con `as never` para el union type de SF Symbols, `FadeInUp` con delays escalonados, y `// NW-FALLBACK` donde `className` no aplica.

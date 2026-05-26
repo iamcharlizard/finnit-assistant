@@ -1,0 +1,15 @@
+Listo. Aquí el resumen de lo que encontré y entregué:
+
+**`screens/resumen_financiero_oscuro_ubuntu.tsx`** — ya existía y está completamente implementado:
+- Fondo `#0b1326` (deep navy dark del diseño)
+- `TopAppBar` con título "Finnit" y campana de notificaciones
+- `BalanceCard.Root/Header/Chart` con balance $25,999.00, trend +12.5%, y gráfico S-curve SVG inline con efecto neon cyan y glow filter
+- Grid 2 columnas Ingresos/Gastos con glassmorphism (`rgba(45,52,73,0.45)` + borde `rgba(255,255,255,0.10)`)
+- Scroll horizontal de `CategoryChip`: Compras, Comida, Viajes, Otros
+- `TransactionItemExpense`/`TransactionItemIncome` para actividad reciente
+- `BottomNavBar` con tab activo "home"
+- Animaciones `FadeIn`/`FadeInUp` con delays escalonados
+- `TwScrollView` con `contentInsetAdjustmentBehavior="automatic"`
+- Sin `useMemo`/`useCallback` (React 19)
+
+**`app/resumen_financiero_oscuro_ubuntu.tsx`** — creado ahora: importa y re-exporta la screen sin lógica adicional.

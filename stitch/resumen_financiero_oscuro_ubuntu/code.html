@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>NeoFin - Resumen Financiero</title>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#2d3449",
+                        "on-background": "#dae2fd",
+                        "on-secondary-fixed": "#23005b",
+                        "outline": "#849495",
+                        "on-surface": "#dae2fd",
+                        "on-primary-container": "#006970",
+                        "tertiary-fixed-dim": "#ffaedd",
+                        "inverse-surface": "#dae2fd",
+                        "on-primary": "#00363a",
+                        "on-error": "#690005",
+                        "secondary-container": "#7000ff",
+                        "on-primary-fixed-variant": "#004f54",
+                        "on-secondary": "#3c0090",
+                        "secondary": "#d1bcff",
+                        "surface": "#0b1326",
+                        "inverse-on-surface": "#283044",
+                        "on-secondary-container": "#ddcdff",
+                        "surface-container-high": "#222a3d",
+                        "on-tertiary": "#60004a",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-container": "#ffcbe6",
+                        "secondary-fixed-dim": "#d1bcff",
+                        "inverse-primary": "#006970",
+                        "tertiary": "#fff3f6",
+                        "error-container": "#93000a",
+                        "primary-container": "#00f0ff",
+                        "surface-variant": "#2d3449",
+                        "error": "#ffb4ab",
+                        "background": "#0b1326",
+                        "on-primary-fixed": "#002022",
+                        "surface-container": "#171f33",
+                        "surface-container-lowest": "#060e20",
+                        "on-tertiary-container": "#b2008b",
+                        "on-secondary-fixed-variant": "#5700c9",
+                        "surface-container-low": "#131b2e",
+                        "on-tertiary-fixed-variant": "#880069",
+                        "primary-fixed-dim": "#00dbe9",
+                        "outline-variant": "#3b494b",
+                        "surface-tint": "#00dbe9",
+                        "primary-fixed": "#7df4ff",
+                        "on-tertiary-fixed": "#3b002c",
+                        "secondary-fixed": "#e9ddff",
+                        "surface-bright": "#31394d",
+                        "primary": "#dbfcff",
+                        "surface-dim": "#0b1326",
+                        "on-surface-variant": "#b9cacb",
+                        "tertiary-fixed": "#ffd8eb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "gutter": "24px",
+                        "container-max": "1440px",
+                        "margin-desktop": "48px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Ubuntu"],
+                        "body-sm": ["Ubuntu"],
+                        "headline-lg": ["Ubuntu"],
+                        "body-lg": ["Ubuntu"],
+                        "display-lg": ["Ubuntu"],
+                        "label-md": ["Ubuntu"],
+                        "title-md": ["Ubuntu"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Ubuntu', sans-serif; background-color: #0b1326; color: #dae2fd; }
+        .glass-card {
+            background: rgba(45, 52, 73, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        }
+        .neon-glow-primary {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+        .scroll-hide::-webkit-scrollbar { display: none; }
+        .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background min-h-screen pb-24">
+<!-- TopAppBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-xl border-b border-white/10 shadow-sm flex justify-between items-center px-margin-mobile h-16">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-primary/20">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a young entrepreneur with a clean, high-tech background. The lighting is soft and cinematic, with subtle cool blue tones that match a premium fintech app aesthetic. The person has a friendly but confident expression, representing a modern digital asset investor in a sophisticated dark-mode environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXf0RTHW1-RrZLTiPDN34YrhvHLDCqj4ZYEM4seo89qSX8J1DIl2JulDj7YQiuKiyvX_WFNIi_zc5nED-DD48_PacE-QxKFye0DBUM8vBMjBMJxEKzSqoRLpYOi2pWXrbNrGuyViCoWeiFehnrB0vN-MgaXgitW8XzSYjqR-sN9kunWF7em1FXYWUMvfyFqNQh1EnszYpeRO_A042nzjW70v-OfHvuKCLPHkpVe9zh4xQPnFJACc7JoQwDsmYNzNGpv9ymEdxMWew"/>
+</div>
+<span class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-primary-fixed-dim tracking-tight">NeoFin</span>
+</div>
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed-dim hover:opacity-80 transition-opacity active:scale-95 duration-200">
+            notifications
+        </button>
+</nav>
+<main class="pt-24 px-margin-mobile max-w-container-max mx-auto space-y-gutter">
+<!-- Hero Balance Section -->
+<section class="glass-card rounded-xl p-6 relative overflow-hidden">
+<div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl"></div>
+<div class="relative z-10">
+<p class="font-label-md text-label-md text-on-surface-variant mb-1 uppercase tracking-widest">Balance Total</p>
+<h1 class="font-display-lg text-display-lg text-primary tracking-tighter">$25,999.00</h1>
+<div class="flex items-center gap-2 mt-2 text-primary-fixed-dim">
+<span class="material-symbols-outlined text-[18px]">trending_up</span>
+<span class="font-body-sm text-body-sm">+12.5% este mes</span>
+</div>
+</div>
+<!-- Neon Line Chart Simulation -->
+<div class="mt-8 h-32 w-full relative">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 400 100">
+<defs>
+<lineargradient id="lineGradient" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" style="stop-color:#00f0ff;stop-opacity:0.2"></stop>
+<stop offset="50%" style="stop-color:#00f0ff;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#00f0ff;stop-opacity:0.5"></stop>
+</lineargradient>
+<filter id="glow">
+<fegaussianblur result="coloredBlur" stddeviation="2"></fegaussianblur>
+<femerge>
+<femergenode in="coloredBlur"></femergenode><femergenode in="SourceGraphic"></femergenode>
+</femerge>
+</filter>
+</defs>
+<path d="M0,80 Q50,70 100,85 T200,40 T300,60 T400,20" fill="none" filter="url(#glow)" stroke="url(#lineGradient)" stroke-width="3"></path>
+<path d="M0,80 Q50,70 100,85 T200,40 T300,60 T400,20 V100 H0 Z" fill="url(#lineGradient)" fill-opacity="0.05"></path>
+</svg>
+</div>
+</section>
+<!-- Stats Grid -->
+<div class="grid grid-cols-2 gap-4">
+<div class="glass-card rounded-xl p-4 flex flex-col gap-2">
+<div class="flex items-center gap-2 text-primary-container">
+<span class="material-symbols-outlined font-variation-settings-fill" style="font-variation-settings: 'FILL' 1;">arrow_downward</span>
+<span class="font-label-md text-label-md">Ingresos</span>
+</div>
+<p class="font-title-md text-title-md font-bold text-on-surface">$8,450.00</p>
+</div>
+<div class="glass-card rounded-xl p-4 flex flex-col gap-2">
+<div class="flex items-center gap-2 text-secondary">
+<span class="material-symbols-outlined font-variation-settings-fill" style="font-variation-settings: 'FILL' 1;">arrow_upward</span>
+<span class="font-label-md text-label-md">Gastos</span>
+</div>
+<p class="font-title-md text-title-md font-bold text-on-surface">$3,120.00</p>
+</div>
+</div>
+<!-- Categories Section -->
+<section>
+<div class="flex justify-between items-end mb-4">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Categorías</h2>
+<button class="font-label-md text-label-md text-primary-fixed-dim">Ver todo</button>
+</div>
+<div class="flex gap-4 overflow-x-auto scroll-hide pb-2">
+<div class="flex-none w-28 glass-card rounded-xl p-4 flex flex-col items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">shopping_bag</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Compras</span>
+</div>
+<div class="flex-none w-28 glass-card rounded-xl p-4 flex flex-col items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">restaurant</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Comida</span>
+</div>
+<div class="flex-none w-28 glass-card rounded-xl p-4 flex flex-col items-center gap-3 border-primary/30">
+<div class="w-10 h-10 rounded-full bg-tertiary-container/10 flex items-center justify-center text-on-tertiary-container">
+<span class="material-symbols-outlined">directions_car</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Viajes</span>
+</div>
+<div class="flex-none w-28 glass-card rounded-xl p-4 flex flex-col items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-outline-variant/10 flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined">more_horiz</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Otros</span>
+</div>
+</div>
+</section>
+<!-- Recent Activity -->
+<section class="pb-8">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background mb-4">Actividad Reciente</h2>
+<div class="space-y-3">
+<div class="glass-card rounded-xl p-4 flex items-center justify-between group hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface">payments</span>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-medium text-on-surface">Suscripción Netflix</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Hace 2 horas • Entretenimiento</p>
+</div>
+</div>
+<p class="font-title-md text-title-md font-bold text-error">-$15.99</p>
+</div>
+<div class="glass-card rounded-xl p-4 flex items-center justify-between group hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-fixed-dim">account_balance_wallet</span>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-medium text-on-surface">Depósito de Nómina</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Ayer • Ingresos</p>
+</div>
+</div>
+<p class="font-title-md text-title-md font-bold text-primary-container">+$2,400.00</p>
+</div>
+<div class="glass-card rounded-xl p-4 flex items-center justify-between group hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container">shopping_cart</span>
+</div>
+<div>
+<p class="font-body-lg text-body-lg font-medium text-on-surface">Apple Store</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">25 Oct • Electrónicos</p>
+</div>
+</div>
+<p class="font-title-md text-title-md font-bold text-error">-$999.00</p>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface-container/70 dark:bg-surface-container/70 backdrop-blur-xl border-t border-white/15 shadow-[0_-4px_20px_rgba(0,240,255,0.1)] rounded-t-xl flex justify-around items-center px-margin-mobile py-2 pb-safe">
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-full p-2 shadow-[0_0_15px_rgba(0,240,255,0.4)] active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 hover:text-primary dark:hover:text-primary-fixed-dim active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-md text-label-md">Analytics</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 hover:text-primary dark:hover:text-primary-fixed-dim active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-label-md text-label-md">Add</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 hover:text-primary dark:hover:text-primary-fixed-dim active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined">credit_card</span>
+<span class="font-label-md text-label-md">Cards</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 hover:text-primary dark:hover:text-primary-fixed-dim active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</button>
+</nav>
+<script>
+        // Micro-interaction for balance hover/tap
+        const balanceCard = document.querySelector('section.glass-card');
+        balanceCard.addEventListener('touchstart', () => {
+            balanceCard.style.transform = 'scale(0.98)';
+            balanceCard.style.transition = 'transform 0.2s ease';
+        });
+        balanceCard.addEventListener('touchend', () => {
+            balanceCard.style.transform = 'scale(1)';
+        });
+
+        // Atmospheric glowing effect movement (mouse only for web feel)
+        document.addEventListener('mousemove', (e) => {
+            const glow = document.querySelector('.blur-3xl');
+            if(glow) {
+                const moveX = (e.clientX / window.innerWidth - 0.5) * 40;
+                const moveY = (e.clientY / window.innerHeight - 0.5) * 40;
+                glow.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            }
+        });
+    </script>
+</body></html>

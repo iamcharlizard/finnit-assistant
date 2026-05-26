@@ -1,0 +1,24 @@
+El archivo route ya está correcto (`import + re-export`). Ambos archivos están listos.
+
+---
+
+**Resumen de lo implementado:**
+
+### `screens/resumen_financiero_claro_ubuntu.tsx`
+Pantalla completa con:
+
+- **TopAppBar** — título "Finnit", campana con badge, avatar
+- **BalanceCard** — glassmorphism, balance `$45,280.00`, tendencia `+2.4%`, sparkline con barras delgadas (3px) + área de gradiente simulada (`experimental_backgroundImage`). Sin SVG, usada técnica de thin-bar para aproximar la línea del diseño
+- **StatCard income** — tarjeta ancha, fondo sólido `#006688` (token `--color-income`), texto blanco, icono blanco translúcido. Coincide con la tarjeta azul del diseño
+- **StatCard expense** — tarjeta ancha, fondo neutro/borde gris, colores del sistema
+- **Categorías Rápidas** — contenedor glass, 2 filas de 3 botones cada una usando `QuickAction`
+- **Actividad Reciente** — encabezado con "Ver todo" en `#006688`, 4 transacciones (`TransactionItemExpense` / `TransactionItemIncome`) con divisores
+- **BottomNavBar** — tab `home` activo
+
+### Decisiones de diseño:
+- Las tarjetas income/expense se apilan **verticalmente** (corrección del `flex-row` al `flex-col`) para coincidir con la imagen de referencia
+- "Ver todo" usa `#006688` directamente — más cercano al azul de la imagen que el cyan primario
+- Sin librerías adicionales, sin modificaciones a `components/`
+
+### `app/resumen_financiero_claro_ubuntu.tsx`
+Ya existía correctamente con el re-export.

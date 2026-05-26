@@ -1,0 +1,28 @@
+La pantalla ya está completamente implementada. Verifico el estado final de ambos archivos.
+
+La implementación en `screens/inicio_de_sesi_n_claro_ubuntu.tsx` (404 líneas) cubre todos los requerimientos:
+
+**Estructura del archivo de pantalla:**
+- `LoginState` como discriminated union (idle / loading / error / success)
+- `SafeAreaView` de `react-native-safe-area-context` + `TwScrollView` con `contentInsetAdjustmentBehavior="automatic"`
+- `FinnGlassView` para el card glassmorphism (bg `rgba(255,255,255,0.85)` + border semitransparente)
+- `InputWithIcon` para email (`envelope`) y password (`lock` + toggle `eye`/`eye.slash`)
+- Label row de contraseña con enlace "¿Olvidó su contraseña?" bien separado
+- Checkbox "Recordarme" con `SymbolView name="checkmark"` cuando activo
+- Botón de login con `experimental_backgroundImage: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)'`
+- Mensaje de error inline via `accessibilityRole="alert"`
+- Divisor "o continuar con" entre dos líneas horizontales
+- Botón Google (lettermark azul) + botón Apple (`apple.logo` SF Symbol sobre fondo oscuro)
+- Link "Regístrese gratis" en `#6c72cb` (accent-neon light)
+- Footer copyright
+- `FadeInUp` escalonado en cada sección (delays: 50ms → 450ms)
+- TODOs para `useMutation` + fetcher en `lib/api/auth.ts`
+- Sin `useMemo`/`useCallback`/`React.memo` (React 19 Compiler activo)
+
+**Archivo de ruta** (`app/inicio_de_sesi_n_claro_ubuntu.tsx`):
+```tsx
+import { Inicio_de_sesi_n_claro_ubuntuScreen } from '@/screens/inicio_de_sesi_n_claro_ubuntu';
+export default Inicio_de_sesi_n_claro_ubuntuScreen;
+```
+
+Ambos archivos están completos y no requieren cambios. La pantalla fiel al diseño de referencia con glassmorphism, tipografía Ubuntu, acento `#6c72cb`, gradiente púrpura en el CTA, y accesibilidad WCAG AA en todos los controles interactivos.

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeoFin Light - Calendario de Pagos</title>
+<!-- Google Fonts: Ubuntu for Brand, Hanken Grotesk for Design System Tokens -->
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&amp;family=Hanken+Grotesk:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "primary-fixed-dim": "#00dce5",
+                "tertiary-fixed-dim": "#fface8",
+                "inverse-on-surface": "#f0f1f2",
+                "secondary-fixed-dim": "#ecb2ff",
+                "on-primary": "#ffffff",
+                "on-background": "#191c1d",
+                "on-error": "#ffffff",
+                "tertiary": "#ad009b",
+                "surface-container": "#edeeef",
+                "tertiary-fixed": "#ffd7f0",
+                "error": "#ba1a1a",
+                "surface-container-high": "#e7e8e9",
+                "surface-dim": "#d9dadb",
+                "tertiary-container": "#ffd0ef",
+                "surface": "#f8f9fa",
+                "on-surface": "#191c1d",
+                "surface-tint": "#00696e",
+                "on-tertiary": "#ffffff",
+                "surface-container-lowest": "#ffffff",
+                "surface-bright": "#f8f9fa",
+                "on-primary-fixed-variant": "#004f53",
+                "surface-container-highest": "#e1e3e4",
+                "outline-variant": "#b9caca",
+                "on-error-container": "#93000a",
+                "on-secondary-container": "#fffbff",
+                "secondary-fixed": "#f8d8ff",
+                "on-primary-container": "#006c71",
+                "primary": "#00696e",
+                "primary-fixed": "#63f7ff",
+                "background": "#f8f9fa",
+                "primary-container": "#00f5ff",
+                "outline": "#6a7a7b",
+                "on-tertiary-container": "#b2009f",
+                "secondary": "#9500ca",
+                "on-tertiary-fixed": "#3a0033",
+                "inverse-primary": "#00dce5",
+                "secondary-container": "#bb00fc",
+                "inverse-surface": "#2e3132",
+                "error-container": "#ffdad6",
+                "on-secondary-fixed-variant": "#74009f",
+                "on-surface-variant": "#3a494a",
+                "on-secondary": "#ffffff",
+                "on-secondary-fixed": "#320047",
+                "surface-container-low": "#f3f4f5",
+                "surface-variant": "#e1e3e4",
+                "on-tertiary-fixed-variant": "#840076",
+                "on-primary-fixed": "#002021"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "unit": "8px",
+                "container-max": "1200px",
+                "margin-desktop": "40px",
+                "margin-mobile": "20px",
+                "gutter": "16px"
+            },
+            "fontFamily": {
+                "ubuntu": ["Ubuntu", "sans-serif"],
+                "headline-lg-mobile": ["Hanken Grotesk"],
+                "headline-lg": ["Hanken Grotesk"],
+                "body-md": ["Hanken Grotesk"],
+                "label-sm": ["Hanken Grotesk"],
+                "headline-xl": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .brand-font {
+            font-family: 'Ubuntu', sans-serif;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.04);
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neo-glow-primary {
+            box-shadow: 0 0 15px rgba(0, 220, 229, 0.3);
+        }
+        .neo-glow-secondary {
+            box-shadow: 0 0 15px rgba(187, 0, 252, 0.3);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface overflow-x-hidden pb-24 md:pb-0 md:pt-16">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16 bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md border-b border-outline-variant/30 dark:border-outline/20">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-2xl" data-icon="account_balance_wallet">account_balance_wallet</span>
+<h1 class="brand-font font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">FinVault</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant dark:text-surface-variant p-2 hover:bg-surface-container-high/50 transition-colors rounded-full" data-icon="notifications">notifications</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a young adult with a friendly expression, set against a clean, soft-focus office background. The lighting is bright and natural, reflecting a high-key modern aesthetic. The color palette is composed of soft whites and cool grays, aligning with a premium, minimalist financial application interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUa7Nu21UBy3j75MsfzbNaVDPHE5YlcJ_ISlqEYTWYuYpRwRzodKuhb4tkdxqf67TelWqiAqg-afwBqpxOplQsjFX_l9yMnmrFnMPsoOuV_8CQBgEVAhnl4VSl5Ld0vyZfOl9xrmDl6z6doMRXwh4_wZdbCtVU0N5Y0bcoYQbichmOP5UrvNlkR0IV_xYB0LHUQZnxNW_0C8qt8s5sBHVGK4LnUaPrdSLXCiLL6G1ujaBGmXOV9TvmCPOHL0QzjXiLJOp2Y7JDXsc"/>
+</div>
+</div>
+</header>
+<main class="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-8 md:py-12 mt-8">
+<!-- Header Section -->
+<section class="mb-10">
+<h2 class="font-ubuntu text-headline-xl text-primary font-bold mb-2">Calendario de Pagos</h2>
+<p class="font-body-md text-on-surface-variant">Gestiona tus vencimientos y proyecta tu salud financiera.</p>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Interactive Calendar (Bento Style) -->
+<div class="lg:col-span-8 space-y-gutter">
+<div class="glass-card rounded-xl p-6">
+<div class="flex justify-between items-center mb-8">
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined p-2 hover:bg-surface-container rounded-full transition-all" data-icon="chevron_left">chevron_left</button>
+<h3 class="font-ubuntu text-xl font-bold text-on-surface">Octubre 2023</h3>
+<button class="material-symbols-outlined p-2 hover:bg-surface-container rounded-full transition-all" data-icon="chevron_right">chevron_right</button>
+</div>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-[12px] font-bold">MES</span>
+<span class="px-3 py-1 hover:bg-surface-container rounded-full text-[12px] font-semibold transition-colors cursor-pointer">SEMANA</span>
+</div>
+</div>
+<div class="calendar-grid mb-2">
+<div class="text-center font-label-sm text-outline py-2">LUN</div>
+<div class="text-center font-label-sm text-outline py-2">MAR</div>
+<div class="text-center font-label-sm text-outline py-2">MIE</div>
+<div class="text-center font-label-sm text-outline py-2">JUE</div>
+<div class="text-center font-label-sm text-outline py-2">VIE</div>
+<div class="text-center font-label-sm text-outline py-2 text-primary/60">SAB</div>
+<div class="text-center font-label-sm text-outline py-2 text-primary/60">DOM</div>
+</div>
+<div class="calendar-grid gap-1">
+<!-- Empty slots for previous month -->
+<div class="h-16 md:h-24 p-2 text-outline/30 font-label-sm">25</div>
+<div class="h-16 md:h-24 p-2 text-outline/30 font-label-sm">26</div>
+<div class="h-16 md:h-24 p-2 text-outline/30 font-label-sm">27</div>
+<div class="h-16 md:h-24 p-2 text-outline/30 font-label-sm">28</div>
+<div class="h-16 md:h-24 p-2 text-outline/30 font-label-sm">29</div>
+<div class="h-16 md:h-24 p-2 text-outline/30 font-label-sm">30</div>
+<!-- Current Month -->
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="font-label-sm">01</span>
+</div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer group">
+<span class="font-label-sm">02</span>
+</div>
+<!-- Day with Pending Payment -->
+<div class="h-16 md:h-24 p-2 border border-primary/40 bg-primary/5 rounded-lg transition-colors cursor-pointer relative group">
+<span class="font-label-sm font-bold text-primary">03</span>
+<div class="mt-1 flex flex-col gap-1 overflow-hidden">
+<div class="h-1 w-full bg-primary rounded-full neo-glow-primary"></div>
+<span class="hidden md:block text-[10px] text-primary truncate font-bold">Alquiler</span>
+</div>
+</div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="font-label-sm">04</span>
+</div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="font-label-sm">05</span>
+</div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="font-label-sm">06</span>
+</div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="font-label-sm">07</span>
+</div>
+<!-- Second Week -->
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="font-label-sm">08</span>
+</div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="font-label-sm">09</span>
+</div>
+<!-- Day with Multiple -->
+<div class="h-16 md:h-24 p-2 border border-secondary/40 bg-secondary/5 rounded-lg transition-colors cursor-pointer relative">
+<span class="font-label-sm font-bold text-secondary">10</span>
+<div class="mt-1 flex flex-col gap-1">
+<div class="h-1 w-full bg-secondary rounded-full neo-glow-secondary"></div>
+<span class="hidden md:block text-[10px] text-secondary truncate font-bold">Seguro</span>
+</div>
+</div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="font-label-sm">11</span>
+</div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg bg-surface-container-highest/20 ring-2 ring-primary">
+<span class="font-label-sm font-bold">12</span>
+<div class="mt-1 flex justify-center">
+<div class="w-1 h-1 rounded-full bg-primary"></div>
+</div>
+<div class="absolute -top-2 left-1/2 -translate-x-1/2 bg-primary text-white text-[8px] px-2 py-0.5 rounded-full font-bold">HOY</div>
+</div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="font-label-sm">13</span>
+</div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
+<span class="font-label-sm">14</span>
+</div>
+<!-- Remaining days implied for visual density -->
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">15</span></div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">16</span></div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">17</span></div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">18</span></div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">19</span></div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">20</span></div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">21</span></div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">22</span></div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">23</span></div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">24</span></div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">25</span></div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">26</span></div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">27</span></div>
+<div class="h-16 md:h-24 p-2 border border-outline-variant/20 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer"><span class="font-label-sm">28</span></div>
+</div>
+</div>
+<!-- Monthly Projections Summary (Asymmetric Cards) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<div class="glass-card rounded-xl p-6 bg-primary-container/20 border-primary/20">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary bg-white p-2 rounded-lg" data-icon="insights">insights</span>
+<span class="text-[12px] font-bold text-primary uppercase tracking-wider">Ahorro Proyectado</span>
+</div>
+<p class="text-headline-lg font-ubuntu font-bold text-on-surface-variant">$2,450.00</p>
+<div class="mt-4 w-full bg-outline-variant/30 h-1.5 rounded-full overflow-hidden">
+<div class="h-full bg-primary neo-glow-primary" style="width: 75%"></div>
+</div>
+<p class="mt-2 text-[12px] font-medium text-on-surface-variant">75% de tu meta mensual alcanzada</p>
+</div>
+<div class="glass-card rounded-xl p-6 bg-secondary-container/10 border-secondary/20">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-secondary bg-white p-2 rounded-lg" data-icon="account_balance">account_balance</span>
+<span class="text-[12px] font-bold text-secondary uppercase tracking-wider">Gastos Fijos</span>
+</div>
+<p class="text-headline-lg font-ubuntu font-bold text-on-surface-variant">$1,120.40</p>
+<p class="mt-4 text-[12px] font-medium text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-green-500 text-sm" data-icon="arrow_downward">arrow_downward</span>
+                            5% menos que el mes pasado
+                        </p>
+</div>
+</div>
+</div>
+<!-- Right Column: Upcoming Payments List -->
+<div class="lg:col-span-4 space-y-gutter">
+<div class="glass-card rounded-xl p-6 flex flex-col h-full">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-ubuntu text-xl font-bold">Próximos Pagos</h3>
+<button class="material-symbols-outlined text-primary" data-icon="filter_list">filter_list</button>
+</div>
+<div class="space-y-4 flex-grow">
+<!-- Item: Pending -->
+<div class="group flex items-center gap-4 p-4 rounded-xl border border-primary/20 bg-primary/5 hover:shadow-md transition-all cursor-pointer">
+<div class="flex-shrink-0 w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+</div>
+<div class="flex-grow">
+<p class="font-ubuntu font-bold text-on-surface">Alquiler Octubre</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full font-bold">PENDIENTE</span>
+<span class="text-[12px] text-outline">Hace 2 días</span>
+</div>
+</div>
+<div class="text-right">
+<p class="font-ubuntu font-bold text-primary">$850.00</p>
+</div>
+</div>
+<!-- Item: Scheduled -->
+<div class="flex items-center gap-4 p-4 rounded-xl border border-outline-variant/30 hover:bg-surface-container-low transition-all cursor-pointer">
+<div class="flex-shrink-0 w-12 h-12 bg-secondary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="health_and_safety">health_and_safety</span>
+</div>
+<div class="flex-grow">
+<p class="font-ubuntu font-bold text-on-surface">Seguro Médico</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-[10px] bg-surface-container-highest text-on-surface-variant px-2 py-0.5 rounded-full font-bold uppercase">Programado</span>
+<span class="text-[12px] text-outline">En 3 días</span>
+</div>
+</div>
+<div class="text-right">
+<p class="font-ubuntu font-bold text-on-surface">$120.00</p>
+</div>
+</div>
+<!-- Item: Paid -->
+<div class="flex items-center gap-4 p-4 rounded-xl border border-outline-variant/10 opacity-60 hover:opacity-100 transition-all cursor-pointer">
+<div class="flex-shrink-0 w-12 h-12 bg-surface-container-highest rounded-lg flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+</div>
+<div class="flex-grow">
+<p class="font-ubuntu font-bold text-on-surface">Servicio Eléctrico</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold uppercase">Pagado</span>
+<span class="text-[12px] text-outline">Ayer</span>
+</div>
+</div>
+<div class="text-right">
+<p class="font-ubuntu font-bold text-on-surface">$45.50</p>
+</div>
+</div>
+<!-- Empty state visual / Call to action -->
+<div class="mt-8 border-2 border-dashed border-outline-variant/30 rounded-xl p-8 flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-outline/40 text-4xl mb-2" data-icon="add_card">add_card</span>
+<p class="font-ubuntu font-bold text-outline">¿Nuevo gasto recurrente?</p>
+<button class="mt-4 px-6 py-2 bg-primary text-white rounded-full font-bold text-sm neo-glow-primary hover:scale-105 transition-transform">Agregar Pago</button>
+</div>
+</div>
+<div class="mt-10 p-4 rounded-xl bg-surface-container-low border border-outline-variant/20">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="smart_toy" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+<p class="font-ubuntu font-bold text-sm">Consejo NeoFin AI</p>
+</div>
+<p class="text-[12px] leading-relaxed text-on-surface-variant">
+                            Detectamos que tus suscripciones digitales han subido un 12%. Podrías ahorrar $15/mes cancelando servicios que no has usado en 30 días.
+                        </p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 pb-safe bg-surface/90 backdrop-blur-lg border-t border-outline-variant/30 shadow-lg rounded-t-xl">
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-highest/40 transition-colors rounded-full">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 neo-glow-secondary">
+<span class="material-symbols-outlined" data-icon="analytics" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-label-sm text-label-sm">Analytics</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-highest/40 transition-colors rounded-full">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-highest/40 transition-colors rounded-full">
+<span class="material-symbols-outlined" data-icon="credit_card">credit_card</span>
+<span class="font-label-sm text-label-sm">Cards</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-highest/40 transition-colors rounded-full">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</div>
+</nav>
+<!-- Floating Action Button (Desktop Context) -->
+<div class="hidden md:flex fixed bottom-8 right-8 flex-col gap-4">
+<button class="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-xl neo-glow-primary hover:scale-110 active:scale-95 transition-all group relative">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span class="absolute right-16 bg-on-surface text-surface text-[12px] px-3 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity font-bold whitespace-nowrap">Nuevo Registro</span>
+</button>
+</div>
+<script>
+        // Micro-interaction for calendar days
+        document.querySelectorAll('.calendar-grid > div').forEach(day => {
+            day.addEventListener('click', function() {
+                // Simplified active state toggle for demo
+                if(this.classList.contains('border-outline-variant/20')) {
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => this.style.transform = 'scale(1)', 100);
+                }
+            });
+        });
+
+        // Hover effect for items in the payment list
+        document.querySelectorAll('.group.cursor-pointer').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                item.style.transform = 'translateX(4px)';
+            });
+            item.addEventListener('mouseleave', () => {
+                item.style.transform = 'translateX(0)';
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NeoFin - Iniciar Sesión</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "outline": "#737688",
+                "on-primary-container": "#dfe3ff",
+                "on-surface": "#181c1e",
+                "on-background": "#181c1e",
+                "on-secondary-fixed": "#001e2b",
+                "surface-container-highest": "#e0e3e5",
+                "tertiary-fixed-dim": "#c1c6d5",
+                "inverse-surface": "#2d3133",
+                "on-secondary": "#ffffff",
+                "secondary-container": "#00c1fd",
+                "on-primary-fixed-variant": "#0038b6",
+                "surface": "#f7fafc",
+                "secondary": "#006688",
+                "on-primary": "#ffffff",
+                "on-error": "#ffffff",
+                "surface-container-high": "#e5e9eb",
+                "on-error-container": "#93000a",
+                "on-tertiary": "#ffffff",
+                "inverse-on-surface": "#eef1f3",
+                "on-secondary-container": "#004b65",
+                "inverse-primary": "#b7c4ff",
+                "surface-variant": "#e0e3e5",
+                "primary-container": "#0052ff",
+                "tertiary": "#484e5a",
+                "error-container": "#ffdad6",
+                "secondary-fixed-dim": "#75d1ff",
+                "tertiary-container": "#606673",
+                "surface-container-lowest": "#ffffff",
+                "on-tertiary-container": "#dfe4f3",
+                "on-secondary-fixed-variant": "#004d67",
+                "surface-container-low": "#f1f4f6",
+                "on-primary-fixed": "#001452",
+                "error": "#ba1a1a",
+                "background": "#f7fafc",
+                "surface-container": "#ebeef0",
+                "primary-fixed": "#dde1ff",
+                "on-tertiary-fixed": "#161c26",
+                "surface-tint": "#004ced",
+                "on-tertiary-fixed-variant": "#414753",
+                "outline-variant": "#c3c5d9",
+                "primary-fixed-dim": "#b7c4ff",
+                "on-surface-variant": "#434656",
+                "tertiary-fixed": "#dde2f1",
+                "primary": "#003ec7",
+                "surface-dim": "#d7dadc",
+                "secondary-fixed": "#c2e8ff",
+                "surface-bright": "#f7fafc"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "margin-mobile": "16px",
+                "unit": "4px",
+                "xxl": "48px",
+                "md": "16px",
+                "xl": "32px",
+                "lg": "24px",
+                "sm": "8px",
+                "xs": "4px",
+                "margin-desktop": "40px",
+                "gutter": "24px"
+            },
+            "fontFamily": {
+                "label-sm": ["Ubuntu"],
+                "display-lg": ["Ubuntu"],
+                "body-md": ["Ubuntu"],
+                "headline-lg": ["Ubuntu"],
+                "headline-lg-mobile": ["Ubuntu"],
+                "headline-md": ["Ubuntu"],
+                "label-md": ["Ubuntu"],
+                "body-lg": ["Ubuntu"],
+                "body-sm": ["Ubuntu"]
+            },
+            "fontSize": {
+                "label-sm": ["12px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Ubuntu', sans-serif; background-color: #f7fafc; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-effect { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); }
+        .gradient-purple { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col">
+<main class="flex-grow flex items-center justify-center px-margin-mobile lg:px-margin-desktop py-xl">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter max-w-[1280px] w-full">
+<div class="hidden lg:flex lg:col-span-7 flex-col justify-center space-y-lg">
+<div class="space-y-sm">
+<span class="font-label-md text-label-md text-primary bg-primary/10 px-md py-xs rounded-full inline-block">Innovación Financiera</span>
+<h1 class="font-display-lg text-display-lg text-on-surface leading-tight">Gestione su futuro con <span class="text-primary">NeoFin</span>.</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg">La plataforma todo-en-uno diseñada para escalar sus finanzas con inteligencia artificial y transparencia total.</p>
+</div>
+<div class="relative w-full aspect-video rounded-xl overflow-hidden shadow-2xl">
+<img alt="NeoFin Dashboard Preview" class="w-full h-full object-cover" data-alt="A sophisticated financial dashboard interface displayed on a sleek minimalist monitor in a high-end modern office. The screen shows vibrant data visualizations, glassmorphism cards, and purple gradient accents reflecting the NeoFin brand. The room is filled with soft natural light and features clean architectural lines, creating an atmosphere of professional trust and technological advancement." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOm5ve27qkT0MsWiTdoSB69OQqaYF09DspR0PWgvnhX0IDuSt2GwphNGOYp8cD4FxxUGx-ZgLfBh9dQ0kqG2hVjtWRLHuyJMIcC4dZbJI76H5TbAKMB2lAneer_cXgz-noLPn618hvCI9-YRIK7QLLD8reab1iqt9NAE65f_tWtewRXJ29uNuM3DdkMun_3BIR6ZcbqWhYiLZjYWQZp4AMWCEOkczXqE9BG_GcMJ70nZvwqI_QRAvzZIgBJ9dnl0vPNYGvHpDkyBM"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-surface/40 to-transparent"></div>
+</div>
+</div>
+<div class="lg:col-span-5 flex flex-col justify-center">
+<div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-lg md:p-xl shadow-sm">
+<div class="mb-xl text-center lg:text-left">
+<div class="font-headline-md text-headline-md font-bold text-primary tracking-tight mb-xs">NeoFin</div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Bienvenido de nuevo</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Por favor, ingrese sus credenciales para acceder.</p>
+</div>
+<form class="space-y-lg" onsubmit="event.preventDefault();">
+<div class="space-y-xs">
+<label class="font-label-md text-label-md text-on-surface-variant" for="email">Correo electrónico</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">mail</span>
+<input class="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg py-3 pl-11 pr-md font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" id="email" placeholder="nombre@ejemplo.com" type="email"/>
+</div>
+</div>
+<div class="space-y-xs">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-on-surface-variant" for="password">Contraseña</label>
+<a class="font-label-sm text-label-sm text-primary hover:underline" href="#">¿Olvidó su contraseña?</a>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">lock</span>
+<input class="w-full bg-surface-container-low border border-outline-variant/50 rounded-lg py-3 pl-11 pr-11 font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" id="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-md top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors" type="button">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</div>
+</div>
+<div class="flex items-center space-x-sm">
+<input class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary" id="remember" type="checkbox"/>
+<label class="font-body-sm text-body-sm text-on-surface-variant select-none" for="remember">Recordarme por 30 días</label>
+</div>
+<button class="w-full gradient-purple text-white font-label-md text-label-md py-4 rounded-lg shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all flex justify-center items-center" type="submit">
+                            Iniciar Sesión
+                        </button>
+</form>
+<div class="relative my-xl">
+<div class="absolute inset-0 flex items-center"><div class="w-full border-t border-outline-variant/30"></div></div>
+<div class="relative flex justify-center text-label-sm font-label-sm uppercase bg-surface-container-lowest px-md text-outline">o continuar con</div>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<button class="flex items-center justify-center space-x-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg py-3 hover:bg-surface-container-low transition-colors active:scale-95">
+<img alt="Google" class="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDg44zay2d9VfXnTezqcGEiHkyugMR4qk2SZYRFoTmnuPvqIhruKmny7A46qFG1G3Xe5SRSIgWnp0we_V5LPrMYelhK-2WEVzela2xj0kXiwRvk94qEp4Fz5cOGkW5wmJuiETSqUiXQnLP7yHZljerHUa2xj2rMgetp9teAgVb1i9DsFmV_bIS8ca1B8TNoM-oV0X0NZM3bqsRpTx_AAZmgDAwB77KdqULOcnwzNQixzml3frgiTi1Vf700sa4Y5NU82tw1EHUb1-E"/>
+<span class="font-label-md text-label-md text-on-surface">Google</span>
+</button>
+<button class="flex items-center justify-center space-x-sm bg-on-surface text-surface rounded-lg py-3 hover:bg-on-surface/90 transition-colors active:scale-95">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">ios</span>
+<span class="font-label-md text-label-md">Apple</span>
+</button>
+</div>
+<p class="mt-xl text-center font-body-sm text-body-sm text-on-surface-variant">
+                        ¿No tiene una cuenta? <a class="text-primary font-label-sm text-label-sm font-bold hover:underline" href="#">Regístrese gratis</a>
+</p>
+</div>
+</div>
+</div>
+</main>
+<footer class="py-md px-margin-mobile text-center">
+<p class="font-label-sm text-label-sm text-outline">© 2024 NeoFin Technologies S.A. Todos los derechos reservados.</p>
+</footer>
+<script>
+        document.querySelectorAll('button, a').forEach(el => {
+            el.addEventListener('mousedown', () => {
+                el.classList.add('scale-95');
+            });
+            el.addEventListener('mouseup', () => {
+                el.classList.remove('scale-95');
+            });
+            el.addEventListener('mouseleave', () => {
+                el.classList.remove('scale-95');
+            });
+        });
+    </script>
+</body></html>

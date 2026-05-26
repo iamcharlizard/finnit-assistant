@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { TransactionsService } from './transactions.service';
 import { PrismaService } from '../../services/prisma.service';
 import {
@@ -10,7 +11,7 @@ import { PaginationUtil } from '../../common/utils/pagination.util';
 
 describe('TransactionsService', () => {
   let service: TransactionsService;
-  let prismaService: jest.Mocked<PrismaService>;
+  let prismaService: DeepMockProxy<PrismaService>;
 
   const mockUserId = 'user-1';
   const mockAccountId = 'account-1';
@@ -53,43 +54,19 @@ describe('TransactionsService', () => {
   };
 
   beforeEach(async () => {
-    const mockPrismaService = {
-      account: {
-        findFirst: jest.fn(),
-        update: jest.fn(),
-      },
-      category: {
-        findFirst: jest.fn(),
-        findMany: jest.fn(),
-      },
-      transaction: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        findFirst: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-        count: jest.fn(),
-        aggregate: jest.fn(),
-      },
-      attachment: {
-        create: jest.fn(),
-        delete: jest.fn(),
-      },
-      $transaction: jest.fn(),
-    };
+    prismaService = mockDeep<PrismaService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TransactionsService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService,
+          useValue: prismaService,
         },
       ],
     }).compile();
 
     service = module.get<TransactionsService>(TransactionsService);
-    prismaService = module.get(PrismaService);
 
     jest.clearAllMocks();
   });
@@ -109,8 +86,8 @@ describe('TransactionsService', () => {
 
     it('should successfully create a transaction with account balance update', async () => {
       // Arrange
-      prismaService.account.findFirst.mockResolvedValue(mockAccount);
-      prismaService.category.findFirst.mockResolvedValue(mockCategory);
+      prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
+      prismaService.category.findFirst.mockResolvedValue(mockCategory as any);
 
       const createdTransaction = { ...mockTransaction, ...createInput };
       prismaService.$transaction.mockImplementation(async (callback) => {
@@ -120,7 +97,7 @@ describe('TransactionsService', () => {
           },
           account: { update: jest.fn() },
         };
-        const result = await callback(mockTx);
+        const result = await callback(mockTx as any);
         return result;
       });
 
@@ -148,11 +125,11 @@ describe('TransactionsService', () => {
 
     it('should create transaction without category when not provided', async () => {
       // Arrange
-      const inputWithoutCategory = { ...createInput };
+      const inputWithoutCategory: any = { ...createInput };
       delete inputWithoutCategory.categoryId;
       delete inputWithoutCategory.merchantName;
 
-      prismaService.account.findFirst.mockResolvedValue(mockAccount);
+      prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
       const createdTransaction = { ...mockTransaction, categoryId: null };
 
       prismaService.$transaction.mockImplementation(async (callback) => {
@@ -162,7 +139,7 @@ describe('TransactionsService', () => {
           },
           account: { update: jest.fn() },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -174,17 +151,17 @@ describe('TransactionsService', () => {
 
     it('should auto-categorize transaction based on merchant name', async () => {
       // Arrange
-      const inputWithoutCategory = { ...createInput };
+      const inputWithoutCategory: any = { ...createInput };
       delete inputWithoutCategory.categoryId;
 
       const suggestedCategory = { id: 'suggested-category', name: 'Suggested' };
-      prismaService.account.findFirst.mockResolvedValue(mockAccount);
+      prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
 
       // Mock the suggestCategoryForMerchant method
       jest
         .spyOn(service as any, 'suggestCategoryForMerchant')
         .mockResolvedValue(suggestedCategory);
-      prismaService.category.findFirst.mockResolvedValue(suggestedCategory);
+      prismaService.category.findFirst.mockResolvedValue(suggestedCategory as any);
 
       const createdTransaction = {
         ...mockTransaction,
@@ -197,7 +174,7 @@ describe('TransactionsService', () => {
           },
           account: { update: jest.fn() },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -223,7 +200,7 @@ describe('TransactionsService', () => {
 
     it('should throw NotFoundError when category not found', async () => {
       // Arrange
-      prismaService.account.findFirst.mockResolvedValue(mockAccount);
+      prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
       prismaService.category.findFirst.mockResolvedValue(null);
 
       // Act & Assert
@@ -236,8 +213,8 @@ describe('TransactionsService', () => {
     it('should handle income transaction with positive balance change', async () => {
       // Arrange
       const incomeInput = { ...createInput, type: TransactionType.income };
-      prismaService.account.findFirst.mockResolvedValue(mockAccount);
-      prismaService.category.findFirst.mockResolvedValue(mockCategory);
+      prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
+      prismaService.category.findFirst.mockResolvedValue(mockCategory as any);
 
       let capturedBalanceChange: number | undefined;
       prismaService.$transaction.mockImplementation(async (callback) => {
@@ -254,7 +231,7 @@ describe('TransactionsService', () => {
             }),
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -266,8 +243,8 @@ describe('TransactionsService', () => {
 
     it('should handle expense transaction with negative balance change', async () => {
       // Arrange
-      prismaService.account.findFirst.mockResolvedValue(mockAccount);
-      prismaService.category.findFirst.mockResolvedValue(mockCategory);
+      prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
+      prismaService.category.findFirst.mockResolvedValue(mockCategory as any);
 
       let capturedBalanceChange: number | undefined;
       prismaService.$transaction.mockImplementation(async (callback) => {
@@ -279,7 +256,7 @@ describe('TransactionsService', () => {
             }),
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -292,8 +269,8 @@ describe('TransactionsService', () => {
     it('should not update balance for pending transactions', async () => {
       // Arrange
       const pendingInput = { ...createInput, isPending: true };
-      prismaService.account.findFirst.mockResolvedValue(mockAccount);
-      prismaService.category.findFirst.mockResolvedValue(mockCategory);
+      prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
+      prismaService.category.findFirst.mockResolvedValue(mockCategory as any);
 
       const pendingTransaction = { ...mockTransaction, isPending: true };
       let accountUpdateCalled = false;
@@ -309,7 +286,7 @@ describe('TransactionsService', () => {
             }),
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -340,8 +317,8 @@ describe('TransactionsService', () => {
         pageInfo: {
           hasNextPage: false,
           hasPreviousPage: false,
-          startCursor: null,
-          endCursor: null,
+          startCursor: undefined,
+          endCursor: undefined,
         },
         totalCount: 2,
       });
@@ -379,7 +356,7 @@ describe('TransactionsService', () => {
 
       jest
         .spyOn(service as any, 'applyFilters')
-        .mockImplementation((where, filters) => {
+        .mockImplementation((where: any, filters: any) => {
           Object.assign(where, filters);
         });
 
@@ -388,8 +365,8 @@ describe('TransactionsService', () => {
         pageInfo: {
           hasNextPage: false,
           hasPreviousPage: false,
-          startCursor: null,
-          endCursor: null,
+          startCursor: undefined,
+          endCursor: undefined,
         },
         totalCount: 1,
       });
@@ -416,8 +393,8 @@ describe('TransactionsService', () => {
         pageInfo: {
           hasNextPage: false,
           hasPreviousPage: false,
-          startCursor: null,
-          endCursor: null,
+          startCursor: undefined,
+          endCursor: undefined,
         },
         totalCount: 1,
       });
@@ -492,7 +469,7 @@ describe('TransactionsService', () => {
       prismaService.transaction.findFirst.mockResolvedValue(manualTransaction);
       prismaService.category.findFirst.mockResolvedValue({
         id: 'new-category-id',
-      });
+      } as any);
 
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
@@ -501,7 +478,7 @@ describe('TransactionsService', () => {
           },
           account: { update: jest.fn() },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -554,7 +531,7 @@ describe('TransactionsService', () => {
       prismaService.transaction.findFirst.mockResolvedValue(manualTransaction);
       prismaService.category.findFirst.mockResolvedValue({
         id: 'new-category-id',
-      });
+      } as any);
 
       let balanceAdjustment: number | undefined;
       prismaService.$transaction.mockImplementation(async (callback) => {
@@ -568,7 +545,7 @@ describe('TransactionsService', () => {
             }),
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -595,7 +572,7 @@ describe('TransactionsService', () => {
           transaction: { delete: jest.fn() },
           account: { update: jest.fn() },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -653,7 +630,7 @@ describe('TransactionsService', () => {
             }),
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -684,7 +661,7 @@ describe('TransactionsService', () => {
             }),
           },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -743,8 +720,8 @@ describe('TransactionsService', () => {
       const result = service['mapTransaction'](transactionWithAttachments);
 
       // Assert
-      expect(result.attachments).toHaveLength(1);
-      expect(result.attachments[0]).toEqual({
+      expect(result.attachments!).toHaveLength(1);
+      expect(result.attachments![0]).toEqual({
         id: 'attachment-1',
         transactionId: mockTransaction.id,
         fileUrl: 'https://example.com/receipt.jpg',
@@ -809,8 +786,8 @@ describe('TransactionsService', () => {
         amount: 999999999.99,
       };
 
-      prismaService.account.findFirst.mockResolvedValue(mockAccount);
-      prismaService.category.findFirst.mockResolvedValue(mockCategory);
+      prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
+      prismaService.category.findFirst.mockResolvedValue(mockCategory as any);
 
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
@@ -819,7 +796,7 @@ describe('TransactionsService', () => {
           },
           account: { update: jest.fn() },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act
@@ -837,7 +814,7 @@ describe('TransactionsService', () => {
 
     it('should handle concurrent transaction creation', async () => {
       // Arrange
-      prismaService.account.findFirst.mockResolvedValue(mockAccount);
+      prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
       prismaService.$transaction.mockRejectedValue(
         new Error('Transaction conflict'),
       );
@@ -863,15 +840,15 @@ describe('TransactionsService', () => {
         name: 'Global Category',
       };
 
-      prismaService.account.findFirst.mockResolvedValue(mockAccount);
-      prismaService.category.findFirst.mockResolvedValue(globalDefaultCategory);
+      prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
+      prismaService.category.findFirst.mockResolvedValue(globalDefaultCategory as any);
 
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
           transaction: { create: jest.fn().mockResolvedValue(mockTransaction) },
           account: { update: jest.fn() },
         };
-        return callback(mockTx);
+        return callback(mockTx as any);
       });
 
       // Act

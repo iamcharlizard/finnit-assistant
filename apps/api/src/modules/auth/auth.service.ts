@@ -324,6 +324,8 @@ export class AuthService {
   }
 
   private async createDefaultCategories(userId: string): Promise<void> {
+    // Names must be unique per user (category_user_name_unique), including
+    // children across different parents.
     const defaultCategories = [
       // Expenses
       {
@@ -340,7 +342,13 @@ export class AuthService {
       },
       {
         name: 'Bills & Utilities',
-        children: ['Electricity', 'Water', 'Internet', 'Phone', 'Insurance'],
+        children: [
+          'Electricity',
+          'Water',
+          'Internet',
+          'Phone',
+          'Home Insurance',
+        ],
       },
       {
         name: 'Entertainment',
@@ -348,10 +356,10 @@ export class AuthService {
       },
       {
         name: 'Health & Medical',
-        children: ['Doctor', 'Pharmacy', 'Fitness', 'Insurance'],
+        children: ['Doctor', 'Pharmacy', 'Fitness', 'Health Insurance'],
       },
-      { name: 'Education', children: ['Tuition', 'Books', 'Supplies'] },
-      { name: 'Personal Care', children: ['Hair', 'Beauty', 'Clothing'] },
+      { name: 'Education', children: ['Tuition', 'Textbooks', 'Supplies'] },
+      { name: 'Personal Care', children: ['Hair', 'Beauty', 'Grooming'] },
 
       // Income
       {

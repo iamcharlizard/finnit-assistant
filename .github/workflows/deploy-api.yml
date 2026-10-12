@@ -1,0 +1,97 @@
+name: Deploy API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/api/**
+      - packages/database/**
+      - packages/typescript-config/**
+      - pnpm-lock.yaml
+      - .dockerignore
+      - .github/workflows/deploy-api.yml
+  workflow_dispatch:
+
+# Never run two deploys at once; a newer push waits for the current one.
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/finnit-api
+
+jobs:
+  build:
+    name: Build, smoke test and push (arm64)
+    # Native arm64 runner: the Hetzner CAX server is ARM, so no QEMU emulation.
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: vars
+        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          platforms: linux/arm64
+          load: true
+          tags: finnit-api:ci
+          cache-from: type=gha,scope=finnit-api
+          cache-to: type=gha,mode=max,scope=finnit-api
+
+      - name: Smoke test (migrations + health + auth flow)
+        run: apps/api/scripts/smoke-test.sh finnit-api:ci
+
+      - name: Upload API logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-api-log
+          path: smoke-api.log
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image
+        run: |
+          for tag in "${{ steps.vars.outputs.tag }}" latest; do
+            docker tag finnit-api:ci "$IMAGE:$tag"
+            docker push "$IMAGE:$tag"
+          done
+
+  deploy:
+    name: Deploy to Dokploy
+    needs: build
+    runs-on: ubuntu-latest
+    # Holds the Dokploy secrets; add required reviewers here to gate deploys.
+    environment: production
+    steps:
+      - name: Trigger Dokploy deployment
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_APPLICATION_ID }}
+        run: |
+          curl --fail-with-body -sS -X POST "$DOKPLOY_URL/api/application.deploy" \
+            -H 'accept: application/json' \
+            -H 'content-type: application/json' \
+            -H "x-api-key: $DOKPLOY_API_KEY" \
+            -d "{\"applicationId\": \"$DOKPLOY_APPLICATION_ID\"}"
+
+      - name: Summary
+        run: |
+          echo "Deployed \`$IMAGE:${{ needs.build.outputs.tag }}\` (also tagged \`latest\`)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Rollback: set the Dokploy image to a previous \`sha-*\` tag and redeploy." >> "$GITHUB_STEP_SUMMARY"

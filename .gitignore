@@ -43,3 +43,6 @@ storybook-static
 
 # Next.js
 next-env.d.ts
+
+# API smoke test output
+smoke-api.log

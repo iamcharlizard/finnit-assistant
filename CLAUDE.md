@@ -262,7 +262,7 @@ pnpm api:dev
 | API Framework | NestJS | ^11 |
 | GraphQL | Apollo Server 5 + NestJS GraphQL | ^13 |
 | ORM | Prisma | ^7.8.0 |
-| Database | PostgreSQL | 15 |
+| Database | PostgreSQL | 18 |
 | Auth | JWT + Passport | — |
 | Mobile | React Native 0.85 + Expo SDK 56 | — |
 | Language | TypeScript (strict) | 5.9.3 |

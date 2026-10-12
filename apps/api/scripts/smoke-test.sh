@@ -27,7 +27,7 @@ gql() {
 docker network create "$NET" > /dev/null
 docker run -d --name "$DB" --network "$NET" \
   -e POSTGRES_USER=finnit -e POSTGRES_PASSWORD=smoke -e POSTGRES_DB=finnit \
-  postgres:15-alpine > /dev/null
+  postgres:18-alpine > /dev/null
 until docker exec "$DB" pg_isready -U finnit -d finnit > /dev/null 2>&1; do sleep 1; done
 
 docker run -d --name "$API" --network "$NET" -p "$PORT:3000" \

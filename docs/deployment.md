@@ -27,7 +27,7 @@ push a main ──► GitHub Actions (runner arm64)
 1. **Projects → Create Project** `Finnit` (entorno `production`).
 2. Dentro del proyecto: **Create Service → Database → PostgreSQL**.
    - Nombre: `finnit-db`; base: `finnit`; usuario: `finnit`; contraseña: genera una fuerte (`openssl rand -base64 32`).
-   - Imagen: `postgres:15` (misma versión que en desarrollo).
+   - Imagen: `postgres:18` (misma versión que en desarrollo y en el smoke test).
    - **No** configures *External Port*: la base solo debe ser accesible dentro de la red de Docker.
 3. Deploy. En la pestaña de conexión copia el **Internal Connection URL** (algo como `postgresql://finnit:...@finnit-finnitdb-xxxx:5432/finnit`).
 4. **Backups**: agrega un destino S3 (Settings → S3 Destinations) y programa un respaldo diario de `finnit-db`.

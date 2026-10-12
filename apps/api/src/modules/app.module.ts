@@ -15,15 +15,25 @@ import { DebtsModule } from './debts/debts.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReportsModule } from './reports/reports.module';
 import { PrismaService } from '../services/prisma.service';
+import { HealthController } from '../controllers/health.controller';
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+function envFlag(name: string, fallback: boolean): boolean {
+  const value = process.env[name];
+  return value === undefined ? fallback : value === 'true';
+}
 
 @Module({
   imports: [
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
-      autoSchemaFile: join(process.cwd(), 'schema.gql'),
+      // Production keeps the schema in memory: the container filesystem is
+      // read-only for the app user and schema.gql is a dev artifact.
+      autoSchemaFile: isProduction ? true : join(process.cwd(), 'schema.gql'),
       sortSchema: true,
-      playground: true,
-      introspection: true,
+      playground: envFlag('GRAPHQL_PLAYGROUND', !isProduction),
+      introspection: envFlag('GRAPHQL_INTROSPECTION', !isProduction),
       context: ({ req, res }) => ({ req, res }),
     }),
     AuthModule,
@@ -38,6 +48,7 @@ import { PrismaService } from '../services/prisma.service';
     NotificationsModule,
     ReportsModule,
   ],
+  controllers: [HealthController],
   providers: [PrismaService],
 })
 export class AppModule {}

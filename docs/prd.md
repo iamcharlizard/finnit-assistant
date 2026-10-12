@@ -171,13 +171,13 @@ Deliver a functional prototype that allows a user to:
 - **Bank Integration Framework**: Ready for Belvo/Paybook integration
 
 ### 🎯 **API ARCHITECTURE DELIVERED**
-- **GraphQL Schema**: Complete schema-first implementation with 10 core modules
+- **GraphQL Schema**: Code-first NestJS implementation with 11 modules
 - **Cursor Pagination**: Efficient pagination on all list operations
 - **Type Safety**: Comprehensive DTOs and input validation
 - **Error Handling**: Typed GraphQL errors with business-specific codes
 - **Security**: JWT guards, user isolation, input sanitization
 - **Performance**: Optimized queries, N+1 prevention, caching strategies
-- **Testing**: Unit and integration tests with >90% coverage
+- **Testing**: Jest unit tests for 6 of 11 modules (auth, accounts, budgets, debts, goals, transactions); categories, transfers, notifications, reports and users still lack tests; no E2E tests yet
 
 ### 🚀 **PRODUCTION READY**
 The GraphQL API is fully functional and ready for frontend integration with:
@@ -185,7 +185,19 @@ The GraphQL API is fully functional and ready for frontend integration with:
 - Real-time data with subscriptions
 - Comprehensive business logic validation
 - Security and performance optimizations
-- Thorough test coverage
+
+Pending before production: CI pipeline, remaining tests, and a hosting decision (see `dev-plans/next-steps-checklist.md`).
+
+### 🟡 **MOBILE APP (Expo) — UI with mock data**
+- Expo Router app (`apps/finnit-app`) with login, dashboard, history, analytics, calendar, cards and settings screens (NativeWind v5).
+- Login connected to the `signIn` mutation (urql + SecureStore).
+- Pending: replace mock data with GraphQL queries, signup, token refresh, route guard, create forms.
+
+### 🟡 **WEB APP (Next.js) — UI with mock data**
+- `apps/web`: Next.js 16 App Router with the same screens as mobile (`/login`, `/dashboard`, `/history`, `/analytics`, `/calendar`, `/cards`, `/settings`), responsive layout (sidebar on desktop, bottom nav on small screens) and light/dark theme.
+- `packages/ui` (`@finnit/ui`): shared web component library built on shadcn/ui + Radix UI + Tailwind v4, with web equivalents of every mobile component and design tokens ported from the mobile app (adjusted to meet WCAG 2.1 AA contrast).
+- `apps/storybook`: Storybook 10 documenting all components (79 stories, light/dark), audited with axe-core: 0 WCAG 2.1 AA violations.
+- Pending: GraphQL data, real authentication, create forms, file upload, Vercel deployment.
 
 ---
 

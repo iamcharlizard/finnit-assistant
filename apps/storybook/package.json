@@ -1,0 +1,32 @@
+{
+  "name": "@finnit/storybook",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "storybook dev -p 6006 --no-open",
+    "build": "storybook build",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@finnit/ui": "workspace:*",
+    "@fontsource/ubuntu": "^5.3.0",
+    "lucide-react": "^1.55.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@finnit/typescript-config": "workspace:*",
+    "@storybook/addon-a11y": "^10.6.1",
+    "@storybook/addon-docs": "^10.6.1",
+    "@storybook/addon-themes": "^10.6.1",
+    "@storybook/react-vite": "^10.6.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "19.2.15",
+    "@types/react-dom": "19.2.3",
+    "storybook": "^10.6.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "5.9.3",
+    "vite": "^8.3.4"
+  }
+}

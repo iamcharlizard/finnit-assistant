@@ -5,12 +5,13 @@ import { AuthService } from './auth.service';
 import { AuthResolver } from './auth.resolver';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PrismaService } from '../../services/prisma.service';
+import { getJwtSecret } from '../../common/utils/jwt-secret.util';
 
 @Module({
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'default-secret-key',
+      secret: getJwtSecret(),
       signOptions: { expiresIn: '15m' },
     }),
   ],

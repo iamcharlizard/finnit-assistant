@@ -16,10 +16,10 @@ Finnit Assistant is a cross-platform personal finance assistant built as a Turbo
 - **Commits/PRs**: *Conventional Commits* conventions; each PR includes: summary, risks, affected migrations, test steps, and rollback plan.
 - **Minimum DoD**: clean lints and types; tests pass; `docs/prd.md` updates *Scope implemented* section; migration applied and verified locally.
 
-## Current Implementation Status (as of 2026-05-24)
+## Current Implementation Status (as of 2026-10-11)
 
-### ✅ Backend API — 100% complete
-All 10 GraphQL modules implemented in `apps/api/`:
+### ✅ Backend API — feature complete
+All 11 GraphQL modules implemented in `apps/api/`:
 
 | Module | Location |
 |--------|----------|
@@ -37,11 +37,29 @@ All 10 GraphQL modules implemented in `apps/api/`:
 
 Auto-generated schema at `apps/api/src/schema.gql`.
 
-### 🟡 Mobile App — Scaffolded, no features yet
-`apps/finnit-app/` is an Expo Router app with default tab screens only. No financial screens implemented.
+Unit tests exist for auth (service + resolver), accounts, budgets, debts, goals, transactions. Missing: categories, transfers, notifications, reports, users. No E2E tests and no CI workflow (only Claude GitHub workflows).
 
-### ⏳ Web App — Not started
-No `apps/web` folder exists. PRD target is Next.js on Vercel.
+### 🟡 Mobile App — UI built, data mostly mocked
+`apps/finnit-app/` is an Expo Router app styled with NativeWind v5:
+- Routes: `app/login.tsx`, `app/(app)/` group (dashboard, history, cards, calendar, analytics, settings) with a custom `BottomNavBar`. Route files re-export screens from `screens/`.
+- Auth: `contexts/AuthContext.tsx` calls the `signIn` mutation via urql (`lib/graphql/client.ts`) and persists tokens in SecureStore. No signup, token refresh, or route guard yet.
+- Screens use hardcoded mock data (e.g. `MOCK_FINANCIAL_DATA` in `screens/dashboard.tsx`). The commented-out data hooks use React Query syntax, but the project's client is **urql** — write real queries with urql under `lib/graphql/`.
+- Finance components live in `components/features/finance/`.
+
+### 🟡 Web App — UI built with mock data
+- `apps/web/` (`@finnit/web`): Next.js 16 App Router, port 3001. Routes mirror mobile: `/login` and `app/(app)/` (dashboard, history, analytics, calendar, cards, settings). `components/app-shell.tsx` renders `SideNav` (≥ lg) or `TopAppBar` + `BottomNavBar`. Screens live in `components/screens/`, mock data in `lib/mocks/` (to be replaced by GraphQL). Login is UI-only. Theme via `next-themes` (class strategy).
+- `packages/ui/` (`@finnit/ui`): shadcn/ui (new-york) on Radix (`radix-ui` package) + Tailwind v4. Ships TypeScript source (consumers transpile it). Import per file, e.g. `@finnit/ui/components/finance/payment-item`. Folders: `components/ui` (shadcn primitives + typography), `components/finance`, `components/navigation`, `components/settings`. Design tokens in `src/styles/globals.css` are ported from `apps/finnit-app/global.css` (light on `:root`, dark on `.dark`).
+  - Web components keep the mobile names/props, with web conventions: `symbolName` → `icon: LucideIcon`, `onPress` → `onClick`.
+  - Use relative imports inside `packages/ui`. If you add `@theme` font sizes or radii, register them in `src/lib/utils.ts` (`extendTailwindMerge`) or `cn()` will drop them.
+  - Avoid locale-dependent `Intl` output that differs between Node and browsers (e.g. `notation: 'compact'`) in SSR'd components; it breaks hydration.
+- `apps/storybook/` (`@finnit/storybook`): Storybook 10 (react-vite), port 6006. Stories are co-located as `packages/ui/src/**/*.stories.tsx`; addons: docs, a11y, themes (light/dark toggle).
+- Commands: `pnpm web:dev`, `pnpm web:build`, `pnpm storybook`, `pnpm storybook:build`.
+
+### 🟡 Deployment — API pipeline ready, not yet live
+- API: Docker image (`apps/api/Dockerfile`, arm64) built and smoke-tested by `.github/workflows/deploy-api.yml`, pushed to GHCR and deployed to a Hetzner CAX11 managed with Dokploy. Postgres runs on the same server inside the Dokploy project. Setup and rollback: `docs/deployment.md`.
+- The container runs `prisma migrate deploy` on start, so migrations must be backwards-compatible.
+- `apps/api/scripts/smoke-test.sh <image>` boots an image against a throwaway Postgres (health + signUp/signIn/me).
+- Known gaps: all API Jest suites fail to run and `eslint` reports ~777 errors, so CI does not gate on them yet.
 
 ### Database Migrations Applied
 - `20250813091847_init`
@@ -57,6 +75,7 @@ No `apps/web` folder exists. PRD target is Next.js on Vercel.
 | `docs/er-diagram.md` | Entity-relationship diagram (Mermaid) |
 | `docs/data-dictionary.md` | Field-level data definitions |
 | `docs/database-monorepo-integration.md` | DB ↔ API integration guide |
+| `docs/deployment.md` | API deployment (Dokploy + GitHub Actions) and rollback |
 | `packages/database/prisma/schema.prisma` | Authoritative DB schema |
 | `dev-plans/progress.md` | Sprint progress tracker |
 | `dev-plans/next-steps-checklist.md` | Prioritized task list |
@@ -83,12 +102,14 @@ No `apps/web` folder exists. PRD target is Next.js on Vercel.
 finnit-assistant/
 ├── apps/
 │   ├── api/          — NestJS GraphQL API (@finnit/api)
-│   └── finnit-app/   — React Native Expo app
+│   ├── finnit-app/   — React Native Expo app
+│   ├── web/          — Next.js web app (@finnit/web)
+│   └── storybook/    — Storybook for @finnit/ui (@finnit/storybook)
 ├── packages/
 │   ├── database/     — Prisma schema + generated client (@finnit/database)
 │   ├── eslint-config/
 │   ├── typescript-config/
-│   └── ui/           — Shared React components
+│   └── ui/           — Web component library: shadcn/ui + Radix + Tailwind v4 (@finnit/ui)
 ├── docs/             — PRD, user stories, ER diagram
 ├── dev-plans/        — Sprint progress and task checklists
 ├── postman/          — API collections (Dev/Staging/Prod environments)
@@ -241,7 +262,7 @@ pnpm api:dev
 | API Framework | NestJS | ^11 |
 | GraphQL | Apollo Server 5 + NestJS GraphQL | ^13 |
 | ORM | Prisma | ^7.8.0 |
-| Database | PostgreSQL | 15 |
+| Database | PostgreSQL | 18 |
 | Auth | JWT + Passport | — |
 | Mobile | React Native 0.85 + Expo SDK 56 | — |
 | Language | TypeScript (strict) | 5.9.3 |

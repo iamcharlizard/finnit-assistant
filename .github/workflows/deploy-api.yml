@@ -1,8 +1,11 @@
 name: Deploy API
 
+# Branch → environment:
+#   main    → production  (image tag `latest`,      api.<domain>)
+#   testing → testing     (image tag `testing`,     api-test.<domain>)
 on:
   push:
-    branches: [main]
+    branches: [main, testing]
     paths:
       - apps/api/**
       - packages/database/**
@@ -12,9 +15,9 @@ on:
       - .github/workflows/deploy-api.yml
   workflow_dispatch:
 
-# Never run two deploys at once; a newer push waits for the current one.
+# One deploy at a time per branch; a newer push waits for the current one.
 concurrency:
-  group: deploy-api
+  group: deploy-api-${{ github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -30,11 +33,24 @@ jobs:
       packages: write
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
+      channel: ${{ steps.vars.outputs.channel }}
+      environment: ${{ steps.vars.outputs.environment }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Resolve target environment
+        id: vars
+        run: |
+          case "$GITHUB_REF_NAME" in
+            main)    environment=production;  channel=latest ;;
+            testing) environment=testing;     channel=testing ;;
+            *) echo "::error::Branch '$GITHUB_REF_NAME' has no environment; deploy from main or testing."; exit 1 ;;
+          esac
+          {
+            echo "tag=sha-${GITHUB_SHA::7}"
+            echo "channel=$channel"
+            echo "environment=$environment"
+          } >> "$GITHUB_OUTPUT"
 
-      - id: vars
-        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
 
       - uses: docker/setup-buildx-action@v3
 
@@ -67,17 +83,18 @@ jobs:
 
       - name: Push image
         run: |
-          for tag in "${{ steps.vars.outputs.tag }}" latest; do
+          for tag in "${{ steps.vars.outputs.tag }}" "${{ steps.vars.outputs.channel }}"; do
             docker tag finnit-api:ci "$IMAGE:$tag"
             docker push "$IMAGE:$tag"
           done
 
   deploy:
-    name: Deploy to Dokploy
+    name: Deploy to Dokploy (${{ needs.build.outputs.environment }})
     needs: build
     runs-on: ubuntu-latest
-    # Holds the Dokploy secrets; add required reviewers here to gate deploys.
-    environment: production
+    # Each GitHub environment holds its own Dokploy secrets (the application
+    # ID differs); add required reviewers to `production` to gate its deploys.
+    environment: ${{ needs.build.outputs.environment }}
     steps:
       - name: Trigger Dokploy deployment
         env:
@@ -93,5 +110,5 @@ jobs:
 
       - name: Summary
         run: |
-          echo "Deployed \`$IMAGE:${{ needs.build.outputs.tag }}\` (also tagged \`latest\`)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Deployed \`$IMAGE:${{ needs.build.outputs.tag }}\` to **${{ needs.build.outputs.environment }}** (also tagged \`${{ needs.build.outputs.channel }}\`)." >> "$GITHUB_STEP_SUMMARY"
           echo "Rollback: set the Dokploy image to a previous \`sha-*\` tag and redeploy." >> "$GITHUB_STEP_SUMMARY"

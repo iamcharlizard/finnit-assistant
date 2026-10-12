@@ -55,8 +55,9 @@ Unit tests exist for auth (service + resolver), accounts, budgets, debts, goals,
 - `apps/storybook/` (`@finnit/storybook`): Storybook 10 (react-vite), port 6006. Stories are co-located as `packages/ui/src/**/*.stories.tsx`; addons: docs, a11y, themes (light/dark toggle).
 - Commands: `pnpm web:dev`, `pnpm web:build`, `pnpm storybook`, `pnpm storybook:build`.
 
-### 🟡 Deployment — API pipeline ready, not yet live
-- API: Docker image (`apps/api/Dockerfile`, arm64) built and smoke-tested by `.github/workflows/deploy-api.yml`, pushed to GHCR and deployed to a Hetzner CAX11 managed with Dokploy. Postgres runs on the same server inside the Dokploy project. Setup and rollback: `docs/deployment.md`.
+### ✅ Deployment — API live on Dokploy
+- API: Docker image (`apps/api/Dockerfile`, arm64) built and smoke-tested by `.github/workflows/deploy-api.yml`, pushed to GHCR and deployed to a Hetzner CAX11 managed with Dokploy. Each environment has its own Postgres on the same server inside the Dokploy project. Setup and rollback: `docs/deployment.md`.
+- Environments: branch `main` → **production** (image tag `latest`); branch `testing` → **testing** (image tag `testing`). Work flows `feature/*` → `testing` → `main`.
 - The container runs `prisma migrate deploy` on start, so migrations must be backwards-compatible.
 - `apps/api/scripts/smoke-test.sh <image>` boots an image against a throwaway Postgres (health + signUp/signIn/me).
 - Known gaps: all API Jest suites fail to run and `eslint` reports ~777 errors, so CI does not gate on them yet.

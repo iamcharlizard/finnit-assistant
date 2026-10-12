@@ -151,7 +151,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
 | Subir PDF del estado de cuenta (almacenado en S3) | ✅ | ⏳ | ⏳ | `POST /statements` (multipart, máx. 10 MB, deduplica por hash). Bucket privado, descarga con URL firmada (`statementFileUrl`). |
-| Extracción: parser Banamex + Claude para otros formatos | 🟡 | — | — | Lectura con Claude lista (requiere `ANTHROPIC_API_KEY`). **Parser Banamex pendiente de un PDF de ejemplo.** Valida saldo anterior + cargos − abonos = saldo al corte. |
+| Extracción: parser Banamex + IA para otros formatos | ✅ | — | — | Parser local `banamex_v1` (tarjeta titular y digital, mensualidades MSI, pagos y devoluciones), verificado con un estado real. Otros bancos: lectura con IA. Valida saldo anterior + cargos − abonos = saldo al corte. |
 | Revisión y confirmación de movimientos importados | ✅ | ⏳ | ⏳ | `statementImport`, `updateStatementLine` (ignorar, categoría, ligar a mano), `confirmStatementImport`, `reprocessStatementImport`. |
 | Conciliación con transacciones y gastos recurrentes | ✅ | ⏳ | ⏳ | No duplica compras ya registradas (mismo monto, ±3 días); marca pagados los recurrentes por patrón de comercio (±10 días, ±15% o ±50% si el monto es variable). |
 | Resumen del mes de la tarjeta vs total a pagar | ✅ | ⏳ | ⏳ | `cardMonthSummary`: total a pagar, recurrentes esperados vs cobrados, cargos nuevos. |

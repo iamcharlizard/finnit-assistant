@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { BanamexCreditCardParser } from './banamex-credit-card.parser';
 import { ClaudeStatementParser } from './claude-statement.parser';
 import {
   ParsedStatement,
@@ -18,7 +19,9 @@ export interface ParseResult {
  */
 @Injectable()
 export class StatementParserRegistry {
-  private readonly localParsers: StatementParser[] = [];
+  private readonly localParsers: StatementParser[] = [
+    new BanamexCreditCardParser(),
+  ];
   private readonly fallback = new ClaudeStatementParser();
 
   /** Ids accepted by `parse(…, parserId)`. */

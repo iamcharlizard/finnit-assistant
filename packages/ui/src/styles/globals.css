@@ -1,0 +1,166 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* Scan the shared components so consumer apps generate their classes. */
+@source '../';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Finnit design tokens — ported from apps/finnit-app/global.css.
+ * Light values live on :root, dark values on .dark (the "-dark" tokens on mobile).
+ */
+:root {
+  --background: #f8f9fa;
+  --surface: #ffffff;
+  --on-background: #1a1b22;
+  --on-surface-variant: #5c6370;
+  --outline: #e0e0e0;
+  --primary: #00f5ff;
+  /* Mobile uses #6c72cb; darkened so white text on it meets WCAG AA (5.3:1). */
+  --accent-neon: #5b61c2;
+
+  --income: #006688;
+  --expense: #ba1a1a;
+
+  /* Accents used across finance components */
+  --brand: #00696e;
+  --brand-foreground: #ffffff;
+  /* Text-safe variants of the brand colors (≥ 4.5:1 on surfaces). */
+  --brand-ink: #00696e;
+  --violet-ink: #5b61c2;
+  --tertiary: #006688;
+  --highlight: #ad009b;
+  --glass: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.07);
+  --track: rgba(0, 0, 0, 0.06);
+
+  /* shadcn/ui semantic variables */
+  --foreground: var(--on-background);
+  --card: var(--surface);
+  --card-foreground: var(--on-background);
+  --popover: var(--surface);
+  --popover-foreground: var(--on-background);
+  --primary-foreground: #1a1b22;
+  --secondary: var(--accent-neon);
+  --secondary-foreground: #ffffff;
+  --muted: #f1f3f5;
+  --muted-foreground: var(--on-surface-variant);
+  --accent: #eef0f3;
+  --accent-foreground: var(--on-background);
+  --destructive: var(--expense);
+  --border: var(--outline);
+  --input: var(--outline);
+  --ring: var(--accent-neon);
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: #12131a;
+  --surface: #1a1b22;
+  --on-background: #f8f9fa;
+  --on-surface-variant: #a0a0a0;
+  --outline: #2d2e38;
+  --primary: #6c72cb;
+  --accent-neon: #00f5ff;
+
+  --income: #27dec1;
+  --expense: #ffb4ab;
+
+  --brand: #6c72cb;
+  --brand-foreground: #0b0c1a;
+  --brand-ink: #9aa0f0;
+  --violet-ink: #9aa0f0;
+  --tertiary: #27dec1;
+  --highlight: #ffabf2;
+  --glass: rgba(23, 24, 31, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --track: rgba(255, 255, 255, 0.06);
+
+  /* White on #6c72cb is 4.28:1; near-black passes AA. */
+  --primary-foreground: #0b0c1a;
+  --secondary-foreground: #00363a;
+  --muted: #22232b;
+  --accent: #262730;
+  --ring: var(--accent-neon);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-on-background: var(--on-background);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline: var(--outline);
+  --color-primary: var(--primary);
+  --color-accent-neon: var(--accent-neon);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-ink: var(--brand-ink);
+  --color-violet-ink: var(--violet-ink);
+  --color-tertiary: var(--tertiary);
+  --color-highlight: var(--highlight);
+  --color-glass: var(--glass);
+  --color-glass-border: var(--glass-border);
+  --color-track: var(--track);
+
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@theme {
+  --font-sans: 'Ubuntu', ui-sans-serif, system-ui, sans-serif;
+
+  /* Type scale */
+  --text-display-lg: 36px;
+  --text-display-lg--line-height: 44px;
+  --text-headline-lg: 28px;
+  --text-headline-lg--line-height: 36px;
+  --text-title-lg: 22px;
+  --text-title-lg--line-height: 28px;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 16px;
+
+  /* Border radius */
+  --radius-card: 24px;
+  --radius-button: 9999px;
+  --radius-chip: 12px;
+  --radius-input: 12px;
+
+  /*
+   * Mobile spacing tokens (xs…xxl) are not ported as --spacing-* because they
+   * collide with Tailwind's max-w-sm/md/lg/xl utilities. Use the numeric scale:
+   * xs=1, sm=2, md=4, lg=6, xl=8, xxl=12.
+   */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-on-background font-sans antialiased;
+  }
+}

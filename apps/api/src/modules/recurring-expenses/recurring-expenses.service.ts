@@ -444,41 +444,78 @@ export class RecurringExpensesService {
       }
     }
 
-    const expense = occurrence.recurringExpense;
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const row = await tx.recurringOccurrence.update({
-        where: { id: occurrenceId },
-        data: {
-          status: OccurrenceStatus.paid,
-          paidAt: new Date(),
-          matchedBy,
-          transactionId: transactionId ?? null,
-        },
-      });
+    const updated = await this.prisma.$transaction((tx) =>
+      this.applyPayment(tx, occurrence, transactionId ?? null, matchedBy),
+    );
+    return this.mapOccurrence(updated);
+  }
 
-      if (expense.kind === RecurringExpenseKind.installment) {
-        const installmentsPaid = expense.installmentsPaid + 1;
-        const finished =
-          expense.installmentsTotal !== null &&
-          installmentsPaid >= expense.installmentsTotal;
-        await tx.recurringExpense.update({
-          where: { id: expense.id },
-          data: { installmentsPaid, ...(finished && { active: false }) },
-        });
-        if (finished) {
-          await tx.recurringOccurrence.deleteMany({
-            where: {
-              recurringExpenseId: expense.id,
-              status: OccurrenceStatus.upcoming,
-              dueDate: { gt: occurrence.dueDate },
-            },
-          });
-        }
-      }
-      return row;
+  /**
+   * Marks an occurrence paid inside the caller's transaction (used by
+   * statement and bank reconciliation). Returns false when it was already
+   * paid or the occurrence belongs to a reminder-only expense.
+   */
+  async markPaidInTransaction(
+    tx: Prisma.TransactionClient,
+    occurrenceId: string,
+    transactionId: string | null,
+    matchedBy: OccurrenceMatchSource,
+  ): Promise<boolean> {
+    const occurrence = await tx.recurringOccurrence.findUnique({
+      where: { id: occurrenceId },
+      include: { recurringExpense: true },
+    });
+    if (
+      !occurrence ||
+      occurrence.status === OccurrenceStatus.paid ||
+      occurrence.recurringExpense.trackingMode ===
+        RecurringTrackingMode.reminder
+    ) {
+      return false;
+    }
+    await this.applyPayment(tx, occurrence, transactionId, matchedBy);
+    return true;
+  }
+
+  private async applyPayment(
+    tx: Prisma.TransactionClient,
+    occurrence: RecurringOccurrenceRow & {
+      recurringExpense: RecurringExpenseRow;
+    },
+    transactionId: string | null,
+    matchedBy: OccurrenceMatchSource,
+  ): Promise<RecurringOccurrenceRow> {
+    const expense = occurrence.recurringExpense;
+    const row = await tx.recurringOccurrence.update({
+      where: { id: occurrence.id },
+      data: {
+        status: OccurrenceStatus.paid,
+        paidAt: new Date(),
+        matchedBy,
+        transactionId,
+      },
     });
 
-    return this.mapOccurrence(updated);
+    if (expense.kind === RecurringExpenseKind.installment) {
+      const installmentsPaid = expense.installmentsPaid + 1;
+      const finished =
+        expense.installmentsTotal !== null &&
+        installmentsPaid >= expense.installmentsTotal;
+      await tx.recurringExpense.update({
+        where: { id: expense.id },
+        data: { installmentsPaid, ...(finished && { active: false }) },
+      });
+      if (finished) {
+        await tx.recurringOccurrence.deleteMany({
+          where: {
+            recurringExpenseId: expense.id,
+            status: OccurrenceStatus.upcoming,
+            dueDate: { gt: occurrence.dueDate },
+          },
+        });
+      }
+    }
+    return row;
   }
 
   async skipOccurrence(

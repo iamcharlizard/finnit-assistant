@@ -71,9 +71,44 @@ Repite estos pasos para cada ambiente, usando los valores de la tabla de abajo.
    GRAPHQL_INTROSPECTION=<según la tabla>
    ```
    `NODE_ENV=production` también en testing: así testing se comporta igual que producción. Sin `JWT_SECRET` la API no arranca.
+
+   Para la importación de estados de cuenta (opcionales; sin ellas la API arranca, pero la subida de PDFs responde 503):
+   ```
+   AWS_REGION=us-east-1
+   S3_BUCKET=<bucket del ambiente, ver "Almacenamiento de estados de cuenta">
+   AWS_ACCESS_KEY_ID=<access key del usuario IAM del ambiente>
+   AWS_SECRET_ACCESS_KEY=<secret del usuario IAM del ambiente>
+   ANTHROPIC_API_KEY=<opcional: lectura con Claude de bancos sin parser local>
+   STATEMENT_AI_MODEL=claude-haiku-5-5
+   ```
 4. **Domains**: el dominio de la tabla, *Path* `/`, *Container Port* `3000`, HTTPS con Let's Encrypt, *Strip Path* desactivado. Crea antes el registro **A** en el DNS (`api` o `api-test` → IPv4 del servidor).
 5. **Advanced → Resources**: límites según la tabla.
 6. Copia el `applicationId` (último segmento de la URL de la app en Dokploy).
+
+### Almacenamiento de estados de cuenta (S3)
+
+Los PDF de estados de cuenta se guardan en un bucket **privado** por ambiente. La API solo entrega URLs firmadas que expiran en 5 minutos.
+
+1. En AWS (región `us-east-1` o la que uses en `AWS_REGION`), crea los buckets `finnit-statements-prod` y `finnit-statements-test`:
+   - *Block all public access* activado.
+   - Cifrado por defecto SSE-S3.
+   - Opcional: regla de ciclo de vida para borrar versiones antiguas.
+2. Crea un usuario IAM por ambiente (`finnit-api-prod`, `finnit-api-test`), sin acceso a consola, con esta política (cambia el bucket):
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [{
+       "Effect": "Allow",
+       "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
+       "Resource": "arn:aws:s3:::finnit-statements-prod/*"
+     }]
+   }
+   ```
+3. Genera una access key para cada usuario y ponla en las variables del ambiente en Dokploy.
+
+`ANTHROPIC_API_KEY` activa la lectura con Claude para bancos sin parser local. Ten en cuenta que el PDF se envía a la API de Anthropic. Sin la clave, esos estados de cuenta quedan en `failed` con "Unsupported statement format".
+
+En desarrollo local, el servicio `s3` de `docker-compose.yml` (s3mock en el puerto 9090) sustituye a AWS; las variables están en `apps/api/.env.example`.
 
 ### 3. Secretos en GitHub
 

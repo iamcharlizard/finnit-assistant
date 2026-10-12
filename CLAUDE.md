@@ -35,6 +35,7 @@ All 11 original GraphQL modules implemented, plus recurring expenses in `apps/ap
 | Notifications | `src/modules/notifications/` |
 | Reports | `src/modules/reports/` |
 | Recurring expenses | `src/modules/recurring-expenses/` |
+| Statements (PDF import + reconciliation) | `src/modules/statements/` (+ `src/modules/storage/` for S3) |
 
 Auto-generated schema at `apps/api/src/schema.gql`.
 

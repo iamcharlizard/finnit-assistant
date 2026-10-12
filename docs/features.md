@@ -25,7 +25,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | 10. Flujo de caja y proyecciones | ✅ | 🟡 | 🟡 |
 | 11. Notificaciones | 🟡 | ⏳ | ⏳ |
 | 12. Gastos recurrentes *(nuevo)* | ✅ | ⏳ | ⏳ |
-| 13. Estados de cuenta y conciliación *(nuevo)* | ⏳ | ⏳ | ⏳ |
+| 13. Estados de cuenta y conciliación *(nuevo)* | 🟡 | ⏳ | ⏳ |
 
 ## Detalle
 
@@ -62,7 +62,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Categorización sugerida por comercio | 🟡 | ⏳ | ⏳ | Busca por la primera palabra del comercio en transacciones previas; no aprende reglas. |
 | Transferencias entre cuentas | ✅ | ⏳ | ⏳ | `createTransfer`. |
 | Detección automática de transferencias internas | ⏳ | — | — | |
-| Adjuntos (tickets, comprobantes) | 🟡 | ⏳ | ⏳ | Solo guarda una URL; **no hay subida a S3**. **Bug:** `transaction`/`transactions` nunca devuelven los adjuntos (el mapper los descarta). |
+| Adjuntos (tickets, comprobantes) | 🟡 | ⏳ | ⏳ | Solo guarda una URL; la subida a S3 existe para estados de cuenta, falta usarla en adjuntos. **Bug:** `transaction`/`transactions` nunca devuelven los adjuntos (el mapper los descarta). |
 | Captura por foto de ticket / SMS | ⏳ | ⏳ | ⏳ | |
 | CEP de Banxico | ⏳ | ⏳ | ⏳ | |
 | Etiquetas (tags) | ⏳ | ⏳ | ⏳ | Modelo `Tag` sin API. |
@@ -150,11 +150,11 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Subir PDF del estado de cuenta (almacenado en S3) | ⏳ | ⏳ | ⏳ | |
-| Extracción: parser Banamex + Claude para otros formatos | ⏳ | — | — | Otros bancos con parser local: pendiente. |
-| Revisión y confirmación de movimientos importados | ⏳ | ⏳ | ⏳ | |
-| Conciliación con transacciones y gastos recurrentes | ⏳ | ⏳ | ⏳ | |
-| Resumen del mes de la tarjeta vs total a pagar | ⏳ | ⏳ | ⏳ | |
+| Subir PDF del estado de cuenta (almacenado en S3) | ✅ | ⏳ | ⏳ | `POST /statements` (multipart, máx. 10 MB, deduplica por hash). Bucket privado, descarga con URL firmada (`statementFileUrl`). |
+| Extracción: parser Banamex + Claude para otros formatos | 🟡 | — | — | Lectura con Claude lista (requiere `ANTHROPIC_API_KEY`). **Parser Banamex pendiente de un PDF de ejemplo.** Valida saldo anterior + cargos − abonos = saldo al corte. |
+| Revisión y confirmación de movimientos importados | ✅ | ⏳ | ⏳ | `statementImport`, `updateStatementLine` (ignorar, categoría, ligar a mano), `confirmStatementImport`, `reprocessStatementImport`. |
+| Conciliación con transacciones y gastos recurrentes | ✅ | ⏳ | ⏳ | No duplica compras ya registradas (mismo monto, ±3 días); marca pagados los recurrentes por patrón de comercio (±10 días, ±15% o ±50% si el monto es variable). |
+| Resumen del mes de la tarjeta vs total a pagar | ✅ | ⏳ | ⏳ | `cardMonthSummary`: total a pagar, recurrentes esperados vs cobrados, cargos nuevos. |
 | Sincronización con Belvo (sandbox) | ⏳ | ⏳ | ⏳ | Ver sección 9. |
 
 ## Plataforma

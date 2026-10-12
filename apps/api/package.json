@@ -25,8 +25,11 @@
     "db:seed": "turbo run db:seed --filter=@finnit/database"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
     "@apollo/server": "^5.5.1",
     "@as-integrations/express5": "^1.1.2",
+    "@aws-sdk/client-s3": "^3.1149.0",
+    "@aws-sdk/s3-request-presigner": "^3.1149.0",
     "@finnit/database": "workspace:*",
     "@nestjs/apollo": "^13.4.2",
     "@nestjs/common": "^11.1.23",
@@ -52,6 +55,7 @@
     "pg": "^8.21.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "unpdf": "^1.8.1",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

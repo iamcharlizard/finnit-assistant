@@ -46,3 +46,6 @@ next-env.d.ts
 
 # API smoke test output
 smoke-api.log
+
+# Real bank statements used to build parsers: never commit them
+apps/api/test/fixtures/private/

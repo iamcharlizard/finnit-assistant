@@ -157,6 +157,36 @@ type BudgetUsage {
   spent: Float!
 }
 
+"""
+A card's month: what the statement asks to pay versus the recurring charges expected on it.
+"""
+type CardMonthSummary {
+  accountId: String!
+  month: Int!
+  newChargesAmount: Float!
+
+  """Statement charges that were not registered in the app"""
+  newChargesCount: Int!
+  periodEnd: DateTime!
+  periodStart: DateTime!
+  recurringExpected: Float!
+  recurringPaid: Float!
+  recurringPayments: [CardRecurringPayment!]!
+
+  """Statement whose cut-off falls in this month"""
+  statement: StatementImport
+  year: Int!
+}
+
+type CardRecurringPayment {
+  dueDate: DateTime!
+  expectedAmount: Float!
+  name: String!
+  occurrenceId: String
+  recurringExpenseId: String!
+  status: OccurrenceStatus!
+}
+
 type CashFlowProjection {
   date: DateTime!
   description: String!
@@ -393,6 +423,11 @@ type MonthlyReport {
 type Mutation {
   addTransactionAttachment(input: CreateAttachmentInput!): Attachment!
   adjustAccountBalance(input: AdjustBalanceInput!): Account!
+
+  """
+  Creates the pending movements as transactions and marks matched recurring payments as paid
+  """
+  confirmStatementImport(id: ID!): StatementImport!
   createAccount(input: CreateAccountInput!): Account!
   createBudget(input: CreateBudgetInput!): Budget!
   createBudgetFromTemplate(input: BudgetFromTemplateInput!): Budget!
@@ -409,6 +444,7 @@ type Mutation {
   deleteCategory(id: String!): Boolean!
   deleteDebt(id: String!): Boolean!
   deleteRecurringExpense(id: ID!): Boolean!
+  deleteStatementImport(id: ID!): Boolean!
   deleteTransaction(id: String!): Boolean!
   markAllNotificationsAsRead: Boolean!
   markNotificationAsRead(id: String!): Boolean!
@@ -420,6 +456,11 @@ type Mutation {
 
   """Undoes paid/skipped/missed and unlinks the transaction"""
   reopenRecurringPayment(occurrenceId: ID!): RecurringOccurrence!
+
+  """
+  Extracts the PDF again, optionally with a specific parser (e.g. "claude")
+  """
+  reprocessStatementImport(id: ID!, parser: String): StatementImport!
   requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
   resetPassword(input: ResetPasswordInput!): Boolean!
   signIn(input: SignInInput!): AuthPayload!
@@ -430,6 +471,7 @@ type Mutation {
   updateCategory(id: String!, input: UpdateCategoryInput!): Category!
   updateDebt(id: String!, input: UpdateDebtInput!): Debt!
   updateRecurringExpense(id: ID!, input: UpdateRecurringExpenseInput!): RecurringExpense!
+  updateStatementLine(id: ID!, input: UpdateStatementLineInput!): StatementLine!
   updateTransaction(id: String!, input: UpdateTransactionInput!): Transaction!
   updateUser(input: UpdateUserInput!): User!
 }
@@ -509,6 +551,7 @@ type Query {
   budgetSummary(month: Float!, year: Float!): BudgetSummary!
   budgetUsage(id: String!): [BudgetUsage!]!
   budgets: [Budget!]!
+  cardMonthSummary(accountId: String!, month: Int!, year: Int!): CardMonthSummary!
   cashFlowProjection(monthsAhead: Int! = 6): [CashFlowProjection!]!
   categories: [Category!]!
   category(id: String!): Category!
@@ -538,6 +581,13 @@ type Query {
   ): RecurringExpenseConnection!
   recurringExpensesSummary: RecurringExpensesSummary!
   rootCategories: [Category!]!
+
+  """Temporary (5 min) download URL of the uploaded PDF"""
+  statementFileUrl(id: ID!): String!
+
+  """Includes the lines; poll it after uploading to follow the status"""
+  statementImport(id: ID!): StatementImport!
+  statementImports(accountId: String, after: String, first: Int = 20): StatementImportConnection!
   suggestCategoryForMerchant(input: SuggestCategoryInput!): Category
   transaction(id: String!): Transaction!
   transactions(after: String, before: String, filters: TransactionFilters, first: Int, last: Int): TransactionConnection!
@@ -684,6 +734,113 @@ input SignUpInput {
   password: String!
 }
 
+type StatementImport {
+  accountId: String!
+
+  """Previous balance plus the net of the extracted lines"""
+  computedTotal: Float
+  confirmedAt: DateTime
+  createdAt: DateTime!
+  currency: String!
+
+  """
+  Statement balance minus computedTotal; non-zero means movements are missing or misread
+  """
+  difference: Float
+  errorMessage: String
+  id: ID!
+  lines: [StatementLine!]
+  minimumPayment: Float
+
+  """
+  "Pago para no generar intereses"
+  """
+  noInterestPayment: Float
+  parser: String
+  paymentDueDate: DateTime
+  periodEnd: DateTime
+  periodStart: DateTime
+  previousBalance: Float
+  source: StatementSource!
+
+  """Balance at cut-off"""
+  statementBalance: Float
+
+  """Cut-off date"""
+  statementDate: DateTime
+  status: StatementStatus!
+  totalCharges: Float
+  totalCredits: Float
+}
+
+type StatementImportConnection {
+  edges: [StatementImportEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type StatementImportEdge {
+  cursor: String!
+  node: StatementImport!
+}
+
+type StatementLine {
+  """Positive; `kind` gives the direction"""
+  amount: Float!
+  currency: String!
+  date: DateTime!
+  description: String
+  id: ID!
+  installmentNumber: Int
+  installmentTotal: Int
+  kind: StatementLineKind!
+
+  """Recurring payment this line pays"""
+  matchedOccurrenceId: String
+
+  """Existing or created transaction"""
+  matchedTransactionId: String
+  merchant: String
+  postDate: DateTime
+  status: StatementLineStatus!
+  suggestedCategoryId: String
+}
+
+enum StatementLineKind {
+  charge
+  fee
+  installment
+  interest
+  payment
+  refund
+}
+
+"""
+pending: becomes a new transaction on confirm. matched: already registered. created: transaction created on confirm. ignored: skipped.
+"""
+enum StatementLineStatus {
+  created
+  ignored
+  matched
+  pending
+}
+
+enum StatementSource {
+  belvo
+  pdf
+}
+
+"""
+uploaded → processing → needs_review (extracted, waiting for confirmation) → confirmed; failed on errors.
+"""
+enum StatementStatus {
+  confirmed
+  failed
+  needs_review
+  processing
+  uploaded
+}
+
 type Subscription {
   notificationAdded: Notification!
 }
@@ -822,6 +979,19 @@ input UpdateRecurringExpenseInput {
   notes: String
   startDate: DateTime
   trackingMode: RecurringTrackingMode
+}
+
+input UpdateStatementLineInput {
+  categoryId: String
+
+  """Link to a recurring payment (null to unlink)"""
+  matchedOccurrenceId: String
+
+  """Link to an existing transaction (null to unlink)"""
+  matchedTransactionId: String
+
+  """Only pending or ignored can be set by hand"""
+  status: StatementLineStatus
 }
 
 input UpdateTransactionInput {

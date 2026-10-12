@@ -1,8 +1,5 @@
-import { PrismaClient } from '@finnit/database';
-
 // Mock external services
 jest.mock('nodemailer');
-jest.mock('aws-sdk');
 jest.mock('@nestjs/jwt', () => ({
   JwtService: jest.fn().mockImplementation(() => ({
     sign: jest.fn(),

@@ -274,6 +274,7 @@ describe('AccountsService', () => {
       // Assert
       expect(prismaService.account.findFirst).toHaveBeenCalledWith({
         where: { id: mockAccount.id, userId: mockUserId },
+        include: { creditCardTerms: true },
       });
       expect(result).toEqual({
         id: mockAccount.id,
@@ -554,7 +555,7 @@ describe('AccountsService', () => {
       const result = service['mapAccount'](accountWithoutMetadata);
 
       // Assert
-      expect(result.metadata).toBeNull();
+      expect(result.metadata).toBeUndefined();
     });
 
     it('should correctly convert Decimal balance to number', () => {

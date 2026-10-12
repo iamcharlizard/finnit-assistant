@@ -1,6 +1,6 @@
 # 📊 Progreso del Desarrollo - Finnit Assistant
 
-**Última actualización:** 11 de Octubre, 2026 (web app UI)
+**Última actualización:** 12 de Octubre, 2026 (despliegue + inventario de funcionalidades)
 **Estado general:** 🟡 En progreso
 
 ## 🎯 Estado por Etapas
@@ -32,8 +32,8 @@
 - [ ] **File Upload (S3)** — sin verificar en el código; pendiente de confirmar/implementar
 
 - [ ] **CI/CD**
-  - [ ] GitHub Actions para lint, test y build (hoy solo existen `claude.yml` y `claude-code-review.yml`)
-  - [ ] Deploy a Railway
+  - [x] Build, smoke test y deploy de la API con GitHub Actions (`deploy-api.yml`)
+  - [ ] Workflow de calidad en PRs (lint, check-types, test)
 
 ### 🔧 **RESOLUCIÓN DE ERRORES CRÍTICOS** ✅
 - [x] DebtsArgs - Extensión de Interfaz Incorrecta
@@ -116,21 +116,23 @@ Detalle en [api-error-resolution.md](./api-error-resolution.md).
 - [ ] Tests en la app móvil
 - [ ] Log de errores clave y tiempos de respuesta
 
-### ⏳ STEP 5: DEPLOYMENT & VALIDATION
-- [ ] Deploy backend a Railway
+### 🟡 STEP 5: DEPLOYMENT & VALIDATION
+- [x] Deploy backend en Hetzner + Dokploy, ambientes production (`main`) y testing (`testing`) — ver `docs/deployment.md`
 - [ ] Deploy frontend web a Vercel
 - [x] `.env.example` de la API
 - [ ] Validar core flows: register → create debt → add transactions → see dashboard
 
 ## 📈 Métricas de Progreso
 
-- **Backend API:** ~95% ✅ (falta CI/CD y confirmar file upload)
+- **Backend API:** 🟡 núcleo listo; faltan integración bancaria, S3, notificaciones generadas, gastos recurrentes y estados de cuenta (detalle en `docs/features.md`)
 - **Mobile App:** ~40% 🟡 (UI + login listos; falta conectar datos y formularios)
 - **Web App:** ~35% 🟡 (UI + Storybook listos; falta datos reales, auth y formularios)
 - **Testing:** ~30% 🟡 (6 de 11 módulos de la API con unit tests)
-- **Deployment:** 0% ⏳
+- **Deployment:** 🟡 API en producción y testing; falta web y builds móviles
 
 ## 🚀 Próximos Pasos Inmediatos
+
+0. **API: gastos recurrentes y estados de cuenta** — gastos recurrentes con modo de seguimiento, importación de PDF (Banamex + Claude) a S3, conciliación con la tarjeta y Belvo en sandbox. Después, su UI en móvil y web.
 
 1. **Conectar la app móvil a la API** — crear queries urql en `lib/graphql/queries/` y reemplazar los mocks, empezando por Dashboard e History.
 2. **Completar auth móvil** — Signup, refresh de token y guard de rutas.

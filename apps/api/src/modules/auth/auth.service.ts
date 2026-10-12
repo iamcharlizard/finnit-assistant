@@ -227,8 +227,8 @@ export class AuthService {
 
     // TODO: Send email with reset link containing the resetTokenJWT
     // await this.emailService.sendPasswordResetEmail(user.email, resetTokenJWT);
-
-    console.log(`Password reset token for ${user.email}: ${resetTokenJWT}`);
+    // Never log the token: anyone with log access could take over the account.
+    void resetTokenJWT;
 
     return true;
   }

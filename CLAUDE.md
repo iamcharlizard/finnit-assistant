@@ -37,7 +37,9 @@ All 11 GraphQL modules implemented in `apps/api/`:
 
 Auto-generated schema at `apps/api/src/schema.gql`.
 
-Unit tests exist for auth (service + resolver), accounts, budgets, debts, goals, transactions. Missing: categories, transfers, notifications, reports, users. No E2E tests and no CI workflow (only Claude GitHub workflows).
+Unit tests exist for auth (service + resolver), accounts, budgets, debts, goals, transactions. Missing: categories, transfers, notifications, reports, users. No E2E tests, and CI only builds and deploys the API (no lint/test gate).
+
+Feature-by-feature status (API / mobile / web), verified against the code: `docs/features.md`. Keep it updated when a feature lands; the PRD checkboxes follow it.
 
 ### 🟡 Mobile App — UI built, data mostly mocked
 `apps/finnit-app/` is an Expo Router app styled with NativeWind v5:
@@ -60,7 +62,7 @@ Unit tests exist for auth (service + resolver), accounts, budgets, debts, goals,
 - Environments: branch `main` → **production** (image tag `latest`); branch `testing` → **testing** (image tag `testing`). Work flows `feature/*` → `testing` → `main`.
 - The container runs `prisma migrate deploy` on start, so migrations must be backwards-compatible.
 - `apps/api/scripts/smoke-test.sh <image>` boots an image against a throwaway Postgres (health + signUp/signIn/me).
-- Known gaps: all API Jest suites fail to run and `eslint` reports ~777 errors, so CI does not gate on them yet.
+- Known gaps: `eslint` reports ~777 errors in the API, so CI does not gate on lint or tests yet.
 
 ### Database Migrations Applied
 - `20250813091847_init`
@@ -71,6 +73,7 @@ Unit tests exist for auth (service + resolver), accounts, budgets, debts, goals,
 | File | Purpose |
 |------|---------|
 | `docs/prd.md` | Product Requirements (MVP) |
+| `docs/features.md` | Feature inventory with real status per platform (source of truth for progress) |
 | `docs/user-stories.md` | User stories by feature |
 | `docs/tech-stack.md` | Technology decisions |
 | `docs/er-diagram.md` | Entity-relationship diagram (Mermaid) |

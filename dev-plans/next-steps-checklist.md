@@ -1,7 +1,7 @@
 # 📋 Checklist de Próximos Pasos - Finnit Assistant
 
 **Creado:** 23 de Agosto, 2025
-**Última actualización:** 11 de Octubre, 2026
+**Última actualización:** 12 de Octubre, 2026
 **Prioridad:** Alta
 
 ## 🎯 Objetivo
@@ -15,10 +15,20 @@ Llevar la app móvil de "UI con datos mock" a "app funcional conectada a la API"
 - [x] Login móvil conectado a la API (urql + SecureStore)
 - [x] Unit tests para 6 servicios de la API
 - [x] Web app (Next.js) + librería `@finnit/ui` + Storybook, con datos mock
+- [x] API desplegada (Hetzner + Dokploy) en production y testing
+- [x] Inventario de funcionalidades verificado: `docs/features.md`
 
 ## 🚀 Próximas Tareas Prioritarias
 
 ### 🔥 CRÍTICO
+
+#### 0. **Gastos recurrentes y estados de cuenta (API primero)**
+- [ ] Quitar la restricción única `[userId, accountId, txnDate]` de `Transaction`
+- [ ] Gastos recurrentes: tipos, frecuencias, modo de seguimiento (automático/manual/recordatorio), ocurrencias y recordatorios
+- [ ] Subida de estados de cuenta PDF a S3, parser Banamex + respaldo con Claude
+- [ ] Conciliación de movimientos con transacciones y gastos recurrentes; resumen del mes de la tarjeta
+- [ ] Belvo en sandbox
+- [ ] UI móvil y web de estas secciones
 
 #### 1. **Conectar pantallas móviles a la API**
 - [ ] Crear `lib/graphql/queries/` con las queries necesarias (urql, no React Query)
@@ -51,8 +61,9 @@ Llevar la app móvil de "UI con datos mock" a "app funcional conectada a la API"
 
 #### 5. **CI/CD y Deploy**
 - [ ] GitHub Actions: `pnpm lint`, `pnpm check-types`, `pnpm turbo run test`
-- [ ] Deploy API a Railway con variables de entorno
-- [ ] Validar GraphQL en producción
+- [x] Deploy API (Hetzner + Dokploy, production y testing)
+- [ ] Respaldos diarios de las bases en Dokploy
+- [ ] Validar flujos completos en producción
 
 #### 6. **File Upload**
 - [ ] Confirmar/implementar signed URLs de S3 en la API
@@ -84,7 +95,6 @@ Llevar la app móvil de "UI con datos mock" a "app funcional conectada a la API"
 ## 🛠️ Recursos Necesarios
 
 ### Herramientas
-- [ ] Railway account para deploy
 - [ ] Expo account para builds (EAS)
 - [ ] Vercel account para web deploy
 - [ ] AWS S3 bucket configurado
@@ -99,7 +109,6 @@ Llevar la app móvil de "UI con datos mock" a "app funcional conectada a la API"
 ### Alto Riesgo
 - **Mocks vs. contrato real:** los tipos de las pantallas se diseñaron sobre datos mock; pueden no coincidir con el schema GraphQL.
 - **Integración con AWS S3:** no verificada en el código.
-- **Deploy en Railway:** posibles problemas con variables de entorno.
 
 ### Medio Riesgo
 - **Expiración de tokens:** sin refresh, la sesión móvil fallará al expirar el access token.

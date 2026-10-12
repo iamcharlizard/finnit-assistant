@@ -9,6 +9,14 @@
       "path": "./apps/finnit-app",
     },
     {
+      "name": "🌐 Webapp",
+      "path": "./apps/web",
+    },
+    {
+      "name": "📚 Storybook",
+      "path": "./apps/storybook",
+    },
+    {
       "name": "⚙️ API",
       "path": "./apps/api",
     },

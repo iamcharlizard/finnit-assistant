@@ -61,7 +61,7 @@
     "workbench.editor.labelFormat": "short",
     "workbench.tree.indent": 20,
     "workbench.tree.renderIndentGuides": "always",
-    "workbench.colorTheme": "Dracula Theme",
+    "workbench.colorTheme": "Quiet Light",
     "workbench.iconTheme": "material-icon-theme",
     "material-icon-theme.folders.associations": {
       "components": "./packages/ui",
@@ -90,11 +90,9 @@
     },
     "prettier.configPath": ".prettierrc.json",
     "prettier.prettierPath": "./node_modules/prettier",
-    "prettier.documentSelectors": [
-      "**/*.{js,jsx,ts,tsx,json,mjs,md}"
-    ],
+    "prettier.documentSelectors": ["**/*.{js,jsx,ts,tsx,json,mjs,md}"],
     "[markdown]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
     },
   },
   "extensions": {

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { AiModelsService } from '../../ai/ai-models.service';
+import { AiStatementParser } from './ai-statement.parser';
 import { BanamexCreditCardParser } from './banamex-credit-card.parser';
-import { ClaudeStatementParser } from './claude-statement.parser';
 import {
   ParsedStatement,
   StatementParseError,
@@ -15,37 +16,60 @@ export interface ParseResult {
 
 /**
  * Picks a parser for a statement: local bank parsers first (the statement
- * never leaves the server), Claude as the fallback for unknown formats.
+ * never leaves the server), the AI model catalog as the fallback.
+ *
+ * Forced parser ids for reprocessing:
+ * - a local parser id, e.g. "banamex_v1";
+ * - "ai": the AI catalog (default model, then the next active ones);
+ * - "ai:<AiModel id>": one specific AI model.
  */
 @Injectable()
 export class StatementParserRegistry {
   private readonly localParsers: StatementParser[] = [
     new BanamexCreditCardParser(),
   ];
-  private readonly fallback = new ClaudeStatementParser();
+  private readonly ai: AiStatementParser;
 
-  /** Ids accepted by `parse(…, parserId)`. */
-  get availableParsers(): string[] {
-    return [
-      ...this.localParsers.map((p) => p.id),
-      ...(this.fallback.isEnabled ? [this.fallback.id] : []),
-    ];
+  constructor(aiModels: AiModelsService) {
+    this.ai = new AiStatementParser(aiModels);
+  }
+
+  isKnownParser(parserId: string): boolean {
+    return (
+      parserId === AiStatementParser.ID ||
+      parserId.startsWith(`${AiStatementParser.ID}:`) ||
+      this.localParsers.some((p) => p.id === parserId)
+    );
+  }
+
+  get localParserIds(): string[] {
+    return this.localParsers.map((p) => p.id);
   }
 
   async parse(pdf: Buffer, parserId?: string): Promise<ParseResult> {
-    const text = await extractPdfText(pdf).catch(() => '');
-    const candidates = [...this.localParsers, this.fallback];
-
-    const parser = parserId
-      ? candidates.find((p) => p.id === parserId)
-      : candidates.find((p) => p.canParse(text));
-    if (!parser) {
-      throw new StatementParseError(
-        parserId
-          ? `Unknown or disabled parser: ${parserId}`
-          : 'Unsupported statement format',
-      );
+    if (parserId?.startsWith(AiStatementParser.ID)) {
+      const aiModelId = parserId.split(':')[1] || undefined;
+      return this.parseWithAi(pdf, aiModelId);
     }
-    return { parser: parser.id, statement: await parser.parse({ text, pdf }) };
+
+    const text = await extractPdfText(pdf).catch(() => '');
+    const local = parserId
+      ? this.localParsers.find((p) => p.id === parserId)
+      : this.localParsers.find((p) => p.canParse(text));
+    if (parserId && !local) {
+      throw new StatementParseError(`Unknown parser: ${parserId}`);
+    }
+    if (local) {
+      return { parser: local.id, statement: await local.parse({ text, pdf }) };
+    }
+    return this.parseWithAi(pdf);
+  }
+
+  private async parseWithAi(
+    pdf: Buffer,
+    aiModelId?: string,
+  ): Promise<ParseResult> {
+    const { parserId, statement } = await this.ai.parse(pdf, aiModelId);
+    return { parser: parserId, statement };
   }
 }

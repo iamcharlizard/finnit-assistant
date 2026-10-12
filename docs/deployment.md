@@ -78,8 +78,10 @@ Repite estos pasos para cada ambiente, usando los valores de la tabla de abajo.
    S3_BUCKET=<bucket del ambiente, ver "Almacenamiento de estados de cuenta">
    AWS_ACCESS_KEY_ID=<access key del usuario IAM del ambiente>
    AWS_SECRET_ACCESS_KEY=<secret del usuario IAM del ambiente>
-   ANTHROPIC_API_KEY=<opcional: lectura con Claude de bancos sin parser local>
-   STATEMENT_AI_MODEL=claude-haiku-5-5
+   ANTHROPIC_API_KEY=<opcional>
+   OPENAI_API_KEY=<opcional>
+   GEMINI_API_KEY=<opcional>
+   ADMIN_EMAILS=<emails que pueden administrar el catálogo de modelos de IA, separados por comas>
    ```
 4. **Domains**: el dominio de la tabla, *Path* `/`, *Container Port* `3000`, HTTPS con Let's Encrypt, *Strip Path* desactivado. Crea antes el registro **A** en el DNS (`api` o `api-test` → IPv4 del servidor).
 5. **Advanced → Resources**: límites según la tabla.
@@ -106,7 +108,16 @@ Los PDF de estados de cuenta se guardan en un bucket **privado** por ambiente. L
    ```
 3. Genera una access key para cada usuario y ponla en las variables del ambiente en Dokploy.
 
-`ANTHROPIC_API_KEY` activa la lectura con Claude para bancos sin parser local. Ten en cuenta que el PDF se envía a la API de Anthropic. Sin la clave, esos estados de cuenta quedan en `failed` con "Unsupported statement format".
+### Modelos de IA
+
+Los bancos sin parser local se leen con IA. Los modelos disponibles están en el catálogo `AiModel` (Anthropic, OpenAI y Gemini):
+
+- La query `aiModels` lista el catálogo e indica para cada modelo si está activo, si es el predeterminado y si se puede usar (`usable`): activo **y** con la llave de su proveedor configurada.
+- Solo los emails de `ADMIN_EMAILS` pueden activar o desactivar modelos, elegir el predeterminado o cambiar el orden (`updateAiModel`, `createAiModel`, `deleteAiModel`).
+- Se prueba primero el modelo predeterminado; si falla, los demás modelos activos con soporte de PDF, en orden de `sortOrder`. Un modelo desactivado nunca se usa.
+- Las llaves van por proveedor en las variables `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` y `GEMINI_API_KEY`, nunca en la base de datos.
+
+El PDF se envía a la API del proveedor. Si no hay ningún modelo utilizable, esos estados de cuenta quedan en `failed` con un mensaje que lo indica.
 
 En desarrollo local, el servicio `s3` de `docker-compose.yml` (s3mock en el puerto 9090) sustituye a AWS; las variables están en `apps/api/.env.example`.
 

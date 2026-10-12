@@ -125,9 +125,9 @@ export class StatementsService {
         'Only uploaded PDF statements can be reprocessed',
       );
     }
-    if (parserId && !this.parsers.availableParsers.includes(parserId)) {
+    if (parserId && !this.parsers.isKnownParser(parserId)) {
       throw new ValidationError(
-        `Unknown parser. Available: ${this.parsers.availableParsers.join(', ')}`,
+        `Unknown parser. Use "ai", "ai:<AI model id>" or one of: ${this.parsers.localParserIds.join(', ')}`,
       );
     }
     this.processInBackground(id, parserId);

@@ -147,6 +147,12 @@ enum ImportedLineKind {
   installment
 }
 
+enum AiProvider {
+  anthropic
+  openai
+  google
+}
+
 enum ImportedLineStatus {
   pending // will become a new transaction on confirm
   matched // linked to an existing transaction
@@ -627,4 +633,21 @@ model TransactionTag {
   tag         Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([transactionId, tagId])
+}
+
+// Catalog of AI models the API may call. API keys live in env vars per
+// provider (ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY), never here.
+model AiModel {
+  id          String     @id @default(uuid())
+  provider    AiProvider
+  modelId     String // provider's model name, e.g. "claude-haiku-5-5"
+  label       String
+  isActive    Boolean    @default(false)
+  isDefault   Boolean    @default(false) // tried first; at most one row
+  supportsPdf Boolean    @default(false)
+  sortOrder   Int        @default(100) // fallback order after the default
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([provider, modelId])
 }

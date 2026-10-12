@@ -17,6 +17,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ReportsModule } from './reports/reports.module';
 import { RecurringExpensesModule } from './recurring-expenses/recurring-expenses.module';
 import { StatementsModule } from './statements/statements.module';
+import { AiModule } from './ai/ai.module';
 import { PrismaService } from '../services/prisma.service';
 import { HealthController } from '../controllers/health.controller';
 
@@ -53,6 +54,7 @@ function envFlag(name: string, fallback: boolean): boolean {
     ReportsModule,
     RecurringExpensesModule,
     StatementsModule,
+    AiModule,
   ],
   controllers: [HealthController],
   providers: [PrismaService],

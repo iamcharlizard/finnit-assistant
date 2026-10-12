@@ -78,7 +78,7 @@ export class StatementsResolver {
 
   @Mutation(() => StatementImport, {
     description:
-      'Extracts the PDF again, optionally with a specific parser (e.g. "claude")',
+      'Extracts the PDF again, optionally with a specific parser: "banamex_v1", "ai" (AI catalog) or "ai:<AI model id>"',
   })
   async reprocessStatementImport(
     @CurrentUser() user: User,

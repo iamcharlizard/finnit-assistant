@@ -67,6 +67,37 @@ input AdjustBalanceInput {
   description: String!
 }
 
+type AiModel {
+  createdAt: DateTime!
+  id: ID!
+  isActive: Boolean!
+
+  """Tried first; the rest follow sortOrder"""
+  isDefault: Boolean!
+  label: String!
+
+  """
+  Provider model name, e.g. "claude-haiku-5-5"
+  """
+  modelId: String!
+  provider: AiProvider!
+
+  """Whether the provider's API key is set on the server"""
+  providerConfigured: Boolean!
+  sortOrder: Int!
+  supportsPdf: Boolean!
+  updatedAt: DateTime!
+
+  """Active and its provider is configured"""
+  usable: Boolean!
+}
+
+enum AiProvider {
+  anthropic
+  google
+  openai
+}
+
 type Attachment {
   """Additional metadata in JSON format"""
   extra: String
@@ -226,6 +257,16 @@ input CreateAccountInput {
   metadata: AccountMetadataInput
   name: String!
   type: AccountType!
+}
+
+input CreateAiModelInput {
+  isActive: Boolean = false
+  isDefault: Boolean = false
+  label: String!
+  modelId: String!
+  provider: AiProvider!
+  sortOrder: Int = 100
+  supportsPdf: Boolean = false
 }
 
 input CreateAttachmentInput {
@@ -429,6 +470,9 @@ type Mutation {
   """
   confirmStatementImport(id: ID!): StatementImport!
   createAccount(input: CreateAccountInput!): Account!
+
+  """Admin only"""
+  createAiModel(input: CreateAiModelInput!): AiModel!
   createBudget(input: CreateBudgetInput!): Budget!
   createBudgetFromTemplate(input: BudgetFromTemplateInput!): Budget!
   createCategory(input: CreateCategoryInput!): Category!
@@ -440,6 +484,9 @@ type Mutation {
   createTransaction(input: CreateTransactionInput!): Transaction!
   createTransfer(input: CreateTransferInput!): Transfer!
   deleteAccount(id: String!): Boolean!
+
+  """Admin only"""
+  deleteAiModel(id: ID!): Boolean!
   deleteBudget(id: String!): Boolean!
   deleteCategory(id: String!): Boolean!
   deleteDebt(id: String!): Boolean!
@@ -458,7 +505,7 @@ type Mutation {
   reopenRecurringPayment(occurrenceId: ID!): RecurringOccurrence!
 
   """
-  Extracts the PDF again, optionally with a specific parser (e.g. "claude")
+  Extracts the PDF again, optionally with a specific parser: "banamex_v1", "ai" (AI catalog) or "ai:<AI model id>"
   """
   reprocessStatementImport(id: ID!, parser: String): StatementImport!
   requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
@@ -467,6 +514,11 @@ type Mutation {
   signUp(input: SignUpInput!): AuthPayload!
   skipRecurringPayment(occurrenceId: ID!): RecurringOccurrence!
   updateAccount(id: String!, input: UpdateAccountInput!): Account!
+
+  """
+  Admin only. Activate/deactivate, set as default, reorder. Deactivating the default unsets it.
+  """
+  updateAiModel(id: ID!, input: UpdateAiModelInput!): AiModel!
   updateBudget(id: String!, input: UpdateBudgetInput!): Budget!
   updateCategory(id: String!, input: UpdateCategoryInput!): Category!
   updateDebt(id: String!, input: UpdateDebtInput!): Debt!
@@ -546,6 +598,13 @@ input PayoffStrategyInput {
 type Query {
   account(id: String!): Account!
   accounts(after: String, archived: Boolean, before: String, first: Int, last: Int, type: AccountType): AccountConnection!
+
+  """AI model catalog; default first, then by sortOrder"""
+  aiModels(
+    """Only active models"""
+    activeOnly: Boolean
+    provider: AiProvider
+  ): [AiModel!]!
   budget(id: String!): Budget!
   budgetAlerts: [BudgetAlert!]!
   budgetSummary(month: Float!, year: Float!): BudgetSummary!
@@ -940,6 +999,14 @@ input UpdateAccountInput {
   archived: Boolean
   metadata: AccountMetadataInput
   name: String
+}
+
+input UpdateAiModelInput {
+  isActive: Boolean
+  isDefault: Boolean
+  label: String
+  sortOrder: Int
+  supportsPdf: Boolean
 }
 
 input UpdateBudgetInput {

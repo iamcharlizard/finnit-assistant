@@ -34,6 +34,7 @@ enum TransactionSource {
   imported
   ocr
   sms
+  statement // movement imported from a card statement PDF
 }
 
 enum NotificationType {
@@ -80,10 +81,77 @@ enum DebtKind {
 }
 
 enum RecurringFrequency {
-  daily
   weekly
+  biweekly // every 14 days
+  semimonthly // "quincenal": the 15th and the last day of the month
   monthly
-  custom
+  bimonthly
+  quarterly
+  semiannual
+  yearly
+}
+
+enum RecurringExpenseKind {
+  subscription // streaming, apps
+  utility // power, water, internet, phone
+  loan
+  installment // "meses sin intereses" on a credit card
+  insurance
+  housing // rent, maintenance fees
+  membership // gym, clubs
+  other
+}
+
+// automatic: charged to a card/account by itself; marked paid when a statement
+//            or bank movement is reconciled against it.
+// manual:    the user pays it and confirms it.
+// reminder:  only reminds; occurrences carry no payment state.
+enum RecurringTrackingMode {
+  automatic
+  manual
+  reminder
+}
+
+enum OccurrenceStatus {
+  upcoming
+  paid
+  skipped
+  missed
+}
+
+enum OccurrenceMatchSource {
+  manual
+  statement
+  bank
+}
+
+enum StatementSource {
+  pdf
+  belvo
+}
+
+enum StatementStatus {
+  uploaded
+  processing
+  needs_review
+  confirmed
+  failed
+}
+
+enum ImportedLineKind {
+  charge
+  payment
+  refund
+  fee
+  interest
+  installment
+}
+
+enum ImportedLineStatus {
+  pending // will become a new transaction on confirm
+  matched // linked to an existing transaction
+  created // transaction created on confirm
+  ignored
 }
 
 // ---------------------- Models -----------------------
@@ -96,17 +164,18 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  accounts        Account[]
-  categories      Category[]
-  transactions    Transaction[]
-  recurringRules  RecurringRule[]
-  budgets         Budget[]
-  goals           Goal[]
-  notifications   Notification[]
-  bankConnections BankConnection[]
-  reconciliations ReconciliationSession[]
-  tags            Tag[]
-  Debt            Debt[]
+  accounts          Account[]
+  categories        Category[]
+  transactions      Transaction[]
+  recurringExpenses RecurringExpense[]
+  statementImports  StatementImport[]
+  budgets           Budget[]
+  goals             Goal[]
+  notifications     Notification[]
+  bankConnections   BankConnection[]
+  reconciliations   ReconciliationSession[]
+  tags              Tag[]
+  Debt              Debt[]
 }
 
 model Account {
@@ -121,13 +190,15 @@ model Account {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
-  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   creditCardTerms     CreditCardTerms?
   transactions        Transaction[]
   linkedAccounts      LinkedAccount[]
   reconciliationItems ReconciliationItem[]
-  debtsLinked         Debt[]               @relation("debt_linked_account")
-  RecurringRule       RecurringRule[]
+  debtsLinked         Debt[]                @relation("debt_linked_account")
+  recurringExpenses   RecurringExpense[]
+  statementImports    StatementImport[]
+  importedLines       ImportedTransaction[] @relation("imported_account")
 
   @@unique([userId, name])
   @@index([userId])
@@ -155,12 +226,12 @@ model Category {
   sortOrder Int?
   createdAt DateTime @default(now())
 
-  user          User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
-  parent        Category?         @relation("category_to_self", fields: [parentId], references: [id], onDelete: SetNull)
-  children      Category[]        @relation("category_to_self")
-  transactions  Transaction[]
-  budgetCaps    BUDGET_CATEGORY[]
-  RecurringRule RecurringRule[]
+  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  parent            Category?          @relation("category_to_self", fields: [parentId], references: [id], onDelete: SetNull)
+  children          Category[]         @relation("category_to_self")
+  transactions      Transaction[]
+  budgetCaps        BUDGET_CATEGORY[]
+  recurringExpenses RecurringExpense[]
 
   @@unique([userId, name], name: "category_user_name_unique")
   @@index([userId])
@@ -198,8 +269,8 @@ model Transaction {
   goalContributions GoalContribution[] // <-- ahora 1–N (fix)
   transactionTags   TransactionTag[]
   importedMatches   ImportedTransaction[] @relation("imported_matched")
+  recurringPayment  RecurringOccurrence?
 
-  @@unique([userId, accountId, txnDate], name: "transaction_user_account_date_unique")
   @@index([userId, txnDate(sort: Desc)])
   @@index([userId, accountId, txnDate(sort: Desc)])
   @@index([source])
@@ -232,27 +303,97 @@ model Attachment {
   @@index([transactionId])
 }
 
-model RecurringRule {
-  id                String             @id @default(uuid())
+model RecurringExpense {
+  id                String                @id @default(uuid())
   userId            String
-  defaultAccountId  String?
-  defaultCategoryId String?
+  name              String
+  kind              RecurringExpenseKind
+  trackingMode      RecurringTrackingMode
   frequency         RecurringFrequency
-  interval          Int                @db.SmallInt
-  byday             String?
-  startDate         DateTime           @db.Date
-  endDate           DateTime?          @db.Date
-  amount            Decimal            @db.Decimal(18, 2)
-  merchantName      String?
-  autoConfirm       Boolean            @default(false)
-  nextOccurrence    DateTime?
-  templateOverrides Json?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  interval          Int                   @default(1) @db.SmallInt // every N periods
+  startDate         DateTime              @db.Date
+  endDate           DateTime?             @db.Date
+  amount            Decimal               @db.Decimal(18, 2)
+  isVariableAmount  Boolean               @default(false) // e.g. power bill: amount is an estimate
+  currency          String                @db.VarChar(3)
+  accountId         String? // account or card it is paid with
+  categoryId        String?
+  debtId            String?               @unique // loan this expense pays
+  merchantPattern   String? // text that identifies it in statements, e.g. "NETFLIX"
+  installmentsTotal Int?                  @db.SmallInt
+  installmentsPaid  Int                   @default(0) @db.SmallInt
+  active            Boolean               @default(true)
+  notes             String?
+  nextDueDate       DateTime?             @db.Date
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account  Account?  @relation(fields: [defaultAccountId], references: [id], onDelete: SetNull)
-  category Category? @relation(fields: [defaultCategoryId], references: [id], onDelete: SetNull)
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account     Account?              @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  category    Category?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  debt        Debt?                 @relation(fields: [debtId], references: [id], onDelete: SetNull)
+  occurrences RecurringOccurrence[]
+
+  @@unique([userId, name])
+  @@index([userId, active])
+  @@index([accountId])
+}
+
+model RecurringOccurrence {
+  id                 String                 @id @default(uuid())
+  recurringExpenseId String
+  dueDate            DateTime               @db.Date
+  expectedAmount     Decimal                @db.Decimal(18, 2)
+  status             OccurrenceStatus       @default(upcoming)
+  transactionId      String?                @unique
+  paidAt             DateTime?
+  matchedBy          OccurrenceMatchSource?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  recurringExpense RecurringExpense      @relation(fields: [recurringExpenseId], references: [id], onDelete: Cascade)
+  transaction      Transaction?          @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  importedLines    ImportedTransaction[]
+
+  @@unique([recurringExpenseId, dueDate])
+  @@index([status, dueDate])
+}
+
+model StatementImport {
+  id                String          @id @default(uuid())
+  userId            String
+  accountId         String
+  source            StatementSource
+  status            StatementStatus @default(uploaded)
+  parser            String? // banamex_v1 | claude | belvo
+  periodStart       DateTime?       @db.Date
+  periodEnd         DateTime?       @db.Date
+  statementDate     DateTime?       @db.Date // cut-off date
+  paymentDueDate    DateTime?       @db.Date
+  previousBalance   Decimal?        @db.Decimal(18, 2)
+  totalCharges      Decimal?        @db.Decimal(18, 2)
+  totalCredits      Decimal?        @db.Decimal(18, 2)
+  statementBalance  Decimal?        @db.Decimal(18, 2) // balance at cut-off
+  noInterestPayment Decimal?        @db.Decimal(18, 2) // "pago para no generar intereses"
+  minimumPayment    Decimal?        @db.Decimal(18, 2)
+  currency          String          @db.VarChar(3)
+  fileKey           String? // S3 object key
+  fileHash          String? // sha256 of the uploaded file
+  computedTotal     Decimal?        @db.Decimal(18, 2) // sum of extracted lines
+  difference        Decimal?        @db.Decimal(18, 2) // statement totals vs extracted lines
+  errorMessage      String?
+  rawExtraction     Json?
+  confirmedAt       DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  user    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  lines   ImportedTransaction[]
+
+  @@unique([accountId, periodEnd])
+  @@unique([userId, fileHash])
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 model Budget {
@@ -327,9 +468,10 @@ model Debt {
   linkedAccountId    String?
   createdAt          DateTime  @default(now())
 
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  payments      DebtPayment[]
-  linkedAccount Account?      @relation("debt_linked_account", fields: [linkedAccountId], references: [id], onDelete: SetNull)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments         DebtPayment[]
+  linkedAccount    Account?          @relation("debt_linked_account", fields: [linkedAccountId], references: [id], onDelete: SetNull)
+  recurringExpense RecurringExpense?
 
   @@unique([userId, name])
   @@index([userId])
@@ -372,7 +514,10 @@ model BankConnection {
   userId         String
   provider       BankProvider
   providerItemId String               @unique
+  institution    String?
   status         BankConnectionStatus
+  lastSyncedAt   DateTime?
+  errorMessage   String?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 
@@ -398,22 +543,40 @@ model LinkedAccount {
   @@index([accountId])
 }
 
+// Staging line for an external movement: a row of a statement PDF or a bank
+// (Belvo) transaction. Reconciliation links it to a Transaction and, when it
+// pays a recurring expense, to its occurrence.
 model ImportedTransaction {
-  id                   String   @id @default(uuid())
-  linkedAccountId      String
-  providerTxnId        String   @unique
-  amount               Decimal  @db.Decimal(18, 2)
-  currency             String   @db.VarChar(3)
-  date                 DateTime @db.Date
+  id                   String             @id @default(uuid())
+  accountId            String
+  linkedAccountId      String?
+  statementImportId    String?
+  providerTxnId        String?            @unique
+  kind                 ImportedLineKind   @default(charge)
+  status               ImportedLineStatus @default(pending)
+  amount               Decimal            @db.Decimal(18, 2) // positive; direction comes from `kind`
+  currency             String             @db.VarChar(3)
+  date                 DateTime           @db.Date
+  postDate             DateTime?          @db.Date
+  description          String?
   merchant             String?
+  installmentNumber    Int?               @db.SmallInt
+  installmentTotal     Int?               @db.SmallInt
+  suggestedCategoryId  String?
   raw                  Json?
   matchedTransactionId String?
-  importedAt           DateTime @default(now())
+  matchedOccurrenceId  String?
+  importedAt           DateTime           @default(now())
 
-  linkedAccount      LinkedAccount @relation(fields: [linkedAccountId], references: [id], onDelete: Cascade)
-  matchedTransaction Transaction?  @relation("imported_matched", fields: [matchedTransactionId], references: [id], onDelete: SetNull)
+  account            Account              @relation("imported_account", fields: [accountId], references: [id], onDelete: Cascade)
+  linkedAccount      LinkedAccount?       @relation(fields: [linkedAccountId], references: [id], onDelete: Cascade)
+  statementImport    StatementImport?     @relation(fields: [statementImportId], references: [id], onDelete: Cascade)
+  matchedTransaction Transaction?         @relation("imported_matched", fields: [matchedTransactionId], references: [id], onDelete: SetNull)
+  matchedOccurrence  RecurringOccurrence? @relation(fields: [matchedOccurrenceId], references: [id], onDelete: SetNull)
 
   @@index([linkedAccountId, date])
+  @@index([statementImportId])
+  @@index([accountId, date])
 }
 
 model ReconciliationSession {

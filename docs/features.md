@@ -24,7 +24,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | 9. Integración bancaria (Belvo) | ⏳ | ⏳ | ⏳ |
 | 10. Flujo de caja y proyecciones | ✅ | 🟡 | 🟡 |
 | 11. Notificaciones | 🟡 | ⏳ | ⏳ |
-| 12. Gastos recurrentes *(nuevo)* | ⏳ | ⏳ | ⏳ |
+| 12. Gastos recurrentes *(nuevo)* | ✅ | ⏳ | ⏳ |
 | 13. Estados de cuenta y conciliación *(nuevo)* | ⏳ | ⏳ | ⏳ |
 
 ## Detalle
@@ -58,7 +58,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 |---|---|---|---|---|
 | Alta rápida (fecha, cuenta, monto, tipo, categoría) | ✅ | ⏳ | ⏳ | Sin formularios en clientes. |
 | Listado con filtros y paginación por cursor | ✅ | 🟡 | 🟡 | History con datos mock. |
-| Varias transacciones por cuenta en el mismo día | ⏳ | — | — | **Bug:** la restricción única `[userId, accountId, txnDate]` solo permite una por día. |
+| Varias transacciones por cuenta en el mismo día | ✅ | — | — | Se quitó la restricción única `[userId, accountId, txnDate]` (migración `20261012120000`). |
 | Categorización sugerida por comercio | 🟡 | ⏳ | ⏳ | Busca por la primera palabra del comercio en transacciones previas; no aprende reglas. |
 | Transferencias entre cuentas | ✅ | ⏳ | ⏳ | `createTransfer`. |
 | Detección automática de transferencias internas | ⏳ | — | — | |
@@ -130,7 +130,8 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
 | Listar / marcar como leídas | ✅ | ⏳ | ⏳ | |
-| Generación automática (presupuesto, pagos, recurrentes, resúmenes) | ⏳ | — | — | **Nada crea notificaciones**; no hay tareas programadas. |
+| Recordatorios de gastos recurrentes | ✅ | — | — | Tarea diaria del módulo de gastos recurrentes. |
+| Generación automática (presupuesto, deudas, resúmenes) | ⏳ | — | — | |
 | Push / email | ⏳ | ⏳ | ⏳ | |
 
 ### 12. Gastos recurrentes *(nuevo)*
@@ -139,11 +140,11 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| CRUD de gastos recurrentes con frecuencia y tipo | ⏳ | ⏳ | ⏳ | |
-| Modo de seguimiento: automático / manual / solo recordatorio | ⏳ | ⏳ | ⏳ | Automático: se marca pagado al conciliar con la tarjeta. |
-| Próximos pagos y costo mensual por tipo | ⏳ | ⏳ | ⏳ | |
-| Meses sin intereses (progreso x de y) | ⏳ | ⏳ | ⏳ | |
-| Recordatorios generados | ⏳ | ⏳ | ⏳ | |
+| CRUD de gastos recurrentes con frecuencia y tipo | ✅ | ⏳ | ⏳ | `recurringExpenses`, `create/update/deleteRecurringExpense`. Frecuencias: semanal, catorcenal, quincenal (15 y fin de mes), mensual, bimestral, trimestral, semestral, anual. |
+| Modo de seguimiento: automático / manual / solo recordatorio | ✅ | ⏳ | ⏳ | Manual: `markRecurringPaymentPaid`, `skipRecurringPayment`, `reopenRecurringPayment`. Automático: se marcará pagado al conciliar con la tarjeta (sección 13). |
+| Próximos pagos y costo mensual por tipo | ✅ | ⏳ | ⏳ | `upcomingPayments`, `recurringExpensesSummary` (por tipo y por cuenta). |
+| Meses sin intereses (progreso x de y) | ✅ | ⏳ | ⏳ | Cierra el plan al pagar la última mensualidad. |
+| Recordatorios generados | ✅ | ⏳ | ⏳ | Tarea diaria (6:00, hora CDMX): genera ocurrencias, marca vencidas las manuales y crea notificaciones 3 días antes. |
 
 ### 13. Estados de cuenta y conciliación *(nuevo)*
 

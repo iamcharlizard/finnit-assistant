@@ -19,7 +19,7 @@ Finnit Assistant is a cross-platform personal finance assistant built as a Turbo
 ## Current Implementation Status (as of 2026-10-11)
 
 ### ✅ Backend API — feature complete
-All 11 GraphQL modules implemented in `apps/api/`:
+All 11 original GraphQL modules implemented, plus recurring expenses in `apps/api/`:
 
 | Module | Location |
 |--------|----------|
@@ -34,6 +34,7 @@ All 11 GraphQL modules implemented in `apps/api/`:
 | Debts | `src/modules/debts/` |
 | Notifications | `src/modules/notifications/` |
 | Reports | `src/modules/reports/` |
+| Recurring expenses | `src/modules/recurring-expenses/` |
 
 Auto-generated schema at `apps/api/src/schema.gql`.
 
@@ -67,6 +68,9 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 ### Database Migrations Applied
 - `20250813091847_init`
 - `20250823110041_unique_indexes_created`
+- `20261012120000_recurring_expenses_and_statements` (rollback: `packages/database/scripts/rollbacks/`)
+
+Migrations with hand-edited SQL wrap their body in `BEGIN; … COMMIT;`: Prisma does not run a migration in a transaction, so a failure would leave it half applied.
 
 ## Docs Index
 

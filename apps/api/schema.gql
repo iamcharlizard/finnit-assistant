@@ -245,6 +245,28 @@ input CreateGoalInput {
   targetAmount: Float!
 }
 
+input CreateRecurringExpenseInput {
+  accountId: String
+  amount: Float!
+  categoryId: String
+  currency: String = "MXN"
+  debtId: String
+  endDate: DateTime
+  frequency: RecurringFrequency!
+  installmentsPaid: Int = 0
+  installmentsTotal: Int
+  interval: Int = 1
+  isVariableAmount: Boolean = false
+  kind: RecurringExpenseKind!
+  merchantPattern: String
+  name: String!
+  notes: String
+
+  """First due date; later dates keep its day of month"""
+  startDate: DateTime!
+  trackingMode: RecurringTrackingMode!
+}
+
 input CreateTransactionInput {
   accountId: String!
   amount: Float!
@@ -379,25 +401,35 @@ type Mutation {
   createDebtPayment(input: CreateDebtPaymentInput!): DebtPayment!
   createDefaultCategories: Boolean!
   createGoal(input: CreateGoalInput!): Goal!
+  createRecurringExpense(input: CreateRecurringExpenseInput!): RecurringExpense!
   createTransaction(input: CreateTransactionInput!): Transaction!
   createTransfer(input: CreateTransferInput!): Transfer!
   deleteAccount(id: String!): Boolean!
   deleteBudget(id: String!): Boolean!
   deleteCategory(id: String!): Boolean!
   deleteDebt(id: String!): Boolean!
+  deleteRecurringExpense(id: ID!): Boolean!
   deleteTransaction(id: String!): Boolean!
   markAllNotificationsAsRead: Boolean!
   markNotificationAsRead(id: String!): Boolean!
+
+  """Marks a manual (or unmatched automatic) payment as paid"""
+  markRecurringPaymentPaid(occurrenceId: ID!, transactionId: ID): RecurringOccurrence!
   refreshToken(input: RefreshTokenInput!): AuthPayload!
   removeTransactionAttachment(id: String!): Boolean!
+
+  """Undoes paid/skipped/missed and unlinks the transaction"""
+  reopenRecurringPayment(occurrenceId: ID!): RecurringOccurrence!
   requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
   resetPassword(input: ResetPasswordInput!): Boolean!
   signIn(input: SignInInput!): AuthPayload!
   signUp(input: SignUpInput!): AuthPayload!
+  skipRecurringPayment(occurrenceId: ID!): RecurringOccurrence!
   updateAccount(id: String!, input: UpdateAccountInput!): Account!
   updateBudget(id: String!, input: UpdateBudgetInput!): Budget!
   updateCategory(id: String!, input: UpdateCategoryInput!): Category!
   updateDebt(id: String!, input: UpdateDebtInput!): Debt!
+  updateRecurringExpense(id: ID!, input: UpdateRecurringExpenseInput!): RecurringExpense!
   updateTransaction(id: String!, input: UpdateTransactionInput!): Transaction!
   updateUser(input: UpdateUserInput!): User!
 }
@@ -443,6 +475,19 @@ enum NotificationType {
   summary
 }
 
+enum OccurrenceMatchSource {
+  bank
+  manual
+  statement
+}
+
+enum OccurrenceStatus {
+  missed
+  paid
+  skipped
+  upcoming
+}
+
 type PageInfo {
   endCursor: String
   hasNextPage: Boolean!
@@ -479,15 +524,140 @@ type Query {
   monthlyReport(month: Int!, year: Int!): MonthlyReport!
   notifications(after: String, first: Int, status: NotificationStatus): NotificationConnection!
   payoffStrategy(input: PayoffStrategyInput!): [DebtPayoffProjection!]!
+  recurringExpense(id: ID!): RecurringExpense!
+  recurringExpenseOccurrences(from: DateTime, recurringExpenseId: ID!, to: DateTime): [RecurringOccurrence!]!
+  recurringExpenses(
+    accountId: String
+
+    """Defaults to active expenses only"""
+    active: Boolean
+    after: String
+    first: Int = 20
+    kind: RecurringExpenseKind
+    trackingMode: RecurringTrackingMode
+  ): RecurringExpenseConnection!
+  recurringExpensesSummary: RecurringExpensesSummary!
   rootCategories: [Category!]!
   suggestCategoryForMerchant(input: SuggestCategoryInput!): Category
   transaction(id: String!): Transaction!
   transactions(after: String, before: String, filters: TransactionFilters, first: Int, last: Int): TransactionConnection!
   transfer(id: String!): Transfer!
   transfers: [Transfer!]!
+  upcomingPayments(accountId: String, from: DateTime!, to: DateTime!): [UpcomingPayment!]!
   user(id: String!): User!
   validateToken(token: String!): TokenValidationResult!
   whatIfScenario(input: WhatIfInput!): WhatIfResult!
+}
+
+type RecurringAccountTotal {
+  """Null for expenses without an account"""
+  accountId: String
+  accountName: String
+  count: Int!
+  currency: String!
+  monthlyCost: Float!
+}
+
+type RecurringCurrencyTotal {
+  currency: String!
+  monthlyCost: Float!
+}
+
+type RecurringExpense {
+  accountId: String
+  active: Boolean!
+  amount: Float!
+  categoryId: String
+  createdAt: DateTime!
+  currency: String!
+  debtId: String
+  endDate: DateTime
+  frequency: RecurringFrequency!
+  id: ID!
+  installmentsPaid: Int!
+  installmentsTotal: Int
+  interval: Int!
+  isVariableAmount: Boolean!
+  kind: RecurringExpenseKind!
+  merchantPattern: String
+
+  """Average cost per month of this expense"""
+  monthlyCost: Float!
+  name: String!
+  nextDueDate: DateTime
+  notes: String
+  startDate: DateTime!
+  trackingMode: RecurringTrackingMode!
+  updatedAt: DateTime!
+}
+
+type RecurringExpenseConnection {
+  edges: [RecurringExpenseEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type RecurringExpenseEdge {
+  cursor: String!
+  node: RecurringExpense!
+}
+
+enum RecurringExpenseKind {
+  housing
+  installment
+  insurance
+  loan
+  membership
+  other
+  subscription
+  utility
+}
+
+type RecurringExpensesSummary {
+  byAccount: [RecurringAccountTotal!]!
+  byKind: [RecurringKindTotal!]!
+  totals: [RecurringCurrencyTotal!]!
+}
+
+"""
+biweekly = every 14 days; semimonthly = the 15th and the last day of each month.
+"""
+enum RecurringFrequency {
+  bimonthly
+  biweekly
+  monthly
+  quarterly
+  semiannual
+  semimonthly
+  weekly
+  yearly
+}
+
+type RecurringKindTotal {
+  count: Int!
+  currency: String!
+  kind: RecurringExpenseKind!
+  monthlyCost: Float!
+}
+
+type RecurringOccurrence {
+  dueDate: DateTime!
+  expectedAmount: Float!
+  id: ID!
+  matchedBy: OccurrenceMatchSource
+  paidAt: DateTime
+  recurringExpenseId: String!
+  status: OccurrenceStatus!
+  transactionId: String
+}
+
+"""
+automatic: charged by itself, marked paid when reconciled with a statement or bank movement. manual: the user confirms the payment. reminder: only reminds, no payment state.
+"""
+enum RecurringTrackingMode {
+  automatic
+  manual
+  reminder
 }
 
 input RefreshTokenInput {
@@ -577,6 +747,7 @@ enum TransactionSource {
   manual
   ocr
   sms
+  statement
 }
 
 """Transaction type"""
@@ -595,6 +766,17 @@ type Transfer {
   id: String!
   toTxn: Transaction!
   toTxnId: String!
+}
+
+"""
+A due payment. Reminder-only expenses have no occurrence: occurrenceId and status are null.
+"""
+type UpcomingPayment {
+  dueDate: DateTime!
+  expectedAmount: Float!
+  occurrenceId: String
+  recurringExpense: RecurringExpense!
+  status: OccurrenceStatus
 }
 
 input UpdateAccountInput {
@@ -620,6 +802,26 @@ input UpdateDebtInput {
   linkedAccountId: String
   minPaymentAmount: Float
   name: String
+}
+
+input UpdateRecurringExpenseInput {
+  accountId: String
+  active: Boolean
+  amount: Float
+  categoryId: String
+  debtId: String
+  endDate: DateTime
+  frequency: RecurringFrequency
+  installmentsPaid: Int
+  installmentsTotal: Int
+  interval: Int
+  isVariableAmount: Boolean
+  kind: RecurringExpenseKind
+  merchantPattern: String
+  name: String
+  notes: String
+  startDate: DateTime
+  trackingMode: RecurringTrackingMode
 }
 
 input UpdateTransactionInput {

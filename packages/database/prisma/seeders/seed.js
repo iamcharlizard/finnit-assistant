@@ -231,11 +231,7 @@ async function main() {
 
   const tIncome = await prisma.transaction.upsert({
     where: {
-      transaction_user_account_date_unique: {
-        userId: user.id,
-        accountId: cash.id,
-        txnDate: toDateOnly(today),
-      }
+      externalId: 'seed:income'
     },
     update: {
       type: 'income',
@@ -246,6 +242,7 @@ async function main() {
       categoryId: salaryCat?.id || null,
     },
     create: {
+      externalId: 'seed:income',
       userId: user.id,
       accountId: cash.id,
       type: 'income',
@@ -261,11 +258,7 @@ async function main() {
 
   const tExpense = await prisma.transaction.upsert({
     where: {
-      transaction_user_account_date_unique: {
-        userId: user.id,
-        accountId: cash.id,
-        txnDate: toDateOnly(today),
-      }
+      externalId: 'seed:expense'
     },
     update: {
       type: 'expense',
@@ -276,6 +269,7 @@ async function main() {
       categoryId: groceriesCat?.id || null,
     },
     create: {
+      externalId: 'seed:expense',
       userId: user.id,
       accountId: cash.id,
       type: 'expense',
@@ -292,11 +286,7 @@ async function main() {
   // 5) Transfer: from cash to card (simulates payment)
   const tFrom = await prisma.transaction.upsert({
     where: {
-      transaction_user_account_date_unique: {
-        userId: user.id,
-        accountId: cash.id,
-        txnDate: toDateOnly(today),
-      }
+      externalId: 'seed:transfer-from'
     },
     update: {
       type: 'transfer',
@@ -305,6 +295,7 @@ async function main() {
       source: 'manual',
     },
     create: {
+      externalId: 'seed:transfer-from',
       userId: user.id,
       accountId: cash.id,
       type: 'transfer',
@@ -318,11 +309,7 @@ async function main() {
 
   const tTo = await prisma.transaction.upsert({
     where: {
-      transaction_user_account_date_unique: {
-        userId: user.id,
-        accountId: credit.id,
-        txnDate: toDateOnly(today),
-      }
+      externalId: 'seed:transfer-to'
     },
     update: {
       type: 'transfer',
@@ -331,6 +318,7 @@ async function main() {
       source: 'manual',
     },
     create: {
+      externalId: 'seed:transfer-to',
       userId: user.id,
       accountId: credit.id,
       type: 'transfer',

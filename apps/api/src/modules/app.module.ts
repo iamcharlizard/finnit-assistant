@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
@@ -14,6 +15,7 @@ import { GoalsModule } from './goals/goals.module';
 import { DebtsModule } from './debts/debts.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReportsModule } from './reports/reports.module';
+import { RecurringExpensesModule } from './recurring-expenses/recurring-expenses.module';
 import { PrismaService } from '../services/prisma.service';
 import { HealthController } from '../controllers/health.controller';
 
@@ -36,6 +38,7 @@ function envFlag(name: string, fallback: boolean): boolean {
       introspection: envFlag('GRAPHQL_INTROSPECTION', !isProduction),
       context: ({ req, res }) => ({ req, res }),
     }),
+    ScheduleModule.forRoot(),
     AuthModule,
     UsersModule,
     AccountsModule,
@@ -47,6 +50,7 @@ function envFlag(name: string, fallback: boolean): boolean {
     DebtsModule,
     NotificationsModule,
     ReportsModule,
+    RecurringExpensesModule,
   ],
   controllers: [HealthController],
   providers: [PrismaService],

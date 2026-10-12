@@ -1,0 +1,21 @@
+import type { Metadata } from 'next';
+
+import { LoginForm } from '@/components/login-form';
+
+export const metadata: Metadata = { title: 'Iniciar sesión' };
+
+export default function LoginPage() {
+  return (
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-background px-4 py-14">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-20 -left-16 hidden size-[340px] rounded-full bg-[#6c72cb]/14 blur-3xl dark:block"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 -bottom-20 hidden size-[340px] rounded-full bg-[#00f5ff]/8 blur-3xl dark:block"
+      />
+      <LoginForm />
+    </div>
+  );
+}

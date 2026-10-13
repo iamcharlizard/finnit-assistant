@@ -2,7 +2,7 @@
  * Creates the master admin (or makes an existing user the master).
  *
  *   Local:     pnpm --filter @finnit/api create-master --email you@example.com --name "Your name"
- *   Container: node apps/api/dist/scripts/create-master.js --email you@example.com --name "Your name"
+ *   Container: node /repo/apps/api/dist/scripts/create-master.js --email you@example.com --name "Your name"
  *
  * The password comes from MASTER_PASSWORD or is asked for without echo;
  * never as an argument (it would stay in the shell history).

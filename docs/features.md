@@ -27,7 +27,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | 12. Gastos recurrentes *(nuevo)* | ✅ | ⏳ | 🟡 |
 | 13. Estados de cuenta y conciliación *(nuevo)* | 🟡 | ⏳ | 🟡 |
 | 14. Panel administrativo *(nuevo)* | ✅ | — | ✅ |
-| 15. Pantalla de pagos recurrentes y sugerencias *(nuevo)* | 🟡 | ⏳ | ⏳ |
+| 15. Pantalla de pagos recurrentes y sugerencias *(nuevo)* | ✅ | ⏳ | ✅ |
 | 16. Clasificación de movimientos *(nuevo)* | ⏳ | ⏳ | ⏳ |
 | 17. Alias de movimientos *(nuevo)* | ⏳ | ⏳ | ⏳ |
 | 18. Personalización de cuentas y tarjetas *(nuevo)* | ✅ | ⏳ | ✅ |
@@ -154,10 +154,10 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| CRUD de gastos recurrentes con frecuencia y tipo | ✅ | ⏳ | ⏳ | `recurringExpenses`, `create/update/deleteRecurringExpense`. Frecuencias: semanal, catorcenal, quincenal (15 y fin de mes), mensual, bimestral, trimestral, semestral, anual. |
-| Modo de seguimiento: automático / manual / solo recordatorio | ✅ | ⏳ | ⏳ | Manual: `markRecurringPaymentPaid`, `skipRecurringPayment`, `reopenRecurringPayment`. Automático: se marcará pagado al conciliar con la tarjeta (sección 13). |
-| Próximos pagos y costo mensual por tipo | ✅ | ⏳ | ✅ | `upcomingPayments`, `recurringExpensesSummary` (por tipo y por cuenta). Web: Inicio (próximos 14 días) y Calendario (mes, por pagar y gasto fijo mensual). |
-| Meses sin intereses (progreso x de y) | ✅ | ⏳ | ⏳ | Cierra el plan al pagar la última mensualidad. |
+| CRUD de gastos recurrentes con frecuencia y tipo | ✅ | ⏳ | ✅ | `recurringExpenses`, `create/update/deleteRecurringExpense`. Frecuencias: semanal, catorcenal, quincenal (15 y fin de mes), mensual, bimestral, trimestral, semestral, anual. |
+| Modo de seguimiento: automático / manual / solo recordatorio | ✅ | ⏳ | ✅ | Manual: `markRecurringPaymentPaid`, `skipRecurringPayment`, `reopenRecurringPayment`. Automático: se marcará pagado al conciliar con la tarjeta (sección 13). |
+| Próximos pagos y costo mensual por tipo | ✅ | ⏳ | ✅ | `upcomingPayments`, `recurringExpensesSummary` (por tipo y por cuenta). Web: Inicio (próximos 14 días) y Pagos recurrentes. |
+| Meses sin intereses (progreso x de y) | ✅ | ⏳ | ✅ | Cierra el plan al pagar la última mensualidad. |
 | Recordatorios generados | ✅ | ⏳ | ⏳ | Tarea diaria (6:00, hora CDMX): genera ocurrencias, marca vencidas las manuales y crea notificaciones 3 días antes. |
 
 ### 13. Estados de cuenta y conciliación *(nuevo)*
@@ -186,10 +186,10 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Calendario día / semana / mes con la lista de pagos del periodo | ✅ | ⏳ | ⏳ | La API ya da `upcomingPayments` y `recurringExpenses`; falta la pantalla. |
-| Alta, edición, pausa y baja; marcar pagado u omitido | ✅ | ⏳ | ⏳ | |
-| Sugerencias detectadas en los movimientos sincronizados | ⏳ | ⏳ | ⏳ | Sin IA: mismo comercio (o alias), monto parecido e intervalo regular, visto 2–3 veces. Agregar con un clic o descartar. |
-| Clasificación de la sugerencia con IA (tipo, categoría, nombre) | ⏳ | — | — | Opcional, como funcionalidad de IA del panel; el usuario siempre confirma. |
+| Calendario día / semana / mes con la lista de pagos del periodo | ✅ | ⏳ | ✅ | `/recurring` (sustituye a `/calendar`): resumen, calendario y lista del día o periodo. |
+| Alta, edición, pausa y baja; marcar pagado u omitido | ✅ | ⏳ | ✅ | |
+| Sugerencias detectadas en los movimientos sincronizados | ✅ | ⏳ | ✅ | `recurringSuggestions` (sin IA): mismo comercio, monto parecido (±15%, variable hasta ±50%) e intervalo regular; 3 apariciones (2 si es mensual a trimestral con monto fijo, o semestral/anual). `acceptRecurringSuggestion` crea el pago y marca pagados los cargos de la evidencia; `dismissRecurringSuggestion`. |
+| Clasificación de la sugerencia con IA (tipo, categoría, nombre) | ✅ | — | ✅ | Funcionalidad `recurring_classification`, en lote y guardada en `RecurringSuggestionState`; solo se envía comercio, monto y frecuencia. El usuario siempre confirma. |
 
 ### 16. Clasificación de movimientos *(nuevo)*
 

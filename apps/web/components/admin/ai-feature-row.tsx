@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { TriangleAlert } from 'lucide-react';
 
 import { Label } from '@finnit/ui/components/ui/label';
@@ -14,9 +15,9 @@ import {
 import { Switch } from '@finnit/ui/components/ui/switch';
 
 import {
-  AI_FEATURE_COPY,
   DEFAULT_MODEL_VALUE,
   PROVIDER_LABELS,
+  aiFeatureCopy,
   type AiFeature,
   type AiModel,
 } from '@/lib/admin/ai';
@@ -31,19 +32,19 @@ export interface AiFeatureChange {
 /** One AI feature: on/off, its model (or the catalog default) and fallbacks. */
 export function AiFeatureRow({
   feature,
-  pdfModels,
+  models,
   onChange,
 }: {
   feature: AiFeature;
-  /** Active models that read PDF: the ones a feature may pick. */
-  pdfModels: AiModel[];
+  /** The models this feature may pick (active; PDF ones for PDF features). */
+  models: AiModel[];
   onChange: (change: AiFeatureChange) => Promise<void>;
 }) {
   const [saving, setSaving] = React.useState(false);
-  const copy = AI_FEATURE_COPY[feature.key] ?? {
-    label: feature.key,
-    description: '',
-  };
+  const t = useTranslations();
+  const locale = useLocale();
+  const copy = aiFeatureCopy(feature.key, t);
+  const updated = formatDate(feature.updatedAt, locale);
   const id = `feature-${feature.key}`;
 
   async function save(change: AiFeatureChange) {
@@ -65,9 +66,11 @@ export function AiFeatureRow({
           >
             {copy.label}
           </label>
-          <p className="text-[13px] text-on-surface-variant">
-            {copy.description}
-          </p>
+          {copy.description ? (
+            <p className="text-[13px] text-on-surface-variant">
+              {copy.description}
+            </p>
+          ) : null}
         </div>
         <Switch
           id={`${id}-enabled`}
@@ -80,7 +83,7 @@ export function AiFeatureRow({
       <div className="grid gap-4 sm:grid-cols-2 sm:items-end">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`${id}-model`} className="px-1">
-            Modelo
+            {t('admin.ai.feature.model')}
           </Label>
           <Select
             value={feature.aiModel?.id ?? DEFAULT_MODEL_VALUE}
@@ -96,18 +99,20 @@ export function AiFeatureRow({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={DEFAULT_MODEL_VALUE}>
-                Predeterminado del catálogo
+                {t('admin.ai.feature.defaultModel')}
               </SelectItem>
-              {pdfModels.map((model) => (
+              {models.map((model) => (
                 <SelectItem key={model.id} value={model.id}>
                   {model.label} · {PROVIDER_LABELS[model.provider]}
                 </SelectItem>
               ))}
               {/* Its model may have been deactivated since it was picked. */}
               {feature.aiModel &&
-              !pdfModels.some((m) => m.id === feature.aiModel?.id) ? (
+              !models.some((m) => m.id === feature.aiModel?.id) ? (
                 <SelectItem value={feature.aiModel.id} disabled>
-                  {feature.aiModel.label} (inactivo)
+                  {t('admin.ai.feature.inactive', {
+                    label: feature.aiModel.label,
+                  })}
                 </SelectItem>
               ) : null}
             </SelectContent>
@@ -118,7 +123,7 @@ export function AiFeatureRow({
             htmlFor={`${id}-fallbacks`}
             className="text-sm text-on-background"
           >
-            Usar otros modelos si falla
+            {t('admin.ai.feature.fallbacks')}
           </label>
           <Switch
             id={`${id}-fallbacks`}
@@ -132,13 +137,17 @@ export function AiFeatureRow({
       {feature.enabled && !feature.usable ? (
         <p role="status" className="flex gap-2 text-[13px] text-expense">
           <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
-          Ningún modelo disponible: activa uno con su llave configurada.
+          {t('admin.ai.feature.unusable')}
         </p>
       ) : null}
 
       <p className="text-[12px] text-on-surface-variant">
-        Actualizado el {formatDate(feature.updatedAt)}
-        {feature.updatedByName ? ` por ${feature.updatedByName}` : ''}
+        {feature.updatedByName
+          ? t('admin.ai.feature.updatedBy', {
+              date: updated,
+              name: feature.updatedByName,
+            })
+          : t('admin.ai.feature.updated', { date: updated })}
       </p>
     </div>
   );

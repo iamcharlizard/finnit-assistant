@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Star, Trash2 } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
@@ -26,6 +27,7 @@ export function AiModelRow({
   onDelete: () => void;
 }) {
   const [saving, setSaving] = React.useState(false);
+  const t = useTranslations('admin.ai.model');
   const [order, setOrder] = React.useState(String(model.sortOrder));
   const id = `model-${model.id}`;
 
@@ -64,11 +66,11 @@ export function AiModelRow({
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {model.isDefault ? (
-            <Badge variant="brand">Predeterminado</Badge>
+            <Badge variant="brand">{t('default')}</Badge>
           ) : null}
-          {model.supportsPdf ? <Badge variant="muted">PDF</Badge> : null}
+          {model.supportsPdf ? <Badge variant="muted">{t('pdf')}</Badge> : null}
           {!model.providerConfigured ? (
-            <Badge variant="expense">Sin llave</Badge>
+            <Badge variant="expense">{t('noKey')}</Badge>
           ) : null}
         </div>
       </div>
@@ -79,7 +81,7 @@ export function AiModelRow({
             htmlFor={`${id}-order`}
             className="text-[13px] text-on-surface-variant"
           >
-            Orden
+            {t('order')}
           </label>
           <input
             id={`${id}-order`}
@@ -101,7 +103,7 @@ export function AiModelRow({
             htmlFor={`${id}-active`}
             className="text-[13px] text-on-surface-variant"
           >
-            Activo
+            {t('active')}
           </label>
           <Switch
             id={`${id}-active`}
@@ -115,16 +117,16 @@ export function AiModelRow({
             variant="outline"
             size="sm"
             disabled={saving || !model.isActive}
-            title={model.isActive ? undefined : 'Actívalo primero'}
+            title={model.isActive ? undefined : t('activateFirst')}
             onClick={() => void save({ isDefault: true })}
           >
-            <Star className="size-4" /> Hacer predeterminado
+            <Star className="size-4" /> {t('makeDefault')}
           </Button>
         ) : null}
         <Button
           variant="ghost"
           size="icon"
-          aria-label={`Eliminar ${model.label}`}
+          aria-label={t('deleteLabel', { label: model.label })}
           disabled={saving}
           onClick={onDelete}
           className="text-expense"

@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { AccountChoice } from '@finnit/bank-connect';
 
 import type { FinnitAccount } from '@/lib/bank-connect/api';
@@ -21,6 +22,7 @@ export function AccountChoiceSelect({
   accounts: FinnitAccount[];
   onChange: (choice: AccountChoice) => void;
 }) {
+  const t = useTranslations('bankConnect.link');
   return (
     <select
       id={id}
@@ -28,9 +30,9 @@ export function AccountChoiceSelect({
       onChange={(e) => onChange(decode(e.target.value))}
       className="min-h-11 w-full rounded-input border border-outline bg-transparent px-3 text-sm text-on-background focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none sm:w-64"
     >
-      <option value="create">Crear cuenta en Finnit</option>
+      <option value="create">{t('create')}</option>
       {accounts.length ? (
-        <optgroup label="Ligar a una cuenta existente">
+        <optgroup label={t('linkExisting')}>
           {accounts.map((account) => (
             <option key={account.id} value={`account:${account.id}`}>
               {account.name}
@@ -38,7 +40,7 @@ export function AccountChoiceSelect({
           ))}
         </optgroup>
       ) : null}
-      <option value="skip">No importar</option>
+      <option value="skip">{t('skip')}</option>
     </select>
   );
 }

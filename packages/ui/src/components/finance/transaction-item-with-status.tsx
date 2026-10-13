@@ -3,11 +3,15 @@
 import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '../../lib/utils';
+import {
+  TransactionItemSelection,
+  type TransactionSelectionProps,
+} from './transaction-item-selection';
 
 type StatusVariant = 'completado' | 'info' | 'pendiente' | 'fallida';
 type ItemVariant = 'income' | 'expense' | 'pending' | 'failed';
 
-interface TransactionItemWithStatusProps {
+interface TransactionItemWithStatusProps extends TransactionSelectionProps {
   merchant: string;
   category: string;
   time: string;
@@ -52,14 +56,18 @@ function TransactionItemWithStatus({
   icon: Icon,
   onClick,
   className,
+  selectable,
+  selected,
+  onSelectedChange,
+  selectLabel,
 }: TransactionItemWithStatusProps) {
-  return (
+  const row = (
     <button
       type="button"
       onClick={onClick}
       className={cn(
         'flex min-h-11 w-full items-center justify-between gap-3 rounded-2xl bg-surface p-4 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50',
-        className,
+        !selectable && className,
       )}
     >
       <span className="flex min-w-0 flex-1 items-center gap-4">
@@ -89,6 +97,19 @@ function TransactionItemWithStatus({
         </span>
       </span>
     </button>
+  );
+
+  return (
+    <TransactionItemSelection
+      selectable={selectable}
+      selected={selected}
+      onSelectedChange={onSelectedChange}
+      selectLabel={selectLabel}
+      merchant={merchant}
+      className={className}
+    >
+      {row}
+    </TransactionItemSelection>
   );
 }
 

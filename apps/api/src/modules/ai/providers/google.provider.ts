@@ -4,6 +4,7 @@ import {
   AiProviderError,
   JsonSchema,
   PdfExtractionRequest,
+  TextExtractionRequest,
   describeHttpError,
   parseJson,
 } from './ai-provider';
@@ -39,7 +40,10 @@ export function toGeminiSchema(schema: JsonSchema): JsonSchema {
   return walk(schema) as JsonSchema;
 }
 
-/** Gemini generateContent: PDF as `inline_data`, answer in JSON mode with a schema. */
+/**
+ * Gemini generateContent: PDF as `inline_data` (or plain text parts), answer
+ * in JSON mode with a schema.
+ */
 export class GoogleProvider implements AiProviderClient {
   readonly provider = AiProvider.google;
   readonly apiKeyEnv = 'GEMINI_API_KEY';
@@ -54,6 +58,30 @@ export class GoogleProvider implements AiProviderClient {
   }
 
   async extractFromPdf(request: PdfExtractionRequest): Promise<unknown> {
+    return this.call(request, [
+      {
+        inline_data: {
+          mime_type: 'application/pdf',
+          data: request.pdf.toString('base64'),
+        },
+      },
+      { text: request.prompt },
+    ]);
+  }
+
+  async extractFromText(request: TextExtractionRequest): Promise<unknown> {
+    return this.call(
+      request,
+      [{ text: request.prompt }, { text: request.text }],
+      request.timeoutMs,
+    );
+  }
+
+  private async call(
+    request: { modelId: string; schema: JsonSchema; schemaName: string },
+    parts: Record<string, unknown>[],
+    timeoutMs = TIMEOUT_MS,
+  ): Promise<unknown> {
     if (!this.apiKey) {
       throw new AiProviderError(this.provider, `${this.apiKeyEnv} is not set`);
     }
@@ -70,22 +98,9 @@ export class GoogleProvider implements AiProviderClient {
             'content-type': 'application/json',
             'x-goog-api-key': this.apiKey,
           },
-          signal: AbortSignal.timeout(TIMEOUT_MS),
+          signal: AbortSignal.timeout(timeoutMs),
           body: JSON.stringify({
-            contents: [
-              {
-                role: 'user',
-                parts: [
-                  {
-                    inline_data: {
-                      mime_type: 'application/pdf',
-                      data: request.pdf.toString('base64'),
-                    },
-                  },
-                  { text: request.prompt },
-                ],
-              },
-            ],
+            contents: [{ role: 'user', parts }],
             generationConfig: {
               responseMimeType: 'application/json',
               responseSchema: toGeminiSchema(request.schema),

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { AlertCircle, Landmark, RefreshCw } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
@@ -10,13 +11,16 @@ import { GlassCard } from '@finnit/ui/components/ui/glass-card';
 import { BodyMd, TitleLg } from '@finnit/ui/components/ui/typography';
 
 import type { BankConnectionView } from '@/lib/bank-connect/connections';
-import { gql } from '@/lib/graphql/client';
+import { dayKeyOf, longDate, timeOf, todayKey } from '@/lib/finance/dates';
+import { gql, requestErrorMessage } from '@/lib/graphql/client';
+import type { Locale } from '@/lib/i18n/locales';
 
-const dateTime = new Intl.DateTimeFormat('es-MX', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-  timeZone: 'America/Mexico_City',
-});
+/** "13 de octubre, 08:15" in Mexico City, the same on server and browser. */
+function syncedAt(iso: string, locale: Locale): string {
+  const time = timeOf(iso);
+  const date = longDate(dayKeyOf(iso), todayKey(), locale);
+  return time ? `${date}, ${time}` : date;
+}
 
 export function BankConnectionCard({
   connection,
@@ -24,6 +28,8 @@ export function BankConnectionCard({
   connection: BankConnectionView;
 }) {
   const router = useRouter();
+  const t = useTranslations();
+  const locale = useLocale();
   const [syncing, setSyncing] = React.useState(false);
   const [message, setMessage] = React.useState<string | null>(null);
   const linked = connection.accounts.filter((a) => a.accountId).length;
@@ -36,14 +42,15 @@ export function BankConnectionCard({
         'mutation SyncBank($id: ID!) { syncBankConnection(id: $id, refreshFromBank: true) { imported } }',
         { id: connection.id },
       );
+      const { imported } = data.syncBankConnection;
       setMessage(
-        data.syncBankConnection.imported
-          ? `Importamos ${data.syncBankConnection.imported} movimiento(s) nuevo(s).`
-          : 'Todo al día. Pedimos datos nuevos a tu banco; llegarán en la próxima sincronización.',
+        imported
+          ? t('banks.imported', { count: imported })
+          : t('banks.upToDate'),
       );
       router.refresh();
     } catch (error) {
-      setMessage((error as Error).message);
+      setMessage(requestErrorMessage(error, t));
     } finally {
       setSyncing(false);
     }
@@ -55,17 +62,28 @@ export function BankConnectionCard({
         <Landmark aria-hidden className="mt-1 size-6 shrink-0 text-brand-ink" />
         <div className="flex-1">
           <TitleLg as="h2" className="text-lg">
-            {connection.institution ?? 'Banco'}
+            {connection.institution ?? t('banks.fallbackName')}
           </TitleLg>
           <BodyMd className="text-[13px] text-on-surface-variant">
-            {linked} de {connection.accounts.length} cuenta(s) importándose
-            {connection.lastSyncedAt
-              ? ` · Última sincronización: ${dateTime.format(new Date(connection.lastSyncedAt))}`
-              : ''}
+            {[
+              t('banks.linkedSummary', {
+                linked: String(linked),
+                total: connection.accounts.length,
+              }),
+              connection.lastSyncedAt
+                ? t('banks.lastSync', {
+                    date: syncedAt(connection.lastSyncedAt, locale),
+                  })
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
           </BodyMd>
         </div>
         <Badge variant={connection.status === 'active' ? 'success' : 'expense'}>
-          {connection.status === 'active' ? 'Activo' : 'Requiere atención'}
+          {connection.status === 'active'
+            ? t('banks.active')
+            : t('banks.needsAttention')}
         </Badge>
       </div>
 
@@ -89,7 +107,7 @@ export function BankConnectionCard({
         onClick={() => void sync()}
       >
         <RefreshCw className={syncing ? 'size-4 animate-spin' : 'size-4'} />
-        {syncing ? 'Sincronizando…' : 'Sincronizar ahora'}
+        {syncing ? t('banks.syncing') : t('banks.syncNow')}
       </Button>
     </GlassCard>
   );

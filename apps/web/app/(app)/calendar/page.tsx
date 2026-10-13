@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 import { CalendarScreen } from '@/components/screens/calendar-screen';
 import { loadCalendar } from '@/lib/calendar/load';
@@ -9,7 +10,10 @@ import {
   todayKey,
 } from '@/lib/finance/dates';
 
-export const metadata: Metadata = { title: 'Calendario' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations();
+  return { title: t('pageTitles.recurring') };
+}
 
 export default async function CalendarPage({
   searchParams,

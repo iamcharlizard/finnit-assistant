@@ -5,11 +5,11 @@ import {
   CreateTransactionInput,
   UpdateTransactionInput,
   TransactionsArgs,
+  SimilarTransactionsArgs,
 } from './dto/transaction.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../../common/types/models/user.model';
-import { Attachment } from '../../common/types/models/attachment.model';
 import {
   Transaction,
   TransactionConnection,
@@ -34,6 +34,17 @@ export class TransactionsResolver {
     @Args('id') id: string,
   ): Promise<Transaction> {
     return this.transactionsService.findById(id, user.id);
+  }
+
+  @Query(() => [Transaction], {
+    description:
+      'Possible duplicates of a transaction about to be created: same account, amount within 0.01, within 3 days; newest first, at most 5',
+  })
+  async similarTransactions(
+    @CurrentUser() user: User,
+    @Args() args: SimilarTransactionsArgs,
+  ): Promise<Transaction[]> {
+    return this.transactionsService.findSimilar(user.id, args);
   }
 
   @Mutation(() => Transaction)

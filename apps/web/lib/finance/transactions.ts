@@ -1,5 +1,7 @@
+import type { Locale } from '@/lib/i18n/locales';
+import type { Localizer, Translate } from '@/lib/i18n/translator';
+
 import {
-  UNCATEGORIZED_LABEL,
   categoryIconKey,
   categoryLabel,
   type CategoryIndex,
@@ -50,7 +52,7 @@ export function direction(tx: ApiTransaction): 'in' | 'out' | 'unknown' {
 // The API marks each side of a transfer in its description.
 const TRANSFER_SIDE = / \((?:outgoing|incoming)\)$/i;
 
-function title(tx: ApiTransaction): string {
+function title(tx: ApiTransaction, t: Translate): string {
   const text = (tx.merchantName || tx.description || '')
     .replace(TRANSFER_SIDE, '')
     .trim();
@@ -58,26 +60,27 @@ function title(tx: ApiTransaction): string {
     const to = /^Transfer to (.+?)(?: \((?:outgoing|incoming)\))?$/i.exec(
       tx.description ?? '',
     );
-    if (to) return `Transferencia a ${to[1]}`;
+    if (to) return t('finance.transferTo', { name: to[1]! });
   }
-  if (/^Initial balance$/i.test(text)) return 'Saldo inicial';
+  if (/^Initial balance$/i.test(text)) return t('finance.initialBalance');
   if (text) return text;
   return tx.type === 'income'
-    ? 'Ingreso'
+    ? t('finance.fallbackTitle.income')
     : tx.type === 'expense'
-      ? 'Gasto'
-      : 'Movimiento';
+      ? t('finance.fallbackTitle.expense')
+      : t('finance.fallbackTitle.other');
 }
 
-function categoryText(tx: ApiTransaction): string {
-  if (tx.type === 'transfer') return 'Transferencia';
-  if (tx.type === 'adjustment') return 'Ajuste o pago';
-  return tx.category ? categoryLabel(tx.category.name) : UNCATEGORIZED_LABEL;
+function categoryText(tx: ApiTransaction, t: Translate): string {
+  if (tx.type === 'transfer') return t('finance.transfer');
+  if (tx.type === 'adjustment') return t('finance.adjustment');
+  return categoryLabel(tx.category?.name, t);
 }
 
 export function toTransactionRow(
   tx: ApiTransaction,
   categories: CategoryIndex,
+  { locale, t }: Localizer,
   { withDate = false }: { withDate?: boolean } = {},
 ): TransactionRow {
   const day = dayKeyOf(tx.txnDate);
@@ -88,12 +91,12 @@ export function toTransactionRow(
 
   return {
     id: tx.id,
-    title: title(tx),
-    category: categoryText(tx),
-    time: [tx.account?.name, withDate ? shortDate(day) : null, time]
+    title: title(tx, t),
+    category: categoryText(tx, t),
+    time: [tx.account?.name, withDate ? shortDate(day, locale) : null, time]
       .filter(Boolean)
       .join(' · '),
-    amount: formatMoney(signed, tx.currency, { sign }),
+    amount: formatMoney(signed, tx.currency, locale, { sign }),
     variant: dir === 'in' ? 'income' : dir === 'out' ? 'expense' : 'neutral',
     status: tx.isPending ? 'pending' : 'completed',
     iconKey:
@@ -112,6 +115,7 @@ export function toTransactionRow(
 export function groupByDay(
   rows: ReadonlyArray<TransactionRow>,
   today: DayKey,
+  locale: Locale,
 ): TransactionGroup[] {
   const groups = new Map<DayKey, TransactionRow[]>();
   for (const row of rows) {
@@ -123,7 +127,7 @@ export function groupByDay(
     .sort(([a], [b]) => (a < b ? 1 : a > b ? -1 : 0))
     .map(([day, dayRows]) => ({
       day,
-      heading: dayHeading(day, today),
+      heading: dayHeading(day, today, locale),
       rows: dayRows,
     }));
 }

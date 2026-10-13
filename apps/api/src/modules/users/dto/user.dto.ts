@@ -5,7 +5,9 @@ import {
   MinLength,
   MaxLength,
   IsOptional,
+  IsIn,
 } from 'class-validator';
+import { APP_LOCALES, type AppLocale } from '../../translation/locale';
 
 @InputType()
 export class UpdateUserInput {
@@ -20,4 +22,12 @@ export class UpdateUserInput {
   @IsOptional()
   @IsEmail()
   email?: string;
+}
+
+@InputType()
+export class UpdateMyPreferencesInput {
+  @Field({ nullable: true, description: "Preferred language: 'es' or 'en'" })
+  @IsOptional()
+  @IsIn(APP_LOCALES)
+  locale?: AppLocale;
 }

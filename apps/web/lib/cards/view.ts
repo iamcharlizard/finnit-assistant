@@ -1,5 +1,6 @@
 import type { CardVariant } from '@finnit/ui/components/finance/bank-payment-card';
 
+import type { Localizer } from '@/lib/i18n/translator';
 import { creditOwed, nextMonthlyDay } from '@/lib/finance/accounts';
 import {
   dayKeyOf,
@@ -56,6 +57,7 @@ const DEBIT_VARIANTS: CardVariant[] = ['platinum', 'virtual'];
 export function buildCards(
   accounts: ReadonlyArray<ApiAccount>,
   connections: ReadonlyArray<BankConnectionInfo>,
+  { locale, t }: Localizer,
 ): CardSummary[] {
   const linked = new Map<
     string,
@@ -101,7 +103,9 @@ export function buildCards(
         owed,
         limit: limit && limit > 0 ? limit : null,
         available:
-          available !== null ? formatMoney(available, account.currency) : null,
+          available !== null
+            ? formatMoney(available, account.currency, locale)
+            : null,
       };
     }
 
@@ -110,13 +114,14 @@ export function buildCards(
       kind: account.type,
       name: account.name,
       bankName: account.metadata?.bank ?? bank?.institution ?? null,
-      tier: isCredit ? 'CRÉDITO' : 'DÉBITO',
+      tier: t(isCredit ? 'cards.tier.credit' : 'cards.tier.debit'),
       maskedNumber: last4 ? `•••• •••• •••• ${last4}` : '•••• •••• ••••',
       variant,
       currency: account.currency,
       balance: formatMoney(
         isCredit ? credit!.owed : account.balanceCurrent,
         account.currency,
+        locale,
       ),
       credit,
       statementDay: account.creditCardTerms?.statementDay ?? null,
@@ -134,8 +139,15 @@ export function pickCard<T extends { id: string }>(
 }
 
 /** "20 oct · En 6 días" */
-function dueLabel(day: DayKey, today: DayKey): string {
-  return `${shortDate(day)} · ${relativeDayLabel(day, today)}`;
+function dueLabel(
+  day: DayKey,
+  today: DayKey,
+  { locale, t }: Localizer,
+): string {
+  return t('cards.facts.due', {
+    date: shortDate(day, locale),
+    relative: relativeDayLabel(day, today, locale),
+  });
 }
 
 export interface CardMonthSummaryData {
@@ -176,45 +188,49 @@ export function buildCardDetail(
     recent: TransactionRow[];
     summary: CardMonthSummaryData | null;
   },
+  l: Localizer,
 ): CardDetail {
-  const money = (n: number) => formatMoney(n, card.currency);
+  const { locale, t } = l;
+  const money = (n: number) => formatMoney(n, card.currency, locale);
   const facts: CardDetail['facts'] = [];
   const statement = summary?.statement;
 
   if (card.statementDay) {
     facts.push({
-      label: 'Próximo corte',
-      value: dueLabel(nextMonthlyDay(today, card.statementDay), today),
+      label: t('cards.facts.nextStatement'),
+      value: dueLabel(nextMonthlyDay(today, card.statementDay), today, l),
     });
   }
   if (statement?.paymentDueDate) {
     facts.push({
-      label: 'Fecha límite de pago',
-      value: dueLabel(dayKeyOf(statement.paymentDueDate), today),
+      label: t('cards.facts.paymentDue'),
+      value: dueLabel(dayKeyOf(statement.paymentDueDate), today, l),
     });
   } else if (card.paymentDueDay) {
     facts.push({
-      label: 'Próxima fecha de pago',
-      value: dueLabel(nextMonthlyDay(today, card.paymentDueDay), today),
+      label: t('cards.facts.nextPayment'),
+      value: dueLabel(nextMonthlyDay(today, card.paymentDueDay), today, l),
     });
   }
   if (statement?.statementBalance != null) {
     facts.push({
       label: statement.statementDate
-        ? `Saldo al corte (${shortDate(dayKeyOf(statement.statementDate))})`
-        : 'Saldo al corte',
+        ? t('cards.facts.statementBalanceOn', {
+            date: shortDate(dayKeyOf(statement.statementDate), locale),
+          })
+        : t('cards.facts.statementBalance'),
       value: money(statement.statementBalance),
     });
   }
   if (statement?.noInterestPayment != null) {
     facts.push({
-      label: 'Pago para no generar intereses',
+      label: t('cards.facts.noInterest'),
       value: money(statement.noInterestPayment),
     });
   }
   if (statement?.minimumPayment != null) {
     facts.push({
-      label: 'Pago mínimo',
+      label: t('cards.facts.minimum'),
       value: money(statement.minimumPayment),
     });
   }

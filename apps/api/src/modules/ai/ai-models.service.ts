@@ -21,7 +21,9 @@ import {
   AiProviderClient,
   AiProviderError,
   PdfExtractionRequest,
+  TextExtractionRequest,
 } from './providers/ai-provider';
+import { AI_FEATURE_DEFAULTS } from './ai-feature-defaults';
 import { AnthropicProvider } from './providers/anthropic.provider';
 import { GoogleProvider } from './providers/google.provider';
 import { OpenAiProvider } from './providers/openai.provider';
@@ -38,6 +40,8 @@ export interface PdfExtractionResult {
   data: unknown;
 }
 
+export type TextExtractionResult = PdfExtractionResult;
+
 export class NoUsableAiModelError extends Error {}
 
 /** The admin turned the AI feature off. */
@@ -52,6 +56,11 @@ export interface PdfCandidateOptions {
   aiModelId?: string;
   /** Applies that feature's admin settings (on/off, model, fallbacks). */
   feature?: AiFeatureKey;
+}
+
+export interface CandidateOptions extends PdfCandidateOptions {
+  /** Only models with PDF support. */
+  requirePdf?: boolean;
 }
 
 /**
@@ -151,19 +160,23 @@ export class AiModelsService {
   }
 
   /**
-   * Models to try for a PDF, in order. Without options: active models with
-   * PDF support whose provider is configured, default first, then by
-   * sortOrder. With a feature: its own model first (if usable), then the
-   * rest only when the feature allows fallbacks. With `aiModelId`, only
+   * Models to try, in order. Without options: active models whose provider
+   * is configured (with `requirePdf`, only those with PDF support), default
+   * first, then by sortOrder. With a feature: its own model first (if
+   * usable), then the rest only when the feature allows fallbacks; a feature
+   * without a settings row uses AI_FEATURE_DEFAULTS. With `aiModelId`, only
    * that model.
    */
-  async pdfCandidates(
-    options: PdfCandidateOptions = {},
-  ): Promise<AiModelRow[]> {
-    const { aiModelId, feature } = options;
-    const settings = feature
+  async candidates(options: CandidateOptions = {}): Promise<AiModelRow[]> {
+    const { aiModelId, feature, requirePdf } = options;
+    const row = feature
       ? await this.prisma.aiFeature.findUnique({ where: { key: feature } })
       : null;
+    const settings =
+      row ??
+      (feature
+        ? { ...AI_FEATURE_DEFAULTS[feature], aiModelId: null as string | null }
+        : null);
     if (feature && settings && !settings.enabled) {
       throw new AiFeatureDisabledError(feature);
     }
@@ -171,20 +184,25 @@ export class AiModelsService {
     const rows = await this.prisma.aiModel.findMany({
       where: {
         isActive: true,
-        supportsPdf: true,
+        ...(requirePdf && { supportsPdf: true }),
         ...(aiModelId && { id: aiModelId }),
       },
       orderBy: [{ isDefault: 'desc' }, { sortOrder: 'asc' }],
     });
     const usable = rows.filter(
-      (row) => this.providers.get(row.provider)?.isConfigured,
+      (model) => this.providers.get(model.provider)?.isConfigured,
     );
     if (aiModelId || !settings) return usable;
 
-    const own = usable.find((row) => row.id === settings.aiModelId);
-    const rest = usable.filter((row) => row !== own);
+    const own = usable.find((model) => model.id === settings.aiModelId);
+    const rest = usable.filter((model) => model !== own);
     const first = own ?? (settings.aiModelId ? undefined : rest.shift());
     return [...(first ? [first] : []), ...(settings.useFallbacks ? rest : [])];
+  }
+
+  /** Models to try for a PDF (see `candidates`). */
+  pdfCandidates(options: PdfCandidateOptions = {}): Promise<AiModelRow[]> {
+    return this.candidates({ ...options, requirePdf: true });
   }
 
   /**
@@ -203,15 +221,42 @@ export class AiModelsService {
           : 'No active AI model with PDF support has its provider configured',
       );
     }
+    return this.tryInOrder(candidates, (provider, modelId) =>
+      provider.extractFromPdf({ ...request, modelId }),
+    );
+  }
 
+  /**
+   * Extracts structured data from plain text with the first model that
+   * answers (no PDF support needed); a failing model falls through to the
+   * next one.
+   */
+  async extractFromText(
+    request: Omit<TextExtractionRequest, 'modelId'>,
+    options: PdfCandidateOptions = {},
+  ): Promise<TextExtractionResult> {
+    const candidates = await this.candidates(options);
+    if (candidates.length === 0) {
+      throw new NoUsableAiModelError(
+        options.aiModelId
+          ? 'That AI model is not active or its provider is not configured'
+          : 'No active AI model has its provider configured',
+      );
+    }
+    return this.tryInOrder(candidates, (provider, modelId) =>
+      provider.extractFromText({ ...request, modelId }),
+    );
+  }
+
+  private async tryInOrder(
+    candidates: AiModelRow[],
+    call: (provider: AiProviderClient, modelId: string) => Promise<unknown>,
+  ): Promise<PdfExtractionResult> {
     const failures: string[] = [];
     for (const model of candidates) {
       const provider = this.providers.get(model.provider)!;
       try {
-        const data = await provider.extractFromPdf({
-          ...request,
-          modelId: model.modelId,
-        });
+        const data = await call(provider, model.modelId);
         return { model, data };
       } catch (error) {
         const message =

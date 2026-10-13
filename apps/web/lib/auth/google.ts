@@ -20,17 +20,20 @@ export type GoogleLoginError =
   | 'google_failed'
   | 'google_unavailable';
 
-export const LOGIN_ERROR_MESSAGES: Record<GoogleLoginError, string> = {
-  google_no_access:
-    'Tu cuenta de Google no tiene acceso a Finnit. Pide acceso al administrador.',
-  google_failed: 'No pudimos iniciar sesión con Google. Intenta de nuevo.',
-  google_unavailable: 'El inicio de sesión con Google no está disponible.',
-};
+const LOGIN_ERRORS: ReadonlyArray<GoogleLoginError> = [
+  'google_no_access',
+  'google_failed',
+  'google_unavailable',
+];
 
-/** The Spanish message for a `/login?error=` code, or null for unknown codes. */
-export function loginErrorMessage(code: unknown): string | null {
-  return typeof code === 'string' && Object.hasOwn(LOGIN_ERROR_MESSAGES, code)
-    ? LOGIN_ERROR_MESSAGES[code as GoogleLoginError]
+/**
+ * A known `/login?error=` code (its text is `login.errors.<code>`), or null
+ * for anything else, so arbitrary query text is never shown.
+ */
+export function loginErrorCode(code: unknown): GoogleLoginError | null {
+  return typeof code === 'string' &&
+    (LOGIN_ERRORS as readonly string[]).includes(code)
+    ? (code as GoogleLoginError)
     : null;
 }
 

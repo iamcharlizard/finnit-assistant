@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronRight, Landmark, Search } from 'lucide-react';
 import { isNativeSupported, type Site } from '@finnit/bank-connect';
 
@@ -15,15 +16,16 @@ export function BankPickerStep({
   onSelect: (site: Site) => void;
 }) {
   const [query, setQuery] = React.useState('');
+  const t = useTranslations('bankConnect.picker');
   const banks = search(query);
 
   return (
     <div className="flex flex-col gap-5">
-      <TitleLg as="h2">Elige tu banco</TitleLg>
+      <TitleLg as="h2">{t('title')}</TitleLg>
       <InputWithIcon
-        label="Buscar banco"
+        label={t('search')}
         iconLeft={Search}
-        placeholder="Ej. BancaNet, BBVA, Banorte"
+        placeholder={t('searchPlaceholder')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         autoComplete="off"
@@ -31,7 +33,7 @@ export function BankPickerStep({
 
       {banks.length === 0 ? (
         <BodyMd className="py-6 text-center text-on-surface-variant">
-          No encontramos bancos con “{query}”.
+          {t('noResults', { query })}
         </BodyMd>
       ) : (
         <ul className="flex max-h-[420px] flex-col gap-2 overflow-y-auto pr-1">
@@ -52,7 +54,7 @@ export function BankPickerStep({
                   </span>
                   {!isNativeSupported(site) ? (
                     <span className="block text-xs text-on-surface-variant">
-                      Se conecta con el asistente de Syncfy
+                      {t('widgetHint')}
                     </span>
                   ) : null}
                 </span>

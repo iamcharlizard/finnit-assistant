@@ -20,7 +20,7 @@ function FilterChipGroup({
   items,
   activeValue,
   onSelect,
-  'aria-label': ariaLabel = 'Filtros',
+  'aria-label': ariaLabel = 'Filters',
   className,
 }: FilterChipGroupProps) {
   return (

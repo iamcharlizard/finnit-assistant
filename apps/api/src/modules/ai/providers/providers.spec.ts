@@ -1,5 +1,9 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import { AiProviderError, PdfExtractionRequest } from './ai-provider';
+import {
+  AiProviderError,
+  PdfExtractionRequest,
+  TextExtractionRequest,
+} from './ai-provider';
 import { AnthropicProvider } from './anthropic.provider';
 import { GoogleProvider, toGeminiSchema } from './google.provider';
 import { OpenAiProvider } from './openai.provider';
@@ -247,5 +251,109 @@ describe('GoogleProvider', () => {
       type: 'object',
       properties: { items: { type: 'array', items: { type: 'object' } } },
     });
+  });
+});
+
+describe('extractFromText', () => {
+  const textRequest: TextExtractionRequest = {
+    modelId: 'model-x',
+    prompt: 'Translate the category name',
+    text: 'Mascotas',
+    schema: { type: 'object', properties: { en: { type: 'string' } } },
+    schemaName: 'record_translation',
+    timeoutMs: 3000,
+  };
+
+  it('Anthropic sends prompt and text as text blocks with the timeout', async () => {
+    const create = jest.fn().mockResolvedValue({
+      stop_reason: 'tool_use',
+      content: [
+        {
+          type: 'tool_use',
+          id: 't1',
+          name: 'record_translation',
+          input: { en: 'Pets' },
+        },
+      ],
+    });
+    const client = { messages: { create } } as unknown as Anthropic;
+
+    const data = await new AnthropicProvider(undefined, client).extractFromText(
+      textRequest,
+    );
+
+    expect(data).toEqual({ en: 'Pets' });
+    const [sent, options] = create.mock.calls[0] as [
+      Anthropic.Messages.MessageCreateParams,
+      { timeout: number },
+    ];
+    expect(sent.messages[0].content).toEqual([
+      { type: 'text', text: 'Translate the category name' },
+      { type: 'text', text: 'Mascotas' },
+    ]);
+    expect(sent.tool_choice).toEqual({
+      type: 'tool',
+      name: 'record_translation',
+    });
+    expect(options.timeout).toBe(3000);
+  });
+
+  it('OpenAI sends input_text parts with the JSON schema format', async () => {
+    const fetchFn = fetchReturning(
+      jsonResponse({
+        status: 'completed',
+        output: [
+          {
+            type: 'message',
+            content: [{ type: 'output_text', text: '{"en":"Pets"}' }],
+          },
+        ],
+      }),
+    );
+
+    const data = await new OpenAiProvider('sk-test', fetchFn).extractFromText(
+      textRequest,
+    );
+
+    expect(data).toEqual({ en: 'Pets' });
+    expect(sentBody(fetchFn).input[0].content).toEqual([
+      { type: 'input_text', text: 'Translate the category name' },
+      { type: 'input_text', text: 'Mascotas' },
+    ]);
+    expect(sentBody(fetchFn).text.format).toEqual(
+      expect.objectContaining({ type: 'json_schema' }),
+    );
+  });
+
+  it('Gemini sends text parts in JSON mode', async () => {
+    const fetchFn = fetchReturning(
+      jsonResponse({
+        candidates: [
+          {
+            finishReason: 'STOP',
+            content: { parts: [{ text: '{"en":"Pets"}' }] },
+          },
+        ],
+      }),
+    );
+
+    const data = await new GoogleProvider('g-test', fetchFn).extractFromText(
+      textRequest,
+    );
+
+    expect(data).toEqual({ en: 'Pets' });
+    expect(sentBody(fetchFn).contents[0].parts).toEqual([
+      { text: 'Translate the category name' },
+      { text: 'Mascotas' },
+    ]);
+    expect(sentBody(fetchFn).generationConfig.responseMimeType).toBe(
+      'application/json',
+    );
+  });
+
+  it('fails without a key', async () => {
+    await expect(
+      new OpenAiProvider('').extractFromText(textRequest),
+    ).rejects.toThrow(AiProviderError);
   });
 });

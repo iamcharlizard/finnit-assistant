@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { GlassCard } from '@finnit/ui/components/ui/glass-card';
 
 import { useBankConnectFlow } from '@/hooks/use-bank-connect-flow';
@@ -16,6 +17,7 @@ import { WidgetFallbackStep } from './widget-fallback-step';
 /** "Conectar banco": renders the current step of the shared BankConnectFlow. */
 export function ConnectBankFlow() {
   const { flow, step } = useBankConnectFlow();
+  const t = useTranslations('bankConnect');
 
   let content: React.ReactNode;
   switch (step.name) {
@@ -49,7 +51,7 @@ export function ConnectBankFlow() {
       content = (
         <ProgressStep
           message={step.status.message}
-          hint="Esto puede tardar hasta un minuto. No cierres esta página."
+          hint={t('connectingHint')}
         />
       );
       break;

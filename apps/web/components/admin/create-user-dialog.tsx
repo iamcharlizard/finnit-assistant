@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { AtSign, CircleCheck, User } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
@@ -57,15 +58,21 @@ export function CreateUserDialog({
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [created, setCreated] = React.useState<AdminUser | null>(null);
+  const t = useTranslations();
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     const found: Record<string, string> = {};
-    if (name.trim().length < 2) found.name = 'Escribe su nombre.';
-    if (!EMAIL_PATTERN.test(email.trim()))
-      found.email = 'Escribe un correo válido.';
+    if (name.trim().length < 2) {
+      found.name = t('admin.users.create.nameRequired');
+    }
+    if (!EMAIL_PATTERN.test(email.trim())) {
+      found.email = t('admin.users.create.emailInvalid');
+    }
     if (password && password.length < MIN_PASSWORD_LENGTH) {
-      found.password = `Mínimo ${MIN_PASSWORD_LENGTH} caracteres.`;
+      found.password = t('admin.users.passwordField.minLengthError', {
+        min: String(MIN_PASSWORD_LENGTH),
+      });
     }
     setErrors(found);
     if (Object.keys(found).length) return;
@@ -84,7 +91,7 @@ export function CreateUserDialog({
       setCreated(data.createUser);
       onCreated(data.createUser);
     } catch (error) {
-      setSubmitError(adminErrorMessage(error));
+      setSubmitError(adminErrorMessage(error, t));
     } finally {
       setSaving(false);
     }
@@ -92,71 +99,76 @@ export function CreateUserDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent closeLabel={t('common.close')}>
         {created ? (
           <>
             <DialogHeader>
               <CircleCheck aria-hidden className="mb-1 size-8 text-income" />
-              <DialogTitle>Agregaste a {created.name}</DialogTitle>
+              <DialogTitle>
+                {t('admin.users.create.createdTitle', { name: created.name })}
+              </DialogTitle>
               <DialogDescription>
                 {created.hasPassword
-                  ? `Ya puede entrar con ${created.email} y la contraseña que asignaste, o con su cuenta de Google de ese correo. Compártele la contraseña por un canal seguro (en persona o un gestor de contraseñas), no por correo ni chat.`
-                  : `Ya puede entrar con su cuenta de Google de ${created.email}.`}
+                  ? t('admin.users.create.createdWithPassword', {
+                      email: created.email,
+                    })
+                  : t('admin.users.create.createdWithGoogle', {
+                      email: created.email,
+                    })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="secondary">Listo</Button>
+                <Button variant="secondary">{t('common.done')}</Button>
               </DialogClose>
             </DialogFooter>
           </>
         ) : (
           <form onSubmit={submit} noValidate className="flex flex-col gap-5">
             <DialogHeader>
-              <DialogTitle>Agregar usuario</DialogTitle>
+              <DialogTitle>{t('admin.users.create.title')}</DialogTitle>
               <DialogDescription>
-                El acceso a Finnit es por invitación: solo entra quien agregas
-                aquí.
+                {t('admin.users.create.description')}
               </DialogDescription>
             </DialogHeader>
 
             <InputWithIcon
-              label="Nombre"
+              label={t('admin.users.create.name')}
               iconLeft={User}
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="off"
-              placeholder="Ana López"
+              placeholder={t('admin.users.create.namePlaceholder')}
               error={errors.name}
             />
             <InputWithIcon
-              label="Correo electrónico"
+              label={t('admin.users.create.email')}
               iconLeft={AtSign}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="off"
-              placeholder="nombre@ejemplo.com"
+              placeholder={t('admin.users.create.emailPlaceholder')}
               error={errors.email}
             />
             <div className="flex flex-col gap-1.5">
               <PasswordField
-                label="Contraseña (opcional)"
+                label={t('admin.users.create.password')}
                 value={password}
                 onChange={setPassword}
                 error={errors.password}
               />
               <p className="px-1 text-[13px] text-on-surface-variant">
                 {password
-                  ? 'Puede entrar con esta contraseña o con su cuenta de Google de este correo.'
-                  : 'Solo podrá entrar con Google usando este correo.'}
+                  ? t('admin.users.create.withPassword')
+                  : t('admin.users.create.withoutPassword')}
               </p>
             </div>
 
             {canChooseRole ? (
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="new-user-role" className="px-1">
-                  Rol
+                  {t('admin.users.create.role')}
                 </Label>
                 <Select
                   value={role}
@@ -166,8 +178,12 @@ export function CreateUserDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">Usuario</SelectItem>
-                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="user">
+                      {t('admin.users.roles.user')}
+                    </SelectItem>
+                    <SelectItem value="admin">
+                      {t('admin.users.roles.admin')}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -182,11 +198,11 @@ export function CreateUserDialog({
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="outline">
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
               </DialogClose>
               <Button type="submit" variant="secondary" disabled={saving}>
-                {saving ? 'Agregando…' : 'Agregar usuario'}
+                {saving ? t('admin.users.create.adding') : t('admin.users.add')}
               </Button>
             </DialogFooter>
           </form>

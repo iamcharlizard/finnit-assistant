@@ -15,8 +15,15 @@ interface TopAppBarProps {
   onAvatarClick?: () => void;
   /** Extra leading content, e.g. a menu button on small screens. */
   leading?: React.ReactNode;
+  /** Accessible name of the bell button; receives the unread count. */
+  notificationsLabel?: (count: number) => string;
+  /** Accessible name of the avatar button. */
+  profileLabel?: string;
   className?: string;
 }
+
+const defaultNotificationsLabel = (count: number) =>
+  count > 0 ? `Notifications, ${count} new` : 'Notifications';
 
 function TopAppBar({
   title,
@@ -26,6 +33,8 @@ function TopAppBar({
   onNotificationsClick,
   onAvatarClick,
   leading,
+  notificationsLabel = defaultNotificationsLabel,
+  profileLabel = 'User profile',
   className,
 }: TopAppBarProps) {
   return (
@@ -44,11 +53,7 @@ function TopAppBar({
         <button
           type="button"
           onClick={onNotificationsClick}
-          aria-label={
-            notificationCount > 0
-              ? `Notificaciones, ${notificationCount} nuevas`
-              : 'Notificaciones'
-          }
+          aria-label={notificationsLabel(notificationCount)}
           className="relative flex size-11 items-center justify-center rounded-full text-on-surface-variant outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <Bell aria-hidden className="size-[22px] fill-current" />
@@ -63,7 +68,7 @@ function TopAppBar({
           <button
             type="button"
             onClick={onAvatarClick}
-            aria-label="Perfil de usuario"
+            aria-label={profileLabel}
             className="flex size-11 items-center justify-center rounded-full outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             <Avatar className="border-2 border-primary">

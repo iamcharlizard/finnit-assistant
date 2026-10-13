@@ -13,6 +13,9 @@ interface SideNavProps {
   onAddClick?: () => void;
   linkComponent?: LinkComponent;
   footer?: React.ReactNode;
+  /** Accessible name of the <nav>. */
+  navLabel?: string;
+  addLabel?: string;
   className?: string;
 }
 
@@ -24,6 +27,8 @@ function SideNav({
   onAddClick,
   linkComponent: Link = 'a',
   footer,
+  navLabel = 'Main navigation',
+  addLabel = 'New transaction',
   className,
 }: SideNavProps) {
   return (
@@ -46,11 +51,11 @@ function SideNav({
         className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground outline-none transition-opacity hover:opacity-90 focus-visible:ring-[3px] focus-visible:ring-ring/50"
       >
         <Plus aria-hidden className="size-4" />
-        Nueva transacción
+        {addLabel}
       </button>
 
       <nav
-        aria-label="Navegación principal"
+        aria-label={navLabel}
         className="flex flex-1 flex-col gap-1"
       >
         {items.map((item) => {

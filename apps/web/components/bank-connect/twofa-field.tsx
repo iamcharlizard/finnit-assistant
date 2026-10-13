@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { TwofaField as TwofaFieldDefinition } from '@finnit/bank-connect';
 
 import { Input } from '@finnit/ui/components/ui/input';
@@ -20,6 +21,7 @@ export function TwofaField({
   error?: string;
   onChange: (value: string | number) => void;
 }) {
+  const t = useTranslations('bankConnect.twofa');
   const id = `twofa-${field.name}`;
   const errorText = error ? (
     <p id={`${id}-error`} className="text-[13px] text-expense">
@@ -56,7 +58,7 @@ export function TwofaField({
                   // eslint-disable-next-line @next/next/no-img-element -- data URI from the bank
                   <img
                     src={option.imgBase64File}
-                    alt={`Opción ${String(option.value)}`}
+                    alt={t('option', { value: String(option.value) })}
                     className="max-h-20 object-contain"
                   />
                 ) : (
@@ -79,7 +81,7 @@ export function TwofaField({
           // eslint-disable-next-line @next/next/no-img-element -- data URI from the bank
           <img
             src={field.imgBase64File}
-            alt="Código QR de tu banco"
+            alt={t('qr')}
             className="size-56 rounded-xl bg-white object-contain p-2"
           />
         ) : null}
@@ -93,7 +95,7 @@ export function TwofaField({
         // eslint-disable-next-line @next/next/no-img-element -- data URI from the bank
         <img
           src={field.imgBase64File}
-          alt="Imagen de verificación"
+          alt={t('captcha')}
           className="max-h-24 self-start rounded-lg bg-white object-contain p-1"
         />
       ) : null}

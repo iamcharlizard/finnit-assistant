@@ -11,29 +11,32 @@ import {
 } from '../../common/exceptions/graphql-error.exception';
 import { Prisma } from '@finnit/database';
 import { Category } from '../../common/types/models/category.model';
+import { createDefaultCategories } from '../auth/default-categories';
+import {
+  TranslationService,
+  type LocalizedNames,
+} from '../translation/translation.service';
+import { APP_LOCALES, AppLocale, DEFAULT_LOCALE } from '../translation/locale';
 
-type CategoryWithRelations = Prisma.CategoryGetPayload<{
-  include: {
-    children: true;
-    parent: true;
-  };
-}>;
+/** Every query loads the names per locale, so `name` resolves without N+1. */
+const translations = { select: { locale: true, name: true } } as const;
+const byOrder: Prisma.CategoryOrderByWithRelationInput[] = [
+  { sortOrder: 'asc' },
+  { name: 'asc' },
+];
 
-type CategoryWithChildren = Prisma.CategoryGetPayload<{
-  include: {
-    children: {
-      include: {
-        children: true;
-      };
-    };
-  };
-}>;
-
-type CategoryBasic = Prisma.CategoryGetPayload<Record<string, never>>;
+type CategoryRow = Prisma.CategoryGetPayload<Record<string, never>> & {
+  translations?: { locale: string; name: string }[];
+  children?: CategoryRow[];
+  parent?: CategoryRow | null;
+};
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly translation: TranslationService,
+  ) {}
 
   async findAll(userId: string): Promise<Category[]> {
     const categories = await this.prisma.category.findMany({
@@ -44,12 +47,11 @@ export class CategoriesService {
         ],
       },
       include: {
-        children: {
-          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-        },
-        parent: true,
+        translations,
+        children: { orderBy: byOrder, include: { translations } },
+        parent: { include: { translations } },
       },
-      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      orderBy: byOrder,
     });
 
     return categories.map((category) => this.mapCategory(category));
@@ -62,10 +64,9 @@ export class CategoriesService {
         OR: [{ userId }, { userId: null, isDefault: true }],
       },
       include: {
-        children: {
-          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-        },
-        parent: true,
+        translations,
+        children: { orderBy: byOrder, include: { translations } },
+        parent: { include: { translations } },
       },
     });
 
@@ -83,22 +84,32 @@ export class CategoriesService {
         OR: [{ userId }, { userId: null, isDefault: true }],
       },
       include: {
+        translations,
         children: {
-          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+          orderBy: byOrder,
           include: {
-            children: {
-              orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-            },
+            translations,
+            children: { orderBy: byOrder, include: { translations } },
           },
         },
       },
-      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      orderBy: byOrder,
     });
 
     return categories.map((category) => this.mapCategory(category));
   }
 
+  /**
+   * The user may type the name in any language: it is stored in English
+   * (Category.name) with its es/en translations. Translation never blocks
+   * creation (see TranslationService).
+   */
   async create(userId: string, input: CreateCategoryInput): Promise<Category> {
+    const typedName = input.name.trim();
+    if (!typedName) {
+      throw new ValidationError('Category name is required');
+    }
+
     // Validate parent category exists and belongs to user
     if (input.parentId) {
       const parent = await this.prisma.category.findFirst({
@@ -111,48 +122,53 @@ export class CategoriesService {
       if (!parent) {
         throw new NotFoundError('Parent category not found');
       }
+    }
 
+    const names = await this.translation.translateName(typedName);
+    const name = names.en.name;
+
+    if (input.parentId) {
       // Check for circular reference by ensuring parent is not a child of any potential children
       const hasCircularRef = await this.checkCircularReference(
         input.parentId,
         userId,
-        input.name,
+        name,
       );
       if (hasCircularRef) {
         throw new ValidationError('Circular reference detected');
       }
     }
 
-    // Check for duplicate name in same level
-    const existing = await this.prisma.category.findFirst({
-      where: {
-        userId,
-        parentId: input.parentId || null,
-        name: input.name,
-      },
-    });
+    // Names are unique per user (category_user_name_unique), at any level.
+    await this.assertNameAvailable(userId, name);
 
-    if (existing) {
-      throw new ValidationError(
-        'Category with this name already exists at this level',
-      );
+    try {
+      const category = await this.prisma.category.create({
+        data: {
+          userId,
+          parentId: input.parentId,
+          name,
+          sortOrder: input.sortOrder,
+          isDefault: false,
+          translations: {
+            create: APP_LOCALES.map((locale) => ({
+              locale,
+              name: names[locale].name,
+              source: names[locale].source,
+            })),
+          },
+        },
+        include: {
+          translations,
+          children: { include: { translations } },
+          parent: { include: { translations } },
+        },
+      });
+
+      return this.mapCategory(category);
+    } catch (error) {
+      throw this.duplicateNameError(error);
     }
-
-    const category = await this.prisma.category.create({
-      data: {
-        userId,
-        parentId: input.parentId,
-        name: input.name,
-        sortOrder: input.sortOrder,
-        isDefault: false,
-      },
-      include: {
-        children: true,
-        parent: true,
-      },
-    });
-
-    return this.mapCategory(category);
   }
 
   async update(
@@ -162,6 +178,7 @@ export class CategoriesService {
   ): Promise<Category> {
     const existingCategory = await this.prisma.category.findFirst({
       where: { id, userId },
+      include: { translations },
     });
 
     if (!existingCategory) {
@@ -171,6 +188,22 @@ export class CategoriesService {
     if (existingCategory.isDefault) {
       throw new ValidationError('Cannot update default categories');
     }
+
+    // A rename only when the text differs from every current name (clients
+    // often send back the localized name unchanged).
+    const typedName = input.name?.trim();
+    if (input.name !== undefined && !typedName) {
+      throw new ValidationError('Category name is required');
+    }
+    const currentNames = new Set([
+      existingCategory.name,
+      ...existingCategory.translations.map((t) => t.name),
+    ]);
+    const names: LocalizedNames | undefined =
+      typedName && !currentNames.has(typedName)
+        ? await this.translation.translateName(typedName)
+        : undefined;
+    const name = names?.en.name ?? existingCategory.name;
 
     // Validate parent category if being changed
     if (input.parentId) {
@@ -193,7 +226,7 @@ export class CategoriesService {
       const hasCircularRef = await this.checkCircularReference(
         input.parentId,
         userId,
-        input.name || existingCategory.name,
+        name,
         id,
       );
       if (hasCircularRef) {
@@ -201,16 +234,45 @@ export class CategoriesService {
       }
     }
 
-    const updatedCategory = await this.prisma.category.update({
-      where: { id },
-      data: input,
-      include: {
-        children: true,
-        parent: true,
-      },
-    });
+    if (names && name !== existingCategory.name) {
+      await this.assertNameAvailable(userId, name, id);
+    }
 
-    return this.mapCategory(updatedCategory);
+    try {
+      const updatedCategory = await this.prisma.category.update({
+        where: { id },
+        data: {
+          ...(input.parentId !== undefined && { parentId: input.parentId }),
+          ...(input.sortOrder !== undefined && { sortOrder: input.sortOrder }),
+          ...(names && {
+            name,
+            translations: {
+              upsert: APP_LOCALES.map((locale) => ({
+                where: { categoryId_locale: { categoryId: id, locale } },
+                create: {
+                  locale,
+                  name: names[locale].name,
+                  source: names[locale].source,
+                },
+                update: {
+                  name: names[locale].name,
+                  source: names[locale].source,
+                },
+              })),
+            },
+          }),
+        },
+        include: {
+          translations,
+          children: { include: { translations } },
+          parent: { include: { translations } },
+        },
+      });
+
+      return this.mapCategory(updatedCategory);
+    } catch (error) {
+      throw this.duplicateNameError(error);
+    }
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
@@ -250,18 +312,26 @@ export class CategoriesService {
     userId: string,
     dateFrom?: Date,
     dateTo?: Date,
+    locale: AppLocale = DEFAULT_LOCALE,
   ): Promise<CategoryUsage[]> {
     const categories = await this.prisma.category.findMany({
       where: {
         OR: [{ userId }, { userId: null, isDefault: true }],
       },
       include: {
+        translations: { where: { locale }, select: { name: true } },
         transactions: {
           where: {
             userId,
-            ...(dateFrom && { txnDate: { gte: dateFrom } }),
-            ...(dateTo && { txnDate: { lte: dateTo } }),
-            type: { not: 'transfer' }, // Exclude transfers from usage stats
+            ...((dateFrom || dateTo) && {
+              txnDate: {
+                ...(dateFrom && { gte: dateFrom }),
+                ...(dateTo && { lte: dateTo }),
+              },
+            }),
+            // Only real income and spending: transfers move money between
+            // accounts and adjustments (e.g. opening balances) correct it.
+            type: { in: ['income', 'expense'] },
           },
           select: {
             amount: true,
@@ -282,7 +352,7 @@ export class CategoriesService {
 
         return {
           categoryId: category.id,
-          categoryName: category.name,
+          categoryName: category.translations[0]?.name ?? category.name,
           totalAmount,
           transactionCount,
           averageAmount:
@@ -312,7 +382,7 @@ export class CategoriesService {
         categoryId: { not: null },
       },
       include: {
-        category: true,
+        category: { include: { translations } },
       },
       orderBy: {
         txnDate: 'desc',
@@ -327,7 +397,7 @@ export class CategoriesService {
     // Count category occurrences
     const categoryCount: Record<
       string,
-      { category: CategoryBasic; count: number }
+      { category: CategoryRow; count: number }
     > = {};
 
     for (const txn of similarTransactions) {
@@ -350,71 +420,37 @@ export class CategoriesService {
     return mostCommon.category ? this.mapCategory(mostCommon.category) : null;
   }
 
+  /** Adds the starter categories the user is missing (same list as sign-up). */
   async createDefaultCategories(userId: string): Promise<void> {
-    const defaultCategories = [
-      // Expenses
-      {
-        name: 'Food & Dining',
-        children: ['Groceries', 'Restaurants', 'Coffee & Snacks'],
-      },
-      {
-        name: 'Transportation',
-        children: ['Gas', 'Public Transit', 'Parking', 'Car Maintenance'],
-      },
-      {
-        name: 'Shopping',
-        children: ['Clothing', 'Electronics', 'Books', 'General'],
-      },
-      {
-        name: 'Bills & Utilities',
-        children: ['Electricity', 'Water', 'Internet', 'Phone', 'Insurance'],
-      },
-      {
-        name: 'Entertainment',
-        children: ['Movies', 'Sports', 'Hobbies', 'Subscriptions'],
-      },
-      {
-        name: 'Health & Medical',
-        children: ['Doctor', 'Pharmacy', 'Fitness', 'Insurance'],
-      },
-      { name: 'Education', children: ['Tuition', 'Books', 'Supplies'] },
-      { name: 'Personal Care', children: ['Hair', 'Beauty', 'Clothing'] },
+    await createDefaultCategories(this.prisma, userId, { skipExisting: true });
+  }
 
-      // Income
-      {
-        name: 'Income',
-        children: ['Salary', 'Freelance', 'Investments', 'Other Income'],
+  private async assertNameAvailable(
+    userId: string,
+    name: string,
+    excludeId?: string,
+  ): Promise<void> {
+    const existing = await this.prisma.category.findFirst({
+      where: {
+        userId,
+        name: { equals: name, mode: 'insensitive' },
+        ...(excludeId && { id: { not: excludeId } }),
       },
-
-      // Other
-      { name: 'Uncategorized', children: [] },
-    ];
-
-    for (let i = 0; i < defaultCategories.length; i++) {
-      const parent = defaultCategories[i];
-
-      const parentCategory = await this.prisma.category.create({
-        data: {
-          userId,
-          name: parent.name,
-          sortOrder: i + 1,
-          isDefault: false,
-        },
-      });
-
-      // Create child categories
-      for (let j = 0; j < parent.children.length; j++) {
-        await this.prisma.category.create({
-          data: {
-            userId,
-            parentId: parentCategory.id,
-            name: parent.children[j],
-            sortOrder: j + 1,
-            isDefault: false,
-          },
-        });
-      }
+      select: { id: true },
+    });
+    if (existing) {
+      throw new ValidationError('A category with this name already exists');
     }
+  }
+
+  private duplicateNameError(error: unknown): unknown {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      return new ValidationError('A category with this name already exists');
+    }
+    return error;
   }
 
   private async checkCircularReference(
@@ -454,25 +490,26 @@ export class CategoriesService {
     return false;
   }
 
-  private mapCategory(
-    category: CategoryWithRelations | CategoryWithChildren | CategoryBasic,
-  ): Category {
+  private mapCategory(category: CategoryRow): Category {
     return {
       id: category.id,
       userId: category.userId || undefined,
       parentId: category.parentId || undefined,
       name: category.name,
+      key: category.key,
       isDefault: category.isDefault,
       sortOrder: category.sortOrder || undefined,
       createdAt: category.createdAt,
-      children:
-        'children' in category && category.children
-          ? category.children.map((child) =>
-              this.mapCategory(child as CategoryBasic),
-            )
-          : undefined,
+      translations: category.translations
+        ? Object.fromEntries(
+            category.translations.map((t) => [t.locale, t.name]),
+          )
+        : undefined,
+      children: category.children
+        ? category.children.map((child) => this.mapCategory(child))
+        : undefined,
       parent:
-        'parent' in category && category.parentId && category.parent
+        category.parentId && category.parent
           ? this.mapCategory(category.parent)
           : undefined,
     };

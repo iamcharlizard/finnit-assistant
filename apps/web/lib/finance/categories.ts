@@ -1,7 +1,8 @@
+import type { Translate } from '@/lib/i18n/translator';
+
 /**
- * Categories as the screens show them: Spanish names for the starter
- * categories (the API creates them in English), an icon and a color picked
- * from the name, and the top-level category of a subcategory.
+ * Categories as the screens show them: an icon and a color picked from the
+ * name (Spanish or English), and the top-level category of a subcategory.
  */
 export type IconKey =
   | 'food'
@@ -30,59 +31,15 @@ export interface CategoryNode {
   parentId: string | null;
 }
 
-/** Spanish names of the starter categories (apps/api default-categories.ts). */
-const STARTER_NAMES: Record<string, string> = {
-  'Food & Dining': 'Comida',
-  Groceries: 'Supermercado',
-  Restaurants: 'Restaurantes',
-  'Coffee & Snacks': 'Café y snacks',
-  Transportation: 'Transporte',
-  Gas: 'Gasolina',
-  'Public Transit': 'Transporte público',
-  Parking: 'Estacionamiento',
-  'Car Maintenance': 'Mantenimiento del auto',
-  Shopping: 'Compras',
-  Clothing: 'Ropa',
-  Electronics: 'Electrónica',
-  Books: 'Libros',
-  General: 'General',
-  'Bills & Utilities': 'Servicios',
-  Electricity: 'Luz',
-  Water: 'Agua',
-  Internet: 'Internet',
-  Phone: 'Teléfono',
-  'Home Insurance': 'Seguro de casa',
-  Entertainment: 'Entretenimiento',
-  Movies: 'Cine',
-  Sports: 'Deportes',
-  Hobbies: 'Pasatiempos',
-  Subscriptions: 'Suscripciones',
-  'Health & Medical': 'Salud',
-  Doctor: 'Médico',
-  Pharmacy: 'Farmacia',
-  Fitness: 'Ejercicio',
-  'Health Insurance': 'Seguro médico',
-  Education: 'Educación',
-  Tuition: 'Colegiaturas',
-  Textbooks: 'Libros de texto',
-  Supplies: 'Útiles',
-  'Personal Care': 'Cuidado personal',
-  Hair: 'Cabello',
-  Beauty: 'Belleza',
-  Grooming: 'Aseo personal',
-  Income: 'Ingresos',
-  Salary: 'Salario',
-  Freelance: 'Freelance',
-  Investments: 'Inversiones',
-  'Other Income': 'Otros ingresos',
-  Uncategorized: 'Sin categoría',
-};
-
-export const UNCATEGORIZED_LABEL = 'Sin categoría';
-
-export function categoryLabel(name: string | null | undefined): string {
-  if (!name) return UNCATEGORIZED_LABEL;
-  return STARTER_NAMES[name] ?? name;
+/**
+ * A category's name as shown. The API already returns names in the user's
+ * language; only "no category" is the web's own text.
+ */
+export function categoryLabel(
+  name: string | null | undefined,
+  t: Translate,
+): string {
+  return name || t('finance.uncategorized');
 }
 
 // First match wins: the specific rules (insurance, subscriptions…) go before

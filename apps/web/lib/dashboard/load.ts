@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
+import { getLocalizer } from '@/lib/i18n/server';
 import {
   addDays,
   endOfDayIso,
@@ -37,18 +38,21 @@ const DASHBOARD_QUERY = `query Dashboard($year: Int!, $month: Int!, $from: DateT
 export async function loadDashboard(): Promise<DashboardView> {
   const today = todayKey();
   const month = monthOf(today);
-  const data = await serverGraphql<{
-    accounts: Connection<ApiAccount>;
-    monthlyReport: ApiMonthlyReport;
-    upcomingPayments: ApiUpcomingPayment[];
-    transactions: Connection<ApiTransaction>;
-    categories: ApiCategory[];
-  }>(DASHBOARD_QUERY, {
-    ...month,
-    from: startOfDayIso(today),
-    to: endOfDayIso(addDays(today, UPCOMING_DAYS)),
-    recent: RECENT_COUNT,
-  });
+  const [data, l] = await Promise.all([
+    serverGraphql<{
+      accounts: Connection<ApiAccount>;
+      monthlyReport: ApiMonthlyReport;
+      upcomingPayments: ApiUpcomingPayment[];
+      transactions: Connection<ApiTransaction>;
+      categories: ApiCategory[];
+    }>(DASHBOARD_QUERY, {
+      ...month,
+      from: startOfDayIso(today),
+      to: endOfDayIso(addDays(today, UPCOMING_DAYS)),
+      recent: RECENT_COUNT,
+    }),
+    getLocalizer(),
+  ]);
 
   return buildDashboardView(
     {
@@ -60,5 +64,6 @@ export async function loadDashboard(): Promise<DashboardView> {
       categories: data.categories,
     },
     { today, month },
+    l,
   );
 }

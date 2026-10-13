@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
+import { getLocalizer } from '@/lib/i18n/server';
 import { indexCategories } from '@/lib/finance/categories';
 import {
   endOfDayIso,
@@ -71,14 +72,18 @@ type AmountsPage = Connection<Pick<ApiTransaction, 'amount'>>;
 export async function loadCards(
   requested?: string | string[],
 ): Promise<CardsData> {
-  const { accounts, bankConnections } = await serverGraphql<{
-    accounts: Connection<ApiAccount>;
-    bankConnections: BankConnectionInfo[];
-  }>(CARDS_QUERY);
+  const [{ accounts, bankConnections }, l] = await Promise.all([
+    serverGraphql<{
+      accounts: Connection<ApiAccount>;
+      bankConnections: BankConnectionInfo[];
+    }>(CARDS_QUERY),
+    getLocalizer(),
+  ]);
 
   const cards = buildCards(
     accounts.edges.map((e) => e.node),
     bankConnections,
+    l,
   );
   const card = pickCard(cards, requested);
   if (!card) return { cards, detail: null };
@@ -125,15 +130,19 @@ export async function loadCards(
   const categories = indexCategories(detail.categories);
   return {
     cards,
-    detail: buildCardDetail(card, {
-      today,
-      monthLabel: monthLabel(month),
-      monthSpending: spending,
-      recent: detail.recent.edges.map((e) =>
-        toTransactionRow(e.node, categories, { withDate: true }),
-      ),
-      summary,
-    }),
+    detail: buildCardDetail(
+      card,
+      {
+        today,
+        monthLabel: monthLabel(month, l.locale),
+        monthSpending: spending,
+        recent: detail.recent.edges.map((e) =>
+          toTransactionRow(e.node, categories, l, { withDate: true }),
+        ),
+        summary,
+      },
+      l,
+    ),
   };
 }
 

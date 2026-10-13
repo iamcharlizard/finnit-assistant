@@ -9,19 +9,25 @@ interface MonthBar {
 interface MonthlyDistributionChartProps {
   title?: string;
   bars?: MonthBar[];
+  /** Accessible description of the chart; receives the bars. */
+  chartLabel?: (bars: MonthBar[]) => string;
   className?: string;
 }
 
+const defaultChartLabel = (bars: MonthBar[]) =>
+  `Bar chart: ${bars.map((b) => `${b.label} ${b.heightPercent}%`).join(', ')}`;
+
 const DEFAULT_BARS: MonthBar[] = [
-  { label: 'Ene', heightPercent: 48 },
+  { label: 'Jan', heightPercent: 48 },
   { label: 'Feb', heightPercent: 72, highlighted: true },
   { label: 'Mar', heightPercent: 62 },
-  { label: 'Abr', heightPercent: 92, highlighted: true },
+  { label: 'Apr', heightPercent: 92, highlighted: true },
 ];
 
 function MonthlyDistributionChart({
-  title = 'Distribución Mensual',
+  title = 'Monthly distribution',
   bars = DEFAULT_BARS,
+  chartLabel = defaultChartLabel,
   className,
 }: MonthlyDistributionChartProps) {
   return (
@@ -37,7 +43,7 @@ function MonthlyDistributionChart({
 
       <div
         role="img"
-        aria-label={`Gráfico de barras: ${bars.map((b) => `${b.label} ${b.heightPercent}%`).join(', ')}`}
+        aria-label={chartLabel(bars)}
         className="flex h-40 items-end justify-between px-1"
       >
         {bars.map((bar) => (

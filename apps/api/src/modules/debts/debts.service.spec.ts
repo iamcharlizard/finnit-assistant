@@ -137,10 +137,7 @@ describe('DebtsService', () => {
       expect(prismaService.debt.create).not.toHaveBeenCalled();
     });
 
-    // TODO(bug): CreateDebtInput declares @IsPositive() on principal, but no
-    // ValidationPipe is registered (main.ts / AppModule) and the service does
-    // not validate, so non-positive principals are persisted.
-    it.skip('should validate positive principal amount', async () => {
+    it('should validate positive principal amount', async () => {
       // Arrange
       const invalidInput = { ...createInput, principal: -1000.0 };
       prismaService.account.findFirst.mockResolvedValue({
@@ -153,9 +150,7 @@ describe('DebtsService', () => {
       );
     });
 
-    // TODO(bug): CreateDebtInput declares @Min(0) on interestRateAnnual, but
-    // no ValidationPipe is registered and the service does not validate.
-    it.skip('should validate non-negative interest rate', async () => {
+    it('should validate non-negative interest rate', async () => {
       // Arrange
       const invalidInput = { ...createInput, interestRateAnnual: -5.0 };
       prismaService.account.findFirst.mockResolvedValue({
@@ -168,9 +163,7 @@ describe('DebtsService', () => {
       );
     });
 
-    // TODO(bug): CreateDebtInput declares @Max(100) on interestRateAnnual, but
-    // no ValidationPipe is registered and the service does not validate.
-    it.skip('should validate reasonable interest rates', async () => {
+    it('should validate reasonable interest rates', async () => {
       // Arrange
       const extremeRateInput = {
         name: 'Loan Shark',
@@ -202,8 +195,8 @@ describe('DebtsService', () => {
       // Assert
       expect(prismaService.debt.findMany).toHaveBeenCalledWith({
         where: { userId: mockUserId },
-        take: 10,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: 11,
         include: { payments: { orderBy: { date: 'desc' } } },
       });
       expect(prismaService.debt.count).toHaveBeenCalledWith({
@@ -230,15 +223,18 @@ describe('DebtsService', () => {
       );
     });
 
-    it('should filter by kind and apply the after cursor', async () => {
-      // Arrange
-      prismaService.debt.findMany.mockResolvedValue([]);
-      prismaService.debt.count.mockResolvedValue(0);
+    it('should filter by kind and continue after the cursor row in (createdAt, id) order', async () => {
+      // Arrange: first: 1 fetches one extra row to know there is more.
+      prismaService.debt.findMany.mockResolvedValue([
+        { ...mockDebt, id: 'debt-older', payments: [] },
+        { ...mockDebt, id: 'debt-oldest', payments: [] },
+      ] as any);
+      prismaService.debt.count.mockResolvedValue(3);
       const after = PaginationUtil.encodeCursor('debt-0');
 
       // Act
-      await service.findMany(mockUserId, {
-        first: 5,
+      const result = await service.findMany(mockUserId, {
+        first: 1,
         after,
         kind: DebtKind.loan,
       });
@@ -246,13 +242,19 @@ describe('DebtsService', () => {
       // Assert
       expect(prismaService.debt.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { userId: mockUserId, kind: DebtKind.loan, id: { gt: 'debt-0' } },
-          take: 5,
+          where: { userId: mockUserId, kind: DebtKind.loan },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          cursor: { id: 'debt-0' },
+          skip: 1,
+          take: 2,
         }),
       );
       expect(prismaService.debt.count).toHaveBeenCalledWith({
         where: { userId: mockUserId, kind: DebtKind.loan },
       });
+      expect(result.edges.map((e) => e.node.id)).toEqual(['debt-older']);
+      expect(result.pageInfo.hasNextPage).toBe(true);
+      expect(result.pageInfo.hasPreviousPage).toBe(true);
     });
 
     it('should default to 20 items and return an empty connection when no debts exist', async () => {
@@ -265,7 +267,7 @@ describe('DebtsService', () => {
 
       // Assert
       expect(prismaService.debt.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ take: 20 }),
+        expect.objectContaining({ take: 21 }),
       );
       expect(result.edges).toEqual([]);
       expect(result.totalCount).toBe(0);
@@ -405,9 +407,9 @@ describe('DebtsService', () => {
       prismaService.debt.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(
-        service.delete('non-existent', mockUserId),
-      ).rejects.toThrow(NotFoundError);
+      await expect(service.delete('non-existent', mockUserId)).rejects.toThrow(
+        NotFoundError,
+      );
       expect(prismaService.debt.delete).not.toHaveBeenCalled();
     });
   });
@@ -515,10 +517,7 @@ describe('DebtsService', () => {
       expect(prismaService.debtPayment.create).not.toHaveBeenCalled();
     });
 
-    // TODO(bug): CreateDebtPaymentInput declares @IsPositive() on amount, but
-    // no ValidationPipe is registered and the service only checks for
-    // overpayment, so negative payments are persisted (increasing the balance).
-    it.skip('should validate positive payment amount', async () => {
+    it('should validate positive payment amount', async () => {
       // Arrange
       const negativePayment = { ...paymentInput, amount: -100.0 };
       prismaService.debt.findFirst.mockResolvedValue(mockDebt as any);

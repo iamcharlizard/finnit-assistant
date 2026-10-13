@@ -9,6 +9,9 @@ interface ExpenseProjectionCardProps {
   subtitle?: string;
   months?: string[];
   onDetailsClick?: () => void;
+  detailsLabel?: string;
+  /** Accessible name of the details button. */
+  detailsAriaLabel?: string;
   className?: string;
 }
 
@@ -16,10 +19,12 @@ const PATH =
   'M0,105 C35,88 70,98 105,65 C140,32 175,50 210,32 C245,14 280,38 400,5';
 
 function ExpenseProjectionCard({
-  title = 'Proyección de Gastos',
-  subtitle = 'Estimado basado en IA para los próximos 6 meses',
-  months = ['JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV'],
+  title = 'Expense projection',
+  subtitle = 'AI estimate for the next 6 months',
+  months = ['JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV'],
   onDetailsClick,
+  detailsLabel = 'DETAILS',
+  detailsAriaLabel = 'View expense projection details',
   className,
 }: ExpenseProjectionCardProps) {
   const id = React.useId().replace(/:/g, '');
@@ -39,10 +44,10 @@ function ExpenseProjectionCard({
         <button
           type="button"
           onClick={onDetailsClick}
-          aria-label="Ver detalles de proyección de gastos"
+          aria-label={detailsAriaLabel}
           className="min-h-11 shrink-0 rounded-[20px] border border-[#6c72cb]/35 bg-[#6c72cb]/10 px-3 py-2 text-[11px] font-bold tracking-[0.15em] text-violet-ink outline-none hover:bg-[#6c72cb]/20 focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:text-[#bfc2ff]"
         >
-          DETALLES
+          {detailsLabel}
         </button>
       </div>
 

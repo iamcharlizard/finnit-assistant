@@ -1,0 +1,658 @@
+{
+  "common": {
+    "appName": "Finnit",
+    "loading": "Cargando…",
+    "retry": "Reintentar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "done": "Listo",
+    "loadMore": "Cargar más",
+    "connectBank": "Conectar banco",
+    "comingSoon": "Próximamente"
+  },
+  "metadata": {
+    "description": "Tu asistente de finanzas personales."
+  },
+  "nav": {
+    "mainNavigation": "Navegación principal",
+    "newTransaction": "Nuevo movimiento",
+    "addTransaction": "Agregar movimiento",
+    "more": "Más",
+    "moreTitle": "Más secciones",
+    "moreDescription": "Todo lo que no cabe en la barra de abajo.",
+    "sections": {
+      "home": "Inicio",
+      "transactions": "Movimientos",
+      "recurring": "Pagos recurrentes",
+      "accounts": "Cuentas y tarjetas",
+      "planning": "Planeación",
+      "analytics": "Análisis",
+      "statements": "Estados de cuenta",
+      "settings": "Ajustes",
+      "admin": "Administración"
+    },
+    "items": {
+      "dashboard": "Inicio",
+      "history": "Movimientos",
+      "recurring": "Pagos recurrentes",
+      "cards": "Cuentas y tarjetas",
+      "analytics": "Análisis",
+      "settings": "Ajustes",
+      "admin": "Administración"
+    },
+    "short": {
+      "dashboard": "Inicio",
+      "history": "Movimientos",
+      "cards": "Cuentas"
+    }
+  },
+  "pageTitles": {
+    "app": "Finnit",
+    "dashboard": "Inicio",
+    "history": "Movimientos",
+    "transaction": "Movimiento",
+    "categorize": "Clasificar movimientos",
+    "recurring": "Pagos recurrentes",
+    "cards": "Cuentas y tarjetas",
+    "analytics": "Análisis",
+    "statements": "Estados de cuenta",
+    "settings": "Ajustes",
+    "banks": "Bancos conectados",
+    "connectBank": "Conectar banco",
+    "admin": "Administración",
+    "adminUsers": "Usuarios · Administración",
+    "adminAi": "IA · Administración",
+    "login": "Iniciar sesión"
+  },
+  "newEntry": {
+    "title": "Nuevo movimiento",
+    "description": "Muy pronto podrás registrar tus movimientos desde aquí.",
+    "expense": "Gasto",
+    "income": "Ingreso",
+    "transfer": "Transferencia"
+  },
+  "errors": {
+    "network": "No pudimos conectar con Finnit. Revisa tu conexión.",
+    "sessionEnded": "Tu sesión terminó.",
+    "unexpected": "Ocurrió un error inesperado.",
+    "loadFailedTitle": "No pudimos cargar tus datos",
+    "loadFailedDescription": "Revisa tu conexión e intenta de nuevo en un momento."
+  },
+  "login": {
+    "welcome": "Bienvenido de nuevo",
+    "tagline": "Gestiona tus finanzas con precisión Finnit.",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "nombre@ejemplo.com",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "remember": "Mantener sesión iniciada",
+    "submitting": "Verificando…",
+    "submit": "Iniciar sesión",
+    "orContinueWith": "O continuar con",
+    "google": "Google",
+    "invitationOnly": "El acceso a Finnit es por invitación. Pide acceso al administrador.",
+    "errors": {
+      "missingFields": "Por favor completa todos los campos.",
+      "unavailable": "No pudimos conectar con Finnit. Intenta de nuevo en un momento.",
+      "failed": "Ocurrió un error al iniciar sesión.",
+      "invalidCredentials": "Correo o contraseña incorrectos.",
+      "google_no_access": "Tu cuenta de Google no tiene acceso a Finnit. Pide acceso al administrador.",
+      "google_failed": "No pudimos iniciar sesión con Google. Intenta de nuevo.",
+      "google_unavailable": "El inicio de sesión con Google no está disponible."
+    }
+  },
+  "finance": {
+    "uncategorized": "Sin categoría",
+    "transferTo": "Transferencia a {name}",
+    "initialBalance": "Saldo inicial",
+    "fallbackTitle": {
+      "income": "Ingreso",
+      "expense": "Gasto",
+      "other": "Movimiento"
+    },
+    "transfer": "Transferencia",
+    "adjustment": "Ajuste o pago",
+    "pending": "Pendiente",
+    "completed": "Completado",
+    "withPending": "{time} · Pendiente",
+    "inCurrency": "{amount} en {currency}",
+    "accountTypes": {
+      "cash": "Efectivo",
+      "credit": "Crédito",
+      "debit": "Débito",
+      "ewallet": "Monedero",
+      "savings": "Ahorro"
+    },
+    "recurringKinds": {
+      "housing": "Vivienda",
+      "installment": "Meses sin intereses",
+      "insurance": "Seguro",
+      "loan": "Préstamo",
+      "membership": "Membresía",
+      "other": "Otro",
+      "subscription": "Suscripción",
+      "utility": "Servicio"
+    },
+    "payment": {
+      "when": "{relative} · {date}",
+      "skipped": "Omitido · {date}",
+      "missed": "Vencido · {date}",
+      "reminder": "Recordatorio · {when}",
+      "approx": "≈ {amount}"
+    }
+  },
+  "monthSwitcher": {
+    "label": "Cambiar de mes",
+    "previous": "Mes anterior",
+    "next": "Mes siguiente"
+  },
+  "dashboard": {
+    "noAccountsTitle": "Aún no tienes cuentas",
+    "noAccountsDescription": "Conecta tu banco para ver tus saldos aquí.",
+    "incomeOf": "Ingresos · {month}",
+    "expensesOf": "Gastos · {month}",
+    "upcoming": "Próximos pagos",
+    "calendarLink": "Calendario",
+    "noUpcomingTitle": "Sin pagos próximos",
+    "noUpcomingDescription": "No tienes pagos recurrentes en los próximos {days} días.",
+    "recent": "Actividad reciente",
+    "seeAll": "Ver todo",
+    "seeAllLabel": "Ver todos los movimientos",
+    "noRecentTitle": "Sin movimientos todavía",
+    "noRecentDescription": "Cuando tu banco importe movimientos aparecerán aquí.",
+    "balance": {
+      "available": "Saldo disponible",
+      "creditDebt": "Deuda en tarjetas",
+      "net": "Patrimonio neto",
+      "accounts": "{count, plural, one {# cuenta} other {# cuentas}}",
+      "alsoIn": "También: {list}"
+    },
+    "welcome": {
+      "title": "Hola, {name}. Te damos la bienvenida a Finnit",
+      "description": "Aún no tienes cuentas ni movimientos. Empieza conectando tu banco; aquí verás tus saldos, gastos del mes y próximos pagos.",
+      "stepBank": "Conecta tu banco: importamos tus cuentas, saldos y movimientos.",
+      "stepCategories": "Ve en qué se va tu dinero cada mes, por categoría.",
+      "stepRecurring": "Ten a la vista tus pagos recurrentes y fechas de tarjeta."
+    }
+  },
+  "history": {
+    "title": "Historial",
+    "subtitle": "Revisa y filtra todos tus movimientos.",
+    "topCategories": "Top categorías · {month}",
+    "types": {
+      "all": "Todos",
+      "income": "Ingresos",
+      "expense": "Gastos",
+      "transfer": "Transferencias"
+    },
+    "searchPlaceholder": "Buscar por comercio o descripción",
+    "searchLabel": "Buscar movimientos por comercio o descripción",
+    "filterByType": "Filtrar por tipo",
+    "account": "Cuenta",
+    "allAccounts": "Todas las cuentas",
+    "category": "Categoría",
+    "allCategories": "Todas las categorías",
+    "from": "Desde",
+    "to": "Hasta",
+    "clearFilters": "Limpiar filtros",
+    "noResultsTitle": "Sin resultados",
+    "noResultsDescription": "Ningún movimiento coincide con estos filtros.",
+    "emptyTitle": "Aún no tienes movimientos",
+    "emptyDescription": "Conecta tu banco para importar tus movimientos automáticamente.",
+    "count": "{shown} de {total, plural, one {# movimiento} other {# movimientos}}"
+  },
+  "cards": {
+    "title": "Mis Tarjetas",
+    "count": "{count, plural, one {# tarjeta} other {# tarjetas}}",
+    "emptyTitle": "Aún no tienes tarjetas",
+    "emptyDescription": "Conecta tu banco para ver aquí tus tarjetas de crédito y débito, su saldo y sus fechas de corte.",
+    "expensesOf": "Gastos · {month}",
+    "movementsOf": "Movimientos de {name}",
+    "noMovementsTitle": "Sin movimientos",
+    "noMovementsDescription": "Esta tarjeta aún no tiene movimientos.",
+    "tier": {
+      "credit": "CRÉDITO",
+      "debit": "DÉBITO"
+    },
+    "carouselLabel": "Carrusel de tarjetas",
+    "selected": "{name} · Seleccionada",
+    "availableCredit": "Crédito disponible: {amount}",
+    "currentDebt": "Deuda actual",
+    "availableBalance": "Saldo disponible",
+    "noLimit": "Sin límite de crédito registrado para esta tarjeta.",
+    "factsTitle": "Corte y pago",
+    "noFacts": "Aún no tenemos el día de corte de esta tarjeta ni su estado de cuenta de este mes.",
+    "recurringSummary": "{count, plural, one {# cargo recurrente} other {# cargos recurrentes}} este periodo: {expected} esperado, {paid} ya cobrado.",
+    "facts": {
+      "due": "{date} · {relative}",
+      "nextStatement": "Próximo corte",
+      "paymentDue": "Fecha límite de pago",
+      "nextPayment": "Próxima fecha de pago",
+      "statementBalanceOn": "Saldo al corte ({date})",
+      "statementBalance": "Saldo al corte",
+      "noInterest": "Pago para no generar intereses",
+      "minimum": "Pago mínimo"
+    }
+  },
+  "calendar": {
+    "title": "Calendario de Pagos",
+    "subtitle": "Tus pagos recurrentes y las fechas de tus tarjetas.",
+    "emptyTitle": "Aún no tienes pagos recurrentes",
+    "emptyDescription": "Cuando registres tus gastos recurrentes (suscripciones, servicios, mensualidades) verás aquí cuándo vence cada uno.",
+    "dueIn": "Por pagar en {month}",
+    "pendingCount": "{count, plural, one {# pago pendiente} other {# pagos pendientes}}",
+    "fixedMonthly": "Gastos fijos al mes",
+    "fixedMonthlyHint": "Promedio de tus gastos recurrentes",
+    "dayTitle": "{day} de {month}",
+    "nothingDue": "Nada vence este día",
+    "monthPayments": "Pagos de {month}",
+    "noMonthPayments": "Sin pagos este mes",
+    "showMonth": "Ver todo el mes",
+    "statementOf": "Corte de {name}",
+    "paymentDueOf": "Límite de pago de {name}",
+    "events": {
+      "payments": "{count} pagos",
+      "statement": "Corte",
+      "cardPayment": "Pago TDC",
+      "cards": "Tarjetas"
+    }
+  },
+  "analytics": {
+    "emptyTitle": "Aún no hay datos para analizar",
+    "emptyDescription": "Conecta tu banco: con tus movimientos verás tus gastos por categoría, la tendencia de tus ingresos y gastos y una proyección de tu saldo.",
+    "monthSpending": "Gasto del mes",
+    "savingsRate": "Tasa de ahorro",
+    "noIncome": "Sin ingresos registrados este mes.",
+    "byCategory": "Gastos por categoría",
+    "cashFlow": "Flujo de caja",
+    "ratings": {
+      "excellent": "Excelente",
+      "good": "Buena",
+      "tight": "Ajustada",
+      "negative": "Negativa"
+    },
+    "savedCaption": "Ahorraste {saved} de {income} de ingresos ({rate}%).",
+    "overspentCaption": "Gastaste {amount} más de lo que ingresó.",
+    "noSpendingTitle": "Sin gastos este mes",
+    "noSpendingDescription": "Cuando registres gastos verás aquí en qué categorías se va tu dinero.",
+    "categoryShare": "{label} · {percent}%",
+    "projection": {
+      "title": "Proyección de saldo",
+      "description": "Con tu promedio mensual de ingresos y gastos, en {month} tendrías <strong>{balance}</strong>."
+    },
+    "trend": {
+      "title": "Ingresos vs gastos",
+      "income": "Ingresos",
+      "expenses": "Gastos",
+      "monthLabel": "{month}: ingresos {income}, gastos {expenses}",
+      "incomeOf": "Ingresos {amount}",
+      "expensesOf": "Gastos {amount}"
+    }
+  },
+  "settings": {
+    "banks": "Bancos",
+    "connectedBanks": "Bancos conectados",
+    "connectedBanksDescription": "Importa tus movimientos automáticamente",
+    "admin": "Administración",
+    "adminDescription": "Usuarios con acceso y modelos de IA",
+    "security": "Seguridad",
+    "biometrics": "Biometría",
+    "changePin": "Cambiar PIN",
+    "appearance": "Apariencia",
+    "darkMode": "Modo oscuro",
+    "font": "Fuente",
+    "language": "Idioma",
+    "languageError": "No pudimos guardar el idioma en tu cuenta. Intenta de nuevo.",
+    "languages": {
+      "es": "Español",
+      "en": "English"
+    },
+    "notifications": "Notificaciones y alertas",
+    "transactions": "Movimientos",
+    "transactionsDescription": "Aviso inmediato",
+    "weeklySummary": "Resumen semanal",
+    "weeklySummaryDescription": "Correo",
+    "signOut": "Cerrar sesión",
+    "version": "Finnit v1.0.0 • Hecho para el futuro"
+  },
+  "banks": {
+    "title": "Bancos conectados",
+    "connect": "Conectar banco",
+    "empty": "Aún no conectas ningún banco. Conéctalo para importar tus movimientos automáticamente.",
+    "fallbackName": "Banco",
+    "linkedSummary": "{linked} de {total, plural, one {# cuenta importándose} other {# cuentas importándose}}",
+    "lastSync": "Última sincronización: {date}",
+    "active": "Activo",
+    "needsAttention": "Requiere atención",
+    "imported": "{count, plural, one {Importamos # movimiento nuevo.} other {Importamos # movimientos nuevos.}}",
+    "upToDate": "Todo al día. Pedimos datos nuevos a tu banco; llegarán en la próxima sincronización.",
+    "syncing": "Sincronizando…",
+    "syncNow": "Sincronizar ahora"
+  },
+  "bankConnect": {
+    "consent": {
+      "title": "Antes de conectar tu banco",
+      "credentials": "Tu usuario y contraseña del banco van directo de tu dispositivo a Syncfy, nuestro proveedor de conexión bancaria. Finnit nunca los ve ni los guarda.",
+      "data": "Finnit solo guarda las cuentas, saldos y movimientos que tú decidas importar.",
+      "disconnect": "Puedes desconectar tu banco cuando quieras desde Ajustes.",
+      "agreement": "Al continuar aceptas que Syncfy acceda a la información de tu banca en línea para sincronizarla con Finnit.",
+      "accept": "Aceptar y continuar"
+    },
+    "picker": {
+      "title": "Elige tu banco",
+      "search": "Buscar banco",
+      "searchPlaceholder": "Ej. BancaNet, BBVA, Banorte",
+      "noResults": "No encontramos bancos con “{query}”.",
+      "widgetHint": "Se conecta con el asistente de Syncfy"
+    },
+    "credentials": {
+      "hint": "Usa los datos con los que entras a tu banca en línea.",
+      "changeBank": "Cambiar de banco",
+      "connect": "Conectar"
+    },
+    "connectingHint": "Esto puede tardar hasta un minuto. No cierres esta página.",
+    "done": {
+      "title": "Listo, conectamos {bank}",
+      "yourBank": "tu banco",
+      "linked": "{count, plural, one {Importamos # cuenta.} other {Importamos # cuentas.}} Sincronizaremos tus movimientos dos veces al día.",
+      "noneLinked": "No importamos ninguna cuenta. Puedes ligarlas después desde Bancos conectados.",
+      "connectedBanks": "Bancos conectados",
+      "seeMovements": "Ver movimientos"
+    },
+    "error": {
+      "title": "No pudimos conectar tu banco",
+      "retry": "Intentar de nuevo"
+    },
+    "link": {
+      "title": "¿Qué cuentas quieres importar?",
+      "found": "Encontramos {count, plural, one {# cuenta} other {# cuentas}} en {bank}. Importaremos sus movimientos de los últimos 90 días y los mantendremos al día.",
+      "accountFallback": "Cuenta",
+      "alreadyLinked": "Ya ligada",
+      "import": "Importar movimientos",
+      "finish": "Terminar",
+      "create": "Crear cuenta en Finnit",
+      "linkExisting": "Ligar a una cuenta existente",
+      "skip": "No importar"
+    },
+    "accountTypes": {
+      "creditCard": "Tarjeta de crédito",
+      "checking": "Cuenta de cheques",
+      "savings": "Ahorro",
+      "investment": "Inversión",
+      "loan": "Préstamo"
+    },
+    "field": {
+      "select": "Selecciona…",
+      "show": "Mostrar",
+      "hide": "Ocultar"
+    },
+    "twofa": {
+      "title": "Verificación de {bank}",
+      "hint": "Tu banco pide un dato adicional para continuar.",
+      "alreadyDone": "Ya lo hice",
+      "continue": "Continuar",
+      "option": "Opción {value}",
+      "qr": "Código QR de tu banco",
+      "captcha": "Imagen de verificación"
+    },
+    "widget": {
+      "hint": "Este banco se conecta con el asistente de Syncfy. Tus datos van directo a Syncfy; Finnit no los ve.",
+      "failed": "No pudimos abrir el asistente de Syncfy. Intenta de nuevo más tarde.",
+      "back": "Elegir otro banco"
+    }
+  },
+  "admin": {
+    "title": "Administración",
+    "tabsLabel": "Secciones de administración",
+    "tabs": {
+      "users": "Usuarios",
+      "ai": "IA"
+    },
+    "users": {
+      "loading": "Cargando usuarios…",
+      "count": "{count, plural, one {# usuario} other {# usuarios}}",
+      "add": "Agregar usuario",
+      "noMatch": "Nadie coincide con la búsqueda.",
+      "empty": "Aún no hay usuarios.",
+      "search": "Buscar por nombre o correo",
+      "status": "Estado",
+      "allStatuses": "Todos los estados",
+      "activePlural": "Activos",
+      "disabledPlural": "Desactivados",
+      "role": "Rol",
+      "allRoles": "Todos los roles",
+      "adminsPlural": "Administradores",
+      "usersPlural": "Usuarios",
+      "columns": {
+        "user": "Usuario",
+        "role": "Rol",
+        "status": "Estado",
+        "access": "Acceso",
+        "lastSignIn": "Último ingreso",
+        "addedBy": "Agregado por",
+        "actions": "Acciones"
+      },
+      "lastSignInLine": "Último ingreso: {when}",
+      "addedByLine": "Agregado por {name}",
+      "roles": {
+        "master": "Maestro",
+        "admin": "Administrador",
+        "user": "Usuario"
+      },
+      "statuses": {
+        "active": "Activo",
+        "disabled": "Desactivado"
+      },
+      "access": {
+        "googleNotYet": "Google (aún no entra)",
+        "password": "Contraseña",
+        "google": "Google"
+      },
+      "lastSignIn": {
+        "never": "Nunca",
+        "justNow": "Hace un momento",
+        "minutes": "Hace {count} min",
+        "hours": "Hace {count} h",
+        "yesterday": "Ayer",
+        "days": "Hace {count} días"
+      },
+      "actions": {
+        "menuLabel": "Acciones para {name}",
+        "setPassword": "Asignar contraseña",
+        "removePassword": "Quitar contraseña",
+        "unlinkGoogle": "Desligar Google",
+        "makeAdmin": "Hacer administrador",
+        "removeAdmin": "Quitar administrador",
+        "enable": "Reactivar",
+        "disable": "Desactivar"
+      },
+      "confirm": {
+        "removePassword": {
+          "title": "¿Quitar la contraseña de {name}?",
+          "description": "Solo podrá entrar con Google y se cerrarán sus sesiones abiertas."
+        },
+        "unlinkGoogle": {
+          "title": "¿Desligar Google de {name}?",
+          "description": "Se cerrarán sus sesiones abiertas. Podrá volver a ligar una cuenta de Google de {email} al entrar con ella."
+        },
+        "disable": {
+          "title": "¿Desactivar a {name}?",
+          "description": "No podrá entrar a Finnit y se cerrarán sus sesiones abiertas. Sus datos se conservan y puedes reactivarlo después."
+        },
+        "enable": {
+          "title": "¿Reactivar a {name}?",
+          "description": "Podrá volver a entrar a Finnit."
+        },
+        "makeAdmin": {
+          "title": "¿Hacer administrador a {name}?",
+          "description": "Podrá agregar usuarios, cambiar sus accesos y configurar la IA."
+        },
+        "removeAdmin": {
+          "title": "¿Quitar administrador a {name}?",
+          "description": "Seguirá usando Finnit, pero sin acceso a Administración."
+        }
+      },
+      "create": {
+        "title": "Agregar usuario",
+        "description": "El acceso a Finnit es por invitación: solo entra quien agregas aquí.",
+        "name": "Nombre",
+        "namePlaceholder": "Ana López",
+        "email": "Correo electrónico",
+        "emailPlaceholder": "nombre@ejemplo.com",
+        "password": "Contraseña (opcional)",
+        "withPassword": "Puede entrar con esta contraseña o con su cuenta de Google de este correo.",
+        "withoutPassword": "Solo podrá entrar con Google usando este correo.",
+        "role": "Rol",
+        "adding": "Agregando…",
+        "createdTitle": "Agregaste a {name}",
+        "createdWithPassword": "Ya puede entrar con {email} y la contraseña que asignaste, o con su cuenta de Google de ese correo. Compártele la contraseña por un canal seguro (en persona o un gestor de contraseñas), no por correo ni chat.",
+        "createdWithGoogle": "Ya puede entrar con su cuenta de Google de {email}.",
+        "nameRequired": "Escribe su nombre.",
+        "emailInvalid": "Escribe un correo válido."
+      },
+      "setPassword": {
+        "title": "Asignar contraseña",
+        "selfDescription": "Tu contraseña cambiará y se cerrarán tus sesiones abiertas, incluida esta.",
+        "description": "Reemplaza la contraseña de {name} ({email}) y cierra sus sesiones abiertas.",
+        "newPassword": "Nueva contraseña",
+        "saving": "Guardando…",
+        "savedTitle": "Contraseña asignada",
+        "savedDescription": "{name} ya puede entrar con la nueva contraseña. Compártesela por un canal seguro (en persona o un gestor de contraseñas), no por correo ni chat."
+      },
+      "passwordField": {
+        "show": "Mostrar contraseña",
+        "hide": "Ocultar contraseña",
+        "minLength": "Mínimo {min} caracteres",
+        "minLengthError": "Mínimo {min} caracteres.",
+        "generate": "Generar",
+        "copy": "Copiar",
+        "copied": "Copiada"
+      }
+    },
+    "ai": {
+      "featuresTitle": "Funcionalidades de IA",
+      "featuresDescription": "Qué hace Finnit con IA y con qué modelo.",
+      "modelsTitle": "Modelos",
+      "modelsDescription": "Se prueba primero el predeterminado y luego el resto por orden.",
+      "addModel": "Agregar modelo",
+      "noModels": "Aún no hay modelos en el catálogo.",
+      "deleteTitle": "¿Eliminar {label}?",
+      "deleteDescription": "Sale del catálogo. Las funcionalidades que lo usaban vuelven al modelo predeterminado.",
+      "delete": "Eliminar",
+      "features": {
+        "statement_parsing": {
+          "label": "Leer estados de cuenta en PDF",
+          "description": "Para bancos sin lector propio (hoy todos menos Banamex), el PDF se envía al modelo de IA."
+        },
+        "transaction_categorization": {
+          "label": "Clasificar movimientos",
+          "description": "Sugiere la categoría de los movimientos que llegan sin una."
+        },
+        "recurring_classification": {
+          "label": "Clasificar pagos recurrentes sugeridos",
+          "description": "Revisa los cargos que se repiten y propone cuáles son pagos recurrentes."
+        },
+        "receipt_parsing": {
+          "label": "Leer tickets (respaldo del OCR)",
+          "description": "Cuando el OCR no logra leer la foto de un ticket, se envía al modelo de IA."
+        },
+        "translation": {
+          "label": "Traducir categorías",
+          "description": "Traduce los nombres de las categorías al idioma de cada usuario."
+        }
+      },
+      "feature": {
+        "model": "Modelo",
+        "defaultModel": "Predeterminado del catálogo",
+        "inactive": "{label} (inactivo)",
+        "fallbacks": "Usar otros modelos si falla",
+        "unusable": "Ningún modelo disponible: activa uno con su llave configurada.",
+        "updated": "Actualizado el {date}",
+        "updatedBy": "Actualizado el {date} por {name}"
+      },
+      "model": {
+        "default": "Predeterminado",
+        "pdf": "PDF",
+        "noKey": "Sin llave",
+        "order": "Orden",
+        "active": "Activo",
+        "activateFirst": "Actívalo primero",
+        "makeDefault": "Hacer predeterminado",
+        "deleteLabel": "Eliminar {label}"
+      },
+      "create": {
+        "title": "Agregar modelo",
+        "description": "Usa el nombre exacto del modelo en el proveedor. Su llave se configura en el servidor de la API.",
+        "provider": "Proveedor",
+        "model": "Modelo",
+        "label": "Nombre visible",
+        "readsPdf": "Lee archivos PDF",
+        "active": "Activo",
+        "adding": "Agregando…"
+      }
+    },
+    "errors": {
+      "emailExists": "Ya existe un usuario con ese correo.",
+      "masterStaysAdmin": "El administrador maestro siempre es administrador.",
+      "masterCannotBeDisabled": "No se puede desactivar al administrador maestro.",
+      "cannotDisableSelf": "No puedes desactivar tu propia cuenta.",
+      "masterOwnAccount": "Solo el administrador maestro puede cambiar su cuenta.",
+      "onlyMaster": "Solo el administrador maestro puede hacer esto.",
+      "noGoogleLinked": "Aún no entra con Google: sin contraseña no podría entrar.",
+      "modelExists": "Ese modelo ya está en el catálogo.",
+      "defaultMustBeActive": "El modelo predeterminado debe estar activo.",
+      "pdfModelRequired": "Elige un modelo activo que lea PDF.",
+      "modelFieldsRequired": "Escribe el modelo y su nombre.",
+      "notFound": "Ya no existe. Recarga la página.",
+      "forbidden": "No tienes permiso para hacer esto.",
+      "conflict": "Ya existe.",
+      "invalid": "Revisa los datos e intenta de nuevo.",
+      "generic": "Ocurrió un error. Intenta de nuevo."
+    }
+  },
+  "ui": {
+    "notifications": "Notificaciones",
+    "notificationsUnread": "Notificaciones, {count, plural, one {# nueva} other {# nuevas}}",
+    "userProfile": "Perfil de usuario",
+    "paymentCalendar": {
+      "label": "Calendario de pagos, {month}",
+      "previousMonth": "Mes anterior",
+      "nextMonth": "Mes siguiente",
+      "monthView": "MES",
+      "monthViewLabel": "Vista mensual",
+      "weekView": "SEMANA",
+      "weekViewLabel": "Vista semanal",
+      "weekdays": {
+        "mon": "LUN",
+        "tue": "MAR",
+        "wed": "MIÉ",
+        "thu": "JUE",
+        "fri": "VIE",
+        "sat": "SÁB",
+        "sun": "DOM"
+      }
+    },
+    "creditLimit": {
+      "title": "Límite de crédito",
+      "of": "de {total}",
+      "used": "{percent}% del límite utilizado"
+    },
+    "trend": {
+      "down": "Bajó",
+      "up": "Subió"
+    },
+    "bankCard": {
+      "holder": "Titular",
+      "expires": "Expira",
+      "virtualBalance": "Saldo virtual"
+    },
+    "profile": {
+      "edit": "Editar perfil",
+      "premium": "Premium",
+      "verified": "Cuenta verificada",
+      "avatar": "Avatar del usuario: {name}"
+    }
+  }
+}

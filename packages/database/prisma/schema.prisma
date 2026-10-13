@@ -156,6 +156,18 @@ enum UserRole {
 
 enum AiFeatureKey {
   statement_parsing
+  transaction_categorization
+  recurring_classification
+  receipt_parsing
+  translation
+}
+
+/// Where a category name translation came from.
+enum TranslationSource {
+  seed // default categories (migration / sign-up)
+  google // Google Cloud Translation
+  ai // AI fallback when Google is unavailable
+  user // the text the user typed, in its own language
 }
 
 enum AiProvider {
@@ -184,6 +196,7 @@ model User {
   disabledAt    DateTime?
   lastLoginAt   DateTime?
   tokenVersion  Int       @default(0) // bumped to revoke every open session
+  locale        String    @default("es") @db.VarChar(5) // UI / data language: 'es' | 'en'
   invitedById   String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -250,21 +263,39 @@ model Category {
   id        String   @id @default(uuid())
   userId    String? // null => default global
   parentId  String?
-  name      String
+  name      String // English original; localized names live in CategoryTranslation
+  key       String? // i18n key of a default category, e.g. categories.food.groceries
   isDefault Boolean  @default(false)
   sortOrder Int?
   createdAt DateTime @default(now())
 
-  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
-  parent            Category?          @relation("category_to_self", fields: [parentId], references: [id], onDelete: SetNull)
-  children          Category[]         @relation("category_to_self")
+  user              User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  parent            Category?             @relation("category_to_self", fields: [parentId], references: [id], onDelete: SetNull)
+  children          Category[]            @relation("category_to_self")
   transactions      Transaction[]
   budgetCaps        BUDGET_CATEGORY[]
   recurringExpenses RecurringExpense[]
+  translations      CategoryTranslation[]
 
   @@unique([userId, name], name: "category_user_name_unique")
+  @@unique([userId, key], name: "category_user_key_unique")
   @@index([userId])
   @@index([parentId])
+}
+
+/// Category name per locale ('es' | 'en'). Child rows of Category (cascade).
+model CategoryTranslation {
+  id         String            @id @default(uuid())
+  categoryId String
+  locale     String            @db.VarChar(5)
+  name       String
+  source     TranslationSource
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, locale])
 }
 
 model Transaction {

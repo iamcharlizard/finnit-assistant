@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsBoolean,
   IsNumber,
+  IsInt,
   Min,
   Max,
 } from 'class-validator';
@@ -133,4 +134,41 @@ export class AccountsArgs {
   @IsOptional()
   @IsBoolean()
   archived?: boolean;
+}
+
+@InputType({
+  description:
+    'Billing terms of a credit card account (days of the month, 1 to 31)',
+})
+export class CreditCardTermsInput {
+  @Field(() => Int, { description: 'Day of the month the statement closes' })
+  @IsInt()
+  @Min(1)
+  @Max(31)
+  statementDay: number;
+
+  @Field(() => Int, { description: 'Day of the month the payment is due' })
+  @IsInt()
+  @Min(1)
+  @Max(31)
+  paymentDueDay: number;
+
+  @Field({ nullable: true, description: 'Annual interest rate, percent' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(200)
+  interestRateAnnual?: number;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  minPaymentRule?: string;
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(90)
+  gracePeriodDays?: number;
 }

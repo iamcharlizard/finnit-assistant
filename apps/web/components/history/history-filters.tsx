@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Search, X } from 'lucide-react';
 
 import { FilterChipGroup } from '@finnit/ui/components/finance/filter-chip-group';
@@ -41,6 +42,11 @@ export function HistoryFilters({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations('history');
+  const typeOptions = React.useMemo(
+    () => TYPE_OPTIONS.map((value) => ({ value, label: t(`types.${value}`) })),
+    [t],
+  );
   const [search, setSearch] = React.useState(filters.search ?? '');
   const debouncedSearch = useDebouncedValue(search.trim(), 400);
 
@@ -63,15 +69,15 @@ export function HistoryFilters({
         <InputWithIcon
           iconLeft={Search}
           type="search"
-          placeholder="Buscar por comercio o descripción"
-          aria-label="Buscar transacciones por comercio o descripción"
+          placeholder={t('searchPlaceholder')}
+          aria-label={t('searchLabel')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
       <FilterChipGroup
-        items={TYPE_OPTIONS}
+        items={typeOptions}
         activeValue={filters.type ?? ALL}
         onSelect={(v) =>
           apply({
@@ -79,7 +85,7 @@ export function HistoryFilters({
             type: v === ALL ? undefined : (v as HistoryType),
           })
         }
-        aria-label="Filtrar por tipo"
+        aria-label={t('filterByType')}
       />
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -89,11 +95,11 @@ export function HistoryFilters({
             apply({ ...filters, accountId: v === ALL ? undefined : v })
           }
         >
-          <SelectTrigger aria-label="Cuenta" className="min-h-12 w-full">
+          <SelectTrigger aria-label={t('account')} className="min-h-12 w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Todas las cuentas</SelectItem>
+            <SelectItem value={ALL}>{t('allAccounts')}</SelectItem>
             {accounts.map((o) => (
               <SelectItem key={o.value} value={o.value}>
                 {o.label}
@@ -107,11 +113,11 @@ export function HistoryFilters({
             apply({ ...filters, categoryId: v === ALL ? undefined : v })
           }
         >
-          <SelectTrigger aria-label="Categoría" className="min-h-12 w-full">
+          <SelectTrigger aria-label={t('category')} className="min-h-12 w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Todas las categorías</SelectItem>
+            <SelectItem value={ALL}>{t('allCategories')}</SelectItem>
             {categories.map((o) => (
               <SelectItem key={o.value} value={o.value}>
                 {o.label}
@@ -123,7 +129,7 @@ export function HistoryFilters({
 
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1 text-xs text-on-surface-variant">
-          Desde
+          {t('from')}
           <input
             type="date"
             className={DATE_INPUT}
@@ -135,7 +141,7 @@ export function HistoryFilters({
           />
         </label>
         <label className="flex flex-col gap-1 text-xs text-on-surface-variant">
-          Hasta
+          {t('to')}
           <input
             type="date"
             className={DATE_INPUT}
@@ -157,7 +163,7 @@ export function HistoryFilters({
           }}
           className="flex min-h-11 items-center gap-1 self-start text-sm font-medium text-income hover:underline"
         >
-          <X aria-hidden className="size-4" /> Limpiar filtros
+          <X aria-hidden className="size-4" /> {t('clearFilters')}
         </button>
       ) : null}
     </div>

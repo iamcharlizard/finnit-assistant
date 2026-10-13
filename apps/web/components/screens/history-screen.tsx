@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { PopularCategoriesCard } from '@finnit/ui/components/finance/popular-categories-card';
 
 import { HistoryFilters } from '@/components/history/history-filters';
@@ -17,15 +19,14 @@ export function HistoryScreen({
   data: HistoryData;
   filters: Filters;
 }) {
+  const t = useTranslations('history');
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="min-w-0 lg:col-span-2">
         <h1 className="mb-1 text-[32px] font-bold text-on-background">
-          Historial
+          {t('title')}
         </h1>
-        <p className="mb-6 text-sm text-on-surface-variant">
-          Revisa y filtra todos tus movimientos.
-        </p>
+        <p className="mb-6 text-sm text-on-surface-variant">{t('subtitle')}</p>
 
         <HistoryFilters
           filters={filters}

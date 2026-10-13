@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { ArrowRight, AtSign, Eye, EyeOff, Lock, Wallet } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
@@ -11,15 +12,17 @@ import { InputWithIcon } from '@finnit/ui/components/ui/input-with-icon';
 import { BodyMd, HeadlineLg } from '@finnit/ui/components/ui/typography';
 
 import { signIn, type SignInState } from '@/app/login/actions';
+import type { GoogleLoginError } from '@/lib/auth/google';
 
 export function LoginForm({
   next,
   error,
 }: {
   next?: string;
-  /** Message for a failed Google sign-in (`/login?error=`). */
-  error?: string;
+  /** A failed Google sign-in (`/login?error=`). */
+  error?: GoogleLoginError;
 }) {
+  const t = useTranslations('login');
   const [state, formAction, isSubmitting] = React.useActionState<
     SignInState,
     FormData
@@ -27,12 +30,13 @@ export function LoginForm({
   const [showPassword, setShowPassword] = React.useState(false);
   const [remember, setRemember] = React.useState(false);
 
-  // The Google route keeps "Mantener sesión iniciada" and where to go next.
+  // The Google route keeps "remember me" and where to go next.
   const googleParams = new URLSearchParams();
   if (next) googleParams.set('next', next);
   if (remember) googleParams.set('remember', '1');
   const googleHref = `/api/auth/google${googleParams.size ? `?${googleParams}` : ''}`;
-  const message = state.error ?? error;
+  const errorCode = state.error ?? error;
+  const message = errorCode ? t(`errors.${errorCode}`) : null;
 
   return (
     <div className="relative w-full max-w-[440px]">
@@ -41,10 +45,10 @@ export function LoginForm({
           <Wallet aria-hidden className="size-9" />
         </span>
         <HeadlineLg as="h1" className="text-center text-accent-neon">
-          Bienvenido de nuevo
+          {t('welcome')}
         </HeadlineLg>
         <BodyMd className="mt-2 text-center text-on-surface-variant">
-          Gestiona tus finanzas con precisión Finnit.
+          {t('tagline')}
         </BodyMd>
       </div>
 
@@ -52,30 +56,30 @@ export function LoginForm({
         <form action={formAction} noValidate className="flex flex-col gap-5">
           {next ? <input type="hidden" name="next" value={next} /> : null}
           <InputWithIcon
-            label="Correo electrónico"
+            label={t('email')}
             iconLeft={AtSign}
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="nombre@ejemplo.com"
+            placeholder={t('emailPlaceholder')}
             defaultValue={state.email}
             required
           />
 
           <InputWithIcon
-            label="Contraseña"
+            label={t('password')}
             labelAction={
               <a
                 href="#"
                 className="flex min-h-11 items-center text-xs font-medium tracking-wide text-accent-neon hover:underline"
               >
-                ¿Olvidaste tu contraseña?
+                {t('forgotPassword')}
               </a>
             }
             iconLeft={Lock}
             iconRight={showPassword ? EyeOff : Eye}
             iconRightAccessibilityLabel={
-              showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+              showPassword ? t('hidePassword') : t('showPassword')
             }
             onIconRightClick={() => setShowPassword((v) => !v)}
             name="password"
@@ -96,7 +100,7 @@ export function LoginForm({
               htmlFor="remember"
               className="text-sm text-on-surface-variant"
             >
-              Mantener sesión iniciada
+              {t('remember')}
             </label>
           </div>
 
@@ -117,7 +121,7 @@ export function LoginForm({
             disabled={isSubmitting}
             className="w-full rounded-[14px] text-lg dark:shadow-[0_0_22px_rgba(0,245,255,0.55)]"
           >
-            {isSubmitting ? 'Verificando…' : 'Iniciar sesión'}
+            {isSubmitting ? t('submitting') : t('submit')}
             {!isSubmitting ? <ArrowRight className="size-5" /> : null}
           </Button>
         </form>
@@ -125,7 +129,7 @@ export function LoginForm({
         <div className="my-8 flex items-center gap-4">
           <span className="h-px flex-1 bg-outline" />
           <span className="text-[11px] font-medium uppercase tracking-widest text-on-surface-variant">
-            O continuar con
+            {t('orContinueWith')}
           </span>
           <span className="h-px flex-1 bg-outline" />
         </div>
@@ -133,13 +137,13 @@ export function LoginForm({
         {/* A plain link: the route handler redirects to Google (no prefetch). */}
         <Button variant="outline" className="w-full rounded-[14px]" asChild>
           <a href={googleHref}>
-            <GoogleIcon className="size-[18px]" /> Google
+            <GoogleIcon className="size-[18px]" /> {t('google')}
           </a>
         </Button>
       </GlassCard>
 
       <p className="mt-8 text-center text-sm text-on-surface-variant">
-        El acceso a Finnit es por invitación. Pide acceso al administrador.
+        {t('invitationOnly')}
       </p>
     </div>
   );

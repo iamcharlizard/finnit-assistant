@@ -7,7 +7,7 @@ import {
   encodeGoogleState,
   googleAuthUrl,
   googleSignInError,
-  loginErrorMessage,
+  loginErrorCode,
   newGoogleState,
   pkceChallenge,
   randomToken,
@@ -120,12 +120,9 @@ describe('login errors', () => {
   });
 
   it('only shows messages for known codes', () => {
-    assert.match(
-      loginErrorMessage('google_no_access') ?? '',
-      /no tiene acceso/,
-    );
-    assert.equal(loginErrorMessage('<script>'), null);
-    assert.equal(loginErrorMessage('toString'), null);
-    assert.equal(loginErrorMessage(['google_failed']), null);
+    assert.equal(loginErrorCode('google_no_access'), 'google_no_access');
+    assert.equal(loginErrorCode('<script>'), null);
+    assert.equal(loginErrorCode('toString'), null);
+    assert.equal(loginErrorCode(['google_failed']), null);
   });
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
 import {
   ADMIN_USERS_QUERY,
@@ -33,6 +34,7 @@ export function useAdminUsers(filters: AdminUsersFilters) {
   const [error, setError] = React.useState<string | null>(null);
   // Answers to an older search arrive late; only the latest one counts.
   const requestId = React.useRef(0);
+  const t = useTranslations();
   const { search, status, role } = filters;
 
   const fetchPage = React.useCallback(
@@ -59,11 +61,11 @@ export function useAdminUsers(filters: AdminUsersFilters) {
       setCursor(adminUsers.pageInfo.endCursor);
       setHasNextPage(adminUsers.pageInfo.hasNextPage);
     } catch (e) {
-      if (id === requestId.current) setError(adminErrorMessage(e));
+      if (id === requestId.current) setError(adminErrorMessage(e, t));
     } finally {
       if (id === requestId.current) setLoading(false);
     }
-  }, [fetchPage]);
+  }, [fetchPage, t]);
 
   React.useEffect(() => {
     void reload();
@@ -87,11 +89,11 @@ export function useAdminUsers(filters: AdminUsersFilters) {
       setCursor(adminUsers.pageInfo.endCursor);
       setHasNextPage(adminUsers.pageInfo.hasNextPage);
     } catch (e) {
-      if (id === requestId.current) setError(adminErrorMessage(e));
+      if (id === requestId.current) setError(adminErrorMessage(e, t));
     } finally {
       setLoadingMore(false);
     }
-  }, [cursor, fetchPage]);
+  }, [cursor, fetchPage, t]);
 
   /** Shows a mutation's result without reloading the list. */
   const replace = React.useCallback((user: AdminUser) => {

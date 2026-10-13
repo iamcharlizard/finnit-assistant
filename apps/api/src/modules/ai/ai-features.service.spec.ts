@@ -48,7 +48,7 @@ describe('AiFeaturesService', () => {
       providerConfigured: true,
       usable: row.isActive,
     }));
-    aiModels.pdfCandidates.mockResolvedValue([model()]);
+    aiModels.candidates.mockResolvedValue([model()]);
     service = new AiFeaturesService(prisma, aiModels);
   });
 
@@ -59,9 +59,17 @@ describe('AiFeaturesService', () => {
       await service.list();
 
       expect(prisma.aiFeature.createMany).toHaveBeenCalledWith({
-        data: Object.values(AiFeatureKey).map((key) => ({ key })),
+        data: expect.arrayContaining([
+          { key: 'statement_parsing', enabled: true, useFallbacks: true },
+          { key: 'translation', enabled: true, useFallbacks: true },
+          // Receipt parsing starts off.
+          { key: 'receipt_parsing', enabled: false, useFallbacks: true },
+        ]),
         skipDuplicates: true,
       });
+      expect(prisma.aiFeature.createMany.mock.calls[0][0]!.data).toHaveLength(
+        Object.values(AiFeatureKey).length,
+      );
       expect(
         prisma.aiFeature.createMany.mock.invocationCallOrder[0],
       ).toBeLessThan(prisma.aiFeature.findMany.mock.invocationCallOrder[0]);
@@ -79,8 +87,9 @@ describe('AiFeaturesService', () => {
 
       const [feature] = await service.list();
 
-      expect(aiModels.pdfCandidates).toHaveBeenCalledWith({
+      expect(aiModels.candidates).toHaveBeenCalledWith({
         feature: AiFeatureKey.statement_parsing,
+        requirePdf: true,
       });
       expect(feature).toEqual({
         key: AiFeatureKey.statement_parsing,
@@ -93,9 +102,22 @@ describe('AiFeaturesService', () => {
       });
     });
 
+    it('text features do not require PDF support', async () => {
+      prisma.aiFeature.findMany.mockResolvedValue([
+        featureRow({ key: AiFeatureKey.translation }),
+      ] as never);
+
+      await service.list();
+
+      expect(aiModels.candidates).toHaveBeenCalledWith({
+        feature: AiFeatureKey.translation,
+        requirePdf: false,
+      });
+    });
+
     it('is not usable when no model it may use is usable', async () => {
       prisma.aiFeature.findMany.mockResolvedValue([featureRow()] as never);
-      aiModels.pdfCandidates.mockResolvedValue([]);
+      aiModels.candidates.mockResolvedValue([]);
 
       const [feature] = await service.list();
 
@@ -111,12 +133,12 @@ describe('AiFeaturesService', () => {
       const [feature] = await service.list();
 
       expect(feature.usable).toBe(false);
-      expect(aiModels.pdfCandidates).not.toHaveBeenCalled();
+      expect(aiModels.candidates).not.toHaveBeenCalled();
     });
 
     it('treats NoUsableAiModelError as not usable', async () => {
       prisma.aiFeature.findMany.mockResolvedValue([featureRow()] as never);
-      aiModels.pdfCandidates.mockRejectedValue(
+      aiModels.candidates.mockRejectedValue(
         new AiFeatureDisabledError(AiFeatureKey.statement_parsing),
       );
 
@@ -127,7 +149,7 @@ describe('AiFeaturesService', () => {
 
     it('lets other errors through', async () => {
       prisma.aiFeature.findMany.mockResolvedValue([featureRow()] as never);
-      aiModels.pdfCandidates.mockRejectedValue(new Error('db down'));
+      aiModels.candidates.mockRejectedValue(new Error('db down'));
 
       await expect(service.list()).rejects.toThrow('db down');
     });
@@ -159,7 +181,7 @@ describe('AiFeaturesService', () => {
       });
       expect(prisma.aiFeature.upsert).toHaveBeenCalledWith({
         where: { key },
-        create: { key, ...data },
+        create: { key, enabled: true, ...data },
         update: data,
         include: expect.any(Object),
       });
@@ -176,6 +198,39 @@ describe('AiFeaturesService', () => {
         service.update(key, { aiModelId: 'm-x' }, 'admin-1'),
       ).rejects.toThrow(ValidationError);
       expect(prisma.aiFeature.upsert).not.toHaveBeenCalled();
+    });
+
+    it('accepts a model without PDF support for a text feature', async () => {
+      prisma.aiModel.findUnique.mockResolvedValue(
+        model({ supportsPdf: false }),
+      );
+
+      await service.update(
+        AiFeatureKey.translation,
+        { aiModelId: 'm-haiku' },
+        'admin-1',
+      );
+
+      expect(prisma.aiFeature.upsert).toHaveBeenCalled();
+    });
+
+    it('creates a missing row with the feature defaults', async () => {
+      await service.update(
+        AiFeatureKey.receipt_parsing,
+        { useFallbacks: false },
+        'admin-1',
+      );
+
+      expect(prisma.aiFeature.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: {
+            key: AiFeatureKey.receipt_parsing,
+            enabled: false,
+            useFallbacks: false,
+            updatedById: 'admin-1',
+          },
+        }),
+      );
     });
 
     it('null goes back to the default model without validation', async () => {

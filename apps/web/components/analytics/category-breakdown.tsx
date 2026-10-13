@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { PieChart } from 'lucide-react';
 
 import { CategoryProgressItem } from '@finnit/ui/components/finance/category-progress-item';
@@ -14,12 +15,13 @@ export function CategoryBreakdown({
 }: {
   categories: AnalyticsView['categories'];
 }) {
+  const t = useTranslations('analytics');
   if (categories.length === 0) {
     return (
       <EmptyState
         icon={PieChart}
-        title="Sin gastos este mes"
-        description="Cuando registres gastos verás aquí en qué categorías se va tu dinero."
+        title={t('noSpendingTitle')}
+        description={t('noSpendingDescription')}
       />
     );
   }
@@ -29,7 +31,10 @@ export function CategoryBreakdown({
       {categories.map((c) => (
         <CategoryProgressItem
           key={c.id}
-          label={`${c.label} · ${c.percent}%`}
+          label={t('categoryShare', {
+            label: c.label,
+            percent: String(c.percent),
+          })}
           amount={c.amount}
           progressPercent={c.percent}
           icon={CATEGORY_ICONS[c.iconKey]}

@@ -27,6 +27,7 @@ describe('AuthResolver', () => {
     isMaster: false,
     hasPassword: true,
     hasGoogle: false,
+    locale: 'es',
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };
@@ -42,6 +43,7 @@ describe('AuthResolver', () => {
     googleSubject: null,
     disabledAt: null,
     lastLoginAt: null,
+    locale: 'es',
     tokenVersion: 0,
     invitedById: null,
     createdAt: mockUser.createdAt,

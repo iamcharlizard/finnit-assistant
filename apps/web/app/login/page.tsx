@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 import { LoginForm } from '@/components/login-form';
-import { loginErrorMessage } from '@/lib/auth/google';
+import { loginErrorCode } from '@/lib/auth/google';
 
-export const metadata: Metadata = { title: 'Iniciar sesión' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations();
+  return { title: t('pageTitles.login') };
+}
 
 export default async function LoginPage({
   searchParams,
@@ -26,7 +30,7 @@ export default async function LoginPage({
       />
       <LoginForm
         next={typeof next === 'string' ? next : undefined}
-        error={loginErrorMessage(error) ?? undefined}
+        error={loginErrorCode(error) ?? undefined}
       />
     </div>
   );

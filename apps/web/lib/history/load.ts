@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
+import { getLocalizer } from '@/lib/i18n/server';
 import { indexCategories } from '@/lib/finance/categories';
 import {
   monthLabel,
@@ -58,30 +59,38 @@ export async function loadHistory(
 ): Promise<HistoryData> {
   const today = todayKey();
   const month = monthOf(today);
-  const data = await serverGraphql<{
-    transactions: Connection<ApiTransaction>;
-    accounts: Connection<ApiAccount>;
-    categories: ApiCategory[];
-    monthlyReport: ApiMonthlyReport;
-  }>(HISTORY_QUERY, {
-    first: HISTORY_PAGE_SIZE,
-    after: null,
-    filters: toApiFilters(filters),
-    ...month,
-  });
+  const [data, l] = await Promise.all([
+    serverGraphql<{
+      transactions: Connection<ApiTransaction>;
+      accounts: Connection<ApiAccount>;
+      categories: ApiCategory[];
+      monthlyReport: ApiMonthlyReport;
+    }>(HISTORY_QUERY, {
+      first: HISTORY_PAGE_SIZE,
+      after: null,
+      filters: toApiFilters(filters),
+      ...month,
+    }),
+    getLocalizer(),
+  ]);
+  const { locale, t } = l;
 
   return {
     today,
     page: toTransactionPage(
       data.transactions,
       indexCategories(data.categories),
+      l,
     ),
     categories: data.categories,
-    accounts: accountOptions(data.accounts.edges.map((e) => e.node)),
-    categoryOptions: categoryOptions(data.categories),
+    accounts: accountOptions(
+      data.accounts.edges.map((e) => e.node),
+      t,
+    ),
+    categoryOptions: categoryOptions(data.categories, t),
     topCategories: {
-      title: `Top categorías · ${monthLabel(month)}`,
-      rows: topCategoryRows(data.monthlyReport, data.categories),
+      title: t('history.topCategories', { month: monthLabel(month, locale) }),
+      rows: topCategoryRows(data.monthlyReport, data.categories, t),
     },
   };
 }

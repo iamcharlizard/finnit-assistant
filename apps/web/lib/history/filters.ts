@@ -23,14 +23,12 @@ export interface HistoryFilters {
 
 export const HISTORY_PAGE_SIZE = 30;
 
-export const TYPE_OPTIONS: ReadonlyArray<{
-  value: HistoryType | 'all';
-  label: string;
-}> = [
-  { value: 'all', label: 'Todos' },
-  { value: 'income', label: 'Ingresos' },
-  { value: 'expense', label: 'Gastos' },
-  { value: 'transfer', label: 'Transferencias' },
+/** The type chips, in order; labels are `history.types.<value>`. */
+export const TYPE_OPTIONS: ReadonlyArray<HistoryType | 'all'> = [
+  'all',
+  'income',
+  'expense',
+  'transfer',
 ];
 
 type Params = Record<string, string | string[] | undefined>;
@@ -48,7 +46,7 @@ export function parseHistoryFilters(params: Params): HistoryFilters {
   const to = one(params.to);
   const search = one(params.q)?.slice(0, 100);
   return {
-    ...(type && TYPE_OPTIONS.some((o) => o.value === type && type !== 'all')
+    ...(type && TYPE_OPTIONS.some((o) => o === type && type !== 'all')
       ? { type: type as HistoryType }
       : {}),
     ...(accountId && ID.test(accountId) ? { accountId } : {}),

@@ -1,7 +1,14 @@
+import { getTranslations } from 'next-intl/server';
+
 /** Shown while a screen loads its data on the server. */
-export default function AppLoading() {
+export default async function AppLoading() {
+  const t = await getTranslations();
   return (
-    <div role="status" aria-label="Cargando" className="flex flex-col gap-4">
+    <div
+      role="status"
+      aria-label={t('common.loading')}
+      className="flex flex-col gap-4"
+    >
       <div className="h-40 animate-pulse rounded-card bg-track" />
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="h-24 animate-pulse rounded-card bg-track" />

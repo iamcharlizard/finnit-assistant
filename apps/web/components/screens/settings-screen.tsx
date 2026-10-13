@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
   BellRing,
@@ -25,9 +26,12 @@ import { Switch } from '@finnit/ui/components/ui/switch';
 
 import { signOut } from '@/app/login/actions';
 import { useSessionUser } from '@/components/session-provider';
+import { LanguageSelect } from '@/components/settings/language-select';
 
 export function SettingsScreen() {
   const user = useSessionUser();
+  const t = useTranslations('settings');
+  const tu = useTranslations('ui.profile');
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   const [toggles, setToggles] = React.useState({
@@ -42,16 +46,29 @@ export function SettingsScreen() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
-      <ProfileCard name={user.name} email={user.email} isPremium isVerified />
+      <ProfileCard
+        name={user.name}
+        email={user.email}
+        isPremium
+        isVerified
+        editLabel={tu('edit')}
+        premiumLabel={tu('premium')}
+        verifiedLabel={tu('verified')}
+        avatarLabel={(name) => tu('avatar', { name })}
+      />
 
-      <SettingsSection title="Bancos" icon={Landmark} iconColor="var(--brand)">
+      <SettingsSection
+        title={t('banks')}
+        icon={Landmark}
+        iconColor="var(--brand)"
+      >
         <Link
           href="/settings/banks"
           className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
         >
           <SettingRow
-            label="Bancos conectados"
-            description="Importa tus movimientos automáticamente"
+            label={t('connectedBanks')}
+            description={t('connectedBanksDescription')}
             icon={Landmark}
           >
             <ChevronRight
@@ -64,7 +81,7 @@ export function SettingsScreen() {
 
       {user.role === 'admin' ? (
         <SettingsSection
-          title="Administración"
+          title={t('admin')}
           icon={UserCog}
           iconColor="var(--accent-neon)"
         >
@@ -73,8 +90,8 @@ export function SettingsScreen() {
             className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
           >
             <SettingRow
-              label="Administración"
-              description="Usuarios con acceso y modelos de IA"
+              label={t('admin')}
+              description={t('adminDescription')}
               icon={UserCog}
             >
               <ChevronRight
@@ -87,16 +104,20 @@ export function SettingsScreen() {
       ) : null}
 
       <SettingsSection
-        title="Seguridad"
+        title={t('security')}
         icon={ShieldCheck}
         iconColor="var(--tertiary)"
       >
-        <SettingRow label="Biometría" icon={Fingerprint} controlId="biometrics">
+        <SettingRow
+          label={t('biometrics')}
+          icon={Fingerprint}
+          controlId="biometrics"
+        >
           <Switch
             id="biometrics"
             checked={toggles.biometrics}
             onCheckedChange={(v) =>
-              setToggles((t) => ({ ...t, biometrics: v }))
+              setToggles((s) => ({ ...s, biometrics: v }))
             }
           />
         </SettingRow>
@@ -106,18 +127,19 @@ export function SettingsScreen() {
         >
           <span className="flex items-center gap-3 text-base">
             <Lock aria-hidden className="size-5" />
-            Cambiar PIN
+            {t('changePin')}
           </span>
           <ChevronRight aria-hidden className="size-4" />
         </button>
       </SettingsSection>
 
       <SettingsSection
-        title="Apariencia"
+        title={t('appearance')}
         icon={Paintbrush}
         iconColor="var(--highlight)"
       >
-        <SettingRow label="Modo Oscuro" icon={Moon} controlId="dark-mode">
+        <LanguageSelect />
+        <SettingRow label={t('darkMode')} icon={Moon} controlId="dark-mode">
           <Switch
             id="dark-mode"
             checked={isDark}
@@ -125,39 +147,39 @@ export function SettingsScreen() {
             onCheckedChange={(v) => setTheme(v ? 'dark' : 'light')}
           />
         </SettingRow>
-        <SettingRow label="Fuente" icon={Type}>
+        <SettingRow label={t('font')} icon={Type}>
           <span className="text-[13px] font-medium text-highlight">Ubuntu</span>
         </SettingRow>
       </SettingsSection>
 
       <SettingsSection
-        title="Notificaciones y Alertas"
+        title={t('notifications')}
         icon={BellRing}
         iconColor="#6c72cb"
       >
         <SettingRow
-          label="Transacciones"
-          description="Empuje inmediato"
+          label={t('transactions')}
+          description={t('transactionsDescription')}
           controlId="tx-notif"
         >
           <Switch
             id="tx-notif"
             checked={toggles.transactions}
             onCheckedChange={(v) =>
-              setToggles((t) => ({ ...t, transactions: v }))
+              setToggles((s) => ({ ...s, transactions: v }))
             }
           />
         </SettingRow>
         <SettingRow
-          label="Resumen Semanal"
-          description="Email"
+          label={t('weeklySummary')}
+          description={t('weeklySummaryDescription')}
           controlId="weekly"
         >
           <Switch
             id="weekly"
             checked={toggles.weeklySummary}
             onCheckedChange={(v) =>
-              setToggles((t) => ({ ...t, weeklySummary: v }))
+              setToggles((s) => ({ ...s, weeklySummary: v }))
             }
           />
         </SettingRow>
@@ -170,12 +192,12 @@ export function SettingsScreen() {
           size="lg"
           className="rounded-[20px] text-base font-bold"
         >
-          <LogOut className="size-5" /> Cerrar Sesión
+          <LogOut className="size-5" /> {t('signOut')}
         </Button>
       </form>
 
       <p className="text-center text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">
-        Finnit v1.0.0 • Built for the future
+        {t('version')}
       </p>
     </div>
   );

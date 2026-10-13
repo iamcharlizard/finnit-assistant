@@ -1,7 +1,19 @@
+import type { Translate } from '@/lib/i18n/translator';
+
 /** Admin panel, AI: GraphQL documents, types and labels. */
 
 export type AiProvider = 'anthropic' | 'openai' | 'google';
-export type AiFeatureKey = 'statement_parsing';
+
+/** The features the web knows by name; the API may add others. */
+export const KNOWN_AI_FEATURES = [
+  'statement_parsing',
+  'transaction_categorization',
+  'recurring_classification',
+  'receipt_parsing',
+  'translation',
+] as const;
+export type KnownAiFeatureKey = (typeof KNOWN_AI_FEATURES)[number];
+export type AiFeatureKey = KnownAiFeatureKey | (string & {});
 
 export interface AiModel {
   id: string;
@@ -52,17 +64,29 @@ export const PROVIDER_LABELS: Record<AiProvider, string> = {
   google: 'Gemini',
 };
 
-/** The web's name and explanation of each AI feature. */
-export const AI_FEATURE_COPY: Record<
-  AiFeatureKey,
-  { label: string; description: string }
-> = {
-  statement_parsing: {
-    label: 'Leer estados de cuenta en PDF',
-    description:
-      'Para bancos sin lector propio (hoy todos menos Banamex), el PDF se envía al modelo de IA.',
-  },
-};
+export function isKnownAiFeature(key: string): key is KnownAiFeatureKey {
+  return (KNOWN_AI_FEATURES as readonly string[]).includes(key);
+}
+
+/**
+ * The web's name and explanation of an AI feature. A key the web doesn't
+ * know yet still shows, by its raw name and without a description.
+ */
+export function aiFeatureCopy(
+  key: AiFeatureKey,
+  t: Translate,
+): { label: string; description: string } {
+  if (!isKnownAiFeature(key)) return { label: key, description: '' };
+  return {
+    label: t(`admin.ai.features.${key}.label`),
+    description: t(`admin.ai.features.${key}.description`),
+  };
+}
+
+/** Features that send PDFs to the model: they may only pick PDF models. */
+export function needsPdfModel(key: AiFeatureKey): boolean {
+  return key === 'statement_parsing';
+}
 
 /** Select value for "use the catalog default" (Radix Select can't use ""). */
 export const DEFAULT_MODEL_VALUE = 'default';

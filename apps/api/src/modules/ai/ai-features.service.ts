@@ -4,6 +4,7 @@ import { PrismaService } from '../../services/prisma.service';
 import { ValidationError } from '../../common/exceptions/graphql-error.exception';
 import { AiModelsService, NoUsableAiModelError } from './ai-models.service';
 import { AiFeature, UpdateAiFeatureInput } from './dto/ai-feature.dto';
+import { AI_FEATURE_DEFAULTS } from './ai-feature-defaults';
 
 const include = {
   aiModel: true,
@@ -19,9 +20,14 @@ export class AiFeaturesService {
   ) {}
 
   async list(): Promise<AiFeature[]> {
-    // Every feature has a row, even ones added after the seed migration.
+    // Every feature has a row, even ones added after the seed migration,
+    // created with that feature's defaults (e.g. receipt parsing starts off).
     await this.prisma.aiFeature.createMany({
-      data: Object.values(AiFeatureKey).map((key) => ({ key })),
+      data: Object.values(AiFeatureKey).map((key) => ({
+        key,
+        enabled: AI_FEATURE_DEFAULTS[key].enabled,
+        useFallbacks: AI_FEATURE_DEFAULTS[key].useFallbacks,
+      })),
       skipDuplicates: true,
     });
     const rows = await this.prisma.aiFeature.findMany({
@@ -40,7 +46,10 @@ export class AiFeaturesService {
       const model = await this.prisma.aiModel.findUnique({
         where: { id: input.aiModelId },
       });
-      if (!model?.isActive || !model.supportsPdf) {
+      if (!model?.isActive) {
+        throw new ValidationError('Choose an active model');
+      }
+      if (AI_FEATURE_DEFAULTS[key].needsPdf && !model.supportsPdf) {
         throw new ValidationError(
           'Choose an active model that supports PDF files',
         );
@@ -54,9 +63,15 @@ export class AiFeaturesService {
       }),
       updatedById: actorId,
     };
+    const defaults = AI_FEATURE_DEFAULTS[key];
     const row = await this.prisma.aiFeature.upsert({
       where: { key },
-      create: { key, ...data },
+      create: {
+        key,
+        enabled: defaults.enabled,
+        useFallbacks: defaults.useFallbacks,
+        ...data,
+      },
       update: data,
       include,
     });
@@ -75,7 +90,12 @@ export class AiFeaturesService {
     if (row.enabled) {
       try {
         usable =
-          (await this.aiModels.pdfCandidates({ feature: row.key })).length > 0;
+          (
+            await this.aiModels.candidates({
+              feature: row.key,
+              requirePdf: AI_FEATURE_DEFAULTS[row.key].needsPdf,
+            })
+          ).length > 0;
       } catch (error) {
         if (!(error instanceof NoUsableAiModelError)) throw error;
       }

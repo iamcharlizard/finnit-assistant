@@ -1,5 +1,6 @@
 'use client';
 
+import { useLocale, useTranslations } from 'next-intl';
 import {
   Table,
   TableBody,
@@ -31,19 +32,23 @@ export function UsersTable({
   onAction: (action: UserAction, user: AdminUser) => void;
   className?: string;
 }) {
+  const t = useTranslations();
+  const locale = useLocale();
   return (
     <div className={className}>
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead>Usuario</TableHead>
-            <TableHead>Rol</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead>Acceso</TableHead>
-            <TableHead>Último ingreso</TableHead>
-            <TableHead>Agregado por</TableHead>
+            <TableHead>{t('admin.users.columns.user')}</TableHead>
+            <TableHead>{t('admin.users.columns.role')}</TableHead>
+            <TableHead>{t('admin.users.columns.status')}</TableHead>
+            <TableHead>{t('admin.users.columns.access')}</TableHead>
+            <TableHead>{t('admin.users.columns.lastSignIn')}</TableHead>
+            <TableHead>{t('admin.users.columns.addedBy')}</TableHead>
             <TableHead className="w-12">
-              <span className="sr-only">Acciones</span>
+              <span className="sr-only">
+                {t('admin.users.columns.actions')}
+              </span>
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -66,7 +71,7 @@ export function UsersTable({
                 <UserAccessMethods user={user} />
               </TableCell>
               <TableCell className="whitespace-nowrap text-[13px] text-on-surface-variant">
-                {formatLastSignIn(user.lastLoginAt)}
+                {formatLastSignIn(user.lastLoginAt, { locale, t })}
               </TableCell>
               <TableCell className="text-[13px] text-on-surface-variant">
                 {user.invitedByName ?? '—'}

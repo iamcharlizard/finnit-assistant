@@ -7,6 +7,8 @@ import {
   GoalProgress,
   CreateGoalContributionInput,
   GoalContribution,
+  GoalProjection,
+  GoalRecommendations,
 } from './dto/goal.dto';
 import {
   NotFoundError,
@@ -14,6 +16,14 @@ import {
   GoalAlreadyReachedError,
 } from '../../common/exceptions/graphql-error.exception';
 import { Prisma } from '@finnit/database';
+import {
+  addDays,
+  localToday,
+  toLocalDateOnly,
+} from '../../common/utils/local-date.util';
+
+/** Months of contributions averaged when no monthly amount is given. */
+const PROJECTION_HISTORY_MONTHS = 3;
 
 @Injectable()
 export class GoalsService {
@@ -25,7 +35,7 @@ export class GoalsService {
         userId,
         name: input.name,
         targetAmount: input.targetAmount,
-        dueDate: input.dueDate,
+        dueDate: input.dueDate ? toLocalDateOnly(input.dueDate) : undefined,
         currency: input.currency,
       },
     });
@@ -99,9 +109,17 @@ export class GoalsService {
       throw new NotFoundError('Goal not found');
     }
 
+    // Enforced here: no ValidationPipe runs the DTO's decorators.
+    if (input.targetAmount != null && !(input.targetAmount > 0)) {
+      throw new ValidationError('The target amount must be greater than 0');
+    }
+
     const updatedGoal = await this.prisma.goal.update({
       where: { id },
-      data: input,
+      data: {
+        ...input,
+        ...(input.dueDate && { dueDate: toLocalDateOnly(input.dueDate) }),
+      },
     });
 
     return this.mapGoal(updatedGoal);
@@ -134,6 +152,10 @@ export class GoalsService {
     userId: string,
     input: CreateGoalContributionInput,
   ): Promise<GoalContribution> {
+    if (!(input.amount > 0)) {
+      throw new ValidationError('The contribution must be greater than 0');
+    }
+
     const goal = await this.prisma.goal.findFirst({
       where: { id: input.goalId, userId },
     });
@@ -165,7 +187,7 @@ export class GoalsService {
           goalId: input.goalId,
           transactionId: input.transactionId,
           amount: input.amount,
-          date: input.date,
+          date: toLocalDateOnly(input.date),
         },
       });
 
@@ -241,11 +263,16 @@ export class GoalsService {
     });
   }
 
+  /**
+   * When the goal would be reached saving `monthlyContribution` a month. If
+   * no amount is given, uses the average of the last 3 months of
+   * contributions.
+   */
   async getGoalProjection(
     goalId: string,
     userId: string,
-    monthlyContribution: number,
-  ): Promise<{ completionDate: Date | null; monthsRemaining: number | null }> {
+    monthlyContribution?: number,
+  ): Promise<GoalProjection> {
     const goal = await this.prisma.goal.findFirst({
       where: { id: goalId, userId },
     });
@@ -254,37 +281,51 @@ export class GoalsService {
       throw new NotFoundError('Goal not found');
     }
 
+    let monthly = monthlyContribution;
+    if (monthly === undefined || monthly === null) {
+      const since = addDays(localToday(), -PROJECTION_HISTORY_MONTHS * 30);
+      const recent = await this.prisma.goalContribution.aggregate({
+        where: { goalId, date: { gte: since } },
+        _sum: { amount: true },
+      });
+      monthly =
+        Math.round(
+          (Number(recent._sum.amount ?? 0) / PROJECTION_HISTORY_MONTHS) * 100,
+        ) / 100;
+    }
+
     const currentAmount = Number(goal.currentAmount);
     const targetAmount = Number(goal.targetAmount);
     const remaining = targetAmount - currentAmount;
+    const base = { goalId: goal.id, monthlyContribution: monthly };
 
     if (remaining <= 0) {
-      return { completionDate: null, monthsRemaining: 0 };
+      return { ...base, monthsRemaining: 0 };
     }
 
-    if (monthlyContribution <= 0) {
-      return { completionDate: null, monthsRemaining: null };
+    if (monthly <= 0) {
+      return base;
     }
 
-    const monthsRemaining = Math.ceil(remaining / monthlyContribution);
-    const completionDate = new Date();
-    completionDate.setMonth(completionDate.getMonth() + monthsRemaining);
+    const monthsRemaining = Math.ceil(remaining / monthly);
+    const completionDate = localToday();
+    completionDate.setUTCMonth(completionDate.getUTCMonth() + monthsRemaining);
 
-    return { completionDate, monthsRemaining };
+    return { ...base, completionDate, monthsRemaining };
   }
 
-  async getGoalRecommendations(userId: string): Promise<{
-    totalGoalsAmount: number;
-    totalSavedAmount: number;
-    averageProgress: number;
-    recommendedMonthlyContribution: number;
-    goalsDueSoon: Goal[];
-    goalsAtRisk: Goal[];
-  }> {
+  /** Recommendations over all the user's goals, or only `goalId`. */
+  async getGoalRecommendations(
+    userId: string,
+    goalId?: string,
+  ): Promise<GoalRecommendations> {
     const goals = await this.prisma.goal.findMany({
-      where: { userId },
-      include: { contributions: true },
+      where: { userId, ...(goalId && { id: goalId }) },
     });
+
+    if (goalId && goals.length === 0) {
+      throw new NotFoundError('Goal not found');
+    }
 
     if (goals.length === 0) {
       return {

@@ -166,7 +166,7 @@ En desarrollo local, el servicio `s3` de `docker-compose.yml` (s3mock en el puer
 ### Conexión bancaria (Syncfy)
 
 - `SYNCFY_API_KEY` habilita la conexión bancaria. Usa la llave de **sandbox** en testing y la de **producción** solo en production: cada llave ve sus propios usuarios y conexiones.
-- El usuario conecta su banco en el widget de Syncfy (`createBankWidgetSession`); Finnit guarda solo los ids de Syncfy, nunca usuario ni contraseña del banco.
+- El usuario conecta su banco en el widget de Syncfy (`createBankConnectSession`); Finnit guarda solo los ids de Syncfy, nunca usuario ni contraseña del banco.
 - La API sincroniza a las 7:00 y 15:00 (CDMX). Pide a Syncfy que entre al banco como máximo cada 20 h por conexión (o cada hora si el usuario lo pide) y respeta `ready_in`; las lecturas son incrementales (`dt_refresh_from`) y reintenta con espera ante 429/5xx.
 - Para adoptar una conexión creada fuera de la app (pruebas): `linkSyncfyUser(email, syncfyUser)` (solo `ADMIN_EMAILS`) y luego `registerBankConnection(idCredential)` como ese usuario.
 - Borrar una conexión en Finnit no la borra en Syncfy; hazlo desde Syncfy.

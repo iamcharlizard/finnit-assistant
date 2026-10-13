@@ -24,7 +24,7 @@ import { addDays, toDateOnly } from '../recurring-expenses/schedule.util';
 import {
   BankConnection,
   BankSyncResult,
-  BankWidgetSession,
+  BankConnectSession,
   LinkBankAccountInput,
 } from './dto/bank-connection.dto';
 import {
@@ -55,13 +55,17 @@ const WIDGET_SCRIPT =
 const WIDGET_STYLESHEET =
   'https://www.syncfy.com/widget/v3/syncfy-authentication-widget.css';
 
-/** Syncfy job codes that need the user to act in the widget. */
+/** Syncfy job codes (sync-widget codes.md) that need the user to act. */
 const USER_ACTION_CODES: Record<number, string> = {
-  401: 'The bank rejected the username or password; update them in the widget',
-  405: 'The bank account is locked; unlock it with the bank',
-  406: 'The bank asks for a security token; reconnect from the widget',
-  410: 'The bank asks for a security token; reconnect from the widget',
-  411: 'The bank token expired before it was entered; try again',
+  401: 'The bank rejected the login details; reconnect the bank with the right ones',
+  403: 'The bank rejected the security code or it expired; reconnect the bank',
+  405: 'The bank locked the access; contact the bank before reconnecting',
+  406: 'The bank allows one session at a time; log out elsewhere and sync again',
+  408: 'The bank needs attention; log in to online banking, then sync again',
+  409: 'These login details belong to another service of the same bank',
+  410: 'The bank asks for a security code; reconnect the bank',
+  411: 'The security code was not entered in time; reconnect the bank',
+  413: 'The bank login failed; sync again',
 };
 
 type ConnectionWithAccounts = BankConnectionRow & {
@@ -87,7 +91,7 @@ export class BankConnectionsService {
     private readonly materializer: LineMaterializerService,
   ) {}
 
-  async widgetSession(userId: string): Promise<BankWidgetSession> {
+  async connectSession(userId: string): Promise<BankConnectSession> {
     this.requireConfigured();
     const providerUserId = await this.ensureProviderUser(userId);
     return {
@@ -337,7 +341,7 @@ export class BankConnectionsService {
           errorMessage: credential.is_authorized
             ? null
             : (USER_ACTION_CODES[credential.code ?? 0] ??
-              'The bank connection needs attention in the widget'),
+              'The bank connection needs attention; reconnect the bank'),
           lastSyncedAt: new Date(),
           transactionsCursor: newCursor ?? new Date(),
         },

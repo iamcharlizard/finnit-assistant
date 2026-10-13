@@ -122,13 +122,13 @@ describe('BankConnectionsService', () => {
     prisma.linkedAccount.findMany.mockResolvedValue([]);
   };
 
-  describe('widgetSession', () => {
+  describe('connectSession', () => {
     it('creates a Syncfy user tagged only with the Finnit user id', async () => {
       prisma.bankProviderUser.findUnique.mockResolvedValue(null);
       syncfy.listUsers.mockResolvedValue([]);
       syncfy.createUser.mockResolvedValue({ id_user: 'sy-new' });
 
-      const session = await service.widgetSession(userId);
+      const session = await service.connectSession(userId);
 
       expect(syncfy.createUser).toHaveBeenCalledWith(userId, 'finnit-user-1');
       expect(prisma.bankProviderUser.create).toHaveBeenCalledWith({
@@ -146,7 +146,7 @@ describe('BankConnectionsService', () => {
       prisma.bankProviderUser.findUnique.mockResolvedValue({
         providerUserId: 'sy-user-1',
       } as never);
-      await service.widgetSession(userId);
+      await service.connectSession(userId);
       expect(syncfy.listUsers).not.toHaveBeenCalled();
       expect(syncfy.createSession).toHaveBeenCalledWith('sy-user-1');
     });
@@ -322,7 +322,7 @@ describe('BankConnectionsService', () => {
           status: BankConnectionStatus.error,
           lastStatusCode: 401,
           errorMessage:
-            'The bank rejected the username or password; update them in the widget',
+            'The bank rejected the login details; reconnect the bank with the right ones',
         }),
       });
     });

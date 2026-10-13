@@ -116,7 +116,7 @@ Belvo dejó de ofrecer datos bancarios de México (solo Brasil), por eso se usa 
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Conectar banco (widget de Syncfy) | ✅ | ⏳ | ⏳ | `createBankWidgetSession` + `registerBankConnection`. Verificado con BancaNet Personal en producción. |
+| Conectar banco con formulario propio (headless) | ✅ | ⏳ | ⏳ | Paquete `@finnit/bank-connect` (web y React Native): formulario del banco, token, captcha, imágenes, opciones y QR; los datos van del dispositivo a Syncfy, nunca a Finnit. Probado contra el sandbox (8/8 casos). Respaldo con el widget de Syncfy para sitios no soportados. API: `createBankConnectSession` + `registerBankConnection`. |
 | Ligar cuentas del banco a cuentas de Finnit | ✅ | ⏳ | ⏳ | `linkBankAccount` (existente o nueva); importa 90 días. Saldo, límite y crédito disponible desde el banco. |
 | Importar movimientos y crear transacciones | ✅ | ⏳ | ⏳ | Incremental, sin duplicados; ignora autorizaciones pendientes y conversiones a meses sin intereses. |
 | Conciliación banco ↔ estado de cuenta PDF | ✅ | — | — | El estado de cuenta empata los movimientos ya importados del banco (probado: 105 de 105). |

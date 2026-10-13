@@ -8,7 +8,7 @@ import { BankConnectionsService } from './bank-connections.service';
 import {
   BankConnection,
   BankSyncResult,
-  BankWidgetSession,
+  BankConnectSession,
   LinkBankAccountInput,
 } from './dto/bank-connection.dto';
 
@@ -22,14 +22,14 @@ export class BankConnectionsResolver {
     return this.banks.list(user.id);
   }
 
-  @Mutation(() => BankWidgetSession, {
+  @Mutation(() => BankConnectSession, {
     description:
-      'Session for the Syncfy widget, where the user connects the bank. Call registerBankConnection with the id_credential the widget returns.',
+      'Short-lived Syncfy session for @finnit/bank-connect (or the widget fallback). When the connection succeeds, call registerBankConnection with its id_credential.',
   })
-  async createBankWidgetSession(
+  async createBankConnectSession(
     @CurrentUser() user: User,
-  ): Promise<BankWidgetSession> {
-    return this.banks.widgetSession(user.id);
+  ): Promise<BankConnectSession> {
+    return this.banks.connectSession(user.id);
   }
 
   @Mutation(() => BankSyncResult)

@@ -15,19 +15,19 @@ registerEnumType(BankConnectionStatus, { name: 'BankConnectionStatus' });
 
 @ObjectType({
   description:
-    'Token for the Syncfy widget. The user types the bank login into the widget; Finnit never sees it.',
+    "Session to connect a bank from the device with @finnit/bank-connect (native form) or, as a fallback, Syncfy's widget. The bank login goes from the device to Syncfy; Finnit never sees it.",
 })
-export class BankWidgetSession {
+export class BankConnectSession {
   @Field(() => BankProvider)
   provider: BankProvider;
 
   @Field({ description: 'Short-lived Syncfy session token; do not store it' })
   token: string;
 
-  @Field()
+  @Field({ description: 'Fallback: Syncfy widget script' })
   widgetScriptUrl: string;
 
-  @Field()
+  @Field({ description: 'Fallback: Syncfy widget stylesheet' })
   widgetStylesheetUrl: string;
 }
 

@@ -129,6 +129,22 @@ type AuthPayload {
   user: User!
 }
 
+"""
+Session to connect a bank from the device with @finnit/bank-connect (native form) or, as a fallback, Syncfy's widget. The bank login goes from the device to Syncfy; Finnit never sees it.
+"""
+type BankConnectSession {
+  provider: BankProvider!
+
+  """Short-lived Syncfy session token; do not store it"""
+  token: String!
+
+  """Fallback: Syncfy widget script"""
+  widgetScriptUrl: String!
+
+  """Fallback: Syncfy widget stylesheet"""
+  widgetStylesheetUrl: String!
+}
+
 type BankConnection {
   accounts: [LinkedBankAccount!]!
   createdAt: DateTime!
@@ -167,18 +183,6 @@ type BankSyncResult {
   Whether Syncfy was asked to log in to the bank again (results arrive on the next sync)
   """
   refreshRequested: Boolean!
-}
-
-"""
-Token for the Syncfy widget. The user types the bank login into the widget; Finnit never sees it.
-"""
-type BankWidgetSession {
-  provider: BankProvider!
-
-  """Short-lived Syncfy session token; do not store it"""
-  token: String!
-  widgetScriptUrl: String!
-  widgetStylesheetUrl: String!
 }
 
 type Budget {
@@ -542,9 +546,9 @@ type Mutation {
   createAiModel(input: CreateAiModelInput!): AiModel!
 
   """
-  Session for the Syncfy widget, where the user connects the bank. Call registerBankConnection with the id_credential the widget returns.
+  Short-lived Syncfy session for @finnit/bank-connect (or the widget fallback). When the connection succeeds, call registerBankConnection with its id_credential.
   """
-  createBankWidgetSession: BankWidgetSession!
+  createBankConnectSession: BankConnectSession!
   createBudget(input: CreateBudgetInput!): Budget!
   createBudgetFromTemplate(input: BudgetFromTemplateInput!): Budget!
   createCategory(input: CreateCategoryInput!): Category!

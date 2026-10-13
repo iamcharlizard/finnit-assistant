@@ -267,6 +267,7 @@ Detailed, verified status per feature and platform: [features.md](./features.md)
 **Implemented:**
 - **Authentication**: invitation-only (no sign-up), sign in with password or Google, refresh tokens with revocation, password reset token flow (no email delivery yet).
 - **Admin**: master admin (CLI), admins, user access management, AI models and per-feature AI settings.
+- **Web create & accounts**: "+" flow for expenses, income and transfers (card payments) with duplicate check, category suggestion and receipt upload; `/accounts` with manual accounts (debit, credit with terms, cash, savings), nickname and card design.
 - **i18n**: categories stored in English with es/en translations (Google Cloud Translation, AI fallback); user language preference.
 - **Fixes**: transaction dates stored as the local (Mexico City) day; opening balances as adjustments; consistent cursor pagination; credit card terms mutation; goals fully exposed; duplicate check (`similarTransactions`).
 - **Accounts**: multi-account support (cash, debit, credit, savings, e-wallet), balance adjustments, credit card terms.

@@ -30,9 +30,9 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | 15. Pantalla de pagos recurrentes y sugerencias *(nuevo)* | 🟡 | ⏳ | ⏳ |
 | 16. Clasificación de movimientos *(nuevo)* | ⏳ | ⏳ | ⏳ |
 | 17. Alias de movimientos *(nuevo)* | ⏳ | ⏳ | ⏳ |
-| 18. Personalización de cuentas y tarjetas *(nuevo)* | ⏳ | ⏳ | ⏳ |
-| 19. Flujo para crear movimientos *(nuevo)* | 🟡 | ⏳ | ⏳ |
-| 20. Cuentas y tarjetas manuales *(nuevo)* | 🟡 | ⏳ | ⏳ |
+| 18. Personalización de cuentas y tarjetas *(nuevo)* | ✅ | ⏳ | ✅ |
+| 19. Flujo para crear movimientos *(nuevo)* | 🟡 | ⏳ | 🟡 |
+| 20. Cuentas y tarjetas manuales *(nuevo)* | ✅ | ⏳ | ✅ |
 
 ## Detalle
 
@@ -55,21 +55,21 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| CRUD de cuentas (efectivo, débito, crédito, ahorro, e-wallet) | ✅ | 🟡 | 🟡 | Web: saldos reales de solo lectura (Inicio: disponible, deuda en tarjetas y patrimonio neto; Tarjetas: crédito y débito). Sin formularios de alta: las cuentas llegan al conectar el banco. Móvil: datos mock. |
+| CRUD de cuentas (efectivo, débito, crédito, ahorro, e-wallet) | ✅ | 🟡 | ✅ | Web: `/accounts` (Cuentas y tarjetas) con alta manual, edición y archivado; Inicio muestra disponible, deuda en tarjetas y patrimonio neto. Móvil: datos mock. |
 | Ajuste de saldo sin ingreso/gasto falso | ✅ | ⏳ | ⏳ | `adjustAccountBalance` (tipo `adjustment`). |
-| Términos de tarjeta de crédito (corte, pago, tasa) | ✅ | 🟡 | ✅ | Modelo `CreditCardTerms`; `accounts` ya los incluye. Web: próximo corte y fecha de pago en Tarjetas y en el Calendario. `setCreditCardTerms` / `removeCreditCardTerms`; falta el formulario (fase 2). |
-| Alta guiada con explicación de tipos | — | ⏳ | ⏳ | Es UI. |
+| Términos de tarjeta de crédito (corte, pago, tasa) | ✅ | 🟡 | ✅ | Modelo `CreditCardTerms`; `accounts` ya los incluye. Web: se capturan al dar de alta o editar la tarjeta; próximo corte y fecha de pago en Cuentas y en el Calendario. `setCreditCardTerms` / `removeCreditCardTerms`. |
+| Alta guiada con explicación de tipos | — | ⏳ | ✅ | Asistente de 4 pasos en `/accounts?add=1` (tipo, banco, saldo/deuda y diseño). |
 | Escaneo de tarjeta con foto | ⏳ | ⏳ | ⏳ | |
 
 ### 3. Transacciones
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Alta rápida (fecha, cuenta, monto, tipo, categoría) | ✅ | ⏳ | ⏳ | Sin formularios en clientes. |
+| Alta rápida (fecha, cuenta, monto, tipo, categoría) | ✅ | ⏳ | ✅ | Web: botón "+" (gasto, ingreso o transferencia), categoría sugerida por comercio y comprobante opcional. |
 | Listado con filtros y paginación por cursor | ✅ | 🟡 | ✅ | Web: Historial agrupado por día, filtros en la URL (tipo, cuenta, categoría, fechas, búsqueda) y "Cargar más". Móvil: datos mock. |
 | Varias transacciones por cuenta en el mismo día | ✅ | — | — | Se quitó la restricción única `[userId, accountId, txnDate]` (migración `20261012120000`). |
 | Categorización sugerida por comercio | 🟡 | ⏳ | ⏳ | Busca por la primera palabra del comercio en transacciones previas; no aprende reglas. |
-| Transferencias entre cuentas | ✅ | ⏳ | ⏳ | `createTransfer`. |
+| Transferencias entre cuentas | ✅ | ⏳ | ✅ | `createTransfer`; `Transaction.transferDirection` indica el lado (in/out). Web: incluye "Pago de tarjeta". |
 | Detección automática de transferencias internas | ⏳ | — | — | |
 | Adjuntos (tickets, comprobantes) | ✅ | ⏳ | ⏳ | `POST /transactions/:id/attachments` (PDF, JPEG, PNG, WEBP, HEIC; máx. 10 MB, 10 por transacción) al bucket privado; descarga solo del dueño en `GET /attachments/:id/file`. |
 | Captura por foto de ticket / SMS | ⏳ | ⏳ | ⏳ | Plan de OCR para tickets (sin IA primero): [document-ocr.md](./document-ocr.md). |
@@ -212,24 +212,24 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Renombrar cuenta o tarjeta (solo visible al usuario) | ✅ | ⏳ | ⏳ | `metadata.nickname`; `updateAccount` combina el JSON en vez de reemplazarlo. |
-| Diseño: un color o degradado de dos; texto con contraste automático | ✅ | ⏳ | 🟡 | `metadata.design`. UI: `bank-payment-card` con `primaryColor`/`secondaryColor` y `readableTextColor` (WCAG AA); falta el editor (fase 2). |
+| Renombrar cuenta o tarjeta (solo visible al usuario) | ✅ | ⏳ | ✅ | `metadata.nickname`; `updateAccount` combina el JSON en vez de reemplazarlo. |
+| Diseño: un color o degradado de dos; texto con contraste automático | ✅ | ⏳ | ✅ | `metadata.design`; editor con vista previa en vivo. El apodo se usa en todas las pantallas (`accountLabel`). |
 
 ### 19. Flujo para crear movimientos *(nuevo)*
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Elegir gasto, ingreso o transferencia | ✅ | ⏳ | ⏳ | `createTransaction`, `createTransfer`. |
+| Elegir gasto, ingreso o transferencia | ✅ | ⏳ | ✅ | `createTransaction`, `createTransfer`. |
 | Capturar ticket para crear un gasto | ⏳ | ⏳ | ⏳ | Usa la extracción de tickets (sección 3, [document-ocr.md](./document-ocr.md)). |
-| Aviso de duplicado contra movimientos sincronizados | ✅ | ⏳ | ⏳ | `similarTransactions`. Ofrece adjuntar el ticket al movimiento existente. |
+| Aviso de duplicado contra movimientos sincronizados | ✅ | ⏳ | ✅ | `similarTransactions`. Ofrece adjuntar el ticket al movimiento existente. |
 | Fecha en hora local | ✅ | — | — | `toLocalDateOnly`: se guarda el día de CDMX. |
 
 ### 20. Cuentas y tarjetas manuales *(nuevo)*
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Alta manual de débito y crédito | ✅ | ⏳ | ⏳ | `createAccount`. |
-| Corte, fecha de pago y tasa de la tarjeta | ✅ | ⏳ | ⏳ | `setCreditCardTerms`. |
+| Alta manual de débito y crédito | ✅ | ⏳ | ✅ | `createAccount` (nombre repetido → `CONFLICT`); también efectivo y ahorro. Liga desde Bancos conectados: "¿Tu banco no aparece?". |
+| Corte, fecha de pago y tasa de la tarjeta | ✅ | ⏳ | ✅ | `setCreditCardTerms`. |
 | Saldo inicial sin contarlo como ingreso o gasto | ✅ | — | — | Se registra como ajuste ("Initial balance") en la misma transacción de BD. |
 | Ligar después una cuenta manual a una conexión bancaria | 🟡 | ⏳ | ⏳ | `linkBankAccount` ya acepta una cuenta existente. |
 

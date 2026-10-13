@@ -10,7 +10,6 @@ import {
   StatementSource,
   StatementStatus,
   TransactionSource,
-  TransactionType,
   type ImportedTransaction as ImportedTransactionRow,
   type StatementImport as StatementImportRow,
 } from '@finnit/database';
@@ -22,7 +21,6 @@ import {
 } from '../../common/exceptions/graphql-error.exception';
 import { PaginationUtil } from '../../common/utils/pagination.util';
 import { S3StorageService } from '../storage/s3-storage.service';
-import { RecurringExpensesService } from '../recurring-expenses/recurring-expenses.service';
 import {
   CardMonthSummary,
   CardMonthSummaryArgs,
@@ -37,6 +35,7 @@ import { isPdf } from './parsing/pdf-text';
 import { StatementParserRegistry } from './parsing/statement-parser.registry';
 import { checkStatement } from './parsing/statement-validation';
 import { ReconciliationService } from './reconciliation/reconciliation.service';
+import { LineMaterializerService } from './reconciliation/line-materializer.service';
 
 export const MAX_STATEMENT_BYTES = 10 * 1024 * 1024;
 
@@ -57,7 +56,7 @@ export class StatementsService {
     private readonly storage: S3StorageService,
     private readonly parsers: StatementParserRegistry,
     private readonly reconciliation: ReconciliationService,
-    private readonly recurringExpenses: RecurringExpensesService,
+    private readonly materializer: LineMaterializerService,
   ) {}
 
   /**
@@ -393,68 +392,13 @@ export class StatementsService {
 
     await this.prisma.$transaction(
       async (tx) => {
-        let balanceChange = 0;
-
-        for (const line of statement.lines) {
-          let transactionId = line.matchedTransactionId;
-
-          if (line.status === ImportedLineStatus.pending) {
-            const isDebit = DEBIT_KINDS.has(line.kind);
-            const amount = Number(line.amount);
-            // Payments and refunds are not income: record them as balance
-            // adjustments so reports only count real income and expenses.
-            const transaction = await tx.transaction.create({
-              data: {
-                userId,
-                accountId: statement.accountId,
-                categoryId: isDebit ? line.suggestedCategoryId : null,
-                type: isDebit
-                  ? TransactionType.expense
-                  : TransactionType.adjustment,
-                amount,
-                currency: line.currency,
-                txnDate: line.date,
-                description: line.description,
-                merchantName: line.merchant ?? line.description,
-                source: TransactionSource.statement,
-              },
-            });
-            transactionId = transaction.id;
-            balanceChange += isDebit ? -amount : amount;
-            await tx.importedTransaction.update({
-              where: { id: line.id },
-              data: {
-                status: ImportedLineStatus.created,
-                matchedTransactionId: transaction.id,
-              },
-            });
-          }
-
-          if (
-            line.matchedOccurrenceId &&
-            line.status !== ImportedLineStatus.ignored
-          ) {
-            const linked = transactionId
-              ? await tx.recurringOccurrence.findUnique({
-                  where: { transactionId },
-                  select: { id: true },
-                })
-              : null;
-            await this.recurringExpenses.markPaidInTransaction(
-              tx,
-              line.matchedOccurrenceId,
-              linked ? null : transactionId,
-              OccurrenceMatchSource.statement,
-            );
-          }
-        }
-
-        if (balanceChange !== 0) {
-          await tx.account.update({
-            where: { id: statement.accountId },
-            data: { balanceCurrent: { increment: balanceChange } },
-          });
-        }
+        await this.materializer.materialize(tx, statement.lines, {
+          userId,
+          accountId: statement.accountId,
+          source: TransactionSource.statement,
+          matchedBy: OccurrenceMatchSource.statement,
+          adjustBalance: true,
+        });
         await tx.statementImport.update({
           where: { id },
           data: { status: StatementStatus.confirmed, confirmedAt: new Date() },

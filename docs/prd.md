@@ -98,9 +98,10 @@ Checkboxes reflect the **API** state, verified against the code. Per-platform st
 
 ---
 
-### 9. Bank & Fintech Integrations ⏳ PENDING
-- [ ] Integration with Belvo for auto-import (sandbox first).
-- [ ] Weekly reconciliation for balances and transactions.
+### 9. Bank & Fintech Integrations ✅ IMPLEMENTED (Syncfy)
+- [x] Bank connection through an aggregator (Syncfy; Belvo no longer covers Mexican banks). Users connect in Syncfy's widget; Finnit never handles bank logins.
+- [x] Automatic import of movements, twice a day, deduplicated and reconciled with statements and recurring expenses.
+- [ ] Weekly reconciliation review.
 - [ ] Detection of internal transfers between linked accounts.
 
 ---
@@ -137,7 +138,7 @@ Nothing generates notifications yet (no scheduled jobs).
 - [ ] Review and confirm imported movements.
 - [ ] Reconcile statement lines with existing transactions and automatic recurring expenses.
 - [ ] Card month summary vs. amount due.
-- [ ] Same flow fed by Belvo sync.
+- [x] Same flow fed by the bank sync (Syncfy).
 
 ---
 
@@ -200,7 +201,7 @@ Detailed, verified status per feature and platform: [features.md](./features.md)
 
 **Deployment:** Docker image deployed with Dokploy on Hetzner, with `production` (`main`) and `testing` (`testing`) environments ([deployment.md](./deployment.md)).
 
-**Not implemented:** bank integrations, S3 file upload, CSV export, email delivery, notification generation, recurring expenses, statement import.
+**Not implemented:** CSV export, email delivery, weekly reconciliation review.
 
 ### 🟡 **MOBILE APP (Expo) — UI with mock data**
 - Expo Router app (`apps/finnit-app`) with login, dashboard, history, analytics, calendar, cards and settings screens (NativeWind v5).

@@ -37,6 +37,7 @@ All 11 original GraphQL modules implemented, plus recurring expenses in `apps/ap
 | Recurring expenses | `src/modules/recurring-expenses/` |
 | Statements (PDF import + reconciliation) | `src/modules/statements/` (+ `src/modules/storage/` for S3) |
 | AI model catalog + providers (Anthropic, OpenAI, Gemini) | `src/modules/ai/` |
+| Bank connections (Syncfy aggregation) | `src/modules/bank-connections/` |
 
 Auto-generated schema at `apps/api/src/schema.gql`.
 
@@ -72,6 +73,7 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20250823110041_unique_indexes_created`
 - `20261012120000_recurring_expenses_and_statements` (rollback: `packages/database/scripts/rollbacks/`)
 - `20261012180000_ai_model_catalog`
+- `20261013090000_syncfy_bank_sync`
 
 Migrations with hand-edited SQL wrap their body in `BEGIN; … COMMIT;`: Prisma does not run a migration in a transaction, so a failure would leave it half applied.
 

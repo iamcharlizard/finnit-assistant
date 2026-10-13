@@ -21,7 +21,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | 6. Deudas y tarjetas | ✅ | ⏳ | ⏳ |
 | 7. Metas y ahorro | 🟡 | ⏳ | ⏳ |
 | 8. Reportes e insights | 🟡 | 🟡 | 🟡 |
-| 9. Integración bancaria (Belvo) | ⏳ | ⏳ | ⏳ |
+| 9. Integración bancaria (Syncfy) | ✅ | ⏳ | ⏳ |
 | 10. Flujo de caja y proyecciones | ✅ | 🟡 | 🟡 |
 | 11. Notificaciones | 🟡 | ⏳ | ⏳ |
 | 12. Gastos recurrentes *(nuevo)* | ✅ | ⏳ | ⏳ |
@@ -110,13 +110,18 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Insights (gastos inusuales, top categorías) | ⏳ | ⏳ | ⏳ | |
 | Exportar a CSV | ⏳ | ⏳ | ⏳ | |
 
-### 9. Integración bancaria (Belvo)
+### 9. Integración bancaria (Syncfy)
+
+Belvo dejó de ofrecer datos bancarios de México (solo Brasil), por eso se usa Syncfy (antes Paybook). El usuario conecta su banco en el widget de Syncfy: Finnit nunca ve el usuario ni la contraseña del banco.
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Conectar banco | ⏳ | ⏳ | ⏳ | Modelos `BankConnection`/`LinkedAccount` sin API. |
-| Importar movimientos | ⏳ | ⏳ | ⏳ | Modelo `ImportedTransaction` sin API. |
-| Conciliación semanal | ⏳ | ⏳ | ⏳ | Modelos `ReconciliationSession/Item` sin API. |
+| Conectar banco (widget de Syncfy) | ✅ | ⏳ | ⏳ | `createBankWidgetSession` + `registerBankConnection`. Verificado con BancaNet Personal en producción. |
+| Ligar cuentas del banco a cuentas de Finnit | ✅ | ⏳ | ⏳ | `linkBankAccount` (existente o nueva); importa 90 días. Saldo, límite y crédito disponible desde el banco. |
+| Importar movimientos y crear transacciones | ✅ | ⏳ | ⏳ | Incremental, sin duplicados; ignora autorizaciones pendientes y conversiones a meses sin intereses. |
+| Conciliación banco ↔ estado de cuenta PDF | ✅ | — | — | El estado de cuenta empata los movimientos ya importados del banco (probado: 105 de 105). |
+| Sincronización automática | ✅ | — | — | 7:00 y 15:00 (CDMX); pide al banco datos nuevos como máximo cada 20 h. Manual: `syncBankConnection`. |
+| Conciliación semanal guiada | ⏳ | ⏳ | ⏳ | Modelos `ReconciliationSession/Item` sin API. |
 
 ### 10. Flujo de caja y proyecciones
 
@@ -156,7 +161,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 | Revisión y confirmación de movimientos importados | ✅ | ⏳ | ⏳ | `statementImport`, `updateStatementLine` (ignorar, categoría, ligar a mano), `confirmStatementImport`, `reprocessStatementImport`. |
 | Conciliación con transacciones y gastos recurrentes | ✅ | ⏳ | ⏳ | No duplica compras ya registradas (mismo monto, ±3 días); marca pagados los recurrentes por patrón de comercio (±10 días, ±15% o ±50% si el monto es variable). |
 | Resumen del mes de la tarjeta vs total a pagar | ✅ | ⏳ | ⏳ | `cardMonthSummary`: total a pagar, recurrentes esperados vs cobrados, cargos nuevos. |
-| Sincronización con Belvo (sandbox) | ⏳ | ⏳ | ⏳ | Ver sección 9. |
+| Sincronización con el banco (Syncfy) | ✅ | ⏳ | ⏳ | Ver sección 9. |
 
 ## Plataforma
 

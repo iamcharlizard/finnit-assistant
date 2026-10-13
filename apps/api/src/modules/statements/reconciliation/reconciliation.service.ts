@@ -3,6 +3,7 @@ import {
   ImportedLineStatus,
   OccurrenceStatus,
   RecurringTrackingMode,
+  type ImportedTransaction as ImportedTransactionRow,
 } from '@finnit/database';
 import { PrismaService } from '../../../services/prisma.service';
 import { CategoriesService } from '../../categories/categories.service';
@@ -34,14 +35,35 @@ export class ReconciliationService {
               in: [ImportedLineStatus.pending, ImportedLineStatus.matched],
             },
           },
-          orderBy: [{ date: 'asc' }, { id: 'asc' }],
         },
       },
     });
-    if (statement.lines.length === 0) return;
+    await this.reconcileLines(
+      statement.userId,
+      statement.accountId,
+      statement.lines,
+      'statement',
+    );
+  }
 
-    const { userId, accountId } = statement;
-    const lines: LineToMatch[] = statement.lines.map((line) => ({
+  /**
+   * Reconciles lines that belong to one account (a statement, or a batch of
+   * bank movements). A transaction can be claimed once by a statement line
+   * and once by a bank line, so the monthly statement still recognizes the
+   * purchases that the bank sync already imported.
+   */
+  async reconcileLines(
+    userId: string,
+    accountId: string,
+    rows: ImportedTransactionRow[],
+    scope: 'statement' | 'bank',
+  ): Promise<void> {
+    if (rows.length === 0) return;
+    const sorted = [...rows].sort(
+      (a, b) => a.date.getTime() - b.date.getTime() || a.id.localeCompare(b.id),
+    );
+    const lineIds = sorted.map((line) => line.id);
+    const lines: LineToMatch[] = sorted.map((line) => ({
       id: line.id,
       date: line.date,
       amount: Number(line.amount),
@@ -58,13 +80,12 @@ export class ReconciliationService {
           userId,
           accountId,
           txnDate: { gte: from, lte: to },
-          // Not already claimed by a line of another import.
           importedMatches: {
             none: {
-              OR: [
-                { statementImportId: null },
-                { statementImportId: { not: statementImportId } },
-              ],
+              id: { notIn: lineIds },
+              ...(scope === 'statement'
+                ? { statementImportId: { not: null } }
+                : { linkedAccountId: { not: null } }),
             },
           },
         },
@@ -110,7 +131,7 @@ export class ReconciliationService {
     );
 
     const suggestions = new Map<string, string | null>();
-    for (const line of statement.lines) {
+    for (const line of sorted) {
       const occurrenceId = occurrenceMatches.get(line.id) ?? null;
       const transactionId = transactionMatches.get(line.id) ?? null;
 

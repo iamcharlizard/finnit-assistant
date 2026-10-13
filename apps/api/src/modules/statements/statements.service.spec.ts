@@ -16,6 +16,7 @@ import { S3StorageService } from '../storage/s3-storage.service';
 import { RecurringExpensesService } from '../recurring-expenses/recurring-expenses.service';
 import { StatementParserRegistry } from './parsing/statement-parser.registry';
 import { ReconciliationService } from './reconciliation/reconciliation.service';
+import { LineMaterializerService } from './reconciliation/line-materializer.service';
 import { StatementsService } from './statements.service';
 import {
   ConflictError,
@@ -116,6 +117,7 @@ describe('StatementsService', () => {
         { provide: StatementParserRegistry, useValue: parsers },
         { provide: ReconciliationService, useValue: reconciliation },
         { provide: RecurringExpensesService, useValue: recurring },
+        LineMaterializerService,
       ],
     }).compile();
     service = module.get(StatementsService);

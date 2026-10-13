@@ -6,6 +6,7 @@ import { RecurringExpensesModule } from '../recurring-expenses/recurring-expense
 import { StorageModule } from '../storage/storage.module';
 import { StatementParserRegistry } from './parsing/statement-parser.registry';
 import { ReconciliationService } from './reconciliation/reconciliation.service';
+import { LineMaterializerService } from './reconciliation/line-materializer.service';
 import { StatementsController } from './statements.controller';
 import { StatementsResolver } from './statements.resolver';
 import { StatementsService } from './statements.service';
@@ -18,8 +19,9 @@ import { StatementsService } from './statements.service';
     StatementsResolver,
     StatementParserRegistry,
     ReconciliationService,
+    LineMaterializerService,
     PrismaService,
   ],
-  exports: [ReconciliationService],
+  exports: [ReconciliationService, LineMaterializerService],
 })
 export class StatementsModule {}

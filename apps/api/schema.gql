@@ -127,6 +127,58 @@ type AuthPayload {
   user: User!
 }
 
+type BankConnection {
+  accounts: [LinkedBankAccount!]!
+  createdAt: DateTime!
+  errorMessage: String
+  id: ID!
+  institution: String
+  lastStatusCode: Int
+  lastSyncedAt: DateTime
+  provider: BankProvider!
+  status: BankConnectionStatus!
+}
+
+enum BankConnectionStatus {
+  active
+  error
+  revoked
+}
+
+enum BankProvider {
+  belvo
+  other
+  paybook
+  syncfy
+}
+
+type BankSyncResult {
+  connection: BankConnection!
+
+  """Transactions created from them"""
+  created: Int!
+
+  """New movements imported"""
+  imported: Int!
+
+  """
+  Whether Syncfy was asked to log in to the bank again (results arrive on the next sync)
+  """
+  refreshRequested: Boolean!
+}
+
+"""
+Token for the Syncfy widget. The user types the bank login into the widget; Finnit never sees it.
+"""
+type BankWidgetSession {
+  provider: BankProvider!
+
+  """Short-lived Syncfy session token; do not store it"""
+  token: String!
+  widgetScriptUrl: String!
+  widgetStylesheetUrl: String!
+}
+
 type Budget {
   amountTotal: Float
   categories: [BudgetCategory!]!
@@ -451,6 +503,28 @@ type GoalProgress {
   remaining: Float!
 }
 
+input LinkBankAccountInput {
+  """Existing Finnit account; omit with createAccount to create one"""
+  accountId: String
+  createAccount: Boolean = false
+}
+
+type LinkedBankAccount {
+  """Finnit account it imports into"""
+  accountId: String
+  availableCredit: Float
+  balance: Float
+  balanceUpdatedAt: DateTime
+  creditLimit: Float
+  currency: String
+  id: ID!
+
+  """Last 4 digits"""
+  mask: String
+  name: String
+  type: String
+}
+
 type MonthlyReport {
   categoryBreakdown: [CategoryExpense!]!
   currency: String!
@@ -473,6 +547,11 @@ type Mutation {
 
   """Admin only"""
   createAiModel(input: CreateAiModelInput!): AiModel!
+
+  """
+  Session for the Syncfy widget, where the user connects the bank. Call registerBankConnection with the id_credential the widget returns.
+  """
+  createBankWidgetSession: BankWidgetSession!
   createBudget(input: CreateBudgetInput!): Budget!
   createBudgetFromTemplate(input: BudgetFromTemplateInput!): Budget!
   createCategory(input: CreateCategoryInput!): Category!
@@ -487,18 +566,34 @@ type Mutation {
 
   """Admin only"""
   deleteAiModel(id: ID!): Boolean!
+
+  """
+  Removes the connection from Finnit; imported transactions stay. Delete the bank login in Syncfy separately.
+  """
+  deleteBankConnection(id: ID!): Boolean!
   deleteBudget(id: String!): Boolean!
   deleteCategory(id: String!): Boolean!
   deleteDebt(id: String!): Boolean!
   deleteRecurringExpense(id: ID!): Boolean!
   deleteStatementImport(id: ID!): Boolean!
   deleteTransaction(id: String!): Boolean!
+
+  """
+  Links a bank account to a Finnit account (or creates one) and imports its last 90 days
+  """
+  linkBankAccount(input: LinkBankAccountInput!, linkedAccountId: ID!): BankSyncResult!
+
+  """
+  Admin only: maps a Finnit user (by email) to an existing Syncfy user (id_user or id_external)
+  """
+  linkSyncfyUser(email: String!, syncfyUser: String!): Boolean!
   markAllNotificationsAsRead: Boolean!
   markNotificationAsRead(id: String!): Boolean!
 
   """Marks a manual (or unmatched automatic) payment as paid"""
   markRecurringPaymentPaid(occurrenceId: ID!, transactionId: ID): RecurringOccurrence!
   refreshToken(input: RefreshTokenInput!): AuthPayload!
+  registerBankConnection(idCredential: String!): BankSyncResult!
   removeTransactionAttachment(id: String!): Boolean!
 
   """Undoes paid/skipped/missed and unlinks the transaction"""
@@ -513,6 +608,12 @@ type Mutation {
   signIn(input: SignInInput!): AuthPayload!
   signUp(input: SignUpInput!): AuthPayload!
   skipRecurringPayment(occurrenceId: ID!): RecurringOccurrence!
+
+  """
+  Imports new movements. refreshFromBank asks Syncfy to log in to the bank again (at most once an hour); its data arrives on the next sync.
+  """
+  syncBankConnection(id: ID!, refreshFromBank: Boolean! = false): BankSyncResult!
+  unlinkBankAccount(linkedAccountId: ID!): BankConnection!
   updateAccount(id: String!, input: UpdateAccountInput!): Account!
 
   """
@@ -605,6 +706,7 @@ type Query {
     activeOnly: Boolean
     provider: AiProvider
   ): [AiModel!]!
+  bankConnections: [BankConnection!]!
   budget(id: String!): Budget!
   budgetAlerts: [BudgetAlert!]!
   budgetSummary(month: Float!, year: Float!): BudgetSummary!
@@ -867,6 +969,7 @@ type StatementLine {
 
 enum StatementLineKind {
   charge
+  deposit
   fee
   installment
   interest

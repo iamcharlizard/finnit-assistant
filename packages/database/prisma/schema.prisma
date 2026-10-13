@@ -54,6 +54,7 @@ enum NotificationStatus {
 enum BankProvider {
   belvo
   paybook
+  syncfy
   other
 }
 
@@ -145,6 +146,7 @@ enum ImportedLineKind {
   fee
   interest
   installment
+  deposit // money received in a debit/savings account (income)
 }
 
 enum AiProvider {
@@ -179,6 +181,7 @@ model User {
   goals             Goal[]
   notifications     Notification[]
   bankConnections   BankConnection[]
+  bankProviderUsers BankProviderUser[]
   reconciliations   ReconciliationSession[]
   tags              Tag[]
   Debt              Debt[]
@@ -515,34 +518,62 @@ model Notification {
   @@index([userId, status])
 }
 
+// A bank login held by the aggregator (Syncfy credential). Finnit stores only
+// the provider's ids, never the bank username or password.
 model BankConnection {
-  id             String               @id @default(uuid())
-  userId         String
-  provider       BankProvider
-  providerItemId String               @unique
-  institution    String?
-  status         BankConnectionStatus
-  lastSyncedAt   DateTime?
-  errorMessage   String?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  id                  String               @id @default(uuid())
+  userId              String
+  provider            BankProvider
+  providerItemId      String               @unique // Syncfy id_credential
+  providerUserId      String? // Syncfy id_user that owns the credential
+  institution         String?
+  status              BankConnectionStatus
+  lastStatusCode      Int? // last provider job code (200 ok, 401 bad credentials, 410 needs token…)
+  lastSyncedAt        DateTime?
+  lastPullRequestedAt DateTime? // last time we asked the provider to refresh from the bank
+  transactionsCursor  DateTime? // provider dt_refresh already imported
+  errorMessage        String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   linkedAccounts LinkedAccount[]
+
+  @@index([userId])
 }
 
+// Finnit user <-> aggregator user (e.g. Syncfy id_user).
+model BankProviderUser {
+  id             String       @id @default(uuid())
+  userId         String
+  provider       BankProvider
+  providerUserId String
+  createdAt      DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, userId])
+  @@unique([provider, providerUserId])
+}
+
+// A bank account seen through a connection. Movements are imported only once
+// it is linked to a Finnit account (accountId).
 model LinkedAccount {
-  id                String  @id @default(uuid())
+  id                String    @id @default(uuid())
   bankConnectionId  String
-  accountId         String
-  providerAccountId String  @unique
-  mask              String?
+  accountId         String?
+  providerAccountId String    @unique
+  mask              String? // last 4 digits only
   officialName      String?
-  type              String?
-  currency          String? @db.VarChar(3)
+  type              String? // provider account type, e.g. "Credit Card"
+  currency          String?   @db.VarChar(3)
+  balance           Decimal?  @db.Decimal(18, 2)
+  creditLimit       Decimal?  @db.Decimal(18, 2)
+  availableCredit   Decimal?  @db.Decimal(18, 2)
+  balanceUpdatedAt  DateTime?
 
   bankConnection BankConnection        @relation(fields: [bankConnectionId], references: [id], onDelete: Cascade)
-  account        Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account        Account?              @relation(fields: [accountId], references: [id], onDelete: SetNull)
   importedTxs    ImportedTransaction[]
 
   @@index([bankConnectionId])

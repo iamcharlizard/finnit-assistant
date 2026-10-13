@@ -82,6 +82,7 @@ Repite estos pasos para cada ambiente, usando los valores de la tabla de abajo.
    OPENAI_API_KEY=<opcional>
    GEMINI_API_KEY=<opcional>
    ADMIN_EMAILS=<emails que pueden administrar el catálogo de modelos de IA, separados por comas>
+   SYNCFY_API_KEY=<opcional: conexión bancaria con Syncfy; llave de sandbox en testing, de producción en production>
    ```
 4. **Domains**: el dominio de la tabla, *Path* `/`, *Container Port* `3000`, HTTPS con Let's Encrypt, *Strip Path* desactivado. Crea antes el registro **A** en el DNS (`api` o `api-test` → IPv4 del servidor).
 5. **Advanced → Resources**: límites según la tabla.
@@ -120,6 +121,15 @@ Los bancos sin parser local se leen con IA. Los modelos disponibles están en el
 El PDF se envía a la API del proveedor. Si no hay ningún modelo utilizable, esos estados de cuenta quedan en `failed` con un mensaje que lo indica.
 
 En desarrollo local, el servicio `s3` de `docker-compose.yml` (s3mock en el puerto 9090) sustituye a AWS; las variables están en `apps/api/.env.example`.
+
+### Conexión bancaria (Syncfy)
+
+- `SYNCFY_API_KEY` habilita la conexión bancaria. Usa la llave de **sandbox** en testing y la de **producción** solo en production: cada llave ve sus propios usuarios y conexiones.
+- El usuario conecta su banco en el widget de Syncfy (`createBankWidgetSession`); Finnit guarda solo los ids de Syncfy, nunca usuario ni contraseña del banco.
+- La API sincroniza a las 7:00 y 15:00 (CDMX). Pide a Syncfy que entre al banco como máximo cada 20 h por conexión (o cada hora si el usuario lo pide) y respeta `ready_in`; las lecturas son incrementales (`dt_refresh_from`) y reintenta con espera ante 429/5xx.
+- Para adoptar una conexión creada fuera de la app (pruebas): `linkSyncfyUser(email, syncfyUser)` (solo `ADMIN_EMAILS`) y luego `registerBankConnection(idCredential)` como ese usuario.
+- Borrar una conexión en Finnit no la borra en Syncfy; hazlo desde Syncfy.
+- Revisa el límite de tu plan de Syncfy (credenciales y transacciones) antes de abrirlo a más usuarios.
 
 ### 3. Secretos en GitHub
 

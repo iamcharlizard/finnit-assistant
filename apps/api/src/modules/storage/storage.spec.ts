@@ -1,4 +1,4 @@
-import { ServiceUnavailableException } from '@nestjs/common';
+import { NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { detectFileType, safeFileName } from './file-type.util';
 import { S3StorageService } from './s3-storage.service';
 
@@ -66,5 +66,17 @@ describe('S3StorageService', () => {
     await expect(
       storage.open(S3StorageService.key(userId, 'statements', id, 'pdf')),
     ).rejects.toThrow(ServiceUnavailableException);
+  });
+
+  it('treats AccessDenied on a read as a missing file', async () => {
+    process.env.S3_BUCKET = 'bucket';
+    const storage = new S3StorageService();
+    const denied = Object.assign(new Error('Access Denied'), {
+      name: 'AccessDenied',
+    });
+    jest.spyOn(storage['client']!, 'send').mockRejectedValue(denied as never);
+    await expect(
+      storage.open(S3StorageService.key(userId, 'statements', id, 'pdf')),
+    ).rejects.toThrow(NotFoundException);
   });
 });

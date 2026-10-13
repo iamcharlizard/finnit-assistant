@@ -113,8 +113,16 @@ export class S3StorageService {
         contentLength: result.ContentLength,
       };
     } catch (error) {
-      if (error instanceof NoSuchKey)
+      if (error instanceof NoSuchKey) {
         throw new NotFoundException('File not found');
+      }
+      // Without s3:ListBucket (least privilege) S3 answers AccessDenied, not
+      // NoSuchKey, for a missing object. The database said the file exists,
+      // so treat it as missing and leave a trace for real permission issues.
+      if ((error as { name?: string }).name === 'AccessDenied') {
+        this.logger.warn(`Access denied reading ${key} (missing object?)`);
+        throw new NotFoundException('File not found');
+      }
       throw error;
     }
   }

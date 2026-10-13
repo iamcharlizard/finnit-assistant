@@ -39,7 +39,12 @@
       "analytics": "Analytics",
       "settings": "Settings",
       "admin": "Administration",
-      "categorize": "Categorize transactions"
+      "categorize": "Categorize transactions",
+      "budgets": "Budgets",
+      "debts": "Debts",
+      "goals": "Goals",
+      "simulator": "Simulator",
+      "statements": "Statements"
     },
     "short": {
       "dashboard": "Home",
@@ -64,7 +69,12 @@
     "adminUsers": "Users · Administration",
     "adminAi": "AI · Administration",
     "login": "Sign in",
-    "aliases": "Transaction aliases"
+    "aliases": "Transaction aliases",
+    "budgets": "Budgets",
+    "debts": "Debts",
+    "goals": "Savings goals",
+    "simulator": "What-if simulator",
+    "notifications": "Notifications"
   },
   "newEntry": {
     "title": "New transaction",

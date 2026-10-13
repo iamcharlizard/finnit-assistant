@@ -39,7 +39,12 @@
       "analytics": "Análisis",
       "settings": "Ajustes",
       "admin": "Administración",
-      "categorize": "Clasificar movimientos"
+      "categorize": "Clasificar movimientos",
+      "budgets": "Presupuestos",
+      "debts": "Deudas",
+      "goals": "Metas",
+      "simulator": "Simulador",
+      "statements": "Estados de cuenta"
     },
     "short": {
       "dashboard": "Inicio",
@@ -64,7 +69,12 @@
     "adminUsers": "Usuarios · Administración",
     "adminAi": "IA · Administración",
     "login": "Iniciar sesión",
-    "aliases": "Alias de movimientos"
+    "aliases": "Alias de movimientos",
+    "budgets": "Presupuestos",
+    "debts": "Deudas",
+    "goals": "Metas de ahorro",
+    "simulator": "Simulador ¿Y si…?",
+    "notifications": "Notificaciones"
   },
   "newEntry": {
     "title": "Nuevo movimiento",

@@ -1,12 +1,17 @@
 import {
+  Calculator,
   ChartLine,
   CreditCard,
+  FileText,
   History,
   House,
+  Landmark,
+  PiggyBank,
   Repeat,
   Settings,
   ShieldCheck,
   Tags,
+  Target,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -35,7 +40,12 @@ export type NavItemKey =
   | 'categorize'
   | 'recurring'
   | 'cards'
+  | 'budgets'
+  | 'debts'
+  | 'goals'
+  | 'simulator'
   | 'analytics'
+  | 'statements'
   | 'settings'
   | 'admin';
 
@@ -72,14 +82,23 @@ export const NAV_SECTIONS: ReadonlyArray<NavSection> = [
     key: 'accounts',
     items: [{ key: 'cards', href: '/accounts', icon: CreditCard }],
   },
-  // Budgets, goals and debts arrive in later phases.
-  { key: 'planning', items: [] },
+  {
+    key: 'planning',
+    items: [
+      { key: 'budgets', href: '/planning/budgets', icon: PiggyBank },
+      { key: 'debts', href: '/planning/debts', icon: Landmark },
+      { key: 'goals', href: '/planning/goals', icon: Target },
+      { key: 'simulator', href: '/planning/simulator', icon: Calculator },
+    ],
+  },
   {
     key: 'analytics',
     items: [{ key: 'analytics', href: '/analytics', icon: ChartLine }],
   },
-  // Statement imports get their own screen later.
-  { key: 'statements', items: [] },
+  {
+    key: 'statements',
+    items: [{ key: 'statements', href: '/statements', icon: FileText }],
+  },
   {
     key: 'settings',
     items: [{ key: 'settings', href: '/settings', icon: Settings }],

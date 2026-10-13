@@ -10,6 +10,11 @@ export type PageTitleKey =
   | 'categorize'
   | 'recurring'
   | 'cards'
+  | 'budgets'
+  | 'debts'
+  | 'goals'
+  | 'simulator'
+  | 'notifications'
   | 'analytics'
   | 'statements'
   | 'settings'
@@ -30,6 +35,11 @@ export const PAGE_TITLES: ReadonlyArray<
   // Redirects to /recurring; kept for the moment before the redirect.
   ['/calendar', 'recurring'],
   ['/accounts', 'cards'],
+  ['/planning/budgets', 'budgets'],
+  ['/planning/debts', 'debts'],
+  ['/planning/goals', 'goals'],
+  ['/planning/simulator', 'simulator'],
+  ['/notifications', 'notifications'],
   ['/analytics', 'analytics'],
   ['/statements', 'statements'],
   ['/statements/[...rest]', 'statements'],

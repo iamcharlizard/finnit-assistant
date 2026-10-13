@@ -28,8 +28,8 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | 13. Estados de cuenta y conciliación *(nuevo)* | 🟡 | ⏳ | 🟡 |
 | 14. Panel administrativo *(nuevo)* | ✅ | — | ✅ |
 | 15. Pantalla de pagos recurrentes y sugerencias *(nuevo)* | ✅ | ⏳ | ✅ |
-| 16. Clasificación de movimientos *(nuevo)* | ⏳ | ⏳ | ⏳ |
-| 17. Alias de movimientos *(nuevo)* | ⏳ | ⏳ | ⏳ |
+| 16. Clasificación de movimientos *(nuevo)* | ✅ | ⏳ | ✅ |
+| 17. Alias de movimientos *(nuevo)* | ✅ | ⏳ | 🟡 |
 | 18. Personalización de cuentas y tarjetas *(nuevo)* | ✅ | ⏳ | ✅ |
 | 19. Flujo para crear movimientos *(nuevo)* | 🟡 | ⏳ | 🟡 |
 | 20. Cuentas y tarjetas manuales *(nuevo)* | ✅ | ⏳ | ✅ |
@@ -83,7 +83,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Lista jerárquica por defecto | ✅ | ⏳ | ⏳ | |
 | CRUD de categorías propias | ✅ | ⏳ | ⏳ | |
 | Uso por categoría | ✅ | ⏳ | ⏳ | `categoryUsage`. |
-| Reglas de comercio que aprenden de correcciones | ⏳ | ⏳ | ⏳ | |
+| Reglas de comercio que aprenden de correcciones | ✅ | ⏳ | ✅ | Ver sección 16. |
 
 ### 5. Presupuestos
 
@@ -195,18 +195,18 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Lista por cuenta y periodo, primero los sin categoría | 🟡 | ⏳ | ⏳ | `transactions` ya filtra por cuenta y fechas. |
-| Sugerencia de categoría con IA, aceptar una por una o todas | ⏳ | ⏳ | ⏳ | Funcionalidad de IA del panel; solo se envía comercio, descripción y monto. |
-| Mover uno o varios movimientos a otra categoría | 🟡 | ⏳ | ⏳ | Hoy solo `updateTransaction` de uno en uno. |
-| Reglas de comercio que aprenden de las correcciones | ⏳ | — | — | Mismo pendiente que la sección 4. |
+| Lista por cuenta y periodo, primero los sin categoría | ✅ | ⏳ | ✅ | `/transactions/categorize`; filtros `uncategorized` y `hasSuggestion`. |
+| Sugerencia de categoría con IA, aceptar una por una o todas | ✅ | ⏳ | ✅ | `suggestTransactionCategories` (primero reglas, el resto en un lote de IA `transaction_categorization`; solo nombre mostrado, monto y tipo), `acceptCategorySuggestions` / `rejectCategorySuggestions`. |
+| Mover uno o varios movimientos a otra categoría | ✅ | ⏳ | ✅ | `categorizeTransactions` (hasta 500), con "Recordar para este comercio". |
+| Reglas de comercio que aprenden de las correcciones | ✅ | — | ✅ | `MerchantRule`; se aplican al crear, importar del banco y de estados de cuenta, antes que la sugerencia por frecuencia. Lista y borrado en Ajustes → Alias. |
 
 ### 17. Alias de movimientos *(nuevo)*
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Reglas de alias (contiene, empieza con, exacto o expresión regular) | ⏳ | ⏳ | ⏳ | Nombre a mostrar, categoría y "privado" opcionales; vista previa de coincidencias. |
-| Alias para un solo movimiento | ⏳ | ⏳ | ⏳ | |
-| Nombre original oculto, visible a demanda | ⏳ | ⏳ | ⏳ | El original nunca se modifica; los privados tampoco aparecen en búsquedas ni exportaciones. |
+| Reglas de alias (contiene, empieza con, exacto o expresión regular) | ✅ | ⏳ | ✅ | `/settings/aliases`. Coincidencia materializada en `Transaction.aliasId`; sin acentos ni mayúsculas (`unaccent`); la expresión regular solo se evalúa en Postgres, con límite de 5 s. Vista previa en vivo. |
+| Alias para un solo movimiento | ✅ | ⏳ | ✅ | `setTransactionAlias`; "Renombrar" en Clasificar movimientos. |
+| Nombre original oculto, visible a demanda | ✅ | ⏳ | 🟡 | El original nunca se modifica; en listas los privados muestran solo el alias (candado) y no se encuentran buscando el original. `transaction(id)` devuelve el original; falta el botón "Ver original" (detalle, fase 5). |
 
 ### 18. Personalización de cuentas y tarjetas *(nuevo)*
 

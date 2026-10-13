@@ -3,6 +3,10 @@ import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AdminGuard } from '../../common/guards/admin.guard';
 import { AiModelsService } from './ai-models.service';
+import { AiFeaturesService } from './ai-features.service';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AiFeatureKey } from '@finnit/database';
+import { AiFeature, UpdateAiFeatureInput } from './dto/ai-feature.dto';
 import {
   AiModel,
   AiModelsArgs,
@@ -13,7 +17,10 @@ import {
 @Resolver(() => AiModel)
 @UseGuards(JwtAuthGuard)
 export class AiModelsResolver {
-  constructor(private readonly catalog: AiModelsService) {}
+  constructor(
+    private readonly catalog: AiModelsService,
+    private readonly features: AiFeaturesService,
+  ) {}
 
   @Query(() => [AiModel], {
     description: 'AI model catalog; default first, then by sortOrder',
@@ -48,5 +55,26 @@ export class AiModelsResolver {
     @Args('id', { type: () => ID }) id: string,
   ): Promise<boolean> {
     return this.catalog.delete(id);
+  }
+
+  @Query(() => [AiFeature], {
+    description: 'Admin only. Settings of each AI feature',
+  })
+  @UseGuards(AdminGuard)
+  async aiFeatures(): Promise<AiFeature[]> {
+    return this.features.list();
+  }
+
+  @Mutation(() => AiFeature, {
+    description:
+      'Admin only. Turn an AI feature on/off, pick its model and fallbacks',
+  })
+  @UseGuards(AdminGuard)
+  async updateAiFeature(
+    @CurrentUser() actor: { id: string },
+    @Args('key', { type: () => AiFeatureKey }) key: AiFeatureKey,
+    @Args('input') input: UpdateAiFeatureInput,
+  ): Promise<AiFeature> {
+    return this.features.update(key, input, actor.id);
   }
 }

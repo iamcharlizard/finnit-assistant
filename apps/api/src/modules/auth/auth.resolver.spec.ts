@@ -2,9 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthResolver } from './auth.resolver';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { ExecutionContext } from '@nestjs/common';
+import { UserRole } from '@finnit/database';
 import {
-  ConflictError,
+  ForbiddenError,
   UnauthorizedError,
   ValidationError,
   NotFoundError,
@@ -23,8 +23,29 @@ describe('AuthResolver', () => {
     id: 'user-1',
     name: 'Test User',
     email: 'test@example.com',
+    role: UserRole.user,
+    isMaster: false,
+    hasPassword: true,
+    hasGoogle: false,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
+  };
+
+  /** The database row JwtStrategy puts on the request. */
+  const mockUserRow = {
+    id: mockUser.id,
+    name: mockUser.name,
+    email: mockUser.email,
+    role: UserRole.user,
+    isMaster: false,
+    passwordHash: 'salt:hash',
+    googleSubject: null,
+    disabledAt: null,
+    lastLoginAt: null,
+    tokenVersion: 0,
+    invitedById: null,
+    createdAt: mockUser.createdAt,
+    updatedAt: mockUser.updatedAt,
   };
 
   const mockAuthPayload = {
@@ -35,8 +56,8 @@ describe('AuthResolver', () => {
 
   beforeEach(async () => {
     const mockAuthService = {
-      signUp: jest.fn(),
       signIn: jest.fn(),
+      signInWithGoogle: jest.fn(),
       refreshToken: jest.fn(),
       requestPasswordReset: jest.fn(),
       resetPassword: jest.fn(),
@@ -53,67 +74,14 @@ describe('AuthResolver', () => {
         },
       ],
     })
-    .overrideGuard(JwtAuthGuard)
-    .useValue(mockJwtAuthGuard)
-    .compile();
+      .overrideGuard(JwtAuthGuard)
+      .useValue(mockJwtAuthGuard)
+      .compile();
 
     resolver = module.get<AuthResolver>(AuthResolver);
     authService = module.get(AuthService);
 
     jest.clearAllMocks();
-  });
-
-  describe('signUp', () => {
-    const signUpInput = {
-      name: 'John Doe',
-      email: 'john@example.com',
-      password: 'securePassword123!',
-    };
-
-    it('should successfully register a new user', async () => {
-      // Arrange
-      authService.signUp.mockResolvedValue(mockAuthPayload);
-
-      // Act
-      const result = await resolver.signUp(signUpInput);
-
-      // Assert
-      expect(authService.signUp).toHaveBeenCalledWith(signUpInput);
-      expect(result).toEqual(mockAuthPayload);
-      expect(result.accessToken).toBe('access-token-123');
-      expect(result.user.email).toBe(mockUser.email);
-    });
-
-    it('should throw ConflictError when user already exists', async () => {
-      // Arrange
-      authService.signUp.mockRejectedValue(
-        new ConflictError('User with this email already exists')
-      );
-
-      // Act & Assert
-      await expect(resolver.signUp(signUpInput)).rejects.toThrow(ConflictError);
-      expect(authService.signUp).toHaveBeenCalledWith(signUpInput);
-    });
-
-    it('should handle validation errors', async () => {
-      // Arrange
-      const invalidInput = { ...signUpInput, email: 'invalid-email' };
-      authService.signUp.mockRejectedValue(new ValidationError('Invalid email format'));
-
-      // Act & Assert
-      await expect(resolver.signUp(invalidInput)).rejects.toThrow(ValidationError);
-    });
-
-    it('should validate required fields', async () => {
-      // Test input validation at the resolver level
-      const incompleteInput = { email: 'test@example.com', password: 'password' };
-      // Note: In a real GraphQL setup, this would be caught by the schema validation
-      // Here we're testing the resolver behavior when such validation fails
-      
-      authService.signUp.mockRejectedValue(new ValidationError('Name is required'));
-
-      await expect(resolver.signUp(incompleteInput as any)).rejects.toThrow(ValidationError);
-    });
   });
 
   describe('signIn', () => {
@@ -138,29 +106,77 @@ describe('AuthResolver', () => {
 
     it('should throw UnauthorizedError for invalid credentials', async () => {
       // Arrange
-      authService.signIn.mockRejectedValue(new UnauthorizedError('Invalid credentials'));
+      authService.signIn.mockRejectedValue(
+        new UnauthorizedError('Invalid credentials'),
+      );
 
       // Act & Assert
-      await expect(resolver.signIn(signInInput)).rejects.toThrow(UnauthorizedError);
+      await expect(resolver.signIn(signInInput)).rejects.toThrow(
+        UnauthorizedError,
+      );
       expect(authService.signIn).toHaveBeenCalledWith(signInInput);
     });
 
     it('should handle non-existent user', async () => {
       // Arrange
-      const nonExistentUserInput = { ...signInInput, email: 'nonexistent@example.com' };
-      authService.signIn.mockRejectedValue(new UnauthorizedError('Invalid credentials'));
+      const nonExistentUserInput = {
+        ...signInInput,
+        email: 'nonexistent@example.com',
+      };
+      authService.signIn.mockRejectedValue(
+        new UnauthorizedError('Invalid credentials'),
+      );
 
       // Act & Assert
-      await expect(resolver.signIn(nonExistentUserInput)).rejects.toThrow(UnauthorizedError);
+      await expect(resolver.signIn(nonExistentUserInput)).rejects.toThrow(
+        UnauthorizedError,
+      );
     });
 
     it('should handle wrong password', async () => {
       // Arrange
       const wrongPasswordInput = { ...signInInput, password: 'wrongPassword' };
-      authService.signIn.mockRejectedValue(new UnauthorizedError('Invalid credentials'));
+      authService.signIn.mockRejectedValue(
+        new UnauthorizedError('Invalid credentials'),
+      );
 
       // Act & Assert
-      await expect(resolver.signIn(wrongPasswordInput)).rejects.toThrow(UnauthorizedError);
+      await expect(resolver.signIn(wrongPasswordInput)).rejects.toThrow(
+        UnauthorizedError,
+      );
+    });
+  });
+
+  describe('signInWithGoogle', () => {
+    const googleInput = { idToken: 'google-id-token', nonce: 'nonce-1' };
+
+    it('should delegate to the service and return its payload', async () => {
+      authService.signInWithGoogle.mockResolvedValue(mockAuthPayload);
+
+      const result = await resolver.signInWithGoogle(googleInput);
+
+      expect(authService.signInWithGoogle).toHaveBeenCalledWith(googleInput);
+      expect(result).toEqual(mockAuthPayload);
+    });
+
+    it('should propagate ForbiddenError for people without access', async () => {
+      authService.signInWithGoogle.mockRejectedValue(
+        new ForbiddenError('No access'),
+      );
+
+      await expect(resolver.signInWithGoogle(googleInput)).rejects.toThrow(
+        ForbiddenError,
+      );
+    });
+
+    it('should propagate UnauthorizedError for invalid Google tokens', async () => {
+      authService.signInWithGoogle.mockRejectedValue(
+        new UnauthorizedError('Invalid Google sign-in'),
+      );
+
+      await expect(resolver.signInWithGoogle(googleInput)).rejects.toThrow(
+        UnauthorizedError,
+      );
     });
   });
 
@@ -189,19 +205,27 @@ describe('AuthResolver', () => {
 
     it('should throw UnauthorizedError for invalid refresh token', async () => {
       // Arrange
-      authService.refreshToken.mockRejectedValue(new UnauthorizedError('Invalid refresh token'));
+      authService.refreshToken.mockRejectedValue(
+        new UnauthorizedError('Invalid refresh token'),
+      );
 
       // Act & Assert
-      await expect(resolver.refreshToken(refreshInput)).rejects.toThrow(UnauthorizedError);
+      await expect(resolver.refreshToken(refreshInput)).rejects.toThrow(
+        UnauthorizedError,
+      );
     });
 
     it('should throw UnauthorizedError for expired refresh token', async () => {
       // Arrange
       const expiredInput = { refreshToken: 'expired-token' };
-      authService.refreshToken.mockRejectedValue(new UnauthorizedError('Invalid refresh token'));
+      authService.refreshToken.mockRejectedValue(
+        new UnauthorizedError('Invalid refresh token'),
+      );
 
       // Act & Assert
-      await expect(resolver.refreshToken(expiredInput)).rejects.toThrow(UnauthorizedError);
+      await expect(resolver.refreshToken(expiredInput)).rejects.toThrow(
+        UnauthorizedError,
+      );
     });
   });
 
@@ -218,7 +242,9 @@ describe('AuthResolver', () => {
       const result = await resolver.requestPasswordReset(resetRequest);
 
       // Assert
-      expect(authService.requestPasswordReset).toHaveBeenCalledWith(resetRequest);
+      expect(authService.requestPasswordReset).toHaveBeenCalledWith(
+        resetRequest,
+      );
       expect(result).toBe(true);
     });
 
@@ -231,16 +257,22 @@ describe('AuthResolver', () => {
       const result = await resolver.requestPasswordReset(nonExistentEmail);
 
       // Assert
-      expect(authService.requestPasswordReset).toHaveBeenCalledWith(nonExistentEmail);
+      expect(authService.requestPasswordReset).toHaveBeenCalledWith(
+        nonExistentEmail,
+      );
       expect(result).toBe(true);
     });
 
     it('should handle email service errors gracefully', async () => {
       // Arrange
-      authService.requestPasswordReset.mockRejectedValue(new Error('Email service unavailable'));
+      authService.requestPasswordReset.mockRejectedValue(
+        new Error('Email service unavailable'),
+      );
 
       // Act & Assert
-      await expect(resolver.requestPasswordReset(resetRequest)).rejects.toThrow('Email service unavailable');
+      await expect(resolver.requestPasswordReset(resetRequest)).rejects.toThrow(
+        'Email service unavailable',
+      );
     });
   });
 
@@ -266,41 +298,51 @@ describe('AuthResolver', () => {
       // Arrange
       const invalidInput = { ...resetInput, token: 'invalid-token' };
       authService.resetPassword.mockRejectedValue(
-        new ValidationError('Invalid or expired reset token')
+        new ValidationError('Invalid or expired reset token'),
       );
 
       // Act & Assert
-      await expect(resolver.resetPassword(invalidInput)).rejects.toThrow(ValidationError);
+      await expect(resolver.resetPassword(invalidInput)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
     it('should throw ValidationError for weak password', async () => {
       // Arrange
       const weakPasswordInput = { ...resetInput, newPassword: '123' };
       authService.resetPassword.mockRejectedValue(
-        new ValidationError('Password does not meet requirements')
+        new ValidationError('Password does not meet requirements'),
       );
 
       // Act & Assert
-      await expect(resolver.resetPassword(weakPasswordInput)).rejects.toThrow(ValidationError);
+      await expect(resolver.resetPassword(weakPasswordInput)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
     it('should throw NotFoundError when user not found', async () => {
       // Arrange
-      authService.resetPassword.mockRejectedValue(new NotFoundError('User not found'));
+      authService.resetPassword.mockRejectedValue(
+        new NotFoundError('User not found'),
+      );
 
       // Act & Assert
-      await expect(resolver.resetPassword(resetInput)).rejects.toThrow(NotFoundError);
+      await expect(resolver.resetPassword(resetInput)).rejects.toThrow(
+        NotFoundError,
+      );
     });
 
     it('should throw ValidationError for expired token', async () => {
       // Arrange
       const expiredTokenInput = { ...resetInput, token: 'expired-token' };
       authService.resetPassword.mockRejectedValue(
-        new ValidationError('Invalid or expired reset token')
+        new ValidationError('Invalid or expired reset token'),
       );
 
       // Act & Assert
-      await expect(resolver.resetPassword(expiredTokenInput)).rejects.toThrow(ValidationError);
+      await expect(resolver.resetPassword(expiredTokenInput)).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -352,23 +394,35 @@ describe('AuthResolver', () => {
   });
 
   describe('me', () => {
-    it('should return the user injected by @CurrentUser', () => {
+    it('should map the user injected by @CurrentUser to the GraphQL model', () => {
       // Act
-      const result = resolver.me(mockUser as any);
+      const result = resolver.me(mockUserRow);
 
       // Assert
-      expect(result).toBe(mockUser);
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should never expose the password hash or the Google subject', () => {
+      const result = resolver.me({
+        ...mockUserRow,
+        googleSubject: 'google-sub',
+      });
+
+      expect(result).not.toHaveProperty('passwordHash');
+      expect(result).not.toHaveProperty('googleSubject');
+      expect(result.hasGoogle).toBe(true);
+      expect(result.hasPassword).toBe(true);
     });
 
     it('should not hit the auth service (user is resolved by the guard)', () => {
       // Act
-      resolver.me(mockUser as any);
+      resolver.me(mockUserRow);
 
       // Assert
       expect(authService.getCurrentUser).not.toHaveBeenCalled();
     });
 
-    it('should require authentication', async () => {
+    it('should require authentication', () => {
       // Test that the JWT guard is applied to the me query
       // Note: This would be tested in integration tests with actual HTTP requests
       // Here we verify the guard is called
@@ -379,48 +433,30 @@ describe('AuthResolver', () => {
   describe('error handling and edge cases', () => {
     it('should handle service errors gracefully', async () => {
       // Arrange
-      authService.signIn.mockRejectedValue(new Error('Database connection failed'));
+      authService.signIn.mockRejectedValue(
+        new Error('Database connection failed'),
+      );
 
       // Act & Assert
-      await expect(resolver.signIn({
-        email: 'test@example.com',
-        password: 'password',
-      })).rejects.toThrow('Database connection failed');
+      await expect(
+        resolver.signIn({
+          email: 'test@example.com',
+          password: 'password',
+        }),
+      ).rejects.toThrow('Database connection failed');
     });
 
     it('should handle malformed input', async () => {
       // Arrange
       const malformedInput = { email: null, password: undefined };
-      authService.signIn.mockRejectedValue(new ValidationError('Invalid input'));
+      authService.signIn.mockRejectedValue(
+        new ValidationError('Invalid input'),
+      );
 
       // Act & Assert
-      await expect(resolver.signIn(malformedInput as any)).rejects.toThrow(ValidationError);
-    });
-
-    it('should handle concurrent sign-up attempts', async () => {
-      // Arrange
-      const signUpInput = {
-        name: 'Test User',
-        email: 'concurrent@example.com',
-        password: 'password123',
-      };
-      authService.signUp.mockRejectedValue(new ConflictError('User already exists'));
-
-      // Act & Assert
-      await expect(resolver.signUp(signUpInput)).rejects.toThrow(ConflictError);
-    });
-
-    it('should validate email format in sign-up', async () => {
-      // Arrange
-      const invalidEmailInput = {
-        name: 'Test User',
-        email: 'not-an-email',
-        password: 'password123',
-      };
-      authService.signUp.mockRejectedValue(new ValidationError('Invalid email format'));
-
-      // Act & Assert
-      await expect(resolver.signUp(invalidEmailInput)).rejects.toThrow(ValidationError);
+      await expect(resolver.signIn(malformedInput as any)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
     it('should handle rate limiting scenarios', async () => {
@@ -428,10 +464,12 @@ describe('AuthResolver', () => {
       authService.signIn.mockRejectedValue(new Error('Too many requests'));
 
       // Act & Assert
-      await expect(resolver.signIn({
-        email: 'test@example.com',
-        password: 'password',
-      })).rejects.toThrow('Too many requests');
+      await expect(
+        resolver.signIn({
+          email: 'test@example.com',
+          password: 'password',
+        }),
+      ).rejects.toThrow('Too many requests');
     });
 
     it('should handle network timeouts', async () => {
@@ -439,21 +477,26 @@ describe('AuthResolver', () => {
       authService.refreshToken.mockRejectedValue(new Error('Network timeout'));
 
       // Act & Assert
-      await expect(resolver.refreshToken({
-        refreshToken: 'token',
-      })).rejects.toThrow('Network timeout');
+      await expect(
+        resolver.refreshToken({
+          refreshToken: 'token',
+        }),
+      ).rejects.toThrow('Network timeout');
     });
   });
 
   describe('security considerations', () => {
     it('should not expose sensitive information in errors', async () => {
       // Arrange
-      authService.signIn.mockRejectedValue(new UnauthorizedError('Invalid credentials'));
+      authService.signIn.mockRejectedValue(
+        new UnauthorizedError('Invalid credentials'),
+      );
 
       // Act & Assert
       try {
         await resolver.signIn({ email: 'test@example.com', password: 'wrong' });
       } catch (error) {
+        if (!(error instanceof Error)) throw error;
         expect(error.message).toBe('Invalid credentials');
         expect(error.message).not.toContain('password');
         expect(error.message).not.toContain('hash');
@@ -464,47 +507,32 @@ describe('AuthResolver', () => {
       // Arrange
       const suspiciousToken = '<script>alert("xss")</script>';
       authService.resetPassword.mockRejectedValue(
-        new ValidationError('Invalid or expired reset token')
+        new ValidationError('Invalid or expired reset token'),
       );
 
       // Act & Assert
-      await expect(resolver.resetPassword({
-        token: suspiciousToken,
-        newPassword: 'newPassword123',
-      })).rejects.toThrow(ValidationError);
-    });
-
-    it('should validate input sanitization', async () => {
-      // Arrange
-      const maliciousInput = {
-        name: '<script>alert("xss")</script>',
-        email: 'test@example.com',
-        password: 'password123',
-      };
-      // Service should handle sanitization
-      authService.signUp.mockResolvedValue(mockAuthPayload);
-
-      // Act
-      await resolver.signUp(maliciousInput);
-
-      // Assert
-      expect(authService.signUp).toHaveBeenCalledWith(maliciousInput);
+      await expect(
+        resolver.resetPassword({
+          token: suspiciousToken,
+          newPassword: 'newPassword123',
+        }),
+      ).rejects.toThrow(ValidationError);
     });
   });
 
   describe('GraphQL specific behavior', () => {
-    it('should return the current user as-is from the GraphQL request', () => {
+    it('should return the current user from the GraphQL request', () => {
       // Arrange
-      const currentUser = { ...mockUser };
+      const currentUser = { ...mockUserRow };
 
       // Act
-      const result = resolver.me(currentUser as any);
+      const result = resolver.me(currentUser);
 
       // Assert
       expect(result).toEqual(mockUser);
     });
 
-    it('should work with GraphQL subscriptions context', async () => {
+    it('should work with GraphQL subscriptions context', () => {
       // For future subscription implementations
       const subscriptionContext = {
         connection: { context: { user: { userId: mockUser.id } } },
@@ -512,7 +540,9 @@ describe('AuthResolver', () => {
       authService.getCurrentUser.mockResolvedValue(mockUser);
 
       // This would be relevant if we had subscription resolvers
-      expect(subscriptionContext.connection.context.user.userId).toBe(mockUser.id);
+      expect(subscriptionContext.connection.context.user.userId).toBe(
+        mockUser.id,
+      );
     });
   });
 });

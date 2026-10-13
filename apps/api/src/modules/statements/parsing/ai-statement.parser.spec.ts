@@ -1,6 +1,7 @@
 import { mockDeep } from 'jest-mock-extended';
-import { AiProvider, ImportedLineKind } from '@finnit/database';
+import { AiFeatureKey, AiProvider, ImportedLineKind } from '@finnit/database';
 import {
+  AiFeatureDisabledError,
   AiModelsService,
   NoUsableAiModelError,
 } from '../../ai/ai-models.service';
@@ -35,7 +36,7 @@ describe('AiStatementParser', () => {
 
     expect(aiModels.extractFromPdf).toHaveBeenCalledWith(
       expect.objectContaining({ pdf, schemaName: 'record_statement' }),
-      'model-uuid',
+      { aiModelId: 'model-uuid', feature: AiFeatureKey.statement_parsing },
     );
     expect(result.parserId).toBe('ai:openai/gpt-5-mini');
     expect(result.statement.currency).toBe('MXN');
@@ -49,6 +50,17 @@ describe('AiStatementParser', () => {
     await expect(parser.parse(pdf)).rejects.toThrow(
       new StatementParseError('No active AI model'),
     );
+  });
+
+  it('reports when an admin turned statement parsing off', async () => {
+    aiModels.extractFromPdf.mockRejectedValue(
+      new AiFeatureDisabledError(AiFeatureKey.statement_parsing),
+    );
+    await expect(parser.parse(pdf)).rejects.toThrow(StatementParseError);
+    expect(aiModels.extractFromPdf).toHaveBeenCalledWith(expect.anything(), {
+      aiModelId: undefined,
+      feature: AiFeatureKey.statement_parsing,
+    });
   });
 
   it('hides provider details when every model fails', async () => {

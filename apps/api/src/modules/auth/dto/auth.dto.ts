@@ -1,5 +1,11 @@
 import { ObjectType, Field, InputType } from '@nestjs/graphql';
-import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 import { User } from '../../../common/types/models/user.model';
 
 @ObjectType()
@@ -15,25 +21,6 @@ export class AuthPayload {
 }
 
 @InputType()
-export class SignUpInput {
-  @Field()
-  @IsString()
-  @MinLength(2)
-  @MaxLength(50)
-  name: string;
-
-  @Field()
-  @IsEmail()
-  email: string;
-
-  @Field()
-  @IsString()
-  @MinLength(8)
-  @MaxLength(100)
-  password: string;
-}
-
-@InputType()
 export class SignInInput {
   @Field()
   @IsEmail()
@@ -42,6 +29,23 @@ export class SignInInput {
   @Field()
   @IsString()
   password: string;
+}
+
+@InputType()
+export class SignInWithGoogleInput {
+  @Field({ description: 'ID token returned by Google Sign-In' })
+  @IsString()
+  @MaxLength(4096)
+  idToken: string;
+
+  @Field({
+    nullable: true,
+    description: 'Nonce sent to Google; when given it must match the token',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(256)
+  nonce?: string;
 }
 
 @InputType()

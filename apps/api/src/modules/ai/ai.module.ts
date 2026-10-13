@@ -6,6 +6,7 @@ import {
   defaultProviders,
 } from './ai-models.service';
 import { AiModelsResolver } from './ai-models.resolver';
+import { AiFeaturesService } from './ai-features.service';
 import { AiProviderClient } from './providers/ai-provider';
 
 @Module({
@@ -18,6 +19,7 @@ import { AiProviderClient } from './providers/ai-provider';
       inject: [PrismaService, AI_PROVIDERS],
     },
     AiModelsResolver,
+    AiFeaturesService,
     PrismaService,
   ],
   exports: [AiModelsService],

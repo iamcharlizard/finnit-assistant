@@ -43,11 +43,16 @@ done
 curl -fsS "http://127.0.0.1:$PORT/health"
 echo
 
-echo "signUp / signIn / me..."
-gql '{"query":"mutation { signUp(input:{email:\"smoke@test.dev\", password:\"Sm0ke-Test-123!\", name:\"Smoke\"}) { user { email } } }"}' \
-  | grep -q '"email":"smoke@test.dev"'
-TOKEN=$(gql '{"query":"mutation { signIn(input:{email:\"smoke@test.dev\", password:\"Sm0ke-Test-123!\"}) { accessToken } }"}' \
+# There is no public sign-up: create the user with the create-master command
+# (run after /health, so the entrypoint already applied the migrations).
+PASSWORD='Sm0ke-Test-123!'
+echo "create-master / signIn / me..."
+docker exec -e MASTER_PASSWORD="$PASSWORD" "$API" \
+  node apps/api/dist/scripts/create-master.js --email smoke@test.dev --name Smoke
+TOKEN=$(gql "{\"query\":\"mutation { signIn(input:{email:\\\"smoke@test.dev\\\", password:\\\"$PASSWORD\\\"}) { accessToken } }\"}" \
   | sed -E 's/.*"accessToken":"([^"]+)".*/\1/')
-gql '{"query":"{ me { email } }"}' "$TOKEN" | grep -q '"email":"smoke@test.dev"'
+ME=$(gql '{"query":"{ me { email role } }"}' "$TOKEN")
+echo "$ME" | grep -q '"email":"smoke@test.dev"'
+echo "$ME" | grep -q '"role":"admin"'
 
 echo "Smoke test passed."

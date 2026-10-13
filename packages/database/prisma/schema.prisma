@@ -149,6 +149,15 @@ enum ImportedLineKind {
   deposit // money received in a debit/savings account (income)
 }
 
+enum UserRole {
+  user
+  admin
+}
+
+enum AiFeatureKey {
+  statement_parsing
+}
+
 enum AiProvider {
   anthropic
   openai
@@ -165,12 +174,23 @@ enum ImportedLineStatus {
 // ---------------------- Models -----------------------
 
 model User {
-  id           String   @id @default(uuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  passwordHash  String? // null: signs in only with Google
+  role          UserRole  @default(user)
+  isMaster      Boolean   @default(false) // at most one (partial unique index in SQL)
+  googleSubject String?   @unique // Google account id ("sub"), linked on first Google sign-in
+  disabledAt    DateTime?
+  lastLoginAt   DateTime?
+  tokenVersion  Int       @default(0) // bumped to revoke every open session
+  invitedById   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  invitedBy      User?       @relation("UserInvitations", fields: [invitedById], references: [id], onDelete: SetNull)
+  invitedUsers   User[]      @relation("UserInvitations")
+  aiFeatureEdits AiFeature[]
 
   accounts          Account[]
   categories        Category[]
@@ -684,5 +704,20 @@ model AiModel {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
+  features AiFeature[]
+
   @@unique([provider, modelId])
+}
+
+/// Per-feature AI settings, managed from the admin panel.
+model AiFeature {
+  key          AiFeatureKey @id
+  enabled      Boolean      @default(true)
+  aiModelId    String? // null: the catalog's default model
+  useFallbacks Boolean      @default(true) // try other active models if this one fails
+  updatedById  String?
+  updatedAt    DateTime     @updatedAt
+
+  aiModel   AiModel? @relation(fields: [aiModelId], references: [id], onDelete: SetNull)
+  updatedBy User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
 }

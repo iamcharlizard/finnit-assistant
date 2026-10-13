@@ -1,36 +1,70 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
-import { AuthService } from './auth.service';
+import { UserRole, type User as UserRow } from '@finnit/database';
+import { AuthService, NO_ACCESS_MESSAGE, isSessionValid } from './auth.service';
+import {
+  GoogleIdentity,
+  GoogleIdTokenVerifier,
+  InvalidGoogleTokenError,
+} from './google-id-token.verifier';
 import { PrismaService } from '../../services/prisma.service';
 import {
-  ConflictError,
+  ForbiddenError,
   UnauthorizedError,
   ValidationError,
   NotFoundError,
 } from '../../common/exceptions/graphql-error.exception';
+import { hashPassword } from '../../common/utils/password.util';
 import * as bcrypt from 'bcrypt';
 
-// Mock bcrypt
+// Legacy (pre-PBKDF2) hashes are still checked with bcrypt.
 jest.mock('bcrypt');
 const mockedBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
+
+const PASSWORD = 'password123';
+const PASSWORD_HASH = hashPassword(PASSWORD);
+
+function userRow(overrides: Partial<UserRow> = {}): UserRow {
+  return {
+    id: 'user-1',
+    name: 'Test User',
+    email: 'test@example.com',
+    passwordHash: PASSWORD_HASH,
+    role: UserRole.user,
+    isMaster: false,
+    googleSubject: null,
+    disabledAt: null,
+    lastLoginAt: null,
+    tokenVersion: 3,
+    invitedById: null,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+    ...overrides,
+  };
+}
+
+const expectedUserModel = (user: UserRow) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  isMaster: user.isMaster,
+  hasPassword: Boolean(user.passwordHash),
+  hasGoogle: Boolean(user.googleSubject),
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
+});
 
 describe('AuthService', () => {
   let service: AuthService;
   let prismaService: DeepMockProxy<PrismaService>;
   let jwtService: jest.Mocked<JwtService>;
-
-  const mockUser = {
-    id: 'user-1',
-    name: 'Test User',
-    email: 'test@example.com',
-    passwordHash: 'hashed-password',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-  };
+  let google: { isConfigured: boolean; verify: jest.Mock };
 
   beforeEach(async () => {
     prismaService = mockDeep<PrismaService>();
+    google = { isConfigured: true, verify: jest.fn() };
 
     const mockJwtService = {
       sign: jest.fn(),
@@ -40,264 +74,478 @@ describe('AuthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        {
-          provide: PrismaService,
-          useValue: prismaService,
-        },
-        {
-          provide: JwtService,
-          useValue: mockJwtService,
-        },
+        { provide: PrismaService, useValue: prismaService },
+        { provide: JwtService, useValue: mockJwtService },
+        { provide: GoogleIdTokenVerifier, useValue: google },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
     jwtService = module.get(JwtService);
 
-    // Reset mocks
     jest.clearAllMocks();
+    jwtService.sign
+      .mockReturnValueOnce('access-token')
+      .mockReturnValueOnce('refresh-token');
+    prismaService.user.update.mockImplementation(
+      (args) =>
+        Promise.resolve(userRow(args.data as Partial<UserRow>)) as never,
+    );
   });
 
-  describe('signUp', () => {
-    const signUpInput = {
-      name: 'Test User',
-      email: 'test@example.com',
-      password: 'password123',
-    };
-
-    it('should successfully create a new user and return auth payload', async () => {
-      // Arrange
-      prismaService.user.findUnique.mockResolvedValue(null);
-      (mockedBcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
-      prismaService.user.create.mockResolvedValue(mockUser);
-      prismaService.category.create.mockResolvedValue({ id: 'category-1' } as any);
-      jwtService.sign
-        .mockReturnValueOnce('access-token')
-        .mockReturnValueOnce('refresh-token');
-
-      // Act
-      const result = await service.signUp(signUpInput);
-
-      // Assert
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { email: signUpInput.email },
-      });
-      // Passwords are hashed with PBKDF2 (salt:hash, hex encoded), not bcrypt
-      expect(mockedBcrypt.hash).not.toHaveBeenCalled();
-      expect(prismaService.user.create).toHaveBeenCalledWith({
-        data: {
-          name: signUpInput.name,
-          email: signUpInput.email,
-          passwordHash: expect.stringMatching(/^[0-9a-f]{32}:[0-9a-f]{128}$/),
-        },
-      });
-      expect(result).toEqual({
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
-        user: {
-          id: mockUser.id,
-          name: mockUser.name,
-          email: mockUser.email,
-          createdAt: mockUser.createdAt,
-          updatedAt: mockUser.updatedAt,
-        },
-      });
+  describe('isSessionValid', () => {
+    it('accepts an enabled user whose tokenVersion matches', () => {
+      expect(isSessionValid(userRow({ tokenVersion: 2 }), 2)).toBe(true);
     });
 
-    it('should throw ConflictError if user already exists', async () => {
-      // Arrange
-      prismaService.user.findUnique.mockResolvedValue(mockUser);
-
-      // Act & Assert
-      await expect(service.signUp(signUpInput)).rejects.toThrow(ConflictError);
-      expect(prismaService.user.create).not.toHaveBeenCalled();
+    it('treats a token without `ver` as version 0', () => {
+      expect(isSessionValid(userRow({ tokenVersion: 0 }), undefined)).toBe(
+        true,
+      );
+      expect(isSessionValid(userRow({ tokenVersion: 1 }), undefined)).toBe(
+        false,
+      );
     });
 
-    it('should create default categories for new user', async () => {
-      // Arrange
-      prismaService.user.findUnique.mockResolvedValue(null);
-      (mockedBcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
-      prismaService.user.create.mockResolvedValue(mockUser);
-      prismaService.category.create.mockResolvedValue({ id: 'category-1' } as any);
-      jwtService.sign
-        .mockReturnValueOnce('access-token')
-        .mockReturnValueOnce('refresh-token');
-
-      // Act
-      await service.signUp(signUpInput);
-
-      // Assert
-      expect(prismaService.category.create).toHaveBeenCalled();
-      const createCalls = (prismaService.category.create as jest.Mock).mock.calls;
-      expect(createCalls.length).toBeGreaterThan(10); // Should create multiple categories
-
-      // Check some specific categories were created
-      const categoryNames = createCalls.map(call => call[0].data.name);
-      expect(categoryNames).toContain('Food & Dining');
-      expect(categoryNames).toContain('Transportation');
-      expect(categoryNames).toContain('Income');
+    it('rejects a stale version, a disabled user and a missing user', () => {
+      expect(isSessionValid(userRow({ tokenVersion: 2 }), 1)).toBe(false);
+      expect(
+        isSessionValid(userRow({ tokenVersion: 2, disabledAt: new Date() }), 2),
+      ).toBe(false);
+      expect(isSessionValid(null, 0)).toBe(false);
     });
   });
 
   describe('signIn', () => {
-    const signInInput = {
-      email: 'test@example.com',
-      password: 'password123',
-    };
+    const signInInput = { email: 'test@example.com', password: PASSWORD };
 
-    it('should successfully sign in user with valid credentials', async () => {
-      // Arrange
-      prismaService.user.findUnique.mockResolvedValue(mockUser);
-      (mockedBcrypt.compare as jest.Mock).mockResolvedValue(true);
-      jwtService.sign
-        .mockReturnValueOnce('access-token')
-        .mockReturnValueOnce('refresh-token');
+    it('signs in with valid credentials and returns the user model', async () => {
+      const user = userRow();
+      prismaService.user.findFirst.mockResolvedValue(user);
 
-      // Act
       const result = await service.signIn(signInInput);
 
-      // Assert
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { email: signInInput.email },
-      });
-      expect(mockedBcrypt.compare).toHaveBeenCalledWith(
-        signInInput.password,
-        mockUser.passwordHash
-      );
       expect(result).toEqual({
         accessToken: 'access-token',
         refreshToken: 'refresh-token',
-        user: {
-          id: mockUser.id,
-          name: mockUser.name,
-          email: mockUser.email,
-          createdAt: mockUser.createdAt,
-          updatedAt: mockUser.updatedAt,
+        user: expectedUserModel(user),
+      });
+      expect(mockedBcrypt.compare).not.toHaveBeenCalled();
+    });
+
+    it('looks the email up case-insensitively (and trimmed)', async () => {
+      prismaService.user.findFirst.mockResolvedValue(userRow());
+
+      await service.signIn({
+        email: '  Test@Example.COM ',
+        password: PASSWORD,
+      });
+
+      expect(prismaService.user.findFirst).toHaveBeenCalledWith({
+        where: {
+          email: { equals: 'Test@Example.COM', mode: 'insensitive' },
         },
       });
     });
 
-    it('should throw UnauthorizedError if user not found', async () => {
-      // Arrange
-      prismaService.user.findUnique.mockResolvedValue(null);
+    it('records lastLoginAt', async () => {
+      prismaService.user.findFirst.mockResolvedValue(userRow());
 
-      // Act & Assert
-      await expect(service.signIn(signInInput)).rejects.toThrow(UnauthorizedError);
-      expect(mockedBcrypt.compare).not.toHaveBeenCalled();
+      await service.signIn(signInInput);
+
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { lastLoginAt: expect.any(Date) },
+      });
     });
 
-    it('should throw UnauthorizedError if password is invalid', async () => {
-      // Arrange
-      prismaService.user.findUnique.mockResolvedValue(mockUser);
-      (mockedBcrypt.compare as jest.Mock).mockResolvedValue(false);
+    it('signs typed tokens carrying the user tokenVersion as `ver`', async () => {
+      prismaService.user.findFirst.mockResolvedValue(
+        userRow({ tokenVersion: 7 }),
+      );
 
-      // Act & Assert
-      await expect(service.signIn(signInInput)).rejects.toThrow(UnauthorizedError);
+      await service.signIn(signInInput);
+
+      const payload = { sub: 'user-1', email: 'test@example.com', ver: 7 };
+      expect(jwtService.sign).toHaveBeenNthCalledWith(
+        1,
+        { ...payload, typ: 'access' },
+        { expiresIn: '15m' },
+      );
+      expect(jwtService.sign).toHaveBeenNthCalledWith(
+        2,
+        { ...payload, typ: 'refresh' },
+        { expiresIn: '7d' },
+      );
+    });
+
+    it('rejects an unknown email', async () => {
+      prismaService.user.findFirst.mockResolvedValue(null);
+
+      await expect(service.signIn(signInInput)).rejects.toThrow(
+        new UnauthorizedError('Invalid credentials'),
+      );
+      expect(prismaService.user.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a wrong password', async () => {
+      prismaService.user.findFirst.mockResolvedValue(userRow());
+
+      await expect(
+        service.signIn({ ...signInInput, password: 'wrong-password' }),
+      ).rejects.toThrow(new UnauthorizedError('Invalid credentials'));
+      expect(prismaService.user.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects users without a password (Google only)', async () => {
+      prismaService.user.findFirst.mockResolvedValue(
+        userRow({ passwordHash: null, googleSubject: 'google-sub' }),
+      );
+
+      await expect(service.signIn(signInInput)).rejects.toThrow(
+        new UnauthorizedError('Invalid credentials'),
+      );
+    });
+
+    it('rejects disabled users with the same error', async () => {
+      prismaService.user.findFirst.mockResolvedValue(
+        userRow({ disabledAt: new Date() }),
+      );
+
+      await expect(service.signIn(signInInput)).rejects.toThrow(
+        new UnauthorizedError('Invalid credentials'),
+      );
+      expect(prismaService.user.update).not.toHaveBeenCalled();
+    });
+
+    it('accepts legacy bcrypt hashes', async () => {
+      prismaService.user.findFirst.mockResolvedValue(
+        userRow({ passwordHash: '$2b$10$legacyhash' }),
+      );
+      (mockedBcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      await expect(service.signIn(signInInput)).resolves.toMatchObject({
+        accessToken: 'access-token',
+      });
+      expect(mockedBcrypt.compare).toHaveBeenCalledWith(
+        PASSWORD,
+        '$2b$10$legacyhash',
+      );
+    });
+
+    it('treats a bcrypt failure as invalid credentials', async () => {
+      prismaService.user.findFirst.mockResolvedValue(
+        userRow({ passwordHash: '$2b$10$legacyhash' }),
+      );
+      (mockedBcrypt.compare as jest.Mock).mockRejectedValue(
+        new Error('Compare failed'),
+      );
+
+      await expect(service.signIn(signInInput)).rejects.toThrow(
+        UnauthorizedError,
+      );
+    });
+  });
+
+  describe('signInWithGoogle', () => {
+    const input = { idToken: 'google-id-token', nonce: 'nonce-1' };
+    const identity: GoogleIdentity = {
+      subject: 'google-sub',
+      email: 'test@example.com',
+      emailVerified: true,
+      nonce: 'nonce-1',
+    };
+
+    beforeEach(() => {
+      google.verify.mockResolvedValue(identity);
+    });
+
+    it('signs in a user already linked by Google subject', async () => {
+      const user = userRow({ googleSubject: 'google-sub' });
+      prismaService.user.findUnique.mockResolvedValue(user);
+
+      const result = await service.signInWithGoogle(input);
+
+      expect(google.verify).toHaveBeenCalledWith('google-id-token');
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { googleSubject: 'google-sub' },
+      });
+      expect(prismaService.user.findFirst).not.toHaveBeenCalled();
+      // Only lastLoginAt is written: the account is already linked.
+      expect(prismaService.user.update).toHaveBeenCalledTimes(1);
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: user.id },
+        data: { lastLoginAt: expect.any(Date) },
+      });
+      expect(result.user).toEqual(expectedUserModel(user));
+      expect(jwtService.sign).toHaveBeenCalledWith(
+        {
+          sub: user.id,
+          email: user.email,
+          ver: user.tokenVersion,
+          typ: 'access',
+        },
+        { expiresIn: '15m' },
+      );
+    });
+
+    it('links the Google account by email on the first sign-in', async () => {
+      prismaService.user.findUnique.mockResolvedValue(null);
+      prismaService.user.findFirst.mockResolvedValue(userRow());
+
+      const result = await service.signInWithGoogle(input);
+
+      expect(prismaService.user.findFirst).toHaveBeenCalledWith({
+        where: {
+          email: { equals: 'test@example.com', mode: 'insensitive' },
+          googleSubject: null,
+        },
+      });
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { googleSubject: 'google-sub' },
+      });
+      expect(result.user.hasGoogle).toBe(true);
+    });
+
+    it('never creates users: unknown people get ForbiddenError', async () => {
+      prismaService.user.findUnique.mockResolvedValue(null);
+      prismaService.user.findFirst.mockResolvedValue(null);
+
+      await expect(service.signInWithGoogle(input)).rejects.toThrow(
+        new ForbiddenError(NO_ACCESS_MESSAGE),
+      );
+      expect(prismaService.user.create).not.toHaveBeenCalled();
+      expect(prismaService.user.update).not.toHaveBeenCalled();
+      expect(jwtService.sign).not.toHaveBeenCalled();
+    });
+
+    it('rejects disabled users with ForbiddenError', async () => {
+      prismaService.user.findUnique.mockResolvedValue(
+        userRow({ googleSubject: 'google-sub', disabledAt: new Date() }),
+      );
+
+      await expect(service.signInWithGoogle(input)).rejects.toThrow(
+        new ForbiddenError(NO_ACCESS_MESSAGE),
+      );
+      expect(prismaService.user.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a Google email that is not verified', async () => {
+      google.verify.mockResolvedValue({ ...identity, emailVerified: false });
+
+      await expect(service.signInWithGoogle(input)).rejects.toThrow(
+        UnauthorizedError,
+      );
+      expect(prismaService.user.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('rejects a nonce mismatch', async () => {
+      google.verify.mockResolvedValue({ ...identity, nonce: 'other' });
+
+      await expect(service.signInWithGoogle(input)).rejects.toThrow(
+        new UnauthorizedError('Invalid Google sign-in'),
+      );
+      expect(prismaService.user.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('rejects a token without nonce when one was expected', async () => {
+      google.verify.mockResolvedValue({ ...identity, nonce: undefined });
+
+      await expect(service.signInWithGoogle(input)).rejects.toThrow(
+        UnauthorizedError,
+      );
+    });
+
+    it('does not check the nonce when the client sent none', async () => {
+      google.verify.mockResolvedValue({ ...identity, nonce: undefined });
+      prismaService.user.findUnique.mockResolvedValue(
+        userRow({ googleSubject: 'google-sub' }),
+      );
+
+      await expect(
+        service.signInWithGoogle({ idToken: 'google-id-token' }),
+      ).resolves.toMatchObject({ accessToken: 'access-token' });
+    });
+
+    it('maps an invalid Google token to UnauthorizedError', async () => {
+      google.verify.mockRejectedValue(new InvalidGoogleTokenError('expired'));
+
+      await expect(service.signInWithGoogle(input)).rejects.toThrow(
+        new UnauthorizedError('Invalid Google sign-in'),
+      );
+    });
+
+    it('lets unexpected verifier errors through', async () => {
+      google.verify.mockRejectedValue(new Error('network down'));
+
+      await expect(service.signInWithGoogle(input)).rejects.toThrow(
+        'network down',
+      );
+    });
+
+    it('is unavailable when Google is not configured', async () => {
+      google.isConfigured = false;
+
+      await expect(service.signInWithGoogle(input)).rejects.toThrow(
+        ForbiddenError,
+      );
+      expect(google.verify).not.toHaveBeenCalled();
     });
   });
 
   describe('refreshToken', () => {
-    const refreshTokenInput = {
-      refreshToken: 'valid-refresh-token',
-    };
+    const refreshTokenInput = { refreshToken: 'valid-refresh-token' };
 
-    it('should successfully refresh token with valid refresh token', async () => {
-      // Arrange
-      const payload = { sub: mockUser.id, email: mockUser.email };
-      jwtService.verify.mockReturnValue(payload);
-      prismaService.user.findUnique.mockResolvedValue(mockUser);
-      jwtService.sign
-        .mockReturnValueOnce('new-access-token')
-        .mockReturnValueOnce('new-refresh-token');
+    it('issues new tokens for a current session', async () => {
+      const user = userRow({ tokenVersion: 3 });
+      jwtService.verify.mockReturnValue({
+        sub: user.id,
+        email: user.email,
+        ver: 3,
+        typ: 'refresh',
+      });
+      prismaService.user.findUnique.mockResolvedValue(user);
 
-      // Act
       const result = await service.refreshToken(refreshTokenInput);
 
-      // Assert
-      expect(jwtService.verify).toHaveBeenCalledWith(refreshTokenInput.refreshToken);
+      expect(jwtService.verify).toHaveBeenCalledWith('valid-refresh-token');
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { id: payload.sub },
+        where: { id: user.id },
       });
       expect(result).toEqual({
-        accessToken: 'new-access-token',
-        refreshToken: 'new-refresh-token',
-        user: {
-          id: mockUser.id,
-          name: mockUser.name,
-          email: mockUser.email,
-          createdAt: mockUser.createdAt,
-          updatedAt: mockUser.updatedAt,
-        },
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        user: expectedUserModel(user),
       });
     });
 
-    it('should throw UnauthorizedError if refresh token is invalid', async () => {
-      // Arrange
+    it('still accepts legacy refresh tokens without `typ`', async () => {
+      jwtService.verify.mockReturnValue({
+        sub: 'user-1',
+        email: 'test@example.com',
+        ver: 3,
+      });
+      prismaService.user.findUnique.mockResolvedValue(
+        userRow({ tokenVersion: 3 }),
+      );
+
+      await expect(
+        service.refreshToken(refreshTokenInput),
+      ).resolves.toMatchObject({ accessToken: 'access-token' });
+    });
+
+    it.each([
+      ['an access token', { sub: 'user-1', ver: 3, typ: 'access' }],
+      ['a reset token', { userId: 'user-1', ver: 3, typ: 'reset' }],
+      ['a token without sub', { email: 'test@example.com', ver: 3 }],
+    ])('rejects %s without querying the database', async (_case, payload) => {
+      jwtService.verify.mockReturnValue(payload);
+
+      await expect(service.refreshToken(refreshTokenInput)).rejects.toThrow(
+        new UnauthorizedError('Invalid refresh token'),
+      );
+      expect(prismaService.user.findUnique).not.toHaveBeenCalled();
+      expect(jwtService.sign).not.toHaveBeenCalled();
+    });
+
+    it('rejects an invalid refresh token', async () => {
       jwtService.verify.mockImplementation(() => {
         throw new Error('Invalid token');
       });
 
-      // Act & Assert
-      await expect(service.refreshToken(refreshTokenInput)).rejects.toThrow(UnauthorizedError);
+      await expect(service.refreshToken(refreshTokenInput)).rejects.toThrow(
+        UnauthorizedError,
+      );
     });
 
-    it('should throw UnauthorizedError if user not found', async () => {
-      // Arrange
-      const payload = { sub: 'non-existent-user', email: 'test@example.com' };
-      jwtService.verify.mockReturnValue(payload);
+    it('rejects a missing user', async () => {
+      jwtService.verify.mockReturnValue({ sub: 'gone', email: 'x', ver: 0 });
       prismaService.user.findUnique.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(service.refreshToken(refreshTokenInput)).rejects.toThrow(UnauthorizedError);
+      await expect(service.refreshToken(refreshTokenInput)).rejects.toThrow(
+        UnauthorizedError,
+      );
+    });
+
+    it('rejects a token with a stale version (sessions revoked)', async () => {
+      jwtService.verify.mockReturnValue({
+        sub: 'user-1',
+        email: 'test@example.com',
+        ver: 2,
+      });
+      prismaService.user.findUnique.mockResolvedValue(
+        userRow({ tokenVersion: 3 }),
+      );
+
+      await expect(service.refreshToken(refreshTokenInput)).rejects.toThrow(
+        UnauthorizedError,
+      );
+      expect(jwtService.sign).not.toHaveBeenCalled();
+    });
+
+    it('rejects a disabled user', async () => {
+      jwtService.verify.mockReturnValue({
+        sub: 'user-1',
+        email: 'test@example.com',
+        ver: 3,
+      });
+      prismaService.user.findUnique.mockResolvedValue(
+        userRow({ tokenVersion: 3, disabledAt: new Date() }),
+      );
+
+      await expect(service.refreshToken(refreshTokenInput)).rejects.toThrow(
+        UnauthorizedError,
+      );
+      expect(jwtService.sign).not.toHaveBeenCalled();
     });
   });
 
   describe('requestPasswordReset', () => {
-    const requestPasswordResetInput = {
-      email: 'test@example.com',
-    };
+    const requestPasswordResetInput = { email: 'test@example.com' };
 
-    it('should return true regardless of whether user exists (security)', async () => {
-      // Arrange - user exists
-      prismaService.user.findUnique.mockResolvedValue(mockUser);
-      jwtService.sign.mockReturnValue('reset-token-jwt');
+    it('returns true and signs a reset token when the user exists', async () => {
+      jwtService.sign.mockReset().mockReturnValue('reset-token-jwt');
+      prismaService.user.findFirst.mockResolvedValue(
+        userRow({ tokenVersion: 4 }),
+      );
 
-      // Act
-      const result = await service.requestPasswordReset(requestPasswordResetInput);
+      const result = await service.requestPasswordReset({
+        email: ' Test@Example.com ',
+      });
 
-      // Assert
       expect(result).toBe(true);
-      expect(jwtService.sign).toHaveBeenCalled();
+      expect(prismaService.user.findFirst).toHaveBeenCalledWith({
+        where: {
+          email: { equals: 'Test@Example.com', mode: 'insensitive' },
+        },
+      });
+      expect(jwtService.sign).toHaveBeenCalledWith(
+        { userId: 'user-1', ver: 4, typ: 'reset' },
+        { expiresIn: '15m' },
+      );
     });
 
-    it('should return true even if user does not exist', async () => {
-      // Arrange - user doesn't exist
-      prismaService.user.findUnique.mockResolvedValue(null);
+    it('returns true without a token for a disabled user', async () => {
+      prismaService.user.findFirst.mockResolvedValue(
+        userRow({ disabledAt: new Date() }),
+      );
 
-      // Act
-      const result = await service.requestPasswordReset(requestPasswordResetInput);
-
-      // Assert
-      expect(result).toBe(true);
+      await expect(
+        service.requestPasswordReset(requestPasswordResetInput),
+      ).resolves.toBe(true);
       expect(jwtService.sign).not.toHaveBeenCalled();
     });
 
-    it('should generate JWT token with correct payload when user exists', async () => {
-      // Arrange
-      prismaService.user.findUnique.mockResolvedValue(mockUser);
-      jwtService.sign.mockReturnValue('reset-token-jwt');
+    it('returns true even if the user does not exist', async () => {
+      prismaService.user.findFirst.mockResolvedValue(null);
 
-      // Act
-      await service.requestPasswordReset(requestPasswordResetInput);
-
-      // Assert
-      expect(jwtService.sign).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId: mockUser.id,
-          exp: expect.any(Number),
-        }),
-        { expiresIn: '15m' }
+      const result = await service.requestPasswordReset(
+        requestPasswordResetInput,
       );
+
+      expect(result).toBe(true);
+      expect(jwtService.sign).not.toHaveBeenCalled();
     });
   });
 
@@ -306,219 +554,144 @@ describe('AuthService', () => {
       token: 'valid-reset-token',
       newPassword: 'newpassword123',
     };
+    // userRow() is on tokenVersion 3.
+    const resetPayload = { userId: 'user-1', ver: 3, typ: 'reset' };
 
-    it('should successfully reset password with valid token', async () => {
-      // Arrange
-      const payload = { userId: mockUser.id };
-      jwtService.verify.mockReturnValue(payload);
-      prismaService.user.findUnique.mockResolvedValue(mockUser);
-      (mockedBcrypt.hash as jest.Mock).mockResolvedValue('new-hashed-password');
-      prismaService.user.update.mockResolvedValue({ ...mockUser, passwordHash: 'new-hashed-password' });
+    it('stores a PBKDF2 hash and ends every open session', async () => {
+      jwtService.verify.mockReturnValue(resetPayload);
+      prismaService.user.findUnique.mockResolvedValue(userRow());
 
-      // Act
       const result = await service.resetPassword(resetPasswordInput);
 
-      // Assert
-      expect(jwtService.verify).toHaveBeenCalledWith(resetPasswordInput.token);
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { id: payload.userId },
-      });
-      expect(mockedBcrypt.hash).not.toHaveBeenCalled();
+      expect(jwtService.verify).toHaveBeenCalledWith('valid-reset-token');
       expect(prismaService.user.update).toHaveBeenCalledWith({
-        where: { id: mockUser.id },
+        where: { id: 'user-1' },
         data: {
           passwordHash: expect.stringMatching(/^[0-9a-f]{32}:[0-9a-f]{128}$/),
+          tokenVersion: { increment: 1 },
         },
       });
+      expect(mockedBcrypt.hash).not.toHaveBeenCalled();
       expect(result).toBe(true);
     });
 
-    it('should throw ValidationError if token is invalid', async () => {
-      // Arrange
+    it('throws ValidationError if the token is invalid', async () => {
       jwtService.verify.mockImplementation(() => {
         throw new Error('Invalid token');
       });
 
-      // Act & Assert
-      await expect(service.resetPassword(resetPasswordInput)).rejects.toThrow(ValidationError);
+      await expect(service.resetPassword(resetPasswordInput)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
-    it('should throw NotFoundError if user not found', async () => {
-      // Arrange
-      const payload = { userId: 'non-existent-user' };
-      jwtService.verify.mockReturnValue(payload);
+    it('throws NotFoundError if the user does not exist', async () => {
+      jwtService.verify.mockReturnValue({ ...resetPayload, userId: 'gone' });
       prismaService.user.findUnique.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(service.resetPassword(resetPasswordInput)).rejects.toThrow(NotFoundError);
+      await expect(service.resetPassword(resetPasswordInput)).rejects.toThrow(
+        NotFoundError,
+      );
+    });
+
+    it.each([
+      ['an access token', { sub: 'user-1', ver: 3, typ: 'access' }],
+      ['a legacy reset token without typ', { userId: 'user-1' }],
+      ['a reset token without userId', { ver: 3, typ: 'reset' }],
+    ])('rejects %s', async (_case, payload) => {
+      jwtService.verify.mockReturnValue(payload);
+
+      await expect(service.resetPassword(resetPasswordInput)).rejects.toThrow(
+        ValidationError,
+      );
+      expect(prismaService.user.findUnique).not.toHaveBeenCalled();
+      expect(prismaService.user.update).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      [
+        'the token version is stale (already used)',
+        userRow({ tokenVersion: 4 }),
+      ],
+      ['the user is disabled', userRow({ disabledAt: new Date() })],
+    ])('rejects the token when %s', async (_case, user) => {
+      jwtService.verify.mockReturnValue(resetPayload);
+      prismaService.user.findUnique.mockResolvedValue(user);
+
+      await expect(service.resetPassword(resetPasswordInput)).rejects.toThrow(
+        ValidationError,
+      );
+      expect(prismaService.user.update).not.toHaveBeenCalled();
     });
   });
 
   describe('validateToken', () => {
-    it('should return valid true for valid token', async () => {
-      // Arrange
-      const payload = { sub: mockUser.id, email: mockUser.email };
-      jwtService.verify.mockReturnValue(payload);
-      prismaService.user.findUnique.mockResolvedValue(mockUser);
+    it('returns valid for a current session', async () => {
+      jwtService.verify.mockReturnValue({ sub: 'user-1', ver: 3 });
+      prismaService.user.findUnique.mockResolvedValue(
+        userRow({ tokenVersion: 3 }),
+      );
 
-      // Act
-      const result = await service.validateToken('valid-token');
-
-      // Assert
-      expect(result).toEqual({ valid: true });
+      await expect(service.validateToken('token')).resolves.toEqual({
+        valid: true,
+      });
     });
 
-    it('should return valid false for invalid token', async () => {
-      // Arrange
+    it.each([
+      ['a refresh token', { sub: 'user-1', ver: 3, typ: 'refresh' }],
+      ['a reset token', { userId: 'user-1', ver: 3, typ: 'reset' }],
+    ])('returns invalid for %s', async (_case, payload) => {
+      jwtService.verify.mockReturnValue(payload);
+
+      await expect(service.validateToken('token')).resolves.toEqual({
+        valid: false,
+        message: 'Invalid token',
+      });
+      expect(prismaService.user.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('returns invalid for a token that does not verify', async () => {
       jwtService.verify.mockImplementation(() => {
         throw new Error('Invalid token');
       });
 
-      // Act
-      const result = await service.validateToken('invalid-token');
-
-      // Assert
-      expect(result).toEqual({
+      await expect(service.validateToken('token')).resolves.toEqual({
         valid: false,
         message: 'Invalid token',
       });
     });
 
-    it('should return valid false if user not found', async () => {
-      // Arrange
-      const payload = { sub: 'non-existent-user', email: 'test@example.com' };
-      jwtService.verify.mockReturnValue(payload);
-      prismaService.user.findUnique.mockResolvedValue(null);
+    it.each([
+      ['a missing user', null],
+      ['a stale version', userRow({ tokenVersion: 4 })],
+      ['a disabled user', userRow({ tokenVersion: 3, disabledAt: new Date() })],
+    ])('returns "Session ended" for %s', async (_case, user) => {
+      jwtService.verify.mockReturnValue({ sub: 'user-1', ver: 3 });
+      prismaService.user.findUnique.mockResolvedValue(user);
 
-      // Act
-      const result = await service.validateToken('valid-token');
-
-      // Assert
-      expect(result).toEqual({
+      await expect(service.validateToken('token')).resolves.toEqual({
         valid: false,
-        message: 'User not found',
+        message: 'Session ended',
       });
     });
   });
 
   describe('getCurrentUser', () => {
-    it('should return user data for valid user ID', async () => {
-      // Arrange
-      prismaService.user.findUnique.mockResolvedValue(mockUser);
+    it('returns the user model', async () => {
+      const user = userRow();
+      prismaService.user.findUnique.mockResolvedValue(user);
 
-      // Act
-      const result = await service.getCurrentUser(mockUser.id);
-
-      // Assert
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { id: mockUser.id },
-      });
-      expect(result).toEqual({
-        id: mockUser.id,
-        name: mockUser.name,
-        email: mockUser.email,
-        createdAt: mockUser.createdAt,
-        updatedAt: mockUser.updatedAt,
-      });
+      await expect(service.getCurrentUser('user-1')).resolves.toEqual(
+        expectedUserModel(user),
+      );
     });
 
-    it('should throw NotFoundError if user not found', async () => {
-      // Arrange
+    it('throws NotFoundError if the user does not exist', async () => {
       prismaService.user.findUnique.mockResolvedValue(null);
 
-      // Act & Assert
-      await expect(service.getCurrentUser('non-existent-user')).rejects.toThrow(NotFoundError);
-    });
-  });
-
-  describe('generateTokens', () => {
-    it('should generate access and refresh tokens with correct payloads', () => {
-      // Arrange
-      jwtService.sign
-        .mockReturnValueOnce('access-token')
-        .mockReturnValueOnce('refresh-token');
-
-      // Act
-      const result = (service as any).generateTokens(mockUser.id, mockUser.email);
-
-      // Assert
-      expect(jwtService.sign).toHaveBeenNthCalledWith(1,
-        { sub: mockUser.id, email: mockUser.email },
-        { expiresIn: '15m' }
+      await expect(service.getCurrentUser('gone')).rejects.toThrow(
+        NotFoundError,
       );
-      expect(jwtService.sign).toHaveBeenNthCalledWith(2,
-        { sub: mockUser.id, email: mockUser.email },
-        { expiresIn: '7d' }
-      );
-      expect(result).toEqual({
-        accessToken: 'access-token',
-        refreshToken: 'refresh-token',
-      });
-    });
-  });
-
-  describe('edge cases and error handling', () => {
-    it('should store a password hash that verifies with the same password on signIn', async () => {
-      // Arrange: capture the PBKDF2 hash written on signUp
-      prismaService.user.findUnique.mockResolvedValueOnce(null);
-      prismaService.user.create.mockResolvedValue(mockUser);
-      prismaService.category.create.mockResolvedValue({ id: 'category-1' } as any);
-      jwtService.sign.mockReturnValue('token');
-      await service.signUp({
-        name: 'Test User',
-        email: 'test@example.com',
-        password: 'password123',
-      });
-      const storedHash = (prismaService.user.create.mock.calls[0][0] as any).data
-        .passwordHash as string;
-
-      // Act: sign in using the stored PBKDF2 hash
-      prismaService.user.findUnique.mockResolvedValueOnce({
-        ...mockUser,
-        passwordHash: storedHash,
-      });
-      const ok = await service.signIn({
-        email: 'test@example.com',
-        password: 'password123',
-      });
-
-      // Assert
-      expect(ok.user.id).toBe(mockUser.id);
-      expect(mockedBcrypt.compare).not.toHaveBeenCalled();
-
-      prismaService.user.findUnique.mockResolvedValueOnce({
-        ...mockUser,
-        passwordHash: storedHash,
-      });
-      await expect(
-        service.signIn({ email: 'test@example.com', password: 'wrong' }),
-      ).rejects.toThrow(UnauthorizedError);
-    });
-
-    it('should handle database error during user creation', async () => {
-      // Arrange
-      prismaService.user.findUnique.mockResolvedValue(null);
-      (mockedBcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
-      prismaService.user.create.mockRejectedValue(new Error('Database error'));
-
-      // Act & Assert
-      await expect(service.signUp({
-        name: 'Test User',
-        email: 'test@example.com',
-        password: 'password123',
-      })).rejects.toThrow('Database error');
-    });
-
-    it('should handle bcrypt compare failure during signin', async () => {
-      // Arrange
-      prismaService.user.findUnique.mockResolvedValue(mockUser);
-      (mockedBcrypt.compare as jest.Mock).mockRejectedValue(new Error('Compare failed'));
-
-      // Act & Assert
-      await expect(service.signIn({
-        email: 'test@example.com',
-        password: 'password123',
-      })).rejects.toThrow('Compare failed');
     });
   });
 });

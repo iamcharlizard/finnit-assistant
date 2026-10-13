@@ -1,11 +1,15 @@
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
-import { AiProvider, Prisma } from '@finnit/database';
+import { AiFeatureKey, AiProvider, Prisma } from '@finnit/database';
 import { PrismaService } from '../../services/prisma.service';
 import {
   ConflictError,
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
-import { AiModelsService, NoUsableAiModelError } from './ai-models.service';
+import {
+  AiFeatureDisabledError,
+  AiModelsService,
+  NoUsableAiModelError,
+} from './ai-models.service';
 import { AiProviderClient, AiProviderError } from './providers/ai-provider';
 
 const row = (overrides: Record<string, unknown> = {}) => ({
@@ -233,13 +237,193 @@ describe('AiModelsService', () => {
     it('never uses a disabled model, even by id', async () => {
       prisma.aiModel.findMany.mockResolvedValue([]);
       await expect(
-        service.extractFromPdf(request, 'm-disabled'),
+        service.extractFromPdf(request, { aiModelId: 'm-disabled' }),
       ).rejects.toThrow(NoUsableAiModelError);
       expect(prisma.aiModel.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { isActive: true, supportsPdf: true, id: 'm-disabled' },
         }),
       );
+    });
+  });
+
+  describe('pdfCandidates with a feature', () => {
+    const feature = AiFeatureKey.statement_parsing;
+    const settings = (overrides: Record<string, unknown> = {}) => ({
+      key: feature,
+      enabled: true,
+      aiModelId: null,
+      useFallbacks: true,
+      updatedById: null,
+      updatedAt: new Date('2026-10-12'),
+      ...overrides,
+    });
+    // Usable, in catalog order: default first.
+    const catalog = () => [
+      row(),
+      row({
+        id: 'm-gpt',
+        provider: AiProvider.openai,
+        modelId: 'gpt-5-mini',
+        isDefault: false,
+        sortOrder: 20,
+      }),
+      row({
+        id: 'm-sonnet',
+        modelId: 'claude-sonnet-5',
+        isDefault: false,
+        sortOrder: 30,
+      }),
+    ];
+
+    beforeEach(() => {
+      prisma.aiModel.findMany.mockResolvedValue(catalog());
+    });
+
+    it('throws AiFeatureDisabledError when the feature is off', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue(
+        settings({ enabled: false }),
+      );
+
+      const result = service.pdfCandidates({ feature });
+
+      await expect(result).rejects.toThrow(AiFeatureDisabledError);
+      await expect(result).rejects.toThrow(NoUsableAiModelError);
+      expect(prisma.aiFeature.findUnique).toHaveBeenCalledWith({
+        where: { key: feature },
+      });
+      expect(prisma.aiModel.findMany).not.toHaveBeenCalled();
+    });
+
+    it('extractFromPdf never calls a provider when the feature is off', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue(
+        settings({ enabled: false }),
+      );
+
+      await expect(
+        service.extractFromPdf(
+          {
+            pdf: Buffer.from('%PDF'),
+            prompt: 'p',
+            schema: {},
+            schemaName: 's',
+          },
+          { feature },
+        ),
+      ).rejects.toThrow(AiFeatureDisabledError);
+      expect(anthropic.extractFromPdf).not.toHaveBeenCalled();
+      expect(openai.extractFromPdf).not.toHaveBeenCalled();
+    });
+
+    it('puts its own model first, then the fallbacks', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue(
+        settings({ aiModelId: 'm-gpt', useFallbacks: true }),
+      );
+
+      const candidates = await service.pdfCandidates({ feature });
+
+      expect(candidates.map((m) => m.id)).toEqual([
+        'm-gpt',
+        'm-haiku',
+        'm-sonnet',
+      ]);
+    });
+
+    it('uses only its own model without fallbacks', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue(
+        settings({ aiModelId: 'm-gpt', useFallbacks: false }),
+      );
+
+      const candidates = await service.pdfCandidates({ feature });
+
+      expect(candidates.map((m) => m.id)).toEqual(['m-gpt']);
+    });
+
+    it('returns nothing when its own model is unusable and fallbacks are off', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue(
+        settings({ aiModelId: 'm-inactive', useFallbacks: false }),
+      );
+
+      await expect(service.pdfCandidates({ feature })).resolves.toEqual([]);
+    });
+
+    it('falls back to the rest when its own model is unusable', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue(
+        settings({ aiModelId: 'm-inactive', useFallbacks: true }),
+      );
+
+      const candidates = await service.pdfCandidates({ feature });
+
+      expect(candidates.map((m) => m.id)).toEqual([
+        'm-haiku',
+        'm-gpt',
+        'm-sonnet',
+      ]);
+    });
+
+    it('uses only the default without its own model and without fallbacks', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue(
+        settings({ aiModelId: null, useFallbacks: false }),
+      );
+
+      const candidates = await service.pdfCandidates({ feature });
+
+      expect(candidates.map((m) => m.id)).toEqual(['m-haiku']);
+    });
+
+    it('uses the default then the rest without its own model', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue(
+        settings({ aiModelId: null, useFallbacks: true }),
+      );
+
+      const candidates = await service.pdfCandidates({ feature });
+
+      expect(candidates.map((m) => m.id)).toEqual([
+        'm-haiku',
+        'm-gpt',
+        'm-sonnet',
+      ]);
+    });
+
+    it('behaves like the plain catalog when the feature has no row yet', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue(null);
+
+      const candidates = await service.pdfCandidates({ feature });
+
+      expect(candidates.map((m) => m.id)).toEqual([
+        'm-haiku',
+        'm-gpt',
+        'm-sonnet',
+      ]);
+    });
+
+    it('still checks the feature is on when a model is chosen by id', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue(
+        settings({ enabled: false }),
+      );
+
+      await expect(
+        service.pdfCandidates({ feature, aiModelId: 'm-gpt' }),
+      ).rejects.toThrow(AiFeatureDisabledError);
+    });
+
+    it('with an explicit model id returns only that model', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue(
+        settings({ aiModelId: 'm-haiku', useFallbacks: true }),
+      );
+      prisma.aiModel.findMany.mockResolvedValue([catalog()[1]]);
+
+      const candidates = await service.pdfCandidates({
+        feature,
+        aiModelId: 'm-gpt',
+      });
+
+      expect(prisma.aiModel.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { isActive: true, supportsPdf: true, id: 'm-gpt' },
+        }),
+      );
+      expect(candidates.map((m) => m.id)).toEqual(['m-gpt']);
     });
   });
 });

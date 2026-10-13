@@ -20,7 +20,10 @@ import {
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import { PaginationUtil } from '../../common/utils/pagination.util';
-import { S3StorageService } from '../storage/s3-storage.service';
+import {
+  S3StorageService,
+  type StoredObject,
+} from '../storage/s3-storage.service';
 import {
   CardMonthSummary,
   CardMonthSummaryArgs,
@@ -91,7 +94,12 @@ export class StatementsService {
         fileHash,
       },
     });
-    const fileKey = `users/${userId}/statements/${created.id}.pdf`;
+    const fileKey = S3StorageService.key(
+      userId,
+      'statements',
+      created.id,
+      'pdf',
+    );
     try {
       await this.storage.put(fileKey, file.buffer, 'application/pdf');
     } catch (error) {
@@ -274,12 +282,13 @@ export class StatementsService {
     return this.mapImport(statement, statement.lines);
   }
 
-  async fileUrl(id: string, userId: string): Promise<string> {
+  /** The uploaded PDF, only for the statement's owner. */
+  async openFile(id: string, userId: string): Promise<StoredObject> {
     const statement = await this.getOwned(id, userId);
     if (!statement.fileKey) {
       throw new NotFoundError('This statement has no file');
     }
-    return this.storage.signedUrl(statement.fileKey);
+    return this.storage.open(statement.fileKey);
   }
 
   async updateLine(

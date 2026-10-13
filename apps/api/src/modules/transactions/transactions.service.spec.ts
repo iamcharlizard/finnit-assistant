@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { TransactionsService } from './transactions.service';
 import { PrismaService } from '../../services/prisma.service';
+import { S3StorageService } from '../storage/s3-storage.service';
 import {
   NotFoundError,
   ValidationError,
@@ -12,6 +13,7 @@ import { PaginationUtil } from '../../common/utils/pagination.util';
 describe('TransactionsService', () => {
   let service: TransactionsService;
   let prismaService: DeepMockProxy<PrismaService>;
+  let storage: DeepMockProxy<S3StorageService>;
 
   const mockUserId = 'user-1';
   const mockAccountId = 'account-1';
@@ -55,6 +57,7 @@ describe('TransactionsService', () => {
 
   beforeEach(async () => {
     prismaService = mockDeep<PrismaService>();
+    storage = mockDeep<S3StorageService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -63,6 +66,7 @@ describe('TransactionsService', () => {
           provide: PrismaService,
           useValue: prismaService,
         },
+        { provide: S3StorageService, useValue: storage },
       ],
     }).compile();
 
@@ -161,7 +165,9 @@ describe('TransactionsService', () => {
       jest
         .spyOn(service as any, 'suggestCategoryForMerchant')
         .mockResolvedValue(suggestedCategory);
-      prismaService.category.findFirst.mockResolvedValue(suggestedCategory as any);
+      prismaService.category.findFirst.mockResolvedValue(
+        suggestedCategory as any,
+      );
 
       const createdTransaction = {
         ...mockTransaction,
@@ -443,9 +449,14 @@ describe('TransactionsService', () => {
         attachments: [
           {
             id: 'attachment-1',
-            fileUrl: 'https://example.com/file.pdf',
-            fileType: 'pdf',
+            transactionId: 'transaction-1',
+            fileKey: 'users/u/attachments/a.pdf',
+            fileName: 'ticket.pdf',
+            fileUrl: null,
+            fileType: 'application/pdf',
             fileSize: 1024,
+            extra: null,
+            uploadedAt: new Date('2024-01-01'),
           },
         ],
       };
@@ -474,12 +485,7 @@ describe('TransactionsService', () => {
       ).rejects.toThrow(NotFoundError);
     });
 
-    // TODO(bug): findById/findMany load `attachments` (and findMany also
-    // `account`/`category`) via `include`, but map the row with
-    // `mapTransaction`, which drops relations. `mapTransactionWithRelations`
-    // is never called and there is no @ResolveField for
-    // `Transaction.attachments`, so the GraphQL field always resolves to null.
-    it.skip('should return the attachments loaded with the transaction', async () => {
+    it('should return the attachments loaded with the transaction', async () => {
       // Arrange
       prismaService.transaction.findFirst.mockResolvedValue({
         ...mockTransaction,
@@ -487,8 +493,10 @@ describe('TransactionsService', () => {
           {
             id: 'attachment-1',
             transactionId: mockTransaction.id,
-            fileUrl: 'https://example.com/file.pdf',
-            fileType: 'pdf',
+            fileKey: 'users/u/attachments/attachment-1.pdf',
+            fileName: 'ticket.pdf',
+            fileUrl: null,
+            fileType: 'application/pdf',
             fileSize: 1024,
             extra: null,
             uploadedAt: new Date('2024-01-01'),
@@ -500,7 +508,17 @@ describe('TransactionsService', () => {
       const result = await service.findById(mockTransaction.id, mockUserId);
 
       // Assert
-      expect(result.attachments).toHaveLength(1);
+      expect(result.attachments).toEqual([
+        {
+          id: 'attachment-1',
+          transactionId: mockTransaction.id,
+          fileName: 'ticket.pdf',
+          fileType: 'application/pdf',
+          fileSize: 1024,
+          downloadPath: '/attachments/attachment-1/file',
+          uploadedAt: new Date('2024-01-01'),
+        },
+      ]);
     });
   });
 
@@ -816,6 +834,8 @@ describe('TransactionsService', () => {
           {
             id: 'attachment-1',
             transactionId: mockTransaction.id,
+            fileKey: null,
+            fileName: null,
             fileUrl: 'https://example.com/receipt.jpg',
             fileType: 'image/jpeg',
             fileSize: 2048,
@@ -830,50 +850,19 @@ describe('TransactionsService', () => {
         transactionWithAttachments as any,
       );
 
-      // Assert
+      // Assert: legacy external links are not downloadable through the API.
       expect(result.attachments!).toHaveLength(1);
       expect(result.attachments![0]).toEqual({
         id: 'attachment-1',
         transactionId: mockTransaction.id,
-        fileUrl: 'https://example.com/receipt.jpg',
+        fileName: undefined,
         fileType: 'image/jpeg',
         fileSize: 2048,
-        extra: 'ocr-text',
+        downloadPath: undefined,
         uploadedAt: new Date('2024-01-01'),
       });
       expect(result.account).toBeUndefined();
       expect(result.category).toBeUndefined();
-    });
-
-    // TODO(bug): `Attachment.extra` is `Json?` in the Prisma schema but the
-    // mappers only keep it when it is a string, so any JSON object stored in
-    // `extra` is silently dropped from API responses.
-    it.skip('should preserve JSON object attachment extra data', () => {
-      // Arrange
-      const transactionWithAttachments = {
-        ...mockTransaction,
-        account: null,
-        category: null,
-        attachments: [
-          {
-            id: 'attachment-1',
-            transactionId: mockTransaction.id,
-            fileUrl: 'https://example.com/receipt.jpg',
-            fileType: 'image/jpeg',
-            fileSize: 2048,
-            extra: { metadata: 'test' },
-            uploadedAt: new Date('2024-01-01'),
-          },
-        ],
-      };
-
-      // Act
-      const result = service['mapTransactionWithRelations'](
-        transactionWithAttachments as any,
-      );
-
-      // Assert
-      expect(result.attachments![0].extra).toBeDefined();
     });
   });
 
@@ -922,7 +911,10 @@ describe('TransactionsService', () => {
 
     it('should return null without querying when merchant name is empty', async () => {
       // Act
-      const result = await service['suggestCategoryForMerchant'](mockUserId, '');
+      const result = await service['suggestCategoryForMerchant'](
+        mockUserId,
+        '',
+      );
 
       // Assert
       expect(result).toBeNull();
@@ -993,7 +985,9 @@ describe('TransactionsService', () => {
       };
 
       prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
-      prismaService.category.findFirst.mockResolvedValue(globalDefaultCategory as any);
+      prismaService.category.findFirst.mockResolvedValue(
+        globalDefaultCategory as any,
+      );
 
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {

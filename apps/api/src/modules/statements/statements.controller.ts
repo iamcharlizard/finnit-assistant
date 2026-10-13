@@ -1,23 +1,23 @@
 import {
   BadRequestException,
   Body,
-  ConflictException,
   Controller,
+  Get,
   HttpCode,
-  NotFoundException,
+  Param,
+  ParseUUIDPipe,
   Post,
   Req,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
+import { sendFile } from '../storage/send-file';
 import { JwtHttpAuthGuard } from '../../common/guards/jwt-http-auth.guard';
-import {
-  ErrorCode,
-  FinnitGraphQLError,
-} from '../../common/exceptions/graphql-error.exception';
+import { toHttpError } from '../../common/exceptions/to-http-error';
 import { StatementImport } from './dto/statement.dto';
 import {
   MAX_STATEMENT_BYTES,
@@ -26,11 +26,13 @@ import {
 } from './statements.service';
 
 /**
- * Statement upload is REST because it is multipart. Everything else about
+ * Statement upload and download are REST (binary). Everything else about
  * statements (status polling, review, confirmation) is GraphQL.
  *
  *   curl -H "Authorization: Bearer $TOKEN" -F accountId=<card id> \
  *        -F file=@statement.pdf https://api.<domain>/statements
+ *   curl -H "Authorization: Bearer $TOKEN" -o statement.pdf \
+ *        https://api.<domain>/statements/<id>/file
  */
 @Controller('statements')
 @UseGuards(JwtHttpAuthGuard)
@@ -56,17 +58,22 @@ export class StatementsController {
       throw toHttpError(error);
     }
   }
-}
 
-/** The services throw GraphQL errors; map them to HTTP for this controller. */
-function toHttpError(error: unknown): unknown {
-  if (!(error instanceof FinnitGraphQLError)) return error;
-  switch (error.extensions.code) {
-    case ErrorCode.NOT_FOUND:
-      return new NotFoundException(error.message);
-    case ErrorCode.CONFLICT:
-      return new ConflictException(error.message);
-    default:
-      return new BadRequestException(error.message);
+  /** Streams the PDF to its owner; the file is never exposed from S3 directly. */
+  @Get(':id/file')
+  async download(
+    @Req() req: Request & { user: { id: string } },
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      const file = await this.statements.openFile(id, req.user.id);
+      sendFile(res, file, {
+        fileName: `estado-de-cuenta-${id}.pdf`,
+        contentType: 'application/pdf',
+      });
+    } catch (error) {
+      throw toHttpError(error);
+    }
   }
 }

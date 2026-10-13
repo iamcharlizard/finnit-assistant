@@ -5,7 +5,6 @@ import {
   CreateTransactionInput,
   UpdateTransactionInput,
   TransactionsArgs,
-  CreateAttachmentInput,
 } from './dto/transaction.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -62,15 +61,10 @@ export class TransactionsResolver {
     return this.transactionsService.delete(id, user.id);
   }
 
-  @Mutation(() => Attachment)
-  async addTransactionAttachment(
-    @CurrentUser() user: User,
-    @Args('input') input: CreateAttachmentInput,
-  ): Promise<Attachment> {
-    return this.transactionsService.addAttachment(user.id, input);
-  }
-
-  @Mutation(() => Boolean)
+  @Mutation(() => Boolean, {
+    description:
+      'Deletes the attachment and its file. Upload with POST /transactions/:id/attachments',
+  })
   async removeTransactionAttachment(
     @CurrentUser() user: User,
     @Args('id') id: string,

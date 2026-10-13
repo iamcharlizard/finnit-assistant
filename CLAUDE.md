@@ -65,6 +65,7 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - API: Docker image (`apps/api/Dockerfile`, arm64) built and smoke-tested by `.github/workflows/deploy-api.yml`, pushed to GHCR and deployed to a Hetzner CAX11 managed with Dokploy. Each environment has its own Postgres on the same server inside the Dokploy project. Setup and rollback: `docs/deployment.md`.
 - Environments: branch `main` → **production** (image tag `latest`); branch `testing` → **testing** (image tag `testing`). Work flows `feature/*` → `testing` → `main`.
 - The container runs `prisma migrate deploy` on start, so migrations must be backwards-compatible.
+- Files: every user file (statements, attachments, future uploads) goes to the private S3 bucket through `S3StorageService` (`src/modules/storage/`), under `users/<userId>/<kind>/<id>.<ext>`. Never public objects or pre-signed URLs: serve files through an authenticated API endpoint that checks ownership in the database (see `sendFile`). Detect file types from the bytes (`detectFileType`), not from names.
 - `apps/api/scripts/smoke-test.sh <image>` boots an image against a throwaway Postgres (health + signUp/signIn/me).
 - Known gaps: `eslint` reports ~777 errors in the API, so CI does not gate on lint or tests yet.
 

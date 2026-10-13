@@ -38,16 +38,6 @@ export class StatementsResolver {
     return this.statements.findById(id, user.id);
   }
 
-  @Query(() => String, {
-    description: 'Temporary (5 min) download URL of the uploaded PDF',
-  })
-  async statementFileUrl(
-    @CurrentUser() user: User,
-    @Args('id', { type: () => ID }) id: string,
-  ): Promise<string> {
-    return this.statements.fileUrl(id, user.id);
-  }
-
   @Query(() => CardMonthSummary)
   async cardMonthSummary(
     @CurrentUser() user: User,

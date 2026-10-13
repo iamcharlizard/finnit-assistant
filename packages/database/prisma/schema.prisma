@@ -298,10 +298,14 @@ model Transfer {
   @@unique([fromTxnId, toTxnId])
 }
 
+// Files live in the private S3 bucket (fileKey); they are only served by the
+// API to the owner of the transaction. fileUrl is legacy (external links).
 model Attachment {
   id            String   @id @default(uuid())
   transactionId String
-  fileUrl       String
+  fileKey       String?  @unique // S3 object key
+  fileName      String?
+  fileUrl       String?
   fileType      String
   fileSize      Int?
   extra         Json?

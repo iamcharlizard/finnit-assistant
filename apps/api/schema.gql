@@ -99,17 +99,19 @@ enum AiProvider {
 }
 
 type Attachment {
-  """Additional metadata in JSON format"""
-  extra: String
+  """
+  API path to download the file (authenticated, owner only); null for legacy external links
+  """
+  downloadPath: String
+
+  """Original file name"""
+  fileName: String
 
   """File size in bytes"""
-  fileSize: Float
+  fileSize: Int
 
   """MIME type of the file (e.g., image/jpeg, application/pdf)"""
   fileType: String!
-
-  """URL where the file is stored"""
-  fileUrl: String!
 
   """Unique identifier for the attachment"""
   id: String!
@@ -321,14 +323,6 @@ input CreateAiModelInput {
   supportsPdf: Boolean = false
 }
 
-input CreateAttachmentInput {
-  extra: String
-  fileSize: Float
-  fileType: String!
-  fileUrl: String!
-  transactionId: String!
-}
-
 input CreateBudgetInput {
   amountTotal: Float
   categories: [BudgetCategoryInput!]!
@@ -536,7 +530,6 @@ type MonthlyReport {
 }
 
 type Mutation {
-  addTransactionAttachment(input: CreateAttachmentInput!): Attachment!
   adjustAccountBalance(input: AdjustBalanceInput!): Account!
 
   """
@@ -594,6 +587,10 @@ type Mutation {
   markRecurringPaymentPaid(occurrenceId: ID!, transactionId: ID): RecurringOccurrence!
   refreshToken(input: RefreshTokenInput!): AuthPayload!
   registerBankConnection(idCredential: String!): BankSyncResult!
+
+  """
+  Deletes the attachment and its file. Upload with POST /transactions/:id/attachments
+  """
   removeTransactionAttachment(id: String!): Boolean!
 
   """Undoes paid/skipped/missed and unlinks the transaction"""
@@ -742,9 +739,6 @@ type Query {
   ): RecurringExpenseConnection!
   recurringExpensesSummary: RecurringExpensesSummary!
   rootCategories: [Category!]!
-
-  """Temporary (5 min) download URL of the uploaded PDF"""
-  statementFileUrl(id: ID!): String!
 
   """Includes the lines; poll it after uploading to follow the status"""
   statementImport(id: ID!): StatementImport!

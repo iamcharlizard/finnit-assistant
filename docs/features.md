@@ -62,7 +62,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Categorización sugerida por comercio | 🟡 | ⏳ | ⏳ | Busca por la primera palabra del comercio en transacciones previas; no aprende reglas. |
 | Transferencias entre cuentas | ✅ | ⏳ | ⏳ | `createTransfer`. |
 | Detección automática de transferencias internas | ⏳ | — | — | |
-| Adjuntos (tickets, comprobantes) | 🟡 | ⏳ | ⏳ | Solo guarda una URL; la subida a S3 existe para estados de cuenta, falta usarla en adjuntos. **Bug:** `transaction`/`transactions` nunca devuelven los adjuntos (el mapper los descarta). |
+| Adjuntos (tickets, comprobantes) | ✅ | ⏳ | ⏳ | `POST /transactions/:id/attachments` (PDF, JPEG, PNG, WEBP, HEIC; máx. 10 MB, 10 por transacción) al bucket privado; descarga solo del dueño en `GET /attachments/:id/file`. |
 | Captura por foto de ticket / SMS | ⏳ | ⏳ | ⏳ | |
 | CEP de Banxico | ⏳ | ⏳ | ⏳ | |
 | Etiquetas (tags) | ⏳ | ⏳ | ⏳ | Modelo `Tag` sin API. |
@@ -155,7 +155,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Subir PDF del estado de cuenta (almacenado en S3) | ✅ | ⏳ | ⏳ | `POST /statements` (multipart, máx. 10 MB, deduplica por hash). Bucket privado, descarga con URL firmada (`statementFileUrl`). |
+| Subir PDF del estado de cuenta (almacenado en S3) | ✅ | ⏳ | ⏳ | `POST /statements` (multipart, máx. 10 MB, deduplica por hash). Bucket privado; descarga solo del dueño en `GET /statements/:id/file`. |
 | Extracción: parser Banamex + IA para otros formatos | ✅ | — | — | Parser local `banamex_v1` (tarjeta titular y digital, mensualidades MSI, pagos y devoluciones), verificado con un estado real. Otros bancos: lectura con IA. Valida saldo anterior + cargos − abonos = saldo al corte. |
 | Catálogo de modelos de IA (Anthropic, OpenAI, Gemini) | ✅ | ⏳ | ⏳ | `aiModels`: activos/desactivados, predeterminado y orden de respaldo; solo administradores (`ADMIN_EMAILS`) lo modifican. Llaves por proveedor en variables de entorno. |
 | Revisión y confirmación de movimientos importados | ✅ | ⏳ | ⏳ | `statementImport`, `updateStatementLine` (ignorar, categoría, ligar a mano), `confirmStatementImport`, `reprocessStatementImport`. |

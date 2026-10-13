@@ -72,10 +72,10 @@ Repite estos pasos para cada ambiente, usando los valores de la tabla de abajo.
    ```
    `NODE_ENV=production` también en testing: así testing se comporta igual que producción. Sin `JWT_SECRET` la API no arranca.
 
-   Para la importación de estados de cuenta (opcionales; sin ellas la API arranca, pero la subida de PDFs responde 503):
+   Para archivos (estados de cuenta y adjuntos), IA y banco (opcionales; sin ellas la API arranca, pero subir archivos responde 503):
    ```
    AWS_REGION=us-east-1
-   S3_BUCKET=<bucket del ambiente, ver "Almacenamiento de estados de cuenta">
+   S3_BUCKET=<bucket del ambiente, ver "Almacenamiento de archivos">
    AWS_ACCESS_KEY_ID=<access key del usuario IAM del ambiente>
    AWS_SECRET_ACCESS_KEY=<secret del usuario IAM del ambiente>
    ANTHROPIC_API_KEY=<opcional>
@@ -88,26 +88,67 @@ Repite estos pasos para cada ambiente, usando los valores de la tabla de abajo.
 5. **Advanced → Resources**: límites según la tabla.
 6. Copia el `applicationId` (último segmento de la URL de la app en Dokploy).
 
-### Almacenamiento de estados de cuenta (S3)
+### Almacenamiento de archivos (S3)
 
-Los PDF de estados de cuenta se guardan en un bucket **privado** por ambiente. La API solo entrega URLs firmadas que expiran en 5 minutos.
+Todos los archivos (estados de cuenta y adjuntos de transacciones) van a un bucket **privado** por ambiente. Solo la API los lee y escribe, con las llaves de su usuario IAM; nunca hay URLs públicas ni pre-firmadas. Los usuarios descargan sus archivos por la API (`GET /statements/:id/file`, `GET /attachments/:id/file`) con su token, y la API comprueba en la base de datos que el archivo sea suyo antes de leerlo de S3. Las llaves de los objetos son `users/<userId>/<tipo>/<id>.<ext>`.
 
-1. En AWS (región `us-east-1` o la que uses en `AWS_REGION`), crea los buckets `finnit-statements-prod` y `finnit-statements-test`:
-   - *Block all public access* activado.
-   - Cifrado por defecto SSE-S3.
-   - Opcional: regla de ciclo de vida para borrar versiones antiguas.
-2. Crea un usuario IAM por ambiente (`finnit-api-prod`, `finnit-api-test`), sin acceso a consola, con esta política (cambia el bucket):
-   ```json
-   {
-     "Version": "2012-10-17",
-     "Statement": [{
-       "Effect": "Allow",
-       "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
-       "Resource": "arn:aws:s3:::finnit-statements-prod/*"
-     }]
-   }
-   ```
-3. Genera una access key para cada usuario y ponla en las variables del ambiente en Dokploy.
+**1. Bucket** (`finnit-files-prod` y `finnit-files-test`, en la región de `AWS_REGION`):
+
+| Ajuste | Valor |
+|---|---|
+| Block Public Access | Las 4 opciones activadas |
+| Object Ownership | *Bucket owner enforced* (ACLs deshabilitadas) |
+| Default encryption | SSE-S3 (o SSE-KMS con *Bucket Key*, y entonces `S3_KMS_KEY_ID`) |
+| Versioning | Activado (protege contra borrados accidentales) |
+| Lifecycle | Expirar versiones no actuales a los 30 días; abortar *multipart uploads* incompletos a los 7 días |
+| CORS | Ninguno (el navegador nunca habla con S3) |
+| Static website hosting | Desactivado |
+| Server access logging / CloudTrail data events | Recomendado en producción |
+
+**2. Bucket policy** (sustituye `<ACCOUNT_ID>`, el bucket y el usuario IAM). Rechaza conexiones sin TLS y cualquier acceso a objetos que no venga del usuario de la API:
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyInsecureTransport",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:*",
+      "Resource": ["arn:aws:s3:::finnit-files-prod", "arn:aws:s3:::finnit-files-prod/*"],
+      "Condition": { "Bool": { "aws:SecureTransport": "false" } }
+    },
+    {
+      "Sid": "OnlyTheApiReadsAndWritesObjects",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::finnit-files-prod/*",
+      "Condition": {
+        "ArnNotEquals": { "aws:PrincipalArn": "arn:aws:iam::<ACCOUNT_ID>:user/finnit-api-prod" }
+      }
+    }
+  ]
+}
+```
+La segunda regla solo afecta a los objetos: tu usuario administrador sigue pudiendo cambiar la configuración del bucket.
+
+**3. Usuario IAM** `finnit-api-prod` (y `finnit-api-test` para su bucket), sin acceso a consola, con solo esta política:
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
+    "Resource": "arn:aws:s3:::finnit-files-prod/users/*"
+  }]
+}
+```
+Si usas SSE-KMS, agrega `kms:Encrypt`, `kms:Decrypt` y `kms:GenerateDataKey` sobre esa llave. Genera una *access key*, ponla en Dokploy (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) y rótala periódicamente.
+
+**4. Variables** en Dokploy: `S3_BUCKET`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` y, opcionales, `S3_KMS_KEY_ID` y `S3_EXPECTED_BUCKET_OWNER` (tu *account id*: la API rechaza operar si el bucket es de otra cuenta).
+
+En desarrollo local, el servicio `s3` de `docker-compose.yml` (s3mock en el puerto 9090) sustituye a AWS; las variables están en `apps/api/.env.example`.
 
 ### Modelos de IA
 

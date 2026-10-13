@@ -1,35 +1,26 @@
 'use client';
 
 import * as React from 'react';
-import {
-  ArrowDown,
-  BriefcaseMedical,
-  ChartLine,
-  House,
-  Landmark,
-  ListFilter,
-  Zap,
-} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { CalendarClock, Landmark, Repeat } from 'lucide-react';
 
-import { AddPaymentCta } from '@finnit/ui/components/finance/add-payment-cta';
-import { NeoTipCard } from '@finnit/ui/components/finance/neo-tip-card';
-import {
-  PaymentCalendar,
-  type CalendarViewMode,
-} from '@finnit/ui/components/finance/payment-calendar';
-import { PaymentItem } from '@finnit/ui/components/finance/payment-item';
+import { PaymentCalendar } from '@finnit/ui/components/finance/payment-calendar';
 import { ProjectionCard } from '@finnit/ui/components/finance/projection-card';
-import { Progress } from '@finnit/ui/components/ui/progress';
-import { SectionHeading } from '@finnit/ui/components/ui/section-heading';
 
-import { CALENDAR_EVENTS, CALENDAR_MONTH } from '@/lib/mocks/calendar';
+import { DayAgenda } from '@/components/calendar/day-agenda';
+import { EmptyState } from '@/components/finance/empty-state';
+import type { CalendarView } from '@/lib/calendar/view';
 
 const TEAL = '#00696e';
 const PURPLE = '#6c72cb';
 
-export function CalendarScreen() {
-  const [viewMode, setViewMode] = React.useState<CalendarViewMode>('month');
+export function CalendarScreen({ view }: { view: CalendarView }) {
+  const router = useRouter();
+  const { month } = view;
+  // Starts with the month's list; choosing a day narrows it.
   const [selectedDay, setSelectedDay] = React.useState<number | null>(null);
+  const monthName = month.label.split(' ')[0]!.toLowerCase();
+  const day = selectedDay ? view.days[selectedDay] : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,106 +29,75 @@ export function CalendarScreen() {
           Calendario de Pagos
         </h1>
         <p className="text-[15px] text-on-surface-variant">
-          Gestiona tus vencimientos y proyecta tu salud financiera.
+          Tus pagos recurrentes y las fechas de tus tarjetas.
         </p>
       </header>
 
+      {view.isEmpty ? (
+        <EmptyState
+          icon={Repeat}
+          title="Aún no tienes pagos recurrentes"
+          description="Cuando registres tus gastos recurrentes (suscripciones, servicios, mensualidades) verás aquí cuándo vence cada uno."
+        />
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <div className="flex flex-col gap-3">
+        <div className="flex min-w-0 flex-col gap-3">
           <PaymentCalendar
-            monthLabel={CALENDAR_MONTH.label}
-            leadingDays={CALENDAR_MONTH.leadingDays}
-            daysInMonth={CALENDAR_MONTH.daysInMonth}
-            today={CALENDAR_MONTH.today}
-            events={CALENDAR_EVENTS}
+            monthLabel={month.label}
+            leadingDays={month.leadingDays}
+            daysInMonth={month.daysInMonth}
+            today={month.today ?? undefined}
+            events={view.events}
             selectedDay={selectedDay}
-            onSelectDay={setSelectedDay}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
+            onSelectDay={(d) => setSelectedDay((s) => (s === d ? null : d))}
+            showViewModes={false}
+            onPrevMonth={() => router.push(month.prevHref, { scroll: false })}
+            onNextMonth={() => router.push(month.nextHref, { scroll: false })}
           />
 
           <div className="flex gap-2.5">
             <ProjectionCard
-              label="Ahorro proyectado"
-              amount="$2,450.00"
-              icon={ChartLine}
+              label={`Por pagar en ${monthName}`}
+              amount={view.totals.open}
+              icon={CalendarClock}
               accentColor={TEAL}
             >
-              <Progress
-                value={75}
-                glow
-                indicatorColor={TEAL}
-                className="mb-1.5"
-                aria-label="75% de tu meta mensual"
-              />
               <p className="text-[10px] text-on-surface-variant">
-                75% de tu meta mensual
+                {view.totals.openCount === 1
+                  ? '1 pago pendiente'
+                  : `${view.totals.openCount} pagos pendientes`}
               </p>
             </ProjectionCard>
             <ProjectionCard
-              label="Gastos fijos"
-              amount="$1,120.40"
+              label="Gastos fijos al mes"
+              amount={view.totals.fixedMonthly}
               icon={Landmark}
               accentColor={PURPLE}
             >
-              <p className="flex items-center gap-1 text-[10px] text-on-surface-variant">
-                <ArrowDown aria-hidden className="size-3 text-green-500" />
-                5% menos que el mes pasado
+              <p className="text-[10px] text-on-surface-variant">
+                Promedio de tus gastos recurrentes
               </p>
             </ProjectionCard>
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <section>
-            <SectionHeading
-              title="Próximos Pagos"
-              action={
-                <button
-                  type="button"
-                  aria-label="Filtrar pagos"
-                  className="flex size-11 items-center justify-center rounded-full text-brand-ink hover:bg-accent"
-                >
-                  <ListFilter aria-hidden className="size-5" />
-                </button>
-              }
-            />
-            <div className="flex flex-col gap-2">
-              <PaymentItem
-                title="Alquiler Octubre"
-                amount="$850.00"
-                status="pending"
-                timeLabel="Hace 2 días"
-                icon={House}
-                iconBg={TEAL}
-              />
-              <PaymentItem
-                title="Seguro Médico"
-                amount="$120.00"
-                status="scheduled"
-                timeLabel="En 3 días"
-                icon={BriefcaseMedical}
-                iconBg={PURPLE}
-              />
-              <PaymentItem
-                title="Servicio Eléctrico"
-                amount="$45.50"
-                status="paid"
-                timeLabel="Ayer"
-                icon={Zap}
-                iconBg="rgba(0,0,0,0.08)"
-                iconTint="#5c6370"
-              />
-            </div>
-          </section>
-
-          <AddPaymentCta />
-
-          <NeoTipCard
-            title="Consejo Finnit AI"
-            body="Detectamos que tus suscripciones digitales han subido un 12%. Podrías ahorrar $15/mes cancelando servicios que no has usado en 30 días."
+        {selectedDay ? (
+          <DayAgenda
+            title={`${selectedDay} de ${monthName}`}
+            payments={day?.payments ?? []}
+            cardDates={day?.cardDates ?? []}
+            emptyText="Nada vence este día"
+            onShowMonth={() => setSelectedDay(null)}
           />
-        </div>
+        ) : (
+          <DayAgenda
+            title={`Pagos de ${monthName}`}
+            payments={view.monthPayments}
+            cardDates={[]}
+            emptyText="Sin pagos este mes"
+          />
+        )}
       </div>
     </div>
   );

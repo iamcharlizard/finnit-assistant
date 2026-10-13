@@ -11,6 +11,7 @@ import {
   GoalRecommendations,
 } from './dto/goal.dto';
 import {
+  ConflictError,
   NotFoundError,
   ValidationError,
   GoalAlreadyReachedError,
@@ -22,6 +23,17 @@ import {
   toLocalDateOnly,
 } from '../../common/utils/local-date.util';
 
+/** A repeated name hits the (userId, name) unique index. */
+function rethrowDuplicateName(error: unknown): never {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  ) {
+    throw new ConflictError('A goal with this name already exists');
+  }
+  throw error;
+}
+
 /** Months of contributions averaged when no monthly amount is given. */
 const PROJECTION_HISTORY_MONTHS = 3;
 
@@ -30,15 +42,25 @@ export class GoalsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, input: CreateGoalInput): Promise<Goal> {
-    const goal = await this.prisma.goal.create({
-      data: {
-        userId,
-        name: input.name,
-        targetAmount: input.targetAmount,
-        dueDate: input.dueDate ? toLocalDateOnly(input.dueDate) : undefined,
-        currency: input.currency,
-      },
-    });
+    // Enforced here: no ValidationPipe runs the DTO's decorators.
+    if (!input.name?.trim()) {
+      throw new ValidationError('The goal needs a name');
+    }
+    if (!(input.targetAmount > 0)) {
+      throw new ValidationError('The target amount must be greater than 0');
+    }
+
+    const goal = await this.prisma.goal
+      .create({
+        data: {
+          userId,
+          name: input.name,
+          targetAmount: input.targetAmount,
+          dueDate: input.dueDate ? toLocalDateOnly(input.dueDate) : undefined,
+          currency: input.currency,
+        },
+      })
+      .catch(rethrowDuplicateName);
 
     return this.mapGoal(goal);
   }
@@ -113,14 +135,19 @@ export class GoalsService {
     if (input.targetAmount != null && !(input.targetAmount > 0)) {
       throw new ValidationError('The target amount must be greater than 0');
     }
+    if (input.name != null && !input.name.trim()) {
+      throw new ValidationError('The goal needs a name');
+    }
 
-    const updatedGoal = await this.prisma.goal.update({
-      where: { id },
-      data: {
-        ...input,
-        ...(input.dueDate && { dueDate: toLocalDateOnly(input.dueDate) }),
-      },
-    });
+    const updatedGoal = await this.prisma.goal
+      .update({
+        where: { id },
+        data: {
+          ...input,
+          ...(input.dueDate && { dueDate: toLocalDateOnly(input.dueDate) }),
+        },
+      })
+      .catch(rethrowDuplicateName);
 
     return this.mapGoal(updatedGoal);
   }

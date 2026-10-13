@@ -80,6 +80,50 @@ describe('ReportsService', () => {
     }
   });
 
+  it('exposes the baseline the projection starts from', async () => {
+    const prisma = prismaMock();
+    prisma.account.findMany.mockResolvedValue([
+      { balanceCurrent: 5000, currency: 'MXN' },
+      { balanceCurrent: -1000, currency: 'USD' },
+    ]);
+    const twoMonthsAgo = new Date(Date.now() - 50 * 86_400_000);
+    prisma.transaction.aggregate
+      .mockResolvedValueOnce({ _sum: { amount: 20000 } })
+      .mockResolvedValueOnce({ _sum: { amount: 12000 } })
+      .mockResolvedValueOnce({ _min: { txnDate: twoMonthsAgo } });
+    const service = new ReportsService(prisma as unknown as PrismaService);
+
+    const baseline = await service.getCashFlowBaseline('user-1');
+
+    expect(baseline).toEqual({
+      currentBalance: 4000,
+      monthlyIncome: 10000,
+      monthlyExpenses: 6000,
+      monthsOfData: 2,
+      currency: 'MXN',
+    });
+    expect(prisma.account.findMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1', archived: false },
+    });
+  });
+
+  it('gives a user without accounts or movements a zero baseline in MXN', async () => {
+    const prisma = prismaMock();
+    prisma.transaction.aggregate
+      .mockResolvedValueOnce({ _sum: { amount: null } })
+      .mockResolvedValueOnce({ _sum: { amount: null } })
+      .mockResolvedValueOnce({ _min: { txnDate: null } });
+    const service = new ReportsService(prisma as unknown as PrismaService);
+
+    expect(await service.getCashFlowBaseline('user-1')).toEqual({
+      currentBalance: 0,
+      monthlyIncome: 0,
+      monthlyExpenses: 0,
+      monthsOfData: 1,
+      currency: 'MXN',
+    });
+  });
+
   it('names the category breakdown in the requested locale with one query', async () => {
     const prisma = prismaMock();
     prisma.transaction.aggregate

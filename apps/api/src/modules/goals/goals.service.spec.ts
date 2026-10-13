@@ -2,11 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { GoalsService } from './goals.service';
 import { PrismaService } from '../../services/prisma.service';
+import { Prisma } from '@finnit/database';
 import {
+  ConflictError,
   NotFoundError,
   ValidationError,
   GoalAlreadyReachedError,
 } from '../../common/exceptions/graphql-error.exception';
+
+const uniqueViolation = () =>
+  new Prisma.PrismaClientKnownRequestError('Unique constraint', {
+    code: 'P2002',
+    clientVersion: 'test',
+  });
 
 /** Makes `$transaction(callback)` run the callback against `tx`. */
 const runTransactionWith = (tx: unknown) =>
@@ -124,6 +132,31 @@ describe('GoalsService', () => {
       expect(result.dueDate).toBeUndefined();
     });
 
+    it('refuses a target amount that is not positive', async () => {
+      await expect(
+        service.create(mockUserId, { ...createInput, targetAmount: 0 }),
+      ).rejects.toThrow(ValidationError);
+      expect(prismaService.goal.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses a blank name', async () => {
+      await expect(
+        service.create(mockUserId, { ...createInput, name: '   ' }),
+      ).rejects.toThrow(ValidationError);
+      expect(prismaService.goal.create).not.toHaveBeenCalled();
+    });
+
+    it('maps a repeated name to a ConflictError', async () => {
+      prismaService.goal.create.mockRejectedValue(uniqueViolation());
+
+      await expect(service.create(mockUserId, createInput)).rejects.toThrow(
+        'A goal with this name already exists',
+      );
+      await expect(service.create(mockUserId, createInput)).rejects.toThrow(
+        ConflictError,
+      );
+    });
+
     it('should handle goal creation errors', async () => {
       // Arrange
       prismaService.goal.create.mockRejectedValue(new Error('Database error'));
@@ -233,6 +266,33 @@ describe('GoalsService', () => {
         service.update('non-existent', mockUserId, updateInput),
       ).rejects.toThrow(NotFoundError);
       expect(prismaService.goal.update).not.toHaveBeenCalled();
+    });
+
+    it('maps a repeated name to a ConflictError', async () => {
+      prismaService.goal.findFirst.mockResolvedValue(mockGoal as any);
+      prismaService.goal.update.mockRejectedValue(uniqueViolation());
+
+      await expect(
+        service.update(mockGoalId, mockUserId, updateInput),
+      ).rejects.toThrow(ConflictError);
+    });
+
+    it('clears the due date when given null', async () => {
+      prismaService.goal.findFirst.mockResolvedValue(mockGoal as any);
+      prismaService.goal.update.mockResolvedValue({
+        ...mockGoal,
+        dueDate: null,
+      } as any);
+
+      const result = await service.update(mockGoalId, mockUserId, {
+        dueDate: null,
+      } as any);
+
+      expect(prismaService.goal.update).toHaveBeenCalledWith({
+        where: { id: mockGoalId },
+        data: { dueDate: null },
+      });
+      expect(result.dueDate).toBeUndefined();
     });
 
     it('should validate target amount is positive', async () => {

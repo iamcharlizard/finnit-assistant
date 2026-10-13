@@ -418,4 +418,68 @@ describe('StatementsService', () => {
       );
     });
   });
+
+  describe('lines with recurring payments', () => {
+    const dueDate = new Date('2026-10-05T00:00:00Z');
+    const occurrence = {
+      id: 'occ-1',
+      dueDate,
+      recurringExpense: { id: 'rec-1', name: 'Netflix' },
+    };
+
+    it('findById names the recurring payment each line pays', async () => {
+      prisma.statementImport.findFirst.mockResolvedValue({
+        ...statementRow({ status: StatementStatus.needs_review }),
+        lines: [
+          lineRow({
+            matchedOccurrenceId: 'occ-1',
+            matchedOccurrence: occurrence,
+          }),
+          lineRow({ id: 'line-2', matchedOccurrence: null }),
+        ],
+      } as never);
+
+      const result = await service.findById('st-1', userId);
+
+      expect(prisma.statementImport.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: {
+            lines: expect.objectContaining({
+              include: { matchedOccurrence: expect.any(Object) },
+            }),
+          },
+        }),
+      );
+      expect(result.lines?.[0]?.matchedRecurringPayment).toEqual({
+        occurrenceId: 'occ-1',
+        recurringExpenseId: 'rec-1',
+        name: 'Netflix',
+        dueDate,
+      });
+      expect(result.lines?.[1]?.matchedRecurringPayment).toBeUndefined();
+    });
+
+    it('updateLine returns the line with its recurring payment', async () => {
+      prisma.importedTransaction.findFirst.mockResolvedValue({
+        ...lineRow(),
+        statementImport: statementRow({ status: StatementStatus.needs_review }),
+      } as never);
+      prisma.importedTransaction.update.mockResolvedValue({
+        ...lineRow({ status: ImportedLineStatus.ignored }),
+        matchedOccurrence: occurrence,
+      } as never);
+
+      const line = await service.updateLine('line-1', userId, {
+        status: ImportedLineStatus.ignored,
+      });
+
+      expect(prisma.importedTransaction.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: { matchedOccurrence: expect.any(Object) },
+        }),
+      );
+      expect(line.status).toBe(ImportedLineStatus.ignored);
+      expect(line.matchedRecurringPayment?.name).toBe('Netflix');
+    });
+  });
 });

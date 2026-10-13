@@ -400,6 +400,26 @@ type CardRecurringPayment {
   status: OccurrenceStatus!
 }
 
+"""
+Where cashFlowProjection starts from: the current balance and the monthly averages it extends
+"""
+type CashFlowBaseline {
+  """The user's first account currency, or MXN"""
+  currency: String!
+
+  """Sum of the balances of the non-archived accounts"""
+  currentBalance: Float!
+
+  """Average monthly expenses over the months with data (up to 6)"""
+  monthlyExpenses: Float!
+
+  """Average monthly income over the months with data (up to 6)"""
+  monthlyIncome: Float!
+
+  """Months averaged, from 1 to 6"""
+  monthsOfData: Int!
+}
+
 type CashFlowProjection {
   date: DateTime!
   description: String!
@@ -644,6 +664,11 @@ type DebtPayoffProjection {
   debtId: String!
   debtName: String!
   monthlyPayment: Float!
+
+  """
+  Months until the debt is paid off; null when the payments never pay it off (they do not cover the interest, or the debt gets no payment)
+  """
+  monthsToPayoff: Int
   payoffDate: DateTime!
   totalInterest: Float!
 }
@@ -1032,6 +1057,8 @@ type PageInfo {
 
 input PayoffStrategyInput {
   debtIds: [String!]!
+
+  """Extra paid each month; 0 or more"""
   extraPayment: Float!
   strategy: String!
 }
@@ -1067,6 +1094,7 @@ type Query {
   budgetUsage(id: String!): [BudgetUsage!]!
   budgets: [Budget!]!
   cardMonthSummary(accountId: String!, month: Int!, year: Int!): CardMonthSummary!
+  cashFlowBaseline: CashFlowBaseline!
   cashFlowProjection(monthsAhead: Int! = 6): [CashFlowProjection!]!
   categories: [Category!]!
   category(id: String!): Category!
@@ -1100,7 +1128,16 @@ type Query {
   """Learned merchant → category rules, most recent first"""
   merchantRules: [MerchantRule!]!
   monthlyReport(month: Int!, year: Int!): MonthlyReport!
-  notifications(after: String, first: Int, status: NotificationStatus): NotificationConnection!
+  notifications(
+    after: String
+    first: Int
+    status: NotificationStatus
+
+    """
+    true: only notifications not read yet (scheduled or sent); overrides `status`
+    """
+    unread: Boolean
+  ): NotificationConnection!
   payoffStrategy(input: PayoffStrategyInput!): [DebtPayoffProjection!]!
 
   """
@@ -1405,6 +1442,9 @@ type StatementLine {
   """Recurring payment this line pays"""
   matchedOccurrenceId: String
 
+  """The recurring payment of matchedOccurrenceId, with its name"""
+  matchedRecurringPayment: StatementLineRecurringPayment
+
   """Existing or created transaction"""
   matchedTransactionId: String
   merchant: String
@@ -1421,6 +1461,14 @@ enum StatementLineKind {
   interest
   payment
   refund
+}
+
+"""The recurring payment a statement line pays"""
+type StatementLineRecurringPayment {
+  dueDate: DateTime!
+  name: String!
+  occurrenceId: ID!
+  recurringExpenseId: ID!
 }
 
 """
@@ -1499,10 +1547,20 @@ type Transaction {
   merchantName ?? description, never modified. Null for private movements except in transaction(id)
   """
   originalDescription: String
+
+  """
+  The recurring payment this movement paid (one query per movement; for the detail, not lists)
+  """
+  recurringPayment: TransactionRecurringPayment
   source: String!
 
   """Pending AI/rule suggestion, not applied until accepted"""
   suggestedCategory: Category
+
+  """
+  For transfers: the other side (one query per movement; for the detail, not lists)
+  """
+  transferCounterpart: TransferCounterpart
 
   """
   For transfers: "out" on the source account, "in" on the destination; null otherwise
@@ -1556,6 +1614,14 @@ input TransactionFilters {
   uncategorized: Boolean
 }
 
+"""The recurring payment a movement paid"""
+type TransactionRecurringPayment {
+  dueDate: DateTime!
+  name: String!
+  occurrenceId: ID!
+  recurringExpenseId: ID!
+}
+
 """Transaction source"""
 enum TransactionSource {
   imported
@@ -1581,6 +1647,18 @@ type Transfer {
   id: String!
   toTxn: Transaction!
   toTxnId: String!
+}
+
+"""The other side of a transfer"""
+type TransferCounterpart {
+  accountId: ID!
+
+  """The account's nickname, else its name"""
+  accountName: String!
+
+  """"out" when this movement is the source side"""
+  direction: String!
+  transactionId: ID!
 }
 
 """
@@ -1629,9 +1707,14 @@ input UpdateCategoryInput {
 input UpdateDebtInput {
   dueDate: DateTime
   interestRateAnnual: Float
+  kind: DebtKind
   linkedAccountId: String
   minPaymentAmount: Float
   name: String
+
+  """Cannot be less than what has been paid already"""
+  principal: Float
+  startDate: DateTime
 }
 
 input UpdateGoalInput {

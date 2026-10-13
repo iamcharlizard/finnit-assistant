@@ -194,6 +194,56 @@ describe('BankConnectFlow', () => {
     );
   });
 
+  it('speaks English when created with locale "en"', async () => {
+    const { fetchFn } = syncfy([[{ code: 100 }, { code: 401 }]]);
+    const flow = new BankConnectFlow(fakeApi().api, {
+      fetchFn,
+      locale: 'en',
+    });
+    const loading = new Promise<FlowStep>((resolve) => {
+      const off = flow.subscribe((step) => {
+        off();
+        resolve(step);
+      });
+    });
+    const accepted = flow.acceptConsent();
+    assert.deepEqual(await loading, {
+      name: 'loading',
+      message: 'Loading banks…',
+    });
+    await accepted;
+    flow.selectBank(banamex);
+    await flow.submitCredentials({ username: 'ana' });
+    const invalid = stepOf(flow);
+    assert.deepEqual(invalid.name === 'credentials' && invalid.errors, [
+      { name: 'password', message: 'This field is required' },
+    ]);
+    await flow.submitCredentials({ username: 'ana', password: 'bad' });
+    const step = stepOf(flow);
+    assert.match(
+      step.name === 'credentials' ? step.message! : '',
+      /didn't accept your sign-in details/,
+    );
+  });
+
+  it('switches language with setLocale', async () => {
+    const { api } = fakeApi({
+      registerConnection: async () => {
+        throw new Error('network');
+      },
+    });
+    const flow = new BankConnectFlow(api, syncfy([[{ code: 200 }]]).fetchFn);
+    flow.setLocale('en');
+    await flow.acceptConsent();
+    flow.selectBank(banamex);
+    await flow.submitCredentials({ username: 'ana', password: 'x' });
+    assert.deepEqual(stepOf(flow), {
+      name: 'error',
+      message: "Your bank is connected, but we couldn't save it in Finnit.",
+      canRetry: true,
+    });
+  });
+
   it("sends banks it can't render to Syncfy's widget", async () => {
     const flow = new BankConnectFlow(fakeApi().api, syncfy([]).fetchFn);
     await flow.acceptConsent();

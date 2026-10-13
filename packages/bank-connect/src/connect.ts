@@ -1,6 +1,7 @@
 import { SyncfyConnectClient } from './client';
 import { describeCode, type CodeInfo } from './codes';
 import { buildValues, isTwofaSupported } from './forms';
+import type { Locale } from './messages';
 import type { FieldValues, TwofaField } from './types';
 
 export interface ConnectHandlers {
@@ -20,6 +21,8 @@ export interface ConnectOptions {
   pollIntervalMs?: number;
   /** Give up after this long without a final status (default 5 min). */
   timeoutMs?: number;
+  /** Language of the status messages (Spanish by default). */
+  locale?: Locale;
 }
 
 export type ConnectResult =
@@ -72,6 +75,7 @@ export async function connectBank(
   options: ConnectOptions = {},
 ): Promise<ConnectResult> {
   const pollIntervalMs = options.pollIntervalMs ?? 2000;
+  const { locale } = options;
   const deadline = Date.now() + (options.timeoutMs ?? 5 * 60_000);
 
   const credential = await client.createCredential(idSite, credentials);
@@ -85,7 +89,7 @@ export async function connectBank(
 
     if (last && last.code !== lastCode) {
       lastCode = last.code;
-      handlers.onStatus?.(last.code, describeCode(last.code));
+      handlers.onStatus?.(last.code, describeCode(last.code, locale));
     }
 
     if (last?.code === 410 && last.twofa && !answered.has(statuses.length)) {
@@ -97,7 +101,7 @@ export async function connectBank(
           needsWidget: true,
           idCredential: credential.id_credential,
           code: 410,
-          info: describeCode(410),
+          info: describeCode(410, locale),
         };
       }
       const values = await handlers.onTwofa(last.twofa);
@@ -111,7 +115,7 @@ export async function connectBank(
         );
       }
     } else if (last && last.code >= 200 && last.code !== 410) {
-      const info = describeCode(last.code);
+      const info = describeCode(last.code, locale);
       return info.kind === 'success'
         ? {
             ok: true,
@@ -134,6 +138,6 @@ export async function connectBank(
     ok: false,
     idCredential: credential.id_credential,
     code: 504,
-    info: describeCode(504),
+    info: describeCode(504, locale),
   };
 }

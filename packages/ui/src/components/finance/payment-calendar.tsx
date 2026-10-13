@@ -22,18 +22,28 @@ interface PaymentCalendarProps {
   onViewModeChange?: (mode: CalendarViewMode) => void;
   onPrevMonth?: () => void;
   onNextMonth?: () => void;
+  /** Seven column headers, Monday first (the last two are styled as weekend). */
+  dayHeaders?: ReadonlyArray<string>;
+  prevLabel?: string;
+  nextLabel?: string;
+  /** Accessible name of the calendar; receives `monthLabel`. */
+  ariaLabel?: (monthLabel: string) => string;
+  /** Text and accessible name of the month/week toggle buttons. */
+  viewModeLabels?: Record<CalendarViewMode, { label: string; aria: string }>;
   className?: string;
 }
 
-const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
-const VIEW_MODES: ReadonlyArray<{
-  value: CalendarViewMode;
-  label: string;
-  aria: string;
-}> = [
-  { value: 'month', label: 'MES', aria: 'Vista mensual' },
-  { value: 'week', label: 'SEMANA', aria: 'Vista semanal' },
-];
+const DEFAULT_DAY_HEADERS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+const DEFAULT_VIEW_MODE_LABELS: Record<
+  CalendarViewMode,
+  { label: string; aria: string }
+> = {
+  month: { label: 'MONTH', aria: 'Month view' },
+  week: { label: 'WEEK', aria: 'Week view' },
+};
+const VIEW_MODES: ReadonlyArray<CalendarViewMode> = ['month', 'week'];
+const defaultAriaLabel = (monthLabel: string) =>
+  `Payment calendar, ${monthLabel}`;
 
 function PaymentCalendar({
   monthLabel,
@@ -48,11 +58,16 @@ function PaymentCalendar({
   onViewModeChange,
   onPrevMonth,
   onNextMonth,
+  dayHeaders = DEFAULT_DAY_HEADERS,
+  prevLabel = 'Previous month',
+  nextLabel = 'Next month',
+  ariaLabel = defaultAriaLabel,
+  viewModeLabels = DEFAULT_VIEW_MODE_LABELS,
   className,
 }: PaymentCalendarProps) {
   return (
     <section
-      aria-label={`Calendario de pagos, ${monthLabel}`}
+      aria-label={ariaLabel(monthLabel)}
       className={cn(
         'rounded-[20px] border border-glass-border bg-glass p-4 shadow-[0_8px_32px_rgba(0,0,0,0.05)] backdrop-blur-md dark:shadow-[0_8px_32px_rgba(0,0,0,0.25)]',
         className,
@@ -63,7 +78,7 @@ function PaymentCalendar({
           <button
             type="button"
             onClick={onPrevMonth}
-            aria-label="Mes anterior"
+            aria-label={prevLabel}
             className="flex size-11 items-center justify-center rounded-full text-on-surface-variant outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             <ChevronLeft aria-hidden className="size-4" />
@@ -74,7 +89,7 @@ function PaymentCalendar({
           <button
             type="button"
             onClick={onNextMonth}
-            aria-label="Mes siguiente"
+            aria-label={nextLabel}
             className="flex size-11 items-center justify-center rounded-full text-on-surface-variant outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             <ChevronRight aria-hidden className="size-4" />
@@ -83,14 +98,14 @@ function PaymentCalendar({
 
         <div className={cn('flex gap-1', !showViewModes && 'hidden')}>
           {VIEW_MODES.map((mode) => {
-            const isActive = viewMode === mode.value;
+            const isActive = viewMode === mode;
             return (
               <button
-                key={mode.value}
+                key={mode}
                 type="button"
-                onClick={() => onViewModeChange?.(mode.value)}
+                onClick={() => onViewModeChange?.(mode)}
                 aria-pressed={isActive}
-                aria-label={mode.aria}
+                aria-label={viewModeLabels[mode].aria}
                 className={cn(
                   'min-h-8 rounded-full px-2.5 py-1 text-[11px] tracking-wide outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
                   isActive
@@ -98,7 +113,7 @@ function PaymentCalendar({
                     : 'font-medium text-on-surface-variant hover:bg-accent',
                 )}
               >
-                {mode.label}
+                {viewModeLabels[mode].label}
               </button>
             );
           })}
@@ -106,9 +121,9 @@ function PaymentCalendar({
       </div>
 
       <div className="mb-1 grid grid-cols-7 gap-[3px]">
-        {DAY_HEADERS.map((header, i) => (
+        {dayHeaders.map((header, i) => (
           <span
-            key={header}
+            key={i}
             className={cn(
               'py-1 text-center text-[9px] font-medium tracking-wide',
               i >= 5 ? 'text-brand-ink' : 'text-on-surface-variant',

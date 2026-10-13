@@ -11,7 +11,7 @@ interface MonthlySpendingCardProps {
 }
 
 function MonthlySpendingCard({
-  title = 'Gastos del mes',
+  title = 'Spending this month',
   amount,
   trendLabel,
   sparkHeights = [40, 60, 50, 80, 100],

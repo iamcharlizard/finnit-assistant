@@ -26,9 +26,12 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  closeLabel = 'Close',
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
+  /** Accessible name of the close button (pass the translated text). */
+  closeLabel?: string;
 }) {
   return (
     <DialogPrimitive.Portal>
@@ -48,8 +51,8 @@ function DialogContent({
         {children}
         {showCloseButton ? (
           <DialogPrimitive.Close className="absolute top-3 right-3 flex size-11 items-center justify-center rounded-full text-on-surface-variant outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50">
-            <XIcon className="size-5" />
-            <span className="sr-only">Cerrar</span>
+            <XIcon aria-hidden className="size-5" />
+            <span className="sr-only">{closeLabel}</span>
           </DialogPrimitive.Close>
         ) : null}
       </DialogPrimitive.Content>

@@ -1,13 +1,32 @@
 'use client';
 
+import type * as React from 'react';
 import { Cpu, CreditCard, EyeOff, Nfc, type LucideIcon } from 'lucide-react';
 
+import {
+  isHexColor,
+  LIGHT_TEXT,
+  normalizeHex,
+  readableTextColor,
+} from '../../lib/color';
 import { cn } from '../../lib/utils';
 
 type CardVariant = 'platinum' | 'virtual' | 'premium' | 'stealth';
 
 interface BankPaymentCardProps {
+  /** Preset look; ignored when `primaryColor` is a valid hex color. */
   variant: CardVariant;
+  /**
+   * Custom card color ('#RRGGBB'). Overrides `variant`. With `secondaryColor`
+   * the card uses a 135° gradient; text is white or near-black, whichever
+   * keeps WCAG AA contrast against the background (both stops for gradients).
+   */
+  primaryColor?: string;
+  secondaryColor?: string;
+  /** Field captions (pass translated text). */
+  holderLabel?: string;
+  expiryLabel?: string;
+  balanceLabel?: string;
   cardTier: string;
   bankName?: string;
   maskedNumber: string;
@@ -84,8 +103,34 @@ const CARD_STYLES: Record<CardVariant, CardStyle> = {
   },
 };
 
+/** Styles for a custom-colored card: text inherits the computed color. */
+function customCardStyle(
+  textColor: string,
+): Omit<CardStyle, 'icon'> & { icon?: LucideIcon } {
+  const light = textColor === LIGHT_TEXT;
+  return {
+    surface: light
+      ? 'border-white/20 shadow-[0_10px_32px_rgba(0,0,0,0.25)]'
+      : 'border-black/10 shadow-[0_10px_32px_rgba(0,0,0,0.12)]',
+    tier: '',
+    name: '',
+    number: '',
+    label: '',
+    value: '',
+    circles: light
+      ? ['rgba(255,255,255,0.45)', 'rgba(255,255,255,0.25)']
+      : ['rgba(11,12,26,0.35)', 'rgba(11,12,26,0.2)'],
+    iconColor: 'opacity-70',
+  };
+}
+
 function BankPaymentCard({
   variant,
+  primaryColor,
+  secondaryColor,
+  holderLabel = 'Holder',
+  expiryLabel = 'Expires',
+  balanceLabel = 'Virtual balance',
   cardTier,
   bankName,
   maskedNumber,
@@ -95,13 +140,38 @@ function BankPaymentCard({
   onClick,
   className,
 }: BankPaymentCardProps) {
-  const s = CARD_STYLES[variant];
+  const primary =
+    primaryColor && isHexColor(primaryColor)
+      ? normalizeHex(primaryColor)
+      : undefined;
+  const secondary =
+    primary && secondaryColor && isHexColor(secondaryColor)
+      ? normalizeHex(secondaryColor)
+      : undefined;
+  const textColor = primary
+    ? readableTextColor(secondary ? [primary, secondary] : primary)
+    : undefined;
+
+  const preset = CARD_STYLES[variant];
+  const s: CardStyle = textColor
+    ? { ...customCardStyle(textColor), icon: preset.icon }
+    : preset;
   const Icon = s.icon;
+  const customStyle: React.CSSProperties | undefined = primary
+    ? {
+        background: secondary
+          ? `linear-gradient(135deg, ${primary} 0%, ${secondary} 100%)`
+          : primary,
+        color: textColor,
+      }
+    : undefined;
 
   return (
     <button
       type="button"
       onClick={onClick}
+      data-custom-color={primary ? '' : undefined}
+      style={customStyle}
       className={cn(
         'relative flex h-[210px] w-full max-w-[360px] shrink-0 flex-col justify-between overflow-hidden rounded-[28px] border p-[22px] text-left outline-none transition-transform hover:-translate-y-0.5 focus-visible:ring-[3px] focus-visible:ring-ring/50',
         s.surface,
@@ -139,14 +209,14 @@ function BankPaymentCard({
 
         <span className="flex items-end justify-between">
           {balance ? (
-            <CardField label="Saldo virtual" value={balance} s={s} />
+            <CardField label={balanceLabel} value={balance} s={s} />
           ) : (
             <span className="flex gap-5">
               {holderName ? (
-                <CardField label="Titular" value={holderName} s={s} />
+                <CardField label={holderLabel} value={holderName} s={s} />
               ) : null}
               {expiryDate ? (
-                <CardField label="Expira" value={expiryDate} s={s} />
+                <CardField label={expiryLabel} value={expiryDate} s={s} />
               ) : null}
             </span>
           )}

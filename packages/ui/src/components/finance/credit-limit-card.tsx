@@ -8,6 +8,11 @@ interface CreditLimitCardProps {
   total: number;
   currency?: string;
   locale?: string;
+  title?: string;
+  /** Text next to the total; receives the formatted total. */
+  ofLabel?: (total: string) => string;
+  /** Accessible name of the progress bar; receives the used percentage. */
+  progressLabel?: (percent: number) => string;
   className?: string;
 }
 
@@ -16,6 +21,9 @@ function CreditLimitCard({
   total,
   currency = 'MXN',
   locale = 'es-MX',
+  title = 'Credit limit',
+  ofLabel = (total) => `of ${total}`,
+  progressLabel = (percent) => `${percent}% of the limit used`,
   className,
 }: CreditLimitCardProps) {
   const pct = Math.round((used / total) * 100);
@@ -37,7 +45,7 @@ function CreditLimitCard({
     >
       <h3 className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.15em] text-on-surface-variant">
         <Gauge aria-hidden className="size-[18px] text-tertiary" />
-        Límite de crédito
+        {title}
       </h3>
 
       <div>
@@ -46,14 +54,14 @@ function CreditLimitCard({
             {format(used)}
           </span>
           <span className="text-[13px] text-on-surface-variant">
-            de {format(total, true)}
+            {ofLabel(format(total, true))}
           </span>
         </div>
         <Progress
           value={pct}
           glow
           className="h-2"
-          aria-label={`${pct}% del límite utilizado`}
+          aria-label={progressLabel(pct)}
         />
       </div>
     </section>

@@ -12,8 +12,8 @@ interface AddPaymentCtaProps {
 }
 
 function AddPaymentCta({
-  title = '¿Nuevo gasto recurrente?',
-  actionLabel = 'Agregar Pago',
+  title = 'New recurring expense?',
+  actionLabel = 'Add payment',
   onClick,
   className,
 }: AddPaymentCtaProps) {

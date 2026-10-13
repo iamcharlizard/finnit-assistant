@@ -71,6 +71,28 @@ export const SideSheet: Story = {
   ),
 };
 
+export const BottomSheet: Story = {
+  render: () => (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="secondary" label="Open bottom sheet" />
+      </SheetTrigger>
+      <SheetContent side="bottom" closeLabel="Close" className="px-6 pt-2">
+        <SheetTitle>New transaction</SheetTitle>
+        <SheetDescription>
+          On phones, forms open from the bottom with a grab handle, a capped
+          height and safe-area padding.
+        </SheetDescription>
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="h-12 rounded-chip bg-muted" />
+          ))}
+        </div>
+      </SheetContent>
+    </Sheet>
+  ),
+};
+
 export const Hint: Story = {
   render: () => (
     <TooltipProvider>

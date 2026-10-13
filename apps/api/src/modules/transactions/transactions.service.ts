@@ -119,22 +119,21 @@ export class TransactionsService {
       this.applyFilters(where, args.filters);
     }
 
-    // Handle cursor pagination
+    // Keyset pagination in the list's order (newest first, id breaks ties),
+    // so pages never skip or repeat rows. One extra row tells whether more
+    // remain in the direction of travel.
     const limit = args.first || args.last || 20;
-    let cursor: any = undefined;
+    const backward = !args.first && !args.after && Boolean(args.before);
+    const cursorId = args.after ?? args.before;
 
-    if (args.after) {
-      const decodedCursor = PaginationUtil.decodeCursor(args.after);
-      cursor = { id: { gt: decodedCursor } };
-    } else if (args.before) {
-      const decodedCursor = PaginationUtil.decodeCursor(args.before);
-      cursor = { id: { lt: decodedCursor } };
-    }
-
-    const transactions = await this.prisma.transaction.findMany({
-      where: { ...where, ...cursor } as Prisma.TransactionWhereInput,
-      take: limit,
-      orderBy: { txnDate: 'desc' },
+    const rows = await this.prisma.transaction.findMany({
+      where,
+      orderBy: [{ txnDate: 'desc' }, { id: 'desc' }],
+      take: backward ? -(limit + 1) : limit + 1,
+      ...(cursorId && {
+        cursor: { id: PaginationUtil.decodeCursor(cursorId) },
+        skip: 1,
+      }),
       include: {
         account: true,
         category: true,
@@ -142,17 +141,23 @@ export class TransactionsService {
       },
     });
 
+    const hasMore = rows.length > limit;
+    const transactions = backward
+      ? rows.slice(hasMore ? 1 : 0)
+      : rows.slice(0, limit);
     const totalCount = await this.prisma.transaction.count({ where });
 
-    return PaginationUtil.createConnection(
-      transactions.map((transaction) => ({
-        ...this.mapTransaction(transaction),
-        attachments: transaction.attachments.map((a) => this.mapAttachment(a)),
-      })),
+    const connection = PaginationUtil.createConnection(
+      transactions.map((transaction) =>
+        this.mapTransactionWithRelations(transaction),
+      ),
       args,
       totalCount,
       (transaction) => PaginationUtil.encodeCursor(transaction.id),
     );
+    connection.pageInfo.hasNextPage = backward ? true : hasMore;
+    connection.pageInfo.hasPreviousPage = backward ? hasMore : !!cursorId;
+    return connection;
   }
 
   async findById(id: string, userId: string): Promise<Transaction> {

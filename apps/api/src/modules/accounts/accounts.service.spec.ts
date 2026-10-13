@@ -164,6 +164,7 @@ describe('AccountsService', () => {
         where: { userId: mockUserId },
         take: 20,
         orderBy: { createdAt: 'desc' },
+        include: { creditCardTerms: true },
       });
       expect(result.totalCount).toBe(2);
     });
@@ -188,6 +189,7 @@ describe('AccountsService', () => {
         where: { userId: mockUserId, type: AccountType.savings },
         take: 20,
         orderBy: { createdAt: 'desc' },
+        include: { creditCardTerms: true },
       });
     });
 
@@ -211,6 +213,7 @@ describe('AccountsService', () => {
         where: { userId: mockUserId, archived: true },
         take: 20,
         orderBy: { createdAt: 'desc' },
+        include: { creditCardTerms: true },
       });
     });
 
@@ -235,6 +238,7 @@ describe('AccountsService', () => {
         where: { userId: mockUserId, id: { gt: 'cursor-123' } },
         take: 10,
         orderBy: { createdAt: 'desc' },
+        include: { creditCardTerms: true },
       });
     });
 
@@ -259,6 +263,7 @@ describe('AccountsService', () => {
         where: { userId: mockUserId, id: { lt: 'cursor-456' } },
         take: 5,
         orderBy: { createdAt: 'desc' },
+        include: { creditCardTerms: true },
       });
     });
   });

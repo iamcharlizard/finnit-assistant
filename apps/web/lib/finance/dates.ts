@@ -100,6 +100,16 @@ const RELATIVE: Record<
   },
 };
 
+/** January … December, lowercase in Spanish (as used inside sentences). */
+export function monthNames(locale: Locale): string[] {
+  return [...NAMES[locale].months];
+}
+
+/** Sunday … Saturday (index = Date#getUTCDay()). */
+export function weekdayNames(locale: Locale): string[] {
+  return [...NAMES[locale].weekdays];
+}
+
 const monthNameOf = (month: number, locale: Locale) =>
   NAMES[locale].months[month - 1]!;
 

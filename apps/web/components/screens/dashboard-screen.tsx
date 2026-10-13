@@ -63,7 +63,7 @@ export function DashboardScreen({ view }: { view: DashboardView }) {
         <SectionHeading
           title={t('upcoming')}
           action={
-            <Link href="/calendar" className={LINK_CLASS}>
+            <Link href="/recurring" className={LINK_CLASS}>
               {t('calendarLink')}
             </Link>
           }

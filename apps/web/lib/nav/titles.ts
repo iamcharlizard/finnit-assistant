@@ -26,6 +26,7 @@ export const PAGE_TITLES: ReadonlyArray<
   ['/transactions/[id]', 'transaction'],
   ['/recurring', 'recurring'],
   ['/recurring/[...rest]', 'recurring'],
+  // Redirects to /recurring; kept for the moment before the redirect.
   ['/calendar', 'recurring'],
   ['/accounts', 'cards'],
   ['/analytics', 'analytics'],

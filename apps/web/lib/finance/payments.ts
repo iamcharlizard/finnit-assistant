@@ -36,6 +36,11 @@ const KIND_ICONS: Record<RecurringKind, IconKey> = {
   other: 'other',
 };
 
+/** The icon (and its color) of a kind of recurring expense. */
+export function recurringKindIcon(kind: RecurringKind): IconKey {
+  return KIND_ICONS[kind] ?? 'other';
+}
+
 /** Within this many days an open payment is highlighted as pending. */
 const SOON_DAYS = 3;
 
@@ -58,7 +63,7 @@ export function toPaymentRow(
     amount: expense.isVariableAmount
       ? t('finance.payment.approx', { amount })
       : amount,
-    iconKey: KIND_ICONS[expense.kind] ?? 'other',
+    iconKey: recurringKindIcon(expense.kind),
     day,
   };
 

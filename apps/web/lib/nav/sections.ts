@@ -61,9 +61,8 @@ export const NAV_SECTIONS: ReadonlyArray<NavSection> = [
     items: [{ key: 'history', href: '/history', icon: History }],
   },
   {
-    // /recurring replaces the calendar once that screen exists.
     key: 'recurring',
-    items: [{ key: 'recurring', href: '/calendar', icon: Repeat }],
+    items: [{ key: 'recurring', href: '/recurring', icon: Repeat }],
   },
   {
     key: 'accounts',

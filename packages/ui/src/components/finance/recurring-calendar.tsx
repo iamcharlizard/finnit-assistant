@@ -26,8 +26,8 @@ interface RecurringCalendarProps {
   onViewChange?: (view: RecurringCalendarView) => void;
   /** Anchor date ('YYYY-MM-DD') that decides the visible month/week/day. */
   date: string;
-  /** Highlighted date; defaults to `date`. */
-  selectedDate?: string;
+  /** Highlighted date; defaults to `date`. `null` highlights no day. */
+  selectedDate?: string | null;
   /**
    * Called when a day is clicked or reached with the arrow keys. Move `date`
    * along with it if the new day falls outside the visible range.
@@ -106,7 +106,9 @@ function RecurringCalendar({
   className,
 }: RecurringCalendarProps) {
   const labels = { ...DEFAULT_RECURRING_CALENDAR_LABELS, ...labelOverrides };
+  // The day keyboard focus starts from; highlighted unless selectedDate is null.
   const selected = selectedDate ?? date;
+  const highlighted = selectedDate === null ? null : selected;
   const titleId = React.useId();
   const gridRef = React.useRef<HTMLDivElement>(null);
   const keyboardMove = React.useRef(false);
@@ -292,14 +294,14 @@ function RecurringCalendar({
                 const dayEvents = eventsByDate.get(day) ?? [];
                 const visible = dayEvents.slice(0, 3);
                 const hidden = dayEvents.length - visible.length;
-                const isSelected = day === selected;
+                const isSelected = day === highlighted;
                 const isToday = day === today;
                 return (
                   <div key={day} role="gridcell" aria-selected={isSelected}>
                     <button
                       type="button"
                       data-date={day}
-                      tabIndex={isSelected ? 0 : -1}
+                      tabIndex={day === selected ? 0 : -1}
                       aria-label={dayLabel(day)}
                       aria-current={isToday ? 'date' : undefined}
                       onClick={() => onSelectDate?.(day)}
@@ -381,7 +383,7 @@ function RecurringCalendar({
             const day = addDaysToDateOnly(weekStart, index);
             const parts = dayParts(day);
             const dayEvents = eventsByDate.get(day) ?? [];
-            const isSelected = day === selected;
+            const isSelected = day === highlighted;
             const isToday = day === today;
             return (
               <div

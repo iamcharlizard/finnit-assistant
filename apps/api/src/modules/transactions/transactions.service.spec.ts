@@ -10,6 +10,15 @@ import {
 import { TransactionType, TransactionSource } from '@finnit/database';
 import { PaginationUtil } from '../../common/utils/pagination.util';
 
+/** Makes `$transaction(callback)` run the callback against `tx`. */
+const runTransactionWith = (tx: unknown) =>
+  ((callback: (client: unknown) => unknown) =>
+    Promise.resolve(callback(tx))) as never;
+
+/** The `data` argument of the n-th call to a mocked create/update. */
+const dataOf = (fn: jest.Mock, call = 0) =>
+  (fn.mock.calls[call] as [{ data: Record<string, unknown> }])[0].data;
+
 describe('TransactionsService', () => {
   let service: TransactionsService;
   let prismaService: DeepMockProxy<PrismaService>;
@@ -312,12 +321,14 @@ describe('TransactionsService', () => {
     it('should return paginated transactions', async () => {
       // Arrange
       const args = { first: 10 };
-      prismaService.transaction.findMany.mockResolvedValue(mockTransactions);
+      prismaService.transaction.findMany.mockResolvedValue(
+        mockTransactions as any,
+      );
       prismaService.transaction.count.mockResolvedValue(2);
 
       jest.spyOn(PaginationUtil, 'createConnection').mockReturnValue({
         edges: mockTransactions.map((txn) => ({
-          node: service['mapTransaction'](txn),
+          node: service['mapTransaction'](txn as any),
           cursor: 'cursor',
         })),
         pageInfo: {
@@ -367,8 +378,11 @@ describe('TransactionsService', () => {
         },
       };
 
-      prismaService.transaction.findMany.mockResolvedValue([mockTransaction]);
+      prismaService.transaction.findMany.mockResolvedValue([
+        mockTransaction,
+      ] as any);
       prismaService.transaction.count.mockResolvedValue(1);
+      prismaService.category.findMany.mockResolvedValue([]);
 
       jest.spyOn(PaginationUtil, 'createConnection').mockReturnValue({
         edges: [],
@@ -406,10 +420,68 @@ describe('TransactionsService', () => {
       });
     });
 
+    it('a parent category filter includes its subcategories at every level', async () => {
+      // Arrange: parent -> [child-a, child-b] -> child-a has [grandchild]
+      prismaService.transaction.findMany.mockResolvedValue([]);
+      prismaService.transaction.count.mockResolvedValue(0);
+      prismaService.category.findMany
+        .mockResolvedValueOnce([{ id: 'child-a' }, { id: 'child-b' }] as any)
+        .mockResolvedValueOnce([{ id: 'grandchild' }] as any)
+        .mockResolvedValueOnce([]);
+
+      // Act
+      await service.findMany(mockUserId, {
+        first: 10,
+        filters: { categoryId: 'parent' },
+      });
+
+      // Assert
+      expect(prismaService.category.findMany).toHaveBeenNthCalledWith(1, {
+        where: {
+          parentId: { in: ['parent'] },
+          OR: [{ userId: mockUserId }, { userId: null }],
+        },
+        select: { id: true },
+      });
+      expect(prismaService.category.findMany).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          where: expect.objectContaining({
+            parentId: { in: ['child-a', 'child-b'] },
+          }),
+        }),
+      );
+      const where = {
+        userId: mockUserId,
+        categoryId: { in: ['parent', 'child-a', 'child-b', 'grandchild'] },
+      };
+      expect(prismaService.transaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where }),
+      );
+      expect(prismaService.transaction.count).toHaveBeenCalledWith({ where });
+    });
+
+    it('a category without subcategories filters by its id only', async () => {
+      prismaService.transaction.findMany.mockResolvedValue([]);
+      prismaService.transaction.count.mockResolvedValue(0);
+      prismaService.category.findMany.mockResolvedValue([]);
+
+      await service.findMany(mockUserId, { filters: { categoryId: 'leaf' } });
+
+      expect(prismaService.category.findMany).toHaveBeenCalledTimes(1);
+      expect(prismaService.transaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: mockUserId, categoryId: 'leaf' },
+        }),
+      );
+    });
+
     it('should handle cursor pagination', async () => {
       // Arrange
       const args = { after: 'cursor-123', first: 5 };
-      prismaService.transaction.findMany.mockResolvedValue([mockTransaction]);
+      prismaService.transaction.findMany.mockResolvedValue([
+        mockTransaction,
+      ] as any);
       prismaService.transaction.count.mockResolvedValue(1);
 
       jest.spyOn(PaginationUtil, 'decodeCursor').mockReturnValue('cursor-123');
@@ -463,7 +535,9 @@ describe('TransactionsService', () => {
       expect(firstPage.pageInfo.hasNextPage).toBe(true);
       expect(firstPage.pageInfo.hasPreviousPage).toBe(false);
 
-      prismaService.transaction.findMany.mockResolvedValue(rows.slice(2) as never);
+      prismaService.transaction.findMany.mockResolvedValue(
+        rows.slice(2) as never,
+      );
       const lastPage = await service.findMany(mockUserId, {
         first: 2,
         after: firstPage.pageInfo.endCursor,
@@ -494,7 +568,7 @@ describe('TransactionsService', () => {
         ],
       };
       prismaService.transaction.findFirst.mockResolvedValue(
-        transactionWithAttachments,
+        transactionWithAttachments as any,
       );
 
       // Act
@@ -570,7 +644,9 @@ describe('TransactionsService', () => {
       };
       const updatedTransaction = { ...manualTransaction, ...updateInput };
 
-      prismaService.transaction.findFirst.mockResolvedValue(manualTransaction);
+      prismaService.transaction.findFirst.mockResolvedValue(
+        manualTransaction as any,
+      );
       prismaService.category.findFirst.mockResolvedValue({
         id: 'new-category-id',
       } as any);
@@ -604,7 +680,7 @@ describe('TransactionsService', () => {
         source: TransactionSource.imported,
       };
       prismaService.transaction.findFirst.mockResolvedValue(
-        importedTransaction,
+        importedTransaction as any,
       );
 
       // Act & Assert
@@ -632,7 +708,9 @@ describe('TransactionsService', () => {
       };
       const updatedTransaction = { ...manualTransaction, amount: 150.0 };
 
-      prismaService.transaction.findFirst.mockResolvedValue(manualTransaction);
+      prismaService.transaction.findFirst.mockResolvedValue(
+        manualTransaction as any,
+      );
       prismaService.category.findFirst.mockResolvedValue({
         id: 'new-category-id',
       } as any);
@@ -708,9 +786,7 @@ describe('TransactionsService', () => {
         transaction: { delete: jest.fn() },
         account: { update: jest.fn() },
       };
-      prismaService.$transaction.mockImplementation(async (callback: any) =>
-        callback(mockTx),
-      );
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
 
       // Act
       const result = await service.delete(mockTransaction.id, mockUserId);
@@ -742,7 +818,7 @@ describe('TransactionsService', () => {
         source: TransactionSource.imported,
       };
       prismaService.transaction.findFirst.mockResolvedValue(
-        importedTransaction,
+        importedTransaction as any,
       );
 
       // Act & Assert
@@ -834,7 +910,7 @@ describe('TransactionsService', () => {
   describe('mapTransaction', () => {
     it('should correctly map transaction with all fields', () => {
       // Act
-      const result = service['mapTransaction'](mockTransaction);
+      const result = service['mapTransaction'](mockTransaction as any);
 
       // Assert
       expect(result).toEqual({
@@ -1047,6 +1123,164 @@ describe('TransactionsService', () => {
           OR: [{ userId: mockUserId }, { userId: null, isDefault: true }],
         },
       });
+    });
+  });
+
+  describe('local dates', () => {
+    const mockTxWith = () => ({
+      transaction: {
+        create: jest.fn().mockResolvedValue(mockTransaction),
+        update: jest.fn().mockResolvedValue(mockTransaction),
+      },
+      account: { update: jest.fn() },
+    });
+    const input = {
+      accountId: mockAccountId,
+      type: TransactionType.expense,
+      amount: 10,
+      currency: 'MXN',
+    };
+
+    beforeEach(() => {
+      prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
+    });
+
+    it.each([
+      ['a date-only value (parsed as UTC midnight)', '2026-10-13T00:00:00Z'],
+      ['a late-evening Mexico City timestamp', '2026-10-14T04:30:00Z'],
+      ['a midday timestamp', '2026-10-13T18:00:00Z'],
+    ])('createTransaction stores %s as that local day', async (_, iso) => {
+      const mockTx = mockTxWith();
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
+
+      await service.create(mockUserId, { ...input, txnDate: new Date(iso) });
+
+      expect(dataOf(mockTx.transaction.create).txnDate).toEqual(
+        new Date('2026-10-13T00:00:00Z'),
+      );
+    });
+
+    it('updateTransaction stores the local day', async () => {
+      prismaService.transaction.findFirst.mockResolvedValue(
+        mockTransaction as any,
+      );
+      const mockTx = mockTxWith();
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
+
+      await service.update(mockTransaction.id, mockUserId, {
+        txnDate: new Date('2026-10-14T04:30:00Z'),
+      });
+
+      expect(mockTx.transaction.update).toHaveBeenCalledWith({
+        where: { id: mockTransaction.id },
+        data: { txnDate: new Date('2026-10-13T00:00:00Z') },
+      });
+      expect(mockTx.account.update).not.toHaveBeenCalled();
+    });
+
+    it('bulkCreate stores the local day', async () => {
+      prismaService.account.findMany.mockResolvedValue([mockAccount] as any);
+      const mockTx = mockTxWith();
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
+
+      await service.bulkCreate(mockUserId, [
+        { ...input, txnDate: new Date('2026-10-14T04:30:00Z') },
+      ]);
+
+      expect(dataOf(mockTx.transaction.create).txnDate).toEqual(
+        new Date('2026-10-13T00:00:00Z'),
+      );
+    });
+  });
+
+  describe('update balance effects', () => {
+    const run = async (existing: any, input: any) => {
+      prismaService.transaction.findFirst.mockResolvedValue({
+        ...mockTransaction,
+        ...existing,
+      });
+      const mockTx = {
+        transaction: { update: jest.fn().mockResolvedValue(mockTransaction) },
+        account: { update: jest.fn() },
+      };
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
+      await service.update(mockTransaction.id, mockUserId, input);
+      return mockTx.account.update.mock.calls.map(
+        (_, call) =>
+          (
+            dataOf(mockTx.account.update, call).balanceCurrent as {
+              increment: number;
+            }
+          ).increment,
+      );
+    };
+
+    it('does not touch the balance when a pending amount changes', async () => {
+      expect(await run({ isPending: true }, { amount: 50 })).toEqual([]);
+    });
+
+    it('applies the amount when a pending expense is confirmed', async () => {
+      expect(await run({ isPending: true }, { isPending: false })).toEqual([
+        -100,
+      ]);
+    });
+
+    it('reverts the amount when a confirmed expense becomes pending', async () => {
+      expect(await run({ isPending: false }, { isPending: true })).toEqual([
+        100,
+      ]);
+    });
+
+    it('applies the difference for a confirmed income', async () => {
+      expect(
+        await run({ type: TransactionType.income }, { amount: 130 }),
+      ).toEqual([30]);
+    });
+  });
+
+  describe('findSimilar', () => {
+    it('looks for the same amount within a cent and 3 days around the local day', async () => {
+      prismaService.transaction.findMany.mockResolvedValue([
+        mockTransaction,
+      ] as any);
+
+      const result = await service.findSimilar(mockUserId, {
+        accountId: mockAccountId,
+        amount: 100,
+        date: new Date('2026-10-14T04:30:00Z'), // Oct 13 in Mexico City
+        type: TransactionType.expense,
+      });
+
+      expect(prismaService.transaction.findMany).toHaveBeenCalledWith({
+        where: {
+          userId: mockUserId,
+          accountId: mockAccountId,
+          type: TransactionType.expense,
+          amount: { gte: 99.99, lte: 100.01 },
+          txnDate: {
+            gte: new Date('2026-10-10T00:00:00Z'),
+            lte: new Date('2026-10-16T00:00:00Z'),
+          },
+        },
+        orderBy: [{ txnDate: 'desc' }, { createdAt: 'desc' }],
+        take: 5,
+      });
+      expect(result).toHaveLength(1);
+      expect(result[0].amount).toBe(100);
+    });
+
+    it('matches any type when none is given', async () => {
+      prismaService.transaction.findMany.mockResolvedValue([]);
+
+      await service.findSimilar(mockUserId, {
+        accountId: mockAccountId,
+        amount: 0.1,
+        date: new Date('2026-10-13T00:00:00Z'),
+      });
+
+      const { where } = prismaService.transaction.findMany.mock.calls[0][0]!;
+      expect(where).not.toHaveProperty('type');
+      expect(where!.amount).toEqual({ gte: 0.09, lte: 0.11 });
     });
   });
 });

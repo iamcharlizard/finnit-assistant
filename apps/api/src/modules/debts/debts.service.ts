@@ -17,7 +17,7 @@ import {
   ValidationError,
   DebtOverpaymentError,
 } from '../../common/exceptions/graphql-error.exception';
-import { PaginationUtil } from '../../common/utils/pagination.util';
+import { KeysetPage } from '../../common/utils/keyset-pagination.util';
 import { Prisma } from '@finnit/database';
 
 @Injectable()
@@ -25,6 +25,19 @@ export class DebtsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, input: CreateDebtInput): Promise<Debt> {
+    // Enforced here: no ValidationPipe runs the DTO's decorators.
+    if (!(input.principal > 0)) {
+      throw new ValidationError('The principal must be greater than 0');
+    }
+    if (
+      input.interestRateAnnual != null &&
+      !(input.interestRateAnnual >= 0 && input.interestRateAnnual <= 100)
+    ) {
+      throw new ValidationError(
+        'The annual interest rate must be between 0 and 100',
+      );
+    }
+
     // Validate linked account if provided
     if (input.linkedAccountId) {
       const account = await this.prisma.account.findFirst({
@@ -60,22 +73,12 @@ export class DebtsService {
       where.kind = args.kind;
     }
 
-    // Handle cursor pagination
-    const limit = args.first || args.last || 20;
-    let cursor: Prisma.DebtWhereInput | undefined = undefined;
-
-    if (args.after) {
-      const decodedCursor = PaginationUtil.decodeCursor(args.after);
-      cursor = { id: { gt: decodedCursor } };
-    } else if (args.before) {
-      const decodedCursor = PaginationUtil.decodeCursor(args.before);
-      cursor = { id: { lt: decodedCursor } };
-    }
-
+    // Newest first; the cursor resolves to (createdAt, id).
+    const page = new KeysetPage(args);
     const debts = await this.prisma.debt.findMany({
-      where: { ...where, ...cursor },
-      take: limit,
-      orderBy: { createdAt: 'desc' },
+      where,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      ...page.query,
       include: {
         payments: {
           orderBy: { date: 'desc' },
@@ -85,22 +88,13 @@ export class DebtsService {
 
     const totalCount = await this.prisma.debt.count({ where });
 
-    const mappedDebts = await Promise.all(
-      debts.map((debt) => {
-        const totalPaid = debt.payments.reduce(
-          (sum, payment) => sum + Number(payment.amount),
-          0,
-        );
-        return this.mapDebt(debt, debt.payments, totalPaid);
-      }),
-    );
-
-    return PaginationUtil.createConnection(
-      mappedDebts,
-      args,
-      totalCount,
-      (debt) => PaginationUtil.encodeCursor(debt.id),
-    );
+    return page.toConnection(debts, totalCount, (debt) => {
+      const totalPaid = debt.payments.reduce(
+        (sum, payment) => sum + Number(payment.amount),
+        0,
+      );
+      return this.mapDebt(debt, debt.payments, totalPaid);
+    });
   }
 
   async findById(id: string, userId: string): Promise<Debt> {
@@ -187,6 +181,10 @@ export class DebtsService {
     userId: string,
     input: CreateDebtPaymentInput,
   ): Promise<DebtPayment> {
+    if (!(input.amount > 0)) {
+      throw new ValidationError('The payment must be greater than 0');
+    }
+
     const debt = await this.prisma.debt.findFirst({
       where: { id: input.debtId, userId },
       include: { payments: true },

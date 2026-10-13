@@ -13,6 +13,8 @@ import {
   ConflictError,
 } from '../../common/exceptions/graphql-error.exception';
 import { Prisma } from '@finnit/database';
+import { loadCategoryI18n } from '../categories/category-names';
+import { AppLocale, DEFAULT_LOCALE } from '../translation/locale';
 
 @Injectable()
 export class BudgetsService {
@@ -268,7 +270,10 @@ export class BudgetsService {
     };
   }
 
-  async getBudgetAlerts(userId: string): Promise<BudgetAlert[]> {
+  async getBudgetAlerts(
+    userId: string,
+    locale: AppLocale = DEFAULT_LOCALE,
+  ): Promise<BudgetAlert[]> {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
@@ -292,6 +297,11 @@ export class BudgetsService {
     const endDate = new Date(currentYear, currentMonth, 0);
 
     const alerts: BudgetAlert[] = [];
+    const names = await loadCategoryI18n(
+      this.prisma,
+      budget.categories.map((c) => c.categoryId),
+      locale,
+    );
 
     for (const budgetCategory of budget.categories) {
       const spent = await this.prisma.transaction.aggregate({
@@ -314,7 +324,9 @@ export class BudgetsService {
       if (percentage >= 80) {
         alerts.push({
           categoryId: budgetCategory.categoryId,
-          categoryName: budgetCategory.category.name,
+          categoryName:
+            names.get(budgetCategory.categoryId)?.name ??
+            budgetCategory.category.name,
           budgeted,
           spent: spentAmount,
           percentage: Math.round(percentage * 100) / 100,

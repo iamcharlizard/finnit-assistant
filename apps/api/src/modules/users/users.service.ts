@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../services/prisma.service';
-import { UpdateUserInput } from './dto/user.dto';
+import { UpdateMyPreferencesInput, UpdateUserInput } from './dto/user.dto';
 import {
   NotFoundError,
   ConflictError,
+  ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import { User, toUserModel } from '../../common/types/models/user.model';
+import { isAppLocale } from '../translation/locale';
 
 @Injectable()
 export class UsersService {
@@ -53,5 +55,19 @@ export class UsersService {
     });
 
     return toUserModel(updatedUser);
+  }
+
+  async updatePreferences(
+    id: string,
+    input: UpdateMyPreferencesInput,
+  ): Promise<User> {
+    if (input.locale !== undefined && !isAppLocale(input.locale)) {
+      throw new ValidationError("Locale must be 'es' or 'en'");
+    }
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: { ...(input.locale && { locale: input.locale }) },
+    });
+    return toUserModel(user);
   }
 }

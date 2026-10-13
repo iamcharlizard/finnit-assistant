@@ -14,6 +14,10 @@ import {
   TransactionSource,
   AccountType,
 } from '@finnit/database';
+import {
+  localToday,
+  toLocalDateOnly,
+} from '../../common/utils/local-date.util';
 
 @Injectable()
 export class TransfersService {
@@ -54,7 +58,10 @@ export class TransfersService {
       throw new ValidationError('Currency conversion not supported yet');
     }
 
-    const txnDate = input.txnDate ? new Date(input.txnDate) : new Date();
+    // The calendar day in the user's time zone (date-only, midnight UTC).
+    const txnDate = input.txnDate
+      ? toLocalDateOnly(input.txnDate)
+      : localToday();
     const description = input.description || `Transfer to ${toAccount.name}`;
 
     return await this.prisma.$transaction(async (tx) => {

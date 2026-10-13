@@ -3,10 +3,15 @@ import { AiProvider } from '@finnit/database';
 import {
   AiProviderClient,
   AiProviderError,
+  JsonSchema,
   PdfExtractionRequest,
+  TextExtractionRequest,
 } from './ai-provider';
 
-/** Anthropic Messages API: PDF as a `document` block, answer through a forced tool call. */
+/**
+ * Anthropic Messages API: PDF as a `document` block (or plain text blocks),
+ * answer through a forced tool call.
+ */
 export class AnthropicProvider implements AiProviderClient {
   readonly provider = AiProvider.anthropic;
   readonly apiKeyEnv = 'ANTHROPIC_API_KEY';
@@ -21,40 +26,60 @@ export class AnthropicProvider implements AiProviderClient {
   }
 
   async extractFromPdf(request: PdfExtractionRequest): Promise<unknown> {
+    return this.call(request, 16000, [
+      {
+        type: 'document',
+        source: {
+          type: 'base64',
+          media_type: 'application/pdf',
+          data: request.pdf.toString('base64'),
+        },
+      },
+      { type: 'text', text: request.prompt },
+    ]);
+  }
+
+  async extractFromText(request: TextExtractionRequest): Promise<unknown> {
+    return this.call(
+      request,
+      4096,
+      [
+        { type: 'text', text: request.prompt },
+        { type: 'text', text: request.text },
+      ],
+      request.timeoutMs,
+    );
+  }
+
+  private async call(
+    request: { modelId: string; schema: JsonSchema; schemaName: string },
+    maxTokens: number,
+    content: Anthropic.Messages.ContentBlockParam[],
+    timeoutMs?: number,
+  ): Promise<unknown> {
     if (!this.client) {
       throw new AiProviderError(this.provider, `${this.apiKeyEnv} is not set`);
     }
 
     let response: Anthropic.Messages.Message;
     try {
-      response = await this.client.messages.create({
-        model: request.modelId,
-        max_tokens: 16000,
-        tools: [
-          {
-            name: request.schemaName,
-            description: 'Records the extracted data.',
-            input_schema: request.schema as Anthropic.Messages.Tool.InputSchema,
-          },
-        ],
-        tool_choice: { type: 'tool', name: request.schemaName },
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'document',
-                source: {
-                  type: 'base64',
-                  media_type: 'application/pdf',
-                  data: request.pdf.toString('base64'),
-                },
-              },
-              { type: 'text', text: request.prompt },
-            ],
-          },
-        ],
-      });
+      response = await this.client.messages.create(
+        {
+          model: request.modelId,
+          max_tokens: maxTokens,
+          tools: [
+            {
+              name: request.schemaName,
+              description: 'Records the extracted data.',
+              input_schema:
+                request.schema as Anthropic.Messages.Tool.InputSchema,
+            },
+          ],
+          tool_choice: { type: 'tool', name: request.schemaName },
+          messages: [{ role: 'user', content }],
+        },
+        timeoutMs ? { timeout: timeoutMs, maxRetries: 0 } : undefined,
+      );
     } catch (error) {
       throw new AiProviderError(this.provider, (error as Error).message);
     }

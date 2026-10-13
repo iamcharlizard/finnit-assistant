@@ -34,6 +34,7 @@ const fakeProvider = (
   apiKeyEnv: `${provider.toUpperCase()}_KEY`,
   isConfigured,
   extractFromPdf: jest.fn(),
+  extractFromText: jest.fn(),
 });
 
 describe('AiModelsService', () => {
@@ -244,6 +245,95 @@ describe('AiModelsService', () => {
           where: { isActive: true, supportsPdf: true, id: 'm-disabled' },
         }),
       );
+    });
+  });
+
+  describe('extractFromText', () => {
+    const request = {
+      prompt: 'Translate',
+      text: 'Mascotas',
+      schema: {},
+      schemaName: 'translation',
+      timeoutMs: 3000,
+    };
+
+    it('does not require PDF support and applies the feature', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue(null);
+      prisma.aiModel.findMany.mockResolvedValue([row({ supportsPdf: false })]);
+      anthropic.extractFromText.mockResolvedValue({ en: 'Pets' });
+
+      const result = await service.extractFromText(request, {
+        feature: AiFeatureKey.translation,
+      });
+
+      expect(prisma.aiFeature.findUnique).toHaveBeenCalledWith({
+        where: { key: AiFeatureKey.translation },
+      });
+      expect(prisma.aiModel.findMany).toHaveBeenCalledWith({
+        where: { isActive: true },
+        orderBy: [{ isDefault: 'desc' }, { sortOrder: 'asc' }],
+      });
+      expect(anthropic.extractFromText).toHaveBeenCalledWith({
+        ...request,
+        modelId: 'claude-haiku-5-5',
+      });
+      expect(anthropic.extractFromPdf).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        model: expect.objectContaining({ id: 'm-haiku' }),
+        data: { en: 'Pets' },
+      });
+    });
+
+    it('falls back to the next model when one fails', async () => {
+      prisma.aiModel.findMany.mockResolvedValue([
+        row(),
+        row({
+          id: 'm-gpt',
+          provider: AiProvider.openai,
+          modelId: 'gpt-5-mini',
+          isDefault: false,
+        }),
+      ]);
+      anthropic.extractFromText.mockRejectedValue(new Error('timeout'));
+      openai.extractFromText.mockResolvedValue({ ok: true });
+
+      const result = await service.extractFromText(request);
+
+      expect(result.model.id).toBe('m-gpt');
+    });
+
+    it('throws NoUsableAiModelError without usable models', async () => {
+      prisma.aiModel.findMany.mockResolvedValue([
+        row({ provider: AiProvider.google }),
+      ]);
+
+      await expect(service.extractFromText(request)).rejects.toThrow(
+        NoUsableAiModelError,
+      );
+    });
+
+    it('never calls a provider when the feature is off', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue({
+        key: AiFeatureKey.translation,
+        enabled: false,
+        aiModelId: null,
+        useFallbacks: true,
+        updatedById: null,
+        updatedAt: new Date(),
+      });
+
+      await expect(
+        service.extractFromText(request, { feature: AiFeatureKey.translation }),
+      ).rejects.toThrow(AiFeatureDisabledError);
+      expect(anthropic.extractFromText).not.toHaveBeenCalled();
+    });
+
+    it('a feature without a row uses its defaults (receipt parsing is off)', async () => {
+      prisma.aiFeature.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.pdfCandidates({ feature: AiFeatureKey.receipt_parsing }),
+      ).rejects.toThrow(AiFeatureDisabledError);
     });
   });
 

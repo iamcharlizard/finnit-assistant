@@ -8,18 +8,25 @@ import { detectFileType, safeFileName } from '../storage/file-type.util';
 
 export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 export const MAX_ATTACHMENTS_PER_TRANSACTION = 10;
+const SIMILAR_AMOUNT_TOLERANCE = 0.01;
+const SIMILAR_DAYS_WINDOW = 3;
+const SIMILAR_MAX_RESULTS = 5;
+const MAX_CATEGORY_DEPTH = 5;
+const toCents = (value: number) => Math.round(value * 100) / 100;
 import { PrismaService } from '../../services/prisma.service';
 import {
   CreateTransactionInput,
   UpdateTransactionInput,
   TransactionsArgs,
   TransactionFilters,
+  SimilarTransactionsArgs,
 } from './dto/transaction.dto';
 import {
   NotFoundError,
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import { PaginationUtil } from '../../common/utils/pagination.util';
+import { addDays, toLocalDateOnly } from '../../common/utils/local-date.util';
 import { TransactionSource } from '@finnit/database';
 import { Prisma } from '@finnit/database';
 import { Attachment } from '../../common/types/models/attachment.model';
@@ -83,7 +90,7 @@ export class TransactionsService {
           type: input.type,
           amount: input.amount,
           currency: input.currency,
-          txnDate: input.txnDate,
+          txnDate: toLocalDateOnly(input.txnDate),
           description: input.description,
           merchantName: input.merchantName,
           isPending: input.isPending || false,
@@ -116,7 +123,7 @@ export class TransactionsService {
     const where: Prisma.TransactionWhereInput = { userId };
 
     if (args.filters) {
-      this.applyFilters(where, args.filters);
+      await this.applyFilters(userId, where, args.filters);
     }
 
     // Keyset pagination in the list's order (newest first, id breaks ties),
@@ -210,16 +217,19 @@ export class TransactionsService {
     }
 
     return await this.prisma.$transaction(async (tx) => {
-      // Calculate balance adjustment if amount changed
-      if (input.amount && input.amount !== Number(existingTransaction.amount)) {
-        const oldAmount =
-          existingTransaction.type === 'income'
-            ? Number(existingTransaction.amount)
-            : -Number(existingTransaction.amount);
-        const newAmount =
-          existingTransaction.type === 'income' ? input.amount : -input.amount;
-        const balanceChange = newAmount - oldAmount;
+      // The balance only reflects confirmed transactions: undo the old effect
+      // and apply the new one (amount and/or pending state may change).
+      const sign = existingTransaction.type === 'income' ? 1 : -1;
+      const oldEffect = existingTransaction.isPending
+        ? 0
+        : sign * Number(existingTransaction.amount);
+      const newEffect =
+        (input.isPending ?? existingTransaction.isPending)
+          ? 0
+          : sign * (input.amount ?? Number(existingTransaction.amount));
+      const balanceChange = newEffect - oldEffect;
 
+      if (balanceChange !== 0) {
         await tx.account.update({
           where: { id: existingTransaction.accountId },
           data: {
@@ -232,11 +242,44 @@ export class TransactionsService {
 
       const updatedTransaction = await tx.transaction.update({
         where: { id },
-        data: input,
+        data: {
+          ...input,
+          ...(input.txnDate && { txnDate: toLocalDateOnly(input.txnDate) }),
+        },
       });
 
       return this.mapTransaction(updatedTransaction);
     });
+  }
+
+  /**
+   * The user's transactions in the account that look like the one about to
+   * be created (same amount within a cent, within 3 days of its local day),
+   * newest first. Lets the create flow warn about duplicates.
+   */
+  async findSimilar(
+    userId: string,
+    args: SimilarTransactionsArgs,
+  ): Promise<Transaction[]> {
+    const day = toLocalDateOnly(args.date);
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        accountId: args.accountId,
+        ...(args.type && { type: args.type }),
+        amount: {
+          gte: toCents(args.amount - SIMILAR_AMOUNT_TOLERANCE),
+          lte: toCents(args.amount + SIMILAR_AMOUNT_TOLERANCE),
+        },
+        txnDate: {
+          gte: addDays(day, -SIMILAR_DAYS_WINDOW),
+          lte: addDays(day, SIMILAR_DAYS_WINDOW),
+        },
+      },
+      orderBy: [{ txnDate: 'desc' }, { createdAt: 'desc' }],
+      take: SIMILAR_MAX_RESULTS,
+    });
+    return transactions.map((transaction) => this.mapTransaction(transaction));
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
@@ -435,7 +478,7 @@ export class TransactionsService {
             type: input.type,
             amount: input.amount,
             currency: input.currency,
-            txnDate: input.txnDate,
+            txnDate: toLocalDateOnly(input.txnDate),
             description: input.description,
             merchantName: input.merchantName,
             isPending: input.isPending || false,
@@ -664,16 +707,22 @@ export class TransactionsService {
     return mostCommonCategoryId ? { id: mostCommonCategoryId } : null;
   }
 
-  private applyFilters(
+  private async applyFilters(
+    userId: string,
     where: Prisma.TransactionWhereInput,
     filters: TransactionFilters,
-  ): void {
+  ): Promise<void> {
     if (filters.accountId) {
       where.accountId = filters.accountId;
     }
 
     if (filters.categoryId) {
-      where.categoryId = filters.categoryId;
+      // A parent category includes its subcategories.
+      const ids = await this.categoryWithDescendants(
+        userId,
+        filters.categoryId,
+      );
+      where.categoryId = ids.length === 1 ? ids[0] : { in: ids };
     }
 
     if (filters.type) {
@@ -704,6 +753,27 @@ export class TransactionsService {
         { merchantName: { contains: filters.search, mode: 'insensitive' } },
       ];
     }
+  }
+
+  /** The category and every subcategory below it visible to the user. */
+  private async categoryWithDescendants(
+    userId: string,
+    categoryId: string,
+  ): Promise<string[]> {
+    const ids = [categoryId];
+    let level = [categoryId];
+    for (let depth = 0; depth < MAX_CATEGORY_DEPTH && level.length; depth++) {
+      const children = await this.prisma.category.findMany({
+        where: {
+          parentId: { in: level },
+          OR: [{ userId }, { userId: null }],
+        },
+        select: { id: true },
+      });
+      level = children.map((c) => c.id).filter((id) => !ids.includes(id));
+      ids.push(...level);
+    }
+    return ids;
   }
 
   private mapTransaction(

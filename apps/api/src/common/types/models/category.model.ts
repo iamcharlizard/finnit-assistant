@@ -5,8 +5,21 @@ export class Category {
   @Field()
   id: string;
 
-  @Field()
+  @Field({
+    description:
+      "Name in the request's locale (x-locale header, else the user's locale)",
+  })
   name: string;
+
+  @Field(() => String, {
+    nullable: true,
+    description:
+      'i18n key of a default category (e.g. categories.food.groceries)',
+  })
+  key?: string | null;
+
+  @Field({ description: 'Original (English) name' })
+  originalName?: string;
 
   @Field({ nullable: true })
   parentId?: string;
@@ -28,4 +41,10 @@ export class Category {
 
   @Field()
   createdAt: Date;
+
+  /**
+   * Names per locale when the query already loaded them (not a GraphQL
+   * field). Without it, the `name` field resolver batches a lookup.
+   */
+  translations?: Partial<Record<string, string>>;
 }

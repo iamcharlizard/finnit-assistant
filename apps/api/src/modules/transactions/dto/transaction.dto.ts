@@ -4,6 +4,8 @@ import {
   registerEnumType,
   ArgsType,
   Int,
+  ID,
+  Float,
 } from '@nestjs/graphql';
 import {
   IsString,
@@ -12,6 +14,7 @@ import {
   IsOptional,
   IsBoolean,
   IsDateString,
+  IsDate,
   Min,
   Max,
 } from 'class-validator';
@@ -177,4 +180,27 @@ export class TransactionsArgs {
   @Field(() => TransactionFilters, { nullable: true })
   @IsOptional()
   filters?: TransactionFilters;
+}
+
+@ArgsType()
+export class SimilarTransactionsArgs {
+  @Field(() => ID)
+  @IsString()
+  accountId: string;
+
+  @Field(() => Float)
+  @IsNumber()
+  amount: number;
+
+  @Field({
+    description:
+      'Date of the new transaction; matches within 3 days of its local day',
+  })
+  @IsDate()
+  date: Date;
+
+  @Field(() => TransactionType, { nullable: true })
+  @IsOptional()
+  @IsEnum(TransactionType)
+  type?: TransactionType;
 }

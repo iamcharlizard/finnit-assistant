@@ -22,6 +22,23 @@ type AccountConnection {
   totalCount: Int!
 }
 
+"""The user's look for an account (card colors)"""
+type AccountDesign {
+  """Hex color, #RRGGBB"""
+  primaryColor: String!
+
+  """Hex color, #RRGGBB"""
+  secondaryColor: String
+}
+
+input AccountDesignInput {
+  """Hex color, #RRGGBB"""
+  primaryColor: String!
+
+  """Hex color, #RRGGBB"""
+  secondaryColor: String
+}
+
 type AccountEdge {
   """Cursor for pagination"""
   cursor: String!
@@ -35,9 +52,13 @@ type AccountMetadata {
   bank: String
   color: String
   creditLimit: Float
+  design: AccountDesign
   icon: String
   interestRate: Float
   last4: String
+
+  """The user's name for the account"""
+  nickname: String
   provider: String
 }
 
@@ -46,9 +67,13 @@ input AccountMetadataInput {
   bank: String
   color: String
   creditLimit: Float
+  design: AccountDesignInput
   icon: String
   interestRate: Float
   last4: String
+
+  """1 to 40 characters"""
+  nickname: String
   provider: String
 }
 
@@ -117,8 +142,13 @@ type AiFeature {
 }
 
 enum AiFeatureKey {
+  receipt_parsing
+  recurring_classification
+
   """Read card statements (PDF) without a local parser"""
   statement_parsing
+  transaction_categorization
+  translation
 }
 
 type AiModel {
@@ -341,7 +371,15 @@ type Category {
   createdAt: DateTime!
   id: String!
   isDefault: Boolean!
+
+  """i18n key of a default category (e.g. categories.food.groceries)"""
+  key: String
+
+  """Name in the request's locale (x-locale header, else the user's locale)"""
   name: String!
+
+  """Original (English) name"""
+  originalName: String!
   parent: Category
   parentId: String
   sortOrder: Float
@@ -413,6 +451,13 @@ input CreateDebtPaymentInput {
   transactionId: String!
 }
 
+input CreateGoalContributionInput {
+  amount: Float!
+  date: DateTime!
+  goalId: String!
+  transactionId: String
+}
+
 input CreateGoalInput {
   currency: String!
   dueDate: DateTime
@@ -482,6 +527,21 @@ type CreditCardTerms {
   paymentDueDay: Float!
   statementDay: Float!
   updatedAt: DateTime!
+}
+
+"""Billing terms of a credit card account (days of the month, 1 to 31)"""
+input CreditCardTermsInput {
+  gracePeriodDays: Int
+
+  """Annual interest rate, percent"""
+  interestRateAnnual: Float
+  minPaymentRule: String
+
+  """Day of the month the payment is due"""
+  paymentDueDay: Int!
+
+  """Day of the month the statement closes"""
+  statementDay: Int!
 }
 
 """
@@ -559,12 +619,50 @@ type Goal {
   userId: String!
 }
 
+type GoalContribution {
+  amount: Float!
+  date: DateTime!
+  goalId: String!
+  id: String!
+  transactionId: String
+}
+
 type GoalProgress {
-  daysRemaining: Float!
+  """Days until the due date; null when the goal has none"""
+  daysRemaining: Int
   goalId: String!
   isCompleted: Boolean!
   percentage: Float!
   remaining: Float!
+}
+
+type GoalProjection {
+  completionDate: DateTime
+  goalId: String!
+
+  """
+  Monthly amount used for the projection (the one given, or the average of the last 3 months of contributions)
+  """
+  monthlyContribution: Float!
+
+  """0 when the goal is reached; null when the monthly contribution is 0"""
+  monthsRemaining: Int
+}
+
+type GoalRecommendations {
+  """Average progress, percent"""
+  averageProgress: Float!
+
+  """Goals under 50% with 60 days or less left"""
+  goalsAtRisk: [Goal!]!
+
+  """Unfinished goals due within 30 days"""
+  goalsDueSoon: [Goal!]!
+
+  """Remaining amount spread over 12 months"""
+  recommendedMonthlyContribution: Float!
+  totalGoalsAmount: Float!
+  totalSavedAmount: Float!
 }
 
 input LinkBankAccountInput {
@@ -600,6 +698,7 @@ type MonthlyReport {
 }
 
 type Mutation {
+  addGoalContribution(input: CreateGoalContributionInput!): GoalContribution!
   adjustAccountBalance(input: AdjustBalanceInput!): Account!
 
   """
@@ -642,6 +741,9 @@ type Mutation {
   deleteBudget(id: String!): Boolean!
   deleteCategory(id: String!): Boolean!
   deleteDebt(id: String!): Boolean!
+
+  """Fails while the goal has contributions"""
+  deleteGoal(id: ID!): Boolean!
   deleteRecurringExpense(id: ID!): Boolean!
   deleteStatementImport(id: ID!): Boolean!
   deleteTransaction(id: String!): Boolean!
@@ -668,6 +770,8 @@ type Mutation {
   markRecurringPaymentPaid(occurrenceId: ID!, transactionId: ID): RecurringOccurrence!
   refreshToken(input: RefreshTokenInput!): AuthPayload!
   registerBankConnection(idCredential: String!): BankSyncResult!
+  removeCreditCardTerms(accountId: ID!): Account!
+  removeGoalContribution(id: ID!): Boolean!
 
   """
   Deletes the attachment and its file. Upload with POST /transactions/:id/attachments
@@ -686,6 +790,9 @@ type Mutation {
   reprocessStatementImport(id: ID!, parser: String): StatementImport!
   requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
   resetPassword(input: ResetPasswordInput!): Boolean!
+
+  """Sets the billing terms of one of the user's credit accounts"""
+  setCreditCardTerms(accountId: ID!, input: CreditCardTermsInput!): Account!
 
   """Admin only. Ends their open sessions."""
   setUserPassword(id: ID!, input: SetUserPasswordInput!): AdminUser!
@@ -717,6 +824,10 @@ type Mutation {
   updateBudget(id: String!, input: UpdateBudgetInput!): Budget!
   updateCategory(id: String!, input: UpdateCategoryInput!): Category!
   updateDebt(id: String!, input: UpdateDebtInput!): Debt!
+  updateGoal(id: ID!, input: UpdateGoalInput!): Goal!
+
+  """Saves the signed-in user's preferences (e.g. locale)."""
+  updateMyPreferences(input: UpdateMyPreferencesInput!): User!
   updateRecurringExpense(id: ID!, input: UpdateRecurringExpenseInput!): RecurringExpense!
   updateStatementLine(id: ID!, input: UpdateStatementLineInput!): StatementLine!
   updateTransaction(id: String!, input: UpdateTransactionInput!): Transaction!
@@ -832,7 +943,21 @@ type Query {
   debtSummary: DebtSummary!
   debts(after: String, before: String, first: Int, includePayoffProjections: Boolean, kind: DebtKind, last: Int): DebtConnection!
   goal(id: String!): Goal!
+
+  """Newest first"""
+  goalContributions(goalId: ID!): [GoalContribution!]!
   goalProgress(id: String!): GoalProgress!
+  goalProjection(
+    goalId: ID!
+
+    """
+    Amount saved per month; defaults to the average of the last 3 months of contributions
+    """
+    monthlyContribution: Float
+  ): GoalProjection!
+
+  """Over all the user's goals, or only goalId when given"""
+  goalRecommendations(goalId: ID): GoalRecommendations!
   goals: [Goal!]!
   me: User!
   monthlyReport(month: Int!, year: Int!): MonthlyReport!
@@ -852,6 +977,18 @@ type Query {
   ): RecurringExpenseConnection!
   recurringExpensesSummary: RecurringExpensesSummary!
   rootCategories: [Category!]!
+
+  """
+  Possible duplicates of a transaction about to be created: same account, amount within 0.01, within 3 days; newest first, at most 5
+  """
+  similarTransactions(
+    accountId: ID!
+    amount: Float!
+
+    """Date of the new transaction; matches within 3 days of its local day"""
+    date: DateTime!
+    type: TransactionType
+  ): [Transaction!]!
 
   """Includes the lines; poll it after uploading to follow the status"""
   statementImport(id: ID!): StatementImport!
@@ -1251,6 +1388,17 @@ input UpdateDebtInput {
   name: String
 }
 
+input UpdateGoalInput {
+  dueDate: DateTime
+  name: String
+  targetAmount: Float
+}
+
+input UpdateMyPreferencesInput {
+  """Preferred language: 'es' or 'en'"""
+  locale: String
+}
+
 input UpdateRecurringExpenseInput {
   accountId: String
   active: Boolean
@@ -1313,6 +1461,9 @@ type User {
 
   """The master admin; cannot be demoted or disabled"""
   isMaster: Boolean!
+
+  """Preferred language: 'es' or 'en'"""
+  locale: String!
   name: String!
   role: UserRole!
   updatedAt: DateTime!

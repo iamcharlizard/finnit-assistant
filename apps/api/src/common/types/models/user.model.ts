@@ -26,6 +26,9 @@ export class User {
   @Field({ description: 'A Google account is linked' })
   hasGoogle: boolean;
 
+  @Field({ description: "Preferred language: 'es' or 'en'" })
+  locale: string;
+
   @Field()
   createdAt: Date;
 
@@ -42,6 +45,7 @@ export interface UserRecord {
   isMaster: boolean;
   passwordHash: string | null;
   googleSubject: string | null;
+  locale: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,6 +60,7 @@ export function toUserModel(user: UserRecord): User {
     isMaster: user.isMaster,
     hasPassword: Boolean(user.passwordHash),
     hasGoogle: Boolean(user.googleSubject),
+    locale: user.locale,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

@@ -37,6 +37,7 @@ function userRow(overrides: Partial<UserRow> = {}): UserRow {
     disabledAt: null,
     lastLoginAt: null,
     tokenVersion: 3,
+    locale: 'es',
     invitedById: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -52,6 +53,7 @@ const expectedUserModel = (user: UserRow) => ({
   isMaster: user.isMaster,
   hasPassword: Boolean(user.passwordHash),
   hasGoogle: Boolean(user.googleSubject),
+  locale: user.locale,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });

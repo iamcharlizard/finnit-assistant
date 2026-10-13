@@ -8,10 +8,12 @@ import { BottomNavBar } from '@finnit/ui/components/navigation/bottom-nav-bar';
 import { SideNav } from '@finnit/ui/components/navigation/side-nav';
 import { TopAppBar } from '@finnit/ui/components/navigation/top-app-bar';
 
+import { initials, useSessionUser } from '@/components/session-provider';
 import { BOTTOM_NAV_ITEMS, PAGE_TITLES, SIDE_NAV_ITEMS } from '@/lib/nav';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const user = useSessionUser();
   // TODO: open the add-transaction flow once the form exists.
   const handleAdd = () => {};
 
@@ -29,7 +31,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <TopAppBar
           title={PAGE_TITLES[pathname] ?? 'Finnit'}
           notificationCount={2}
-          avatarFallback="AN"
+          avatarFallback={initials(user.name)}
         />
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-8 lg:pb-10">
           {children}

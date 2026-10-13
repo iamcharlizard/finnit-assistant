@@ -425,6 +425,9 @@ importers:
       react-dom:
         specifier: ^19.2.6
         version: 19.2.6(react@19.2.6)
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
     devDependencies:
       '@finnit/eslint-config':
         specifier: workspace:*
@@ -450,6 +453,9 @@ importers:
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
+      tsx:
+        specifier: ^4.22.3
+        version: 4.22.3
       typescript:
         specifier: 5.9.3
         version: 5.9.3

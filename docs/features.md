@@ -34,10 +34,10 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
 | Registro con email y contraseña | ✅ | ⏳ | ⏳ | `signUp`. Crea categorías por defecto. |
-| Login con JWT | ✅ | ✅ | ⏳ | `signIn`. Móvil guarda tokens en SecureStore; el login web es solo UI. |
-| Refresh token | ✅ | ⏳ | ⏳ | `refreshToken`; ningún cliente renueva el token. |
-| Usuario actual / validar token | ✅ | ⏳ | ⏳ | `me`, `validateToken`. |
-| Protección de rutas según sesión | — | ⏳ | ⏳ | |
+| Login con JWT | ✅ | ✅ | ✅ | `signIn`. Móvil guarda tokens en SecureStore; web en cookies httpOnly (backend-for-frontend con Server Actions). |
+| Refresh token | ✅ | ⏳ | ✅ | Web: `proxy.ts` renueva el token antes de que expire. Móvil: pendiente. |
+| Usuario actual / validar token | ✅ | ⏳ | ✅ | `me`, `validateToken`. Web: nombre e iniciales reales en la app. |
+| Protección de rutas según sesión | — | ⏳ | ✅ | Web: sin sesión redirige a `/login?next=…` (sin redirecciones abiertas). |
 | Recuperar contraseña por email | 🟡 | ⏳ | ⏳ | `requestPasswordReset`/`resetPassword` existen, pero **no se envía correo** (no hay servicio de email). |
 | Aislamiento de datos por usuario | ✅ | — | — | Todas las consultas filtran por `userId`. |
 | Validación de inputs | ⏳ | — | — | **Bug:** los DTOs tienen decoradores de `class-validator`, pero no hay `ValidationPipe`; se aceptan montos negativos, tasas > 100, etc. |

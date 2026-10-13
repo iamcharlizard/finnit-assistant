@@ -4,7 +4,12 @@ import { LoginForm } from '@/components/login-form';
 
 export const metadata: Metadata = { title: 'Iniciar sesión' };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
+  const { next } = await searchParams;
   return (
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-background px-4 py-14">
       <div
@@ -15,7 +20,7 @@ export default function LoginPage() {
         aria-hidden
         className="pointer-events-none absolute -right-16 -bottom-20 hidden size-[340px] rounded-full bg-[#00f5ff]/8 blur-3xl dark:block"
       />
-      <LoginForm />
+      <LoginForm next={typeof next === 'string' ? next : undefined} />
     </div>
   );
 }

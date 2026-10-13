@@ -11,14 +11,19 @@ import {
 } from '@/lib/auth/cookies';
 import { isExpiring } from '@/lib/auth/jwt';
 
-const PUBLIC_PATHS = ['/login'];
+/** Reachable without a session. Signed-in users are sent away only from /login. */
+const PUBLIC_PATHS = [
+  '/login',
+  '/api/auth/google',
+  '/api/auth/google/callback',
+];
 
 /**
  * Runs before every page and /api route:
  * - renews the access token with the refresh token when it is about to
  *   expire (15 min tokens), so pages and /api/graphql always get a fresh one;
  * - sends visitors without a session to /login, and signed-in users away
- *   from /login.
+ *   from /login (the Google sign-in routes work either way).
  */
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
@@ -57,7 +62,7 @@ export async function proxy(request: NextRequest) {
         login.searchParams.set('next', `${pathname}${search}`);
       response = NextResponse.redirect(login);
     }
-  } else if (signedIn && (isPublic || pathname === '/')) {
+  } else if (signedIn && (pathname === '/login' || pathname === '/')) {
     response = NextResponse.redirect(new URL('/dashboard', request.url));
   } else if (renewed) {
     // Hand the fresh token to this same request, not only to the browser.

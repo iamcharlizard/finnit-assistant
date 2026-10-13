@@ -13,6 +13,7 @@
       "bundleIdentifier": "com.karlhub.finnitapp"
     },
     "android": {
+      "package": "com.karlhub.finnitapp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#26215C"

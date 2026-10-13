@@ -30,3 +30,30 @@ export type SignInResult = {
     user: AuthUser;
   };
 };
+
+export const SIGN_IN_WITH_GOOGLE_MUTATION = `
+  mutation SignInWithGoogle($input: SignInWithGoogleInput!) {
+    signInWithGoogle(input: $input) {
+      accessToken
+      refreshToken
+      user {
+        id
+        email
+        name
+      }
+    }
+  }
+`;
+
+export type SignInWithGoogleInput = {
+  idToken: string;
+  nonce?: string;
+};
+
+export type SignInWithGoogleResult = {
+  signInWithGoogle: {
+    accessToken: string;
+    refreshToken: string;
+    user: AuthUser;
+  };
+};

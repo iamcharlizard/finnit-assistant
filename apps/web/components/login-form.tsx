@@ -1,15 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import {
-  Apple,
-  ArrowRight,
-  AtSign,
-  Eye,
-  EyeOff,
-  Lock,
-  Wallet,
-} from 'lucide-react';
+import { ArrowRight, AtSign, Eye, EyeOff, Lock, Wallet } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import { Checkbox } from '@finnit/ui/components/ui/checkbox';
@@ -20,12 +12,27 @@ import { BodyMd, HeadlineLg } from '@finnit/ui/components/ui/typography';
 
 import { signIn, type SignInState } from '@/app/login/actions';
 
-export function LoginForm({ next }: { next?: string }) {
+export function LoginForm({
+  next,
+  error,
+}: {
+  next?: string;
+  /** Message for a failed Google sign-in (`/login?error=`). */
+  error?: string;
+}) {
   const [state, formAction, isSubmitting] = React.useActionState<
     SignInState,
     FormData
   >(signIn, {});
   const [showPassword, setShowPassword] = React.useState(false);
+  const [remember, setRemember] = React.useState(false);
+
+  // The Google route keeps "Mantener sesión iniciada" and where to go next.
+  const googleParams = new URLSearchParams();
+  if (next) googleParams.set('next', next);
+  if (remember) googleParams.set('remember', '1');
+  const googleHref = `/api/auth/google${googleParams.size ? `?${googleParams}` : ''}`;
+  const message = state.error ?? error;
 
   return (
     <div className="relative w-full max-w-[440px]">
@@ -79,7 +86,12 @@ export function LoginForm({ next }: { next?: string }) {
           />
 
           <div className="flex min-h-11 items-center gap-3 px-1">
-            <Checkbox id="remember" name="remember" />
+            <Checkbox
+              id="remember"
+              name="remember"
+              checked={remember}
+              onCheckedChange={(v) => setRemember(v === true)}
+            />
             <label
               htmlFor="remember"
               className="text-sm text-on-surface-variant"
@@ -88,13 +100,13 @@ export function LoginForm({ next }: { next?: string }) {
             </label>
           </div>
 
-          {state.error ? (
+          {message ? (
             <p
               role="alert"
               aria-live="polite"
               className="px-1 text-[13px] text-expense"
             >
-              {state.error}
+              {message}
             </p>
           ) : null}
 
@@ -118,24 +130,16 @@ export function LoginForm({ next }: { next?: string }) {
           <span className="h-px flex-1 bg-outline" />
         </div>
 
-        <div className="flex gap-4">
-          <Button variant="outline" className="flex-1 rounded-[14px]">
+        {/* A plain link: the route handler redirects to Google (no prefetch). */}
+        <Button variant="outline" className="w-full rounded-[14px]" asChild>
+          <a href={googleHref}>
             <GoogleIcon className="size-[18px]" /> Google
-          </Button>
-          <Button variant="outline" className="flex-1 rounded-[14px]">
-            <Apple className="size-[18px]" /> Apple
-          </Button>
-        </div>
+          </a>
+        </Button>
       </GlassCard>
 
-      <p className="mt-8 flex flex-wrap items-center justify-center gap-1 text-sm text-on-surface-variant">
-        ¿No tienes una cuenta?
-        <a
-          href="#"
-          className="flex min-h-11 items-center font-medium text-accent-neon hover:underline"
-        >
-          Regístrate ahora
-        </a>
+      <p className="mt-8 text-center text-sm text-on-surface-variant">
+        El acceso a Finnit es por invitación. Pide acceso al administrador.
       </p>
     </div>
   );

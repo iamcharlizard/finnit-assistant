@@ -67,6 +67,60 @@ input AdjustBalanceInput {
   description: String!
 }
 
+"""A user as seen from the admin panel"""
+type AdminUser {
+  createdAt: DateTime!
+  disabledAt: DateTime
+  email: String!
+
+  """A Google account is linked (signed in with it once)"""
+  hasGoogle: Boolean!
+
+  """Can sign in with email and password"""
+  hasPassword: Boolean!
+  id: ID!
+
+  """Name of the admin who added them"""
+  invitedByName: String
+  isMaster: Boolean!
+  lastLoginAt: DateTime
+  name: String!
+  role: UserRole!
+  status: UserStatus!
+}
+
+type AdminUserConnection {
+  edges: [AdminUserEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type AdminUserEdge {
+  cursor: String!
+  node: AdminUser!
+}
+
+"""Admin settings of one AI feature"""
+type AiFeature {
+  """The feature's own model; null uses the catalog default"""
+  aiModel: AiModel
+  enabled: Boolean!
+  key: AiFeatureKey!
+  updatedAt: DateTime!
+  updatedByName: String
+
+  """Enabled and at least one model it may use is usable now"""
+  usable: Boolean!
+
+  """If the model fails, try the other active models"""
+  useFallbacks: Boolean!
+}
+
+enum AiFeatureKey {
+  """Read card statements (PDF) without a local parser"""
+  statement_parsing
+}
+
 type AiModel {
   createdAt: DateTime!
   id: ID!
@@ -408,6 +462,18 @@ input CreateTransferInput {
   txnDate: DateTime
 }
 
+input CreateUserInput {
+  """They can also sign in with the Google account of this email"""
+  email: String!
+  name: String!
+
+  """Without a password they can only sign in with Google"""
+  password: String
+
+  """Only the master can create admins"""
+  role: UserRole
+}
+
 type CreditCardTerms {
   accountId: String!
   gracePeriodDays: Float
@@ -559,6 +625,11 @@ type Mutation {
   createRecurringExpense(input: CreateRecurringExpenseInput!): RecurringExpense!
   createTransaction(input: CreateTransactionInput!): Transaction!
   createTransfer(input: CreateTransferInput!): Transfer!
+
+  """
+  Admin only. Gives a person access: they sign in with the password set here, or with Google using this email.
+  """
+  createUser(input: CreateUserInput!): AdminUser!
   deleteAccount(id: String!): Boolean!
 
   """Admin only"""
@@ -574,6 +645,12 @@ type Mutation {
   deleteRecurringExpense(id: ID!): Boolean!
   deleteStatementImport(id: ID!): Boolean!
   deleteTransaction(id: String!): Boolean!
+
+  """Admin only. Blocks sign-in and ends their open sessions."""
+  disableUser(id: ID!): AdminUser!
+
+  """Admin only"""
+  enableUser(id: ID!): AdminUser!
 
   """
   Links a bank account to a Finnit account (or creates one) and imports its last 90 days
@@ -597,6 +674,9 @@ type Mutation {
   """
   removeTransactionAttachment(id: String!): Boolean!
 
+  """Admin only. Only for users with Google linked."""
+  removeUserPassword(id: ID!): AdminUser!
+
   """Undoes paid/skipped/missed and unlinks the transaction"""
   reopenRecurringPayment(occurrenceId: ID!): RecurringOccurrence!
 
@@ -606,8 +686,15 @@ type Mutation {
   reprocessStatementImport(id: ID!, parser: String): StatementImport!
   requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
   resetPassword(input: ResetPasswordInput!): Boolean!
+
+  """Admin only. Ends their open sessions."""
+  setUserPassword(id: ID!, input: SetUserPasswordInput!): AdminUser!
   signIn(input: SignInInput!): AuthPayload!
-  signUp(input: SignUpInput!): AuthPayload!
+
+  """
+  Signs in with a Google ID token. Only users an admin already added (same email) get in; it never creates accounts.
+  """
+  signInWithGoogle(input: SignInWithGoogleInput!): AuthPayload!
   skipRecurringPayment(occurrenceId: ID!): RecurringOccurrence!
 
   """
@@ -615,7 +702,13 @@ type Mutation {
   """
   syncBankConnection(id: ID!, refreshFromBank: Boolean! = false): BankSyncResult!
   unlinkBankAccount(linkedAccountId: ID!): BankConnection!
+
+  """Admin only"""
+  unlinkUserGoogle(id: ID!): AdminUser!
   updateAccount(id: String!, input: UpdateAccountInput!): Account!
+
+  """Admin only. Turn an AI feature on/off, pick its model and fallbacks"""
+  updateAiFeature(input: UpdateAiFeatureInput!, key: AiFeatureKey!): AiFeature!
 
   """
   Admin only. Activate/deactivate, set as default, reorder. Deactivating the default unsets it.
@@ -627,7 +720,9 @@ type Mutation {
   updateRecurringExpense(id: ID!, input: UpdateRecurringExpenseInput!): RecurringExpense!
   updateStatementLine(id: ID!, input: UpdateStatementLineInput!): StatementLine!
   updateTransaction(id: String!, input: UpdateTransactionInput!): Transaction!
-  updateUser(input: UpdateUserInput!): User!
+
+  """Admin only"""
+  updateUser(id: ID!, input: UpdateUserInput!): AdminUser!
 }
 
 type Notification {
@@ -700,6 +795,20 @@ input PayoffStrategyInput {
 type Query {
   account(id: String!): Account!
   accounts(after: String, archived: Boolean, before: String, first: Int, last: Int, type: AccountType): AccountConnection!
+
+  """Admin only"""
+  adminUsers(
+    after: String
+    first: Int = 50
+    role: UserRole
+
+    """Matches name or email"""
+    search: String
+    status: UserStatus
+  ): AdminUserConnection!
+
+  """Admin only. Settings of each AI feature"""
+  aiFeatures: [AiFeature!]!
 
   """AI model catalog; default first, then by sortOrder"""
   aiModels(
@@ -882,15 +991,21 @@ input ResetPasswordInput {
   token: String!
 }
 
+input SetUserPasswordInput {
+  password: String!
+}
+
 input SignInInput {
   email: String!
   password: String!
 }
 
-input SignUpInput {
-  email: String!
-  name: String!
-  password: String!
+input SignInWithGoogleInput {
+  """ID token returned by Google Sign-In"""
+  idToken: String!
+
+  """Nonce sent to Google; when given it must match the token"""
+  nonce: String
 }
 
 type StatementImport {
@@ -1102,6 +1217,13 @@ input UpdateAccountInput {
   name: String
 }
 
+input UpdateAiFeatureInput {
+  """An active model with PDF support; null goes back to the default"""
+  aiModelId: String
+  enabled: Boolean
+  useFallbacks: Boolean
+}
+
 input UpdateAiModelInput {
   isActive: Boolean
   isDefault: Boolean
@@ -1172,16 +1294,38 @@ input UpdateTransactionInput {
 }
 
 input UpdateUserInput {
-  email: String
   name: String
+
+  """Only the master can change roles"""
+  role: UserRole
 }
 
 type User {
   createdAt: DateTime!
   email: String!
+
+  """A Google account is linked"""
+  hasGoogle: Boolean!
+
+  """Can sign in with email and password"""
+  hasPassword: Boolean!
   id: String!
+
+  """The master admin; cannot be demoted or disabled"""
+  isMaster: Boolean!
   name: String!
+  role: UserRole!
   updatedAt: DateTime!
+}
+
+enum UserRole {
+  admin
+  user
+}
+
+enum UserStatus {
+  active
+  disabled
 }
 
 input WhatIfInput {

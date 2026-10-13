@@ -2,7 +2,7 @@
 
 Inventario de funcionalidades y su estado **real**, verificado contra el código. Es la fuente de verdad del avance; [prd.md](./prd.md) describe el alcance y [user-stories.md](./user-stories.md) los criterios de aceptación.
 
-**Última revisión:** 12 de octubre de 2026
+**Última revisión:** 14 de octubre de 2026
 
 **Leyenda:** ✅ hecho · 🟡 parcial · ⏳ pendiente · — no aplica
 
@@ -26,6 +26,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | 11. Notificaciones | 🟡 | ⏳ | ⏳ |
 | 12. Gastos recurrentes *(nuevo)* | ✅ | ⏳ | ⏳ |
 | 13. Estados de cuenta y conciliación *(nuevo)* | 🟡 | ⏳ | ⏳ |
+| 14. Panel administrativo *(nuevo)* | ✅ | — | ✅ |
 
 ## Detalle
 
@@ -33,8 +34,10 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Registro con email y contraseña | ✅ | ⏳ | ⏳ | `signUp`. Crea categorías por defecto. |
-| Login con JWT | ✅ | ✅ | ✅ | `signIn`. Móvil guarda tokens en SecureStore; web en cookies httpOnly (backend-for-frontend con Server Actions). |
+| Acceso solo por invitación (sin registro abierto) | ✅ | ✅ | ✅ | No existe `signUp`. Un administrador da de alta a cada persona desde el panel (`createUser`); el login explica que el acceso es por invitación. |
+| Login con Google | ✅ | 🟡 | ✅ | `signInWithGoogle(idToken)`: solo entra si su correo de Google coincide con un usuario dado de alta; nunca crea cuentas. Web: OAuth con PKCE en el servidor (`/api/auth/google`). Móvil: `@react-native-google-signin`, requiere *development build*; sin probar en dispositivo. |
+| Usuarios desactivados y cierre de sesiones | ✅ | — | — | Desactivar a alguien o cambiarle la contraseña invalida sus tokens (`tokenVersion`), se revisa en cada petición y al refrescar. |
+| Login con email y contraseña (JWT) | ✅ | ✅ | ✅ | `signIn`; la contraseña la asigna un administrador. Móvil guarda tokens en SecureStore; web en cookies httpOnly (backend-for-frontend con Server Actions). |
 | Refresh token | ✅ | ⏳ | ✅ | Web: `proxy.ts` renueva el token antes de que expire. Móvil: pendiente. |
 | Usuario actual / validar token | ✅ | ⏳ | ✅ | `me`, `validateToken`. Web: nombre e iniciales reales en la app. |
 | Protección de rutas según sesión | — | ⏳ | ✅ | Web: sin sesión redirige a `/login?next=…` (sin redirecciones abiertas). |
@@ -157,11 +160,21 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 |---|---|---|---|---|
 | Subir PDF del estado de cuenta (almacenado en S3) | ✅ | ⏳ | ⏳ | `POST /statements` (multipart, máx. 10 MB, deduplica por hash). Bucket privado; descarga solo del dueño en `GET /statements/:id/file`. |
 | Extracción: parser Banamex + IA para otros formatos | ✅ | — | — | Parser local `banamex_v1` (tarjeta titular y digital, mensualidades MSI, pagos y devoluciones), verificado con un estado real. Otros bancos: lectura con IA. Valida saldo anterior + cargos − abonos = saldo al corte. |
-| Catálogo de modelos de IA (Anthropic, OpenAI, Gemini) | ✅ | ⏳ | ⏳ | `aiModels`: activos/desactivados, predeterminado y orden de respaldo; solo administradores (`ADMIN_EMAILS`) lo modifican. Llaves por proveedor en variables de entorno. |
+| Catálogo de modelos de IA (Anthropic, OpenAI, Gemini) | ✅ | ⏳ | ⏳ | `aiModels`: activos/desactivados, predeterminado y orden de respaldo; solo administradores lo modifican, desde el panel (`/admin/ai`). Llaves por proveedor en variables de entorno. |
 | Revisión y confirmación de movimientos importados | ✅ | ⏳ | ⏳ | `statementImport`, `updateStatementLine` (ignorar, categoría, ligar a mano), `confirmStatementImport`, `reprocessStatementImport`. |
 | Conciliación con transacciones y gastos recurrentes | ✅ | ⏳ | ⏳ | No duplica compras ya registradas (mismo monto, ±3 días); marca pagados los recurrentes por patrón de comercio (±10 días, ±15% o ±50% si el monto es variable). |
 | Resumen del mes de la tarjeta vs total a pagar | ✅ | ⏳ | ⏳ | `cardMonthSummary`: total a pagar, recurrentes esperados vs cobrados, cargos nuevos. |
 | Sincronización con el banco (Syncfy) | ✅ | ⏳ | ⏳ | Ver sección 9. |
+
+### 14. Panel administrativo *(nuevo)*
+
+| Funcionalidad | API | Móvil | Web | Notas |
+|---|---|---|---|---|
+| Usuario maestro | ✅ | — | — | Se crea una vez por ambiente con `create-master` ([deployment.md](./deployment.md)). No se le puede quitar el rol ni desactivar. |
+| Administradores | ✅ | — | ✅ | `role: admin`. Solo el maestro nombra o quita administradores. |
+| Dar y quitar acceso a usuarios | ✅ | — | ✅ | `/admin/users`: alta con contraseña opcional, asignar o quitar contraseña, desligar Google, desactivar y reactivar. No se borran usuarios. |
+| Modelos de IA | ✅ | — | ✅ | `/admin/ai`: activar, predeterminado, orden, alta y baja. |
+| Funcionalidades de IA | ✅ | — | ✅ | `aiFeatures` / `updateAiFeature`: hoy solo "Leer estados de cuenta en PDF"; se enciende o apaga, con modelo propio y respaldos opcionales. |
 
 ## Plataforma
 

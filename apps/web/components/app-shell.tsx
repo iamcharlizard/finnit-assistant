@@ -9,19 +9,32 @@ import { SideNav } from '@finnit/ui/components/navigation/side-nav';
 import { TopAppBar } from '@finnit/ui/components/navigation/top-app-bar';
 
 import { initials, useSessionUser } from '@/components/session-provider';
-import { BOTTOM_NAV_ITEMS, PAGE_TITLES, SIDE_NAV_ITEMS } from '@/lib/nav';
+import {
+  ADMIN_NAV_ITEM,
+  BOTTOM_NAV_ITEMS,
+  PAGE_TITLES,
+  SIDE_NAV_ITEMS,
+  activeNavHref,
+} from '@/lib/nav';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const user = useSessionUser();
+  const sideItems = React.useMemo(
+    () =>
+      user.role === 'admin'
+        ? [...SIDE_NAV_ITEMS, ADMIN_NAV_ITEM]
+        : SIDE_NAV_ITEMS,
+    [user.role],
+  );
   // TODO: open the add-transaction flow once the form exists.
   const handleAdd = () => {};
 
   return (
     <div className="flex min-h-dvh bg-background">
       <SideNav
-        items={SIDE_NAV_ITEMS}
-        activeHref={pathname}
+        items={sideItems}
+        activeHref={activeNavHref(sideItems, pathname)}
         linkComponent={Link}
         onAddClick={handleAdd}
         className="sticky top-0 hidden h-dvh shrink-0 lg:flex"
@@ -40,7 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <BottomNavBar
         items={BOTTOM_NAV_ITEMS}
-        activeHref={pathname}
+        activeHref={activeNavHref(BOTTOM_NAV_ITEMS, pathname)}
         linkComponent={Link}
         onAddClick={handleAdd}
         className="lg:hidden"

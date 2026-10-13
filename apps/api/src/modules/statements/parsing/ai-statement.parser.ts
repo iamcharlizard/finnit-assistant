@@ -1,4 +1,4 @@
-import { ImportedLineKind } from '@finnit/database';
+import { AiFeatureKey, ImportedLineKind } from '@finnit/database';
 import {
   AiModelsService,
   NoUsableAiModelError,
@@ -84,7 +84,7 @@ export class AiStatementParser {
     try {
       const { model, data } = await this.aiModels.extractFromPdf(
         { pdf, prompt: PROMPT, schema: SCHEMA, schemaName: SCHEMA_NAME },
-        aiModelId,
+        { aiModelId, feature: AiFeatureKey.statement_parsing },
       );
       return {
         parserId: `${AiStatementParser.ID}:${model.provider}/${model.modelId}`,

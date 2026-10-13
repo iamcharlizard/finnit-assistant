@@ -4,6 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthResolver } from './auth.resolver';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { GoogleIdTokenVerifier } from './google-id-token.verifier';
 import { PrismaService } from '../../services/prisma.service';
 import { getJwtSecret } from '../../common/utils/jwt-secret.util';
 
@@ -15,7 +16,13 @@ import { getJwtSecret } from '../../common/utils/jwt-secret.util';
       signOptions: { expiresIn: '15m' },
     }),
   ],
-  providers: [AuthService, AuthResolver, JwtStrategy, PrismaService],
+  providers: [
+    AuthService,
+    AuthResolver,
+    JwtStrategy,
+    GoogleIdTokenVerifier,
+    PrismaService,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

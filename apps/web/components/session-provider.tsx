@@ -6,6 +6,9 @@ export interface SessionUser {
   id: string;
   name: string;
   email: string;
+  role: 'admin' | 'user';
+  /** The master admin: the only one who names or removes admins. */
+  isMaster: boolean;
 }
 
 const SessionContext = React.createContext<SessionUser | null>(null);

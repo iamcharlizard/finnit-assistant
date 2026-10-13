@@ -64,12 +64,18 @@ export function isUnauthenticated(errors: GraphqlError[] | undefined): boolean {
   );
 }
 
-const AUTH_FIELDS = 'accessToken refreshToken user { id name email }';
+const AUTH_FIELDS =
+  'accessToken refreshToken user { id name email role isMaster }';
+
+export type UserRole = 'admin' | 'user';
 
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  role: UserRole;
+  /** The master admin (created with the CLI); names the other admins. */
+  isMaster: boolean;
 }
 
 export async function apiSignIn(
@@ -83,6 +89,39 @@ export async function apiSignIn(
     { input: { email, password } },
   );
   return result.data?.signIn ?? null;
+}
+
+/** The API rejected a request; `code` is its GraphQL error code. */
+export class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    readonly code?: string,
+  ) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}
+
+/**
+ * Exchanges a Google ID token for a Finnit session. Only people an admin
+ * already added get in (FORBIDDEN otherwise); throws ApiRequestError.
+ */
+export async function apiSignInWithGoogle(
+  idToken: string,
+  nonce: string,
+): Promise<SessionTokens & { user: AuthUser }> {
+  const result = await apiGraphql<{
+    signInWithGoogle: SessionTokens & { user: AuthUser };
+  }>(
+    `mutation SignInWithGoogle($input: SignInWithGoogleInput!) { signInWithGoogle(input: $input) { ${AUTH_FIELDS} } }`,
+    { input: { idToken, nonce } },
+  );
+  if (result.data?.signInWithGoogle) return result.data.signInWithGoogle;
+  const error = result.errors?.[0];
+  throw new ApiRequestError(
+    error?.message ?? 'Google sign-in failed',
+    error?.extensions?.code,
+  );
 }
 
 export async function apiRefresh(

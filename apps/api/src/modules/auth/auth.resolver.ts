@@ -3,8 +3,8 @@ import { UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   AuthPayload,
-  SignUpInput,
   SignInInput,
+  SignInWithGoogleInput,
   RefreshTokenInput,
   RequestPasswordResetInput,
   ResetPasswordInput,
@@ -12,20 +12,29 @@ import {
 } from './dto/auth.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { User } from '../../common/types/models/user.model';
+import {
+  User,
+  toUserModel,
+  type UserRecord,
+} from '../../common/types/models/user.model';
 
 @Resolver()
 export class AuthResolver {
   constructor(private readonly authService: AuthService) {}
 
   @Mutation(() => AuthPayload)
-  async signUp(@Args('input') input: SignUpInput): Promise<AuthPayload> {
-    return this.authService.signUp(input);
-  }
-
-  @Mutation(() => AuthPayload)
   async signIn(@Args('input') input: SignInInput): Promise<AuthPayload> {
     return this.authService.signIn(input);
+  }
+
+  @Mutation(() => AuthPayload, {
+    description:
+      'Signs in with a Google ID token. Only users an admin already added (same email) get in; it never creates accounts.',
+  })
+  async signInWithGoogle(
+    @Args('input') input: SignInWithGoogleInput,
+  ): Promise<AuthPayload> {
+    return this.authService.signInWithGoogle(input);
   }
 
   @Mutation(() => AuthPayload)
@@ -58,7 +67,7 @@ export class AuthResolver {
 
   @Query(() => User)
   @UseGuards(JwtAuthGuard)
-  me(@CurrentUser() user: User): User {
-    return user;
+  me(@CurrentUser() user: UserRecord): User {
+    return toUserModel(user);
   }
 }

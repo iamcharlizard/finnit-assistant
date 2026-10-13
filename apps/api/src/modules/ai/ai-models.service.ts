@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
+  AiFeatureKey,
   AiProvider,
   Prisma,
   type AiModel as AiModelRow,
@@ -38,6 +39,20 @@ export interface PdfExtractionResult {
 }
 
 export class NoUsableAiModelError extends Error {}
+
+/** The admin turned the AI feature off. */
+export class AiFeatureDisabledError extends NoUsableAiModelError {
+  constructor(feature: AiFeatureKey) {
+    super(`The AI feature "${feature}" is turned off by an administrator`);
+  }
+}
+
+export interface PdfCandidateOptions {
+  /** A specific model (e.g. reprocessing a statement); it must be usable. */
+  aiModelId?: string;
+  /** Applies that feature's admin settings (on/off, model, fallbacks). */
+  feature?: AiFeatureKey;
+}
 
 /**
  * Catalog of AI models and the entry point for calling them. A model is
@@ -136,11 +151,23 @@ export class AiModelsService {
   }
 
   /**
-   * Usable PDF-capable models in the order they are tried: the default
-   * first, then by sortOrder. With `aiModelId`, only that model (it must
-   * still be usable).
+   * Models to try for a PDF, in order. Without options: active models with
+   * PDF support whose provider is configured, default first, then by
+   * sortOrder. With a feature: its own model first (if usable), then the
+   * rest only when the feature allows fallbacks. With `aiModelId`, only
+   * that model.
    */
-  async pdfCandidates(aiModelId?: string): Promise<AiModelRow[]> {
+  async pdfCandidates(
+    options: PdfCandidateOptions = {},
+  ): Promise<AiModelRow[]> {
+    const { aiModelId, feature } = options;
+    const settings = feature
+      ? await this.prisma.aiFeature.findUnique({ where: { key: feature } })
+      : null;
+    if (feature && settings && !settings.enabled) {
+      throw new AiFeatureDisabledError(feature);
+    }
+
     const rows = await this.prisma.aiModel.findMany({
       where: {
         isActive: true,
@@ -149,7 +176,15 @@ export class AiModelsService {
       },
       orderBy: [{ isDefault: 'desc' }, { sortOrder: 'asc' }],
     });
-    return rows.filter((row) => this.providers.get(row.provider)?.isConfigured);
+    const usable = rows.filter(
+      (row) => this.providers.get(row.provider)?.isConfigured,
+    );
+    if (aiModelId || !settings) return usable;
+
+    const own = usable.find((row) => row.id === settings.aiModelId);
+    const rest = usable.filter((row) => row !== own);
+    const first = own ?? (settings.aiModelId ? undefined : rest.shift());
+    return [...(first ? [first] : []), ...(settings.useFallbacks ? rest : [])];
   }
 
   /**
@@ -158,12 +193,12 @@ export class AiModelsService {
    */
   async extractFromPdf(
     request: Omit<PdfExtractionRequest, 'modelId'>,
-    aiModelId?: string,
+    options: PdfCandidateOptions = {},
   ): Promise<PdfExtractionResult> {
-    const candidates = await this.pdfCandidates(aiModelId);
+    const candidates = await this.pdfCandidates(options);
     if (candidates.length === 0) {
       throw new NoUsableAiModelError(
-        aiModelId
+        options.aiModelId
           ? 'That AI model is not active or its provider is not configured'
           : 'No active AI model with PDF support has its provider configured',
       );
@@ -206,7 +241,7 @@ export class AiModelsService {
     return row;
   }
 
-  private map(row: AiModelRow): AiModel {
+  map(row: AiModelRow): AiModel {
     const providerConfigured = Boolean(
       this.providers.get(row.provider)?.isConfigured,
     );

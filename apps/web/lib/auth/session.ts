@@ -14,9 +14,13 @@ export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
   const accessToken = (await cookies()).get(ACCESS_COOKIE)?.value;
   if (!accessToken) return null;
   const result = await apiGraphql<{ me: AuthUser }>(
-    'query Me { me { id name email } }',
+    'query Me { me { id name email role isMaster } }',
     {},
     accessToken,
   ).catch(() => null);
   return result?.data?.me ?? null;
 });
+
+export function isAdmin(user: Pick<AuthUser, 'role'> | null): boolean {
+  return user?.role === 'admin';
+}

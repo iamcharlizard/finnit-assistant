@@ -5,7 +5,7 @@ import {
   NotFoundError,
   ConflictError,
 } from '../../common/exceptions/graphql-error.exception';
-import { User } from '../../common/types/models/user.model';
+import { User, toUserModel } from '../../common/types/models/user.model';
 
 @Injectable()
 export class UsersService {
@@ -20,13 +20,7 @@ export class UsersService {
       throw new NotFoundError('User not found');
     }
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    return toUserModel(user);
   }
 
   async update(id: string, input: UpdateUserInput): Promise<User> {
@@ -58,12 +52,6 @@ export class UsersService {
       data: input,
     });
 
-    return {
-      id: updatedUser.id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      createdAt: updatedUser.createdAt,
-      updatedAt: updatedUser.updatedAt,
-    };
+    return toUserModel(updatedUser);
   }
 }

@@ -12,6 +12,7 @@
     "test": "tsx --test lib/**/*.test.ts"
   },
   "dependencies": {
+    "@finnit/bank-connect": "workspace:*",
     "@finnit/ui": "workspace:*",
     "@fontsource/ubuntu": "^5.3.0",
     "lucide-react": "^1.55.0",

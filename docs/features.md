@@ -21,7 +21,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | 6. Deudas y tarjetas | ✅ | ⏳ | ⏳ |
 | 7. Metas y ahorro | 🟡 | ⏳ | ⏳ |
 | 8. Reportes e insights | 🟡 | 🟡 | 🟡 |
-| 9. Integración bancaria (Syncfy) | ✅ | ⏳ | ⏳ |
+| 9. Integración bancaria (Syncfy) | ✅ | ⏳ | 🟡 |
 | 10. Flujo de caja y proyecciones | ✅ | 🟡 | 🟡 |
 | 11. Notificaciones | 🟡 | ⏳ | ⏳ |
 | 12. Gastos recurrentes *(nuevo)* | ✅ | ⏳ | ⏳ |
@@ -116,11 +116,11 @@ Belvo dejó de ofrecer datos bancarios de México (solo Brasil), por eso se usa 
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Conectar banco con formulario propio (headless) | ✅ | ⏳ | ⏳ | Paquete `@finnit/bank-connect` (web y React Native): formulario del banco, token, captcha, imágenes, opciones y QR; los datos van del dispositivo a Syncfy, nunca a Finnit. Probado contra el sandbox (8/8 casos). Respaldo con el widget de Syncfy para sitios no soportados. API: `createBankConnectSession` + `registerBankConnection`. |
-| Ligar cuentas del banco a cuentas de Finnit | ✅ | ⏳ | ⏳ | `linkBankAccount` (existente o nueva); importa 90 días. Saldo, límite y crédito disponible desde el banco. |
+| Conectar banco con formulario propio (headless) | ✅ | ⏳ | ✅ | Paquete `@finnit/bank-connect` (web y React Native): formulario del banco, token, captcha, imágenes, opciones y QR; los datos van del dispositivo a Syncfy, nunca a Finnit. Probado contra el sandbox (8/8 casos). Respaldo con el widget de Syncfy para sitios no soportados. API: `createBankConnectSession` + `registerBankConnection`. |
+| Ligar cuentas del banco a cuentas de Finnit | ✅ | ⏳ | ✅ | `linkBankAccount` (existente o nueva); importa 90 días. Saldo, límite y crédito disponible desde el banco. |
 | Importar movimientos y crear transacciones | ✅ | ⏳ | ⏳ | Incremental, sin duplicados; ignora autorizaciones pendientes y conversiones a meses sin intereses. |
 | Conciliación banco ↔ estado de cuenta PDF | ✅ | — | — | El estado de cuenta empata los movimientos ya importados del banco (probado: 105 de 105). |
-| Sincronización automática | ✅ | — | — | 7:00 y 15:00 (CDMX); pide al banco datos nuevos como máximo cada 20 h. Manual: `syncBankConnection`. |
+| Sincronización automática | ✅ | — | ✅ | 7:00 y 15:00 (CDMX); pide al banco datos nuevos como máximo cada 20 h. Manual: `syncBankConnection` (web: botón "Sincronizar ahora" en Ajustes → Bancos conectados). |
 | Conciliación semanal guiada | ⏳ | ⏳ | ⏳ | Modelos `ReconciliationSession/Item` sin API. |
 
 ### 10. Flujo de caja y proyecciones

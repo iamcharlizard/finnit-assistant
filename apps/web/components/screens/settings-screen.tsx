@@ -1,11 +1,13 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import {
   BellRing,
   ChevronRight,
   Fingerprint,
+  Landmark,
   Lock,
   LogOut,
   Moon,
@@ -40,6 +42,24 @@ export function SettingsScreen() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
       <ProfileCard name={user.name} email={user.email} isPremium isVerified />
+
+      <SettingsSection title="Bancos" icon={Landmark} iconColor="var(--brand)">
+        <Link
+          href="/settings/banks"
+          className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+        >
+          <SettingRow
+            label="Bancos conectados"
+            description="Importa tus movimientos automáticamente"
+            icon={Landmark}
+          >
+            <ChevronRight
+              aria-hidden
+              className="size-4 text-on-surface-variant"
+            />
+          </SettingRow>
+        </Link>
+      </SettingsSection>
 
       <SettingsSection
         title="Seguridad"

@@ -20,3 +20,11 @@ export type {
   SiteField,
   TwofaField,
 } from './types';
+export { BankConnectFlow } from './flow';
+export type {
+  AccountChoice,
+  BankConnectApi,
+  ConnectedAccount,
+  ConnectedBank,
+  FlowStep,
+} from './flow';

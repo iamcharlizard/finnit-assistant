@@ -31,6 +31,21 @@ registerEnumType(ImportedLineStatus, {
     'pending: becomes a new transaction on confirm. matched: already registered. created: transaction created on confirm. ignored: skipped.',
 });
 
+@ObjectType({ description: 'The recurring payment a statement line pays' })
+export class StatementLineRecurringPayment {
+  @Field(() => ID)
+  occurrenceId: string;
+
+  @Field(() => ID)
+  recurringExpenseId: string;
+
+  @Field()
+  name: string;
+
+  @Field()
+  dueDate: Date;
+}
+
 @ObjectType()
 export class StatementLine {
   @Field(() => ID)
@@ -74,6 +89,12 @@ export class StatementLine {
 
   @Field({ nullable: true, description: 'Recurring payment this line pays' })
   matchedOccurrenceId?: string;
+
+  @Field(() => StatementLineRecurringPayment, {
+    nullable: true,
+    description: 'The recurring payment of matchedOccurrenceId, with its name',
+  })
+  matchedRecurringPayment?: StatementLineRecurringPayment;
 }
 
 @ObjectType()

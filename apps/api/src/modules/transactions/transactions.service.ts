@@ -22,6 +22,10 @@ import {
   SimilarTransactionsArgs,
 } from './dto/transaction.dto';
 import {
+  TransactionRecurringPayment,
+  TransferCounterpart,
+} from './dto/transaction-links.dto';
+import {
   NotFoundError,
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
@@ -184,6 +188,8 @@ export class TransactionsService {
       where: { id, userId },
       include: {
         attachments: true,
+        account: true,
+        category: true,
         ...TRANSACTION_PRESENTATION_INCLUDE,
       },
     });
@@ -239,14 +245,38 @@ export class TransactionsService {
   ): Promise<Transaction> {
     const existingTransaction = await this.prisma.transaction.findFirst({
       where: { id, userId },
+      include: {
+        transferFrom: { select: { id: true } },
+        transferTo: { select: { id: true } },
+      },
     });
 
     if (!existingTransaction) {
       throw new NotFoundError('Transaction not found');
     }
 
+    // Movements from the bank or a statement keep the bank's data; only the
+    // category is the user's (the name is changed with an alias).
     if (existingTransaction.source !== TransactionSource.manual) {
-      throw new ValidationError('Cannot modify imported transactions');
+      const changed = (
+        Object.keys(input) as (keyof UpdateTransactionInput)[]
+      ).filter((key) => key !== 'categoryId' && input[key] !== undefined);
+      if (changed.length > 0) {
+        throw new ValidationError(
+          'Cannot modify imported transactions; only the category can change',
+        );
+      }
+    }
+
+    // One side's amount alone would leave the transfer unbalanced.
+    if (
+      (existingTransaction.transferFrom || existingTransaction.transferTo) &&
+      input.amount !== undefined &&
+      input.amount !== Number(existingTransaction.amount)
+    ) {
+      throw new ValidationError(
+        'Cannot change the amount of a transfer; delete it and create it again',
+      );
     }
 
     // Validate category belongs to user (if provided)
@@ -307,6 +337,61 @@ export class TransactionsService {
       await this.aliases.applyTo(userId, [id]);
     }
     return this.reload(updated);
+  }
+
+  /** The other side of a transfer movement, or null when it isn't one. */
+  async findTransferCounterpart(
+    id: string,
+    userId: string,
+  ): Promise<TransferCounterpart | null> {
+    const side = {
+      select: {
+        id: true,
+        accountId: true,
+        account: { select: { name: true, metadata: true } },
+      },
+    } as const;
+    const transfer = await this.prisma.transfer.findFirst({
+      where: {
+        OR: [{ fromTxnId: id }, { toTxnId: id }],
+        fromTxn: { userId },
+      },
+      select: { fromTxnId: true, fromTxn: side, toTxn: side },
+    });
+    if (!transfer) return null;
+    const isSource = transfer.fromTxnId === id;
+    const other = isSource ? transfer.toTxn : transfer.fromTxn;
+    const nickname = (
+      other.account.metadata as { nickname?: string | null } | null
+    )?.nickname?.trim();
+    return {
+      transactionId: other.id,
+      accountId: other.accountId,
+      accountName: nickname || other.account.name,
+      direction: isSource ? 'out' : 'in',
+    };
+  }
+
+  /** The recurring payment this movement paid, if any. */
+  async findRecurringPayment(
+    id: string,
+    userId: string,
+  ): Promise<TransactionRecurringPayment | null> {
+    const occurrence = await this.prisma.recurringOccurrence.findFirst({
+      where: { transactionId: id, recurringExpense: { userId } },
+      select: {
+        id: true,
+        dueDate: true,
+        recurringExpense: { select: { id: true, name: true } },
+      },
+    });
+    if (!occurrence) return null;
+    return {
+      occurrenceId: occurrence.id,
+      recurringExpenseId: occurrence.recurringExpense.id,
+      name: occurrence.recurringExpense.name,
+      dueDate: occurrence.dueDate,
+    };
   }
 
   /**

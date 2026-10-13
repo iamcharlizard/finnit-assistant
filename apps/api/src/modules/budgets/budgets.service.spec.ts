@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
-import { BudgetsService } from './budgets.service';
+import { BudgetsService, budgetMonthRange } from './budgets.service';
 import { PrismaService } from '../../services/prisma.service';
 import {
   NotFoundError,
@@ -358,6 +358,39 @@ describe('BudgetsService', () => {
       expect(mockTx.bUDGET_CATEGORY.createMany).not.toHaveBeenCalled();
     });
 
+    it('should remove every category cap when an empty list is given', async () => {
+      // Arrange
+      prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
+      const mockTx = {
+        bUDGET_CATEGORY: {
+          deleteMany: jest.fn(),
+          createMany: jest.fn(),
+        },
+        budget: {
+          update: jest.fn().mockResolvedValue(mockBudget),
+          findUnique: jest
+            .fn()
+            .mockResolvedValue({ ...mockBudget, categories: [] }),
+        },
+      };
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
+
+      // Act
+      const result = await service.update(mockBudgetId, mockUserId, {
+        amountTotal: 1000,
+        categories: [],
+      });
+
+      // Assert
+      expect(mockTx.bUDGET_CATEGORY.deleteMany).toHaveBeenCalledWith({
+        where: { budgetId: mockBudgetId },
+      });
+      expect(mockTx.bUDGET_CATEGORY.createMany).toHaveBeenCalledWith({
+        data: [],
+      });
+      expect(result.categories).toEqual([]);
+    });
+
     it('should throw NotFoundError when budget not found', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(null);
@@ -457,15 +490,22 @@ describe('BudgetsService', () => {
         where: { id: mockBudgetId, userId: mockUserId },
         include: { categories: true },
       });
+      // The whole month in UTC, confirmed expenses only, and the category's
+      // subcategories count against its cap.
       expect(prismaService.transaction.aggregate).toHaveBeenCalledWith({
         where: {
           userId: mockUserId,
-          categoryId: mockCategoryId,
           type: 'expense',
+          isPending: false,
           txnDate: {
-            gte: new Date(2024, 0, 1),
-            lte: new Date(2024, 0, 31),
+            gte: new Date('2024-01-01T00:00:00.000Z'),
+            lt: new Date('2024-02-01T00:00:00.000Z'),
           },
+          OR: [
+            { categoryId: mockCategoryId },
+            { category: { parentId: mockCategoryId } },
+            { category: { parent: { parentId: mockCategoryId } } },
+          ],
         },
         _sum: { amount: true },
       });
@@ -534,6 +574,18 @@ describe('BudgetsService', () => {
       const result = await service.getBudgetSummary(mockUserId, 2024, 1);
 
       // Assert
+      expect(prismaService.transaction.aggregate).toHaveBeenNthCalledWith(1, {
+        where: {
+          userId: mockUserId,
+          type: 'expense',
+          isPending: false,
+          txnDate: {
+            gte: new Date('2024-01-01T00:00:00.000Z'),
+            lt: new Date('2024-02-01T00:00:00.000Z'),
+          },
+        },
+        _sum: { amount: true },
+      });
       expect(result).toEqual({
         budgetId: mockBudgetId,
         year: 2024,
@@ -863,6 +915,15 @@ describe('BudgetsService', () => {
           categories: [],
         }),
       ).rejects.toThrow('Unique constraint violation');
+    });
+  });
+});
+
+describe('budgetMonthRange', () => {
+  it('covers the whole month in UTC, December into the next year', () => {
+    expect(budgetMonthRange(2026, 12)).toEqual({
+      gte: new Date('2026-12-01T00:00:00.000Z'),
+      lt: new Date('2027-01-01T00:00:00.000Z'),
     });
   });
 });

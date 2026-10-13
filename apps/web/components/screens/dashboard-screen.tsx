@@ -9,18 +9,27 @@ import { Card } from '@finnit/ui/components/ui/card';
 import { SectionHeading } from '@finnit/ui/components/ui/section-heading';
 import { Separator } from '@finnit/ui/components/ui/separator';
 
+import { BudgetDashboardCard } from '@/components/budgets/budget-dashboard-card';
 import { BalanceSummary } from '@/components/dashboard/balance-summary';
 import { DashboardWelcome } from '@/components/dashboard/dashboard-welcome';
 import { EmptyState } from '@/components/finance/empty-state';
 import { PaymentRow } from '@/components/finance/payment-row';
 import { TransactionRow } from '@/components/finance/transaction-row';
 import { useSessionUser } from '@/components/session-provider';
+import type { BudgetCardView } from '@/lib/budgets/view';
 import { UPCOMING_DAYS, type DashboardView } from '@/lib/dashboard/view';
 
 const LINK_CLASS =
   'flex min-h-11 items-center text-sm font-medium text-income hover:underline';
 
-export function DashboardScreen({ view }: { view: DashboardView }) {
+export function DashboardScreen({
+  view,
+  budget = null,
+}: {
+  view: DashboardView;
+  /** The current month's budget, when there is one. */
+  budget?: BudgetCardView | null;
+}) {
   const user = useSessionUser();
   const t = useTranslations('dashboard');
   const tc = useTranslations('common');
@@ -57,6 +66,8 @@ export function DashboardScreen({ view }: { view: DashboardView }) {
             amount={view.month.expenses}
           />
         </div>
+
+        {budget ? <BudgetDashboardCard card={budget} /> : null}
       </div>
 
       <section className="min-w-0 lg:row-span-2">

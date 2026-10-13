@@ -47,6 +47,25 @@ export interface UploadedStatementFile {
   size: number;
 }
 
+/** Loads the recurring payment a line pays, for its name. */
+const LINE_INCLUDE = {
+  matchedOccurrence: {
+    select: {
+      id: true,
+      dueDate: true,
+      recurringExpense: { select: { id: true, name: true } },
+    },
+  },
+} satisfies Prisma.ImportedTransactionInclude;
+
+type LineRow = ImportedTransactionRow & {
+  matchedOccurrence?: {
+    id: string;
+    dueDate: Date;
+    recurringExpense: { id: string; name: string };
+  } | null;
+};
+
 const toDate = (value?: string) =>
   value ? new Date(`${value}T00:00:00.000Z`) : null;
 
@@ -276,7 +295,12 @@ export class StatementsService {
   async findById(id: string, userId: string): Promise<StatementImport> {
     const statement = await this.prisma.statementImport.findFirst({
       where: { id, userId },
-      include: { lines: { orderBy: [{ date: 'asc' }, { id: 'asc' }] } },
+      include: {
+        lines: {
+          orderBy: [{ date: 'asc' }, { id: 'asc' }],
+          include: LINE_INCLUDE,
+        },
+      },
     });
     if (!statement) throw new NotFoundError('Statement not found');
     return this.mapImport(statement, statement.lines);
@@ -381,6 +405,7 @@ export class StatementsService {
     const updated = await this.prisma.importedTransaction.update({
       where: { id: lineId },
       data,
+      include: LINE_INCLUDE,
     });
     return this.mapLine(updated);
   }
@@ -532,7 +557,7 @@ export class StatementsService {
 
   private mapImport(
     row: StatementImportRow,
-    lines?: ImportedTransactionRow[],
+    lines?: LineRow[],
   ): StatementImport {
     const money = (value: Prisma.Decimal | null) =>
       value === null ? undefined : Number(value);
@@ -562,7 +587,8 @@ export class StatementsService {
     };
   }
 
-  private mapLine(row: ImportedTransactionRow): StatementLine {
+  private mapLine(row: LineRow): StatementLine {
+    const occurrence = row.matchedOccurrence;
     return {
       id: row.id,
       date: row.date,
@@ -578,6 +604,14 @@ export class StatementsService {
       suggestedCategoryId: row.suggestedCategoryId ?? undefined,
       matchedTransactionId: row.matchedTransactionId ?? undefined,
       matchedOccurrenceId: row.matchedOccurrenceId ?? undefined,
+      matchedRecurringPayment: occurrence
+        ? {
+            occurrenceId: occurrence.id,
+            recurringExpenseId: occurrence.recurringExpense.id,
+            name: occurrence.recurringExpense.name,
+            dueDate: occurrence.dueDate,
+          }
+        : undefined,
     };
   }
 }

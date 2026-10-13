@@ -25,6 +25,10 @@ import {
 } from '../../common/types/models/transaction.model';
 import { TransferDirectionLoader } from './transfer-direction.loader';
 import { TransactionAliasInput } from '../categorization/dto/merchant-alias.dto';
+import {
+  TransactionRecurringPayment,
+  TransferCounterpart,
+} from './dto/transaction-links.dto';
 
 @Resolver(() => Transaction)
 @UseGuards(JwtAuthGuard)
@@ -45,6 +49,35 @@ export class TransactionsResolver {
   ): Promise<string | null> {
     if (transaction.type !== 'transfer') return null;
     return this.transferDirections.load(req, transaction.id);
+  }
+
+  @ResolveField('transferCounterpart', () => TransferCounterpart, {
+    nullable: true,
+    description:
+      'For transfers: the other side (one query per movement; for the detail, not lists)',
+  })
+  async transferCounterpart(
+    @Parent() transaction: Transaction,
+  ): Promise<TransferCounterpart | null> {
+    if (transaction.type !== 'transfer') return null;
+    return this.transactionsService.findTransferCounterpart(
+      transaction.id,
+      transaction.userId,
+    );
+  }
+
+  @ResolveField('recurringPayment', () => TransactionRecurringPayment, {
+    nullable: true,
+    description:
+      'The recurring payment this movement paid (one query per movement; for the detail, not lists)',
+  })
+  async recurringPayment(
+    @Parent() transaction: Transaction,
+  ): Promise<TransactionRecurringPayment | null> {
+    return this.transactionsService.findRecurringPayment(
+      transaction.id,
+      transaction.userId,
+    );
   }
 
   @Query(() => TransactionConnection)

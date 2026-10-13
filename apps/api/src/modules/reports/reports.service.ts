@@ -3,6 +3,7 @@ import { PrismaService } from '../../services/prisma.service';
 import {
   MonthlyReport,
   CategoryExpense,
+  CashFlowBaseline,
   CashFlowProjection,
   WhatIfInput,
   WhatIfResult,
@@ -90,11 +91,13 @@ export class ReportsService {
     };
   }
 
-  async getCashFlowProjection(
-    userId: string,
-    monthsAhead = 6,
-  ): Promise<CashFlowProjection[]> {
-    // Get current total balance
+  /**
+   * The current balance of the non-archived accounts and the average
+   * monthly income and expenses over the last 6 months, divided by the
+   * months the user actually has data for (a new user is not averaged
+   * against empty months).
+   */
+  async getCashFlowBaseline(userId: string): Promise<CashFlowBaseline> {
     const accounts = await this.prisma.account.findMany({
       where: { userId, archived: false },
     });
@@ -104,9 +107,6 @@ export class ReportsService {
       0,
     );
 
-    // Average monthly income and expenses over the last 6 months, divided by
-    // the months the user actually has data for (a new user is not averaged
-    // against empty months).
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     const window = {
@@ -131,8 +131,21 @@ export class ReportsService {
     ]);
 
     const months = monthsOfData(first._min.txnDate);
-    const monthlyIncome = Number(income._sum.amount || 0) / months;
-    const monthlyExpenses = Number(expenses._sum.amount || 0) / months;
+    return {
+      currentBalance,
+      monthlyIncome: Number(income._sum.amount || 0) / months,
+      monthlyExpenses: Number(expenses._sum.amount || 0) / months,
+      monthsOfData: months,
+      currency: accounts[0]?.currency || 'MXN',
+    };
+  }
+
+  async getCashFlowProjection(
+    userId: string,
+    monthsAhead = 6,
+  ): Promise<CashFlowProjection[]> {
+    const { currentBalance, monthlyIncome, monthlyExpenses } =
+      await this.getCashFlowBaseline(userId);
 
     const projections: CashFlowProjection[] = [];
     let projectedBalance = currentBalance;

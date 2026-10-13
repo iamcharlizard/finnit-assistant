@@ -17,11 +17,19 @@ describe('nav sections', () => {
       'transactions',
       'recurring',
       'accounts',
+      'planning',
       'analytics',
+      'statements',
       'settings',
     ]);
     assert.equal(keys(true).at(-1), 'admin');
-    assert.ok(!keys(true).includes('planning'));
+    const empty = { key: 'planning' as const, items: [] };
+    assert.deepEqual(
+      visibleSections(true, [...NAV_SECTIONS, empty]).filter(
+        (s) => s.items.length === 0,
+      ),
+      [],
+    );
   });
 
   it('keeps the bottom bar to screens that exist', () => {

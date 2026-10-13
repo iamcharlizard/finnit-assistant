@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { MoreVertical, PencilLine } from 'lucide-react';
+import { Eye, MoreVertical, PencilLine } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import {
@@ -14,12 +15,16 @@ import {
 /** The "⋮" menu of a categorize row. */
 export function RowMenu({
   name,
+  detailHref,
   onRename,
 }: {
   name: string;
+  /** The movement's detail page ("Ver detalle"). */
+  detailHref: string;
   onRename: () => void;
 }) {
   const t = useTranslations('categorize');
+  const tt = useTranslations('transaction');
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
@@ -33,6 +38,11 @@ export function RowMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild>
+          <Link href={detailHref}>
+            <Eye /> {tt('viewDetail')}
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={onRename}>
           <PencilLine /> {t('rename')}
         </DropdownMenuItem>

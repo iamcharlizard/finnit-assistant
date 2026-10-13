@@ -39,7 +39,12 @@
       "analytics": "Análisis",
       "settings": "Ajustes",
       "admin": "Administración",
-      "categorize": "Clasificar movimientos"
+      "categorize": "Clasificar movimientos",
+      "budgets": "Presupuestos",
+      "debts": "Deudas",
+      "goals": "Metas",
+      "simulator": "Simulador",
+      "statements": "Estados de cuenta"
     },
     "short": {
       "dashboard": "Inicio",
@@ -64,7 +69,12 @@
     "adminUsers": "Usuarios · Administración",
     "adminAi": "IA · Administración",
     "login": "Iniciar sesión",
-    "aliases": "Alias de movimientos"
+    "aliases": "Alias de movimientos",
+    "budgets": "Presupuestos",
+    "debts": "Deudas",
+    "goals": "Metas de ahorro",
+    "simulator": "Simulador ¿Y si…?",
+    "notifications": "Notificaciones"
   },
   "newEntry": {
     "title": "Nuevo movimiento",
@@ -763,6 +773,287 @@
       "evidence": "{count, plural, one {Visto # vez} other {Visto # veces}}"
     }
   },
+  "budgets": {
+    "title": "Presupuestos",
+    "subtitle": "Ponle un límite a tu mes y a cada categoría, y ve cuánto llevas gastado.",
+    "edit": "Editar",
+    "deletedCategory": "Categoría eliminada",
+    "delete": {
+      "action": "Eliminar",
+      "title": "¿Eliminar el presupuesto de {month}?",
+      "description": "Se borran el límite y los topes por categoría de este mes. Tus movimientos no cambian.",
+      "confirm": "Eliminar presupuesto"
+    },
+    "toasts": {
+      "created": "Presupuesto de {month} creado",
+      "updated": "Presupuesto de {month} actualizado",
+      "copied": "Copiamos tu presupuesto a {month}",
+      "deleted": "Presupuesto de {month} eliminado"
+    },
+    "overview": {
+      "title": "Gastado este mes",
+      "of": "de {amount}",
+      "barLabel": "Llevas {percent}% de tu presupuesto",
+      "over": "Te pasaste por {amount}",
+      "left": "Te quedan {amount}",
+      "used": "{percent}% usado",
+      "explicitTotal": "Incluye todos tus gastos del mes. Tus topes por categoría suman {amount}.",
+      "capsTotal": "Incluye todos tus gastos del mes. El límite es la suma de tus topes por categoría."
+    },
+    "caps": {
+      "title": "Topes por categoría",
+      "empty": "Este presupuesto no tiene topes por categoría. Edítalo para agregar alguno.",
+      "spentOf": "{spent} de {cap}",
+      "barLabel": "{category}: {percent}% del tope",
+      "over": "Te pasaste por {amount}",
+      "reached": "Llegaste al tope",
+      "left": "Quedan {amount}"
+    },
+    "alerts": {
+      "title": "Alertas",
+      "over": "Te pasaste del tope de {category} por {amount}.",
+      "reached": "Llegaste al tope de {category}.",
+      "warning": "Llevas {percent}% del tope de {category}; te quedan {amount}."
+    },
+    "outside": {
+      "title": "Gastos que no cuentan en ningún tope",
+      "uncategorized": "{amount} sin categoría.",
+      "categorize": "Categorizar",
+      "uncapped": "{amount} en categorías sin tope."
+    },
+    "empty": {
+      "title": "Aún no tienes presupuesto para {month}",
+      "description": "Define cuánto quieres gastar en el mes y, si quieres, un tope para cada categoría. Te avisamos al llegar al 80% y al 100%.",
+      "create": "Crear presupuesto",
+      "copy": "Copiar de {month}"
+    },
+    "suggestions": {
+      "title": "Sugerencia con base en tus gastos",
+      "description": "Tu promedio por categoría {count, plural, one {del último mes} other {de los últimos # meses}}, redondeado hacia arriba.",
+      "average": "Promedio: {amount}",
+      "total": "Total sugerido: {amount}",
+      "use": "Usar sugerencia"
+    },
+    "form": {
+      "createTitle": "Nuevo presupuesto de {month}",
+      "editTitle": "Presupuesto de {month}",
+      "description": "Un límite para el mes, topes por categoría, o ambos.",
+      "total": "Límite del mes (opcional)",
+      "totalPlaceholder": "Ej. 20000",
+      "totalHint": "Si lo dejas vacío, tu límite es la suma de los topes.",
+      "caps": "Topes por categoría",
+      "noCaps": "Sin topes por categoría.",
+      "addCap": "Agregar categoría",
+      "capsSum": "Suma de topes: {amount}",
+      "capsHint": "El tope de una categoría incluye sus subcategorías.",
+      "totalBelowCaps": "Tu límite del mes es menor que la suma de tus topes ({amount}). Puedes guardarlo así, pero revisa que sea lo que quieres.",
+      "fixErrors": "Revisa los campos marcados.",
+      "saving": "Guardando…",
+      "save": "Guardar cambios",
+      "create": "Crear presupuesto",
+      "category": "Categoría",
+      "categoryPlaceholder": "Elige una categoría",
+      "categorySearch": "Buscar categoría…",
+      "noResults": "Sin resultados.",
+      "capAmount": "Tope para {category}",
+      "capPlaceholder": "Tope",
+      "remove": "Quitar {category}",
+      "newCap": "nueva categoría"
+    },
+    "validation": {
+      "empty": "Agrega un límite del mes o al menos un tope por categoría.",
+      "totalInvalid": "Escribe un monto mayor a 0.",
+      "totalTooLarge": "El monto es demasiado grande.",
+      "categoryRequired": "Elige una categoría.",
+      "categoryRepeated": "Esta categoría ya tiene tope.",
+      "amountRequired": "Escribe el tope.",
+      "amountInvalid": "Escribe un monto mayor a 0.",
+      "amountTooLarge": "El monto es demasiado grande."
+    },
+    "errors": {
+      "exists": "Ya hay un presupuesto para ese mes. Recarga la página.",
+      "templateGone": "El presupuesto que querías copiar ya no existe.",
+      "notFound": "Este presupuesto ya no existe. Recarga la página.",
+      "repeatedCategory": "Hay una categoría repetida en los topes.",
+      "category": "Una de las categorías ya no existe."
+    },
+    "card": {
+      "title": "Presupuesto de {month}",
+      "link": "Ver presupuesto",
+      "of": "de {amount}",
+      "barLabel": "Llevas {percent}% de tu presupuesto",
+      "over": "Te pasaste por {amount}",
+      "left": "Llevas {percent}% · Te quedan {amount}"
+    }
+  },
+  "debts": {
+    "title": "Deudas",
+    "subtitle": "Lo que debes, tus pagos y el plan para liquidarlo.",
+    "new": "Nueva deuda",
+    "kinds": {
+      "loan": "Préstamo",
+      "card": "Tarjeta",
+      "other": "Otra"
+    },
+    "empty": {
+      "title": "No tienes deudas registradas",
+      "description": "Registra tus préstamos y tarjetas para ver cuánto debes, anotar tus pagos y armar un plan para salir de deudas."
+    },
+    "summary": {
+      "owed": "Total que debes",
+      "owedDetail": "{count, plural, =0 {Sin deudas activas} one {# deuda activa} other {# deudas activas}}{paidOff, plural, =0 {} one { · # liquidada} other { · # liquidadas}}",
+      "minimums": "Pagos mínimos al mes",
+      "minimumsDetail": "Suma de los mínimos de tus deudas activas",
+      "rate": "Tasa promedio",
+      "rateUnknown": "Agrega la tasa de tus deudas para calcularla",
+      "rateMissing": "Ponderada por saldo; {count, plural, one {# deuda no tiene tasa} other {# deudas no tienen tasa}}",
+      "rateDetail": "Anual, ponderada por lo que debes en cada una"
+    },
+    "list": {
+      "title": "Tus deudas"
+    },
+    "card": {
+      "rate": "{rate} anual",
+      "noRate": "Sin tasa",
+      "minPayment": "Mínimo {amount}",
+      "account": "Cuenta: {account}",
+      "paidOff": "Liquidada",
+      "overdue": "Vencida",
+      "more": "Más acciones para {name}",
+      "pay": "Registrar pago",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "remaining": "Te falta pagar",
+      "of": "de {amount}",
+      "paidLabel": "Pagado: {percent}%",
+      "paid": "Has pagado {amount} ({percent}%)",
+      "due": "Vence el {date}"
+    },
+    "delete": {
+      "title": "¿Eliminar {name}?",
+      "description": "Se borra la deuda. Si ya tiene pagos registrados no se puede eliminar.",
+      "confirm": "Eliminar deuda"
+    },
+    "toasts": {
+      "created": "{name} registrada",
+      "updated": "{name} actualizada",
+      "deleted": "{name} eliminada",
+      "paid": "Pago a {name} registrado",
+      "noChanges": "No hubo cambios"
+    },
+    "form": {
+      "createTitle": "Nueva deuda",
+      "editTitle": "Editar deuda",
+      "createDescription": "Un préstamo, una tarjeta o cualquier dinero que debas.",
+      "editDescription": "Cambia los datos de {name}.",
+      "name": "Nombre",
+      "namePlaceholder": "Ej. Crédito automotriz",
+      "kind": "Tipo",
+      "principal": "Monto de la deuda",
+      "principalHint": "Lo que pediste prestado o lo que debías al registrarla. Tus pagos se restan de aquí.",
+      "rate": "Tasa de interés anual (%)",
+      "ratePlaceholder": "Ej. 36",
+      "minPayment": "Pago mínimo mensual",
+      "startDate": "Fecha de inicio",
+      "dueDate": "Fecha de vencimiento",
+      "datePlaceholder": "Elige una fecha",
+      "clearDate": "Quitar fecha",
+      "account": "Cuenta ligada (opcional)",
+      "accountPlaceholder": "Sin cuenta",
+      "accountSearch": "Buscar cuenta…",
+      "noResults": "Sin resultados.",
+      "accountHint": "La cuenta de donde sale o a la que pertenece esta deuda.",
+      "accountCardHint": "Es una tarjeta de crédito: tus pagos se registrarán como transferencias a esta tarjeta.",
+      "fixErrors": "Revisa los campos marcados.",
+      "saving": "Guardando…",
+      "save": "Guardar cambios",
+      "create": "Registrar deuda"
+    },
+    "validation": {
+      "nameRequired": "Escribe un nombre.",
+      "nameTooLong": "El nombre es demasiado largo.",
+      "principalRequired": "Escribe el monto.",
+      "principalInvalid": "Escribe un monto mayor a 0.",
+      "principalTooLarge": "El monto es demasiado grande.",
+      "principalBelowPaid": "No puede ser menor a lo que ya pagaste.",
+      "rateInvalid": "Escribe una tasa entre 0 y 100.",
+      "minPaymentInvalid": "Escribe un monto mayor a 0.",
+      "dueBeforeStart": "Debe ser después de la fecha de inicio."
+    },
+    "payment": {
+      "title": "Registrar pago",
+      "description": "{name}: te falta pagar {amount}.",
+      "transferNote": "Se registrará como una transferencia de la cuenta que elijas a tu tarjeta {card}.",
+      "expenseNote": "Se registrará como un gasto de la cuenta que elijas.",
+      "amount": "Monto",
+      "date": "Fecha del pago",
+      "datePlaceholder": "Elige una fecha",
+      "account": "¿De qué cuenta salió?",
+      "accountPlaceholder": "Elige una cuenta",
+      "accountSearch": "Buscar cuenta…",
+      "noResults": "Sin resultados.",
+      "noSources": "No tienes cuentas en pesos abiertas para registrar el pago.",
+      "noSourcesTransfer": "Necesitas una cuenta de débito, efectivo o ahorro en la moneda de la tarjeta para registrar el pago.",
+      "category": "Categoría (opcional)",
+      "categoryPlaceholder": "Sin categoría",
+      "categorySearch": "Buscar categoría…",
+      "saving": "Registrando…",
+      "submit": "Registrar pago",
+      "movementDescription": "Pago de {name}"
+    },
+    "paymentValidation": {
+      "amountRequired": "Escribe el monto.",
+      "amountInvalid": "Escribe un monto mayor a 0.",
+      "amountTooMuch": "Es más de lo que te falta pagar.",
+      "dateRequired": "Elige la fecha.",
+      "dateInFuture": "La fecha no puede ser futura.",
+      "accountRequired": "Elige la cuenta."
+    },
+    "plan": {
+      "title": "Plan para salir de deudas",
+      "subtitle": "Paga el mínimo de todas y pon el dinero extra en una a la vez. Cuando liquidas una, su pago pasa a la siguiente.",
+      "extra": "Pago extra al mes",
+      "extraHint": "Lo que puedes pagar cada mes además de los mínimos.",
+      "extraInvalid": "Escribe un monto válido.",
+      "error": "No pudimos calcular el plan. Intenta de nuevo.",
+      "assumptions": "Estimación con tus saldos y tasas actuales, sin nuevos cargos. Las deudas sin tasa se calculan sin intereses.",
+      "never": "Nunca",
+      "months": "{count, plural, =0 {Ya liquidada} one {# mes} other {# meses}}",
+      "recommended": "Te conviene",
+      "debtFree": "Sin deudas en",
+      "interest": "Intereses totales",
+      "order": "Orden de pago",
+      "stepDetail": "{months} · intereses {interest}",
+      "strategies": {
+        "avalanche": {
+          "name": "Avalancha",
+          "description": "Primero la de mayor tasa: pagas menos intereses."
+        },
+        "snowball": {
+          "name": "Bola de nieve",
+          "description": "Primero la de menor saldo: liquidas deudas más pronto."
+        }
+      },
+      "verdict": {
+        "never": "Con estos pagos alguna deuda no se termina de pagar: los intereses son mayores que lo que le abonas. Sube tu pago extra o revisa los mínimos.",
+        "saves": "{strategy} te ahorra {amount} en intereses.",
+        "faster": "{strategy} te deja sin deudas {count, plural, one {# mes} other {# meses}} antes.",
+        "same": "Con tus deudas, las dos estrategias dan el mismo resultado."
+      }
+    },
+    "errors": {
+      "hasPayments": "No se puede eliminar una deuda con pagos registrados.",
+      "duplicateName": "Ya tienes una deuda con ese nombre.",
+      "overpayment": "El pago es mayor que lo que te falta pagar.",
+      "insufficientBalance": "La cuenta no tiene saldo suficiente para este pago.",
+      "currency": "La cuenta y la tarjeta están en monedas distintas.",
+      "account": "La cuenta ligada ya no existe.",
+      "principalBelowPaid": "El monto no puede ser menor a lo que ya pagaste.",
+      "notFound": "Esta deuda ya no existe. Recarga la página.",
+      "paymentUndone": "No pudimos registrar el pago: {reason} No se guardó ningún movimiento.",
+      "paymentNotLinked": "Guardamos el movimiento, pero no pudimos ligarlo a la deuda: {reason}"
+    }
+  },
   "analytics": {
     "emptyTitle": "Aún no hay datos para analizar",
     "emptyDescription": "Conecta tu banco: con tus movimientos verás tus gastos por categoría, la tendencia de tus ingresos y gastos y una proyección de tu saldo.",
@@ -1334,6 +1625,541 @@
       "duplicate": "Ya tienes un alias con ese texto.",
       "notFound": "Ese alias ya no existe.",
       "category": "Esa categoría ya no existe."
+    }
+  },
+  "transaction": {
+    "back": "Volver",
+    "viewDetail": "Ver detalle",
+    "types": {
+      "income": "Ingreso",
+      "expense": "Gasto",
+      "transfer": "Transferencia",
+      "adjustment": "Ajuste o pago"
+    },
+    "detailsTitle": "Detalles",
+    "fields": {
+      "date": "Fecha",
+      "account": "Cuenta",
+      "category": "Categoría",
+      "source": "Origen",
+      "status": "Estado",
+      "merchant": "Comercio",
+      "description": "Descripción",
+      "original": "Texto original",
+      "transfer": "Transferencia",
+      "recurring": "Pago recurrente"
+    },
+    "sources": {
+      "manual": "Registrado a mano",
+      "bank": "Banco",
+      "statement": "Estado de cuenta",
+      "receipt": "Recibo",
+      "sms": "SMS"
+    },
+    "private": "Privado",
+    "privateHint": "Este movimiento es privado: en listas y búsquedas solo se ve su nombre.",
+    "showOriginal": "Ver original",
+    "hideOriginal": "Ocultar original",
+    "counterpartTo": "Hacia {account}",
+    "counterpartFrom": "Desde {account}",
+    "recurringPaid": "{name} · vencía el {date}",
+    "edit": "Editar",
+    "rename": "Renombrar",
+    "delete": "Eliminar",
+    "editTitle": "Editar movimiento",
+    "editDescription": "Cambia los datos de este movimiento. El saldo de la cuenta se ajusta solo.",
+    "editImported": "Viene del banco o de un estado de cuenta: solo puedes cambiar su categoría. Para cambiar cómo se ve su nombre usa «Renombrar».",
+    "editTransfer": "En una transferencia el monto y la fecha no cambian; si están mal, elimínala desde la otra cuenta y vuelve a crearla.",
+    "form": {
+      "amount": "Monto",
+      "date": "Fecha",
+      "datePlaceholder": "Elige una fecha",
+      "category": "Categoría",
+      "categoryPlaceholder": "Sin categoría",
+      "categorySearch": "Buscar categoría",
+      "noResults": "Sin resultados",
+      "merchant": "Comercio",
+      "merchantPlaceholder": "Ej. Oxxo",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Notas sobre el movimiento",
+      "save": "Guardar",
+      "saving": "Guardando…"
+    },
+    "validation": {
+      "amountRequired": "Escribe el monto.",
+      "amountInvalid": "Escribe un monto mayor a cero.",
+      "amountTooLarge": "El monto es demasiado grande.",
+      "dateRequired": "Elige la fecha.",
+      "dateInFuture": "La fecha no puede ser futura."
+    },
+    "toasts": {
+      "saved": "Movimiento actualizado",
+      "noChanges": "No hubo cambios",
+      "renamed": "Nombre actualizado",
+      "nameRemoved": "Se quitó el nombre",
+      "deleted": "Movimiento eliminado",
+      "attachmentUploaded": "Archivo adjuntado",
+      "attachmentRemoved": "Archivo eliminado"
+    },
+    "deleteTitle": "¿Eliminar este movimiento?",
+    "deleteDescription": "Se quitará de tus movimientos y el saldo de {account} se ajustará. No se puede deshacer.",
+    "deleteBlocked": {
+      "imported": "Los movimientos del banco o de estados de cuenta no se pueden eliminar.",
+      "transfer": "Las transferencias no se pueden eliminar desde aquí."
+    },
+    "attachments": {
+      "title": "Archivos adjuntos",
+      "empty": "Sin archivos adjuntos.",
+      "unnamed": "Archivo",
+      "download": "Descargar {name}",
+      "remove": "Eliminar {name}",
+      "removeTitle": "¿Eliminar el archivo?",
+      "removeDescription": "Se borrará {name}. No se puede deshacer.",
+      "dropTitle": "Arrastra un archivo o toca para elegirlo",
+      "dropHint": "PDF o imagen (JPG, PNG, WEBP o HEIC), hasta 10 MB.",
+      "dragActive": "Suelta el archivo aquí",
+      "tooLarge": "{name} pesa más de {max}.",
+      "wrongType": "{name} no es un PDF ni una imagen.",
+      "removeFile": "Quitar {name}",
+      "upload": "Adjuntar",
+      "uploading": "Subiendo… {percent}%"
+    },
+    "errors": {
+      "transfer": "Las transferencias no se pueden eliminar ni cambiar de monto desde aquí.",
+      "debtPayment": "Este movimiento es el pago de una deuda; quítalo desde Deudas.",
+      "goal": "Este movimiento tiene aportaciones a una meta; quítalas primero.",
+      "imported": "Los movimientos del banco solo permiten cambiar la categoría.",
+      "category": "Ya no encontramos esa categoría. Elige otra.",
+      "attachmentNotFound": "Ese archivo ya no existe.",
+      "notFound": "Este movimiento ya no existe."
+    }
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "subtitle": "Recordatorios de tus pagos y avisos sobre tu dinero.",
+    "recent": "Recientes",
+    "markAllRead": "Marcar todas como leídas",
+    "seeAll": "Ver todas",
+    "empty": "No tienes notificaciones.",
+    "emptyUnread": "No tienes notificaciones sin leer.",
+    "emptyDescription": "Aquí verás los recordatorios de tus pagos recurrentes.",
+    "unread": "Sin leer",
+    "loadFailed": "No pudimos cargar tus notificaciones.",
+    "filterLabel": "Filtrar notificaciones",
+    "filters": {
+      "all": "Todas",
+      "unread": "No leídas"
+    },
+    "count": "{shown} de {total}",
+    "allRead": "Todas tus notificaciones están leídas",
+    "types": {
+      "budget": "Presupuesto",
+      "debt_due": "Deuda",
+      "recurring": "Pago recurrente",
+      "summary": "Resumen"
+    }
+  },
+  "statements": {
+    "title": "Estados de cuenta",
+    "subtitle": "Sube el PDF de tu tarjeta para revisar y registrar sus movimientos.",
+    "uploadFromAccount": "Subir estado de cuenta",
+    "upload": {
+      "title": "Subir estado de cuenta",
+      "card": "Tarjeta de crédito",
+      "cardPlaceholder": "Elige la tarjeta",
+      "noCards": "Agrega una tarjeta de crédito para subir su estado de cuenta.",
+      "addCard": "Ir a Cuentas",
+      "dropTitle": "Arrastra el PDF o toca para elegirlo",
+      "dropHint": "El PDF del estado de cuenta, hasta 10 MB.",
+      "dragActive": "Suelta el PDF aquí",
+      "tooLarge": "{name} pesa más de {max}.",
+      "wrongType": "{name} no es un PDF.",
+      "removeFile": "Quitar {name}",
+      "submit": "Subir",
+      "uploading": "Subiendo…",
+      "cardRequired": "Elige una tarjeta.",
+      "fileRequired": "Elige el PDF."
+    },
+    "uploadErrors": {
+      "network": "No pudimos subir el archivo. Revisa tu conexión.",
+      "tooLarge": "El archivo pesa más de 10 MB.",
+      "notPdf": "El archivo no es un PDF.",
+      "notCredit": "Solo se pueden subir estados de cuenta de tarjetas de crédito.",
+      "accountNotFound": "Ya no encontramos esa tarjeta.",
+      "failed": "No pudimos subir el estado de cuenta. Intenta de nuevo."
+    },
+    "listTitle": "Subidos",
+    "emptyTitle": "Aún no subes estados de cuenta",
+    "emptyDescription": "Sube el PDF de tu tarjeta y Finnit lo compara con tus movimientos.",
+    "count": "{shown} de {total}",
+    "unknownAccount": "Cuenta eliminada",
+    "periodPending": "Periodo por leer",
+    "uploadedOn": "Subido el {date}",
+    "balance": "Saldo al corte: {amount}",
+    "differenceShort": "Diferencia: {amount}",
+    "status": {
+      "uploaded": "Subido",
+      "processing": "Procesando",
+      "needs_review": "Por revisar",
+      "confirmed": "Confirmado",
+      "failed": "Falló"
+    },
+    "parser": "Leído con {parser}",
+    "parserAi": "IA: {model}",
+    "parserAiAny": "IA",
+    "facts": {
+      "previousBalance": "Saldo anterior",
+      "totalCharges": "Cargos",
+      "totalCredits": "Abonos",
+      "statementBalance": "Saldo al corte",
+      "minimumPayment": "Pago mínimo",
+      "noInterestPayment": "Pago para no generar intereses",
+      "statementDate": "Fecha de corte",
+      "paymentDueDate": "Fecha límite de pago"
+    },
+    "check": {
+      "title": "Cuadre",
+      "computed": "Saldo anterior + movimientos",
+      "statement": "Saldo al corte del estado",
+      "difference": "Diferencia",
+      "ok": "Los movimientos cuadran con el saldo al corte.",
+      "mismatch": "Los movimientos no cuadran con el saldo al corte: faltan o se leyeron mal algunos. Revísalos antes de confirmar."
+    },
+    "processing": "Estamos leyendo tu estado de cuenta…",
+    "processingHint": "Tarda unos segundos. Puedes salir y volver después.",
+    "timeout": "Sigue procesando. Recarga la página en un momento.",
+    "reload": "Recargar",
+    "failedTitle": "No pudimos leer este estado de cuenta",
+    "reprocess": "Reprocesar",
+    "reprocessWith": "Leer con",
+    "parsers": {
+      "auto": "Automático",
+      "banamex_v1": "Banamex",
+      "ai": "IA"
+    },
+    "download": "Descargar PDF",
+    "back": "Estados de cuenta",
+    "kinds": {
+      "charge": "Cargo",
+      "payment": "Pago",
+      "refund": "Devolución",
+      "fee": "Comisión",
+      "interest": "Intereses",
+      "installment": "Mensualidad",
+      "deposit": "Depósito"
+    },
+    "lineStatus": {
+      "pending": "Nuevo",
+      "matched": "Ya registrado",
+      "created": "Creado",
+      "ignored": "Ignorado"
+    },
+    "lines": {
+      "title": "Movimientos ({count})",
+      "empty": "No hay movimientos extraídos.",
+      "summary": "{pending} nuevos · {matched} ya registrados · {ignored} ignorados",
+      "summaryConfirmed": "{created} creados · {matched} ya registrados · {ignored} ignorados",
+      "ignore": "Ignorar",
+      "restore": "Restaurar",
+      "link": "Vincular con un movimiento",
+      "unlink": "Desvincular",
+      "viewTransaction": "Ver movimiento",
+      "installments": "Mensualidad {value}",
+      "recurring": "Pago recurrente: {name}",
+      "category": "Categoría de {name}",
+      "categoryPlaceholder": "Sin categoría",
+      "categorySearch": "Buscar categoría",
+      "noResults": "Sin resultados",
+      "menu": "Acciones para {name}"
+    },
+    "linkDialog": {
+      "title": "Vincular con un movimiento",
+      "description": "Movimientos de esta tarjeta por {amount}, hasta 3 días antes o después del {date}.",
+      "empty": "No encontramos movimientos parecidos. Si no está registrado, déjalo como nuevo.",
+      "searching": "Buscando…",
+      "choose": "Vincular"
+    },
+    "confirm": "Confirmar",
+    "confirmTitle": "¿Confirmar el estado de cuenta?",
+    "confirmDescription": "Se {count, plural, one {creará # movimiento nuevo} other {crearán # movimientos nuevos}} en {account} y los pagos recurrentes vinculados quedarán pagados.",
+    "confirmed": "Listo: {created, plural, one {# movimiento creado} other {# movimientos creados}} y {matched} ya registrados.",
+    "delete": "Eliminar",
+    "deleteTitle": "¿Eliminar este estado de cuenta?",
+    "deleteDescription": "Se borrarán el PDF y los movimientos extraídos. Tus movimientos registrados no cambian.",
+    "deleted": "Estado de cuenta eliminado",
+    "errors": {
+      "alreadyLinked": "Ese movimiento ya está vinculado a otra línea.",
+      "notOnCard": "Ese movimiento no es de esta tarjeta.",
+      "notInReview": "Este estado de cuenta ya no está en revisión. Recarga la página.",
+      "confirmedDelete": "Un estado de cuenta confirmado no se puede eliminar: sus movimientos ya existen.",
+      "confirmedReprocess": "Un estado de cuenta confirmado no se puede reprocesar.",
+      "processing": "Espera a que termine de procesarse.",
+      "recurringPaid": "Ese pago recurrente ya está pagado.",
+      "category": "Ya no encontramos esa categoría. Elige otra.",
+      "notFound": "Este estado de cuenta ya no existe."
+    },
+    "factsTitle": "Resumen del estado"
+  },
+  "goals": {
+    "title": "Metas de ahorro",
+    "subtitle": "Ahorra para lo que quieres y ve cuándo llegas.",
+    "new": "Nueva meta",
+    "empty": {
+      "title": "Aún no tienes metas",
+      "description": "Crea una meta (un viaje, un fondo de emergencia, el enganche de un auto) y registra tus aportaciones para ver cuándo la alcanzas.",
+      "cta": "Crear mi primera meta"
+    },
+    "status": {
+      "reached": "Alcanzada",
+      "onTrack": "En camino",
+      "behind": "Atrasada",
+      "overdue": "Vencida",
+      "noDueDate": "Sin fecha"
+    },
+    "card": {
+      "open": "Ver detalle de {name}",
+      "progressLabel": "{percent} % ahorrado",
+      "of": "de {target}",
+      "remaining": "Faltan {amount}",
+      "dueTerm": "Fecha límite",
+      "projectionTerm": "Proyección",
+      "due": "Vence el {date}",
+      "noDueDate": "Sin fecha límite",
+      "dueToday": "Vence hoy",
+      "daysLeft": "{count, plural, one {Falta # día} other {Faltan # días}}",
+      "daysOverdue": "{count, plural, one {Venció hace # día} other {Venció hace # días}}",
+      "projection": "Llegarías en {month}",
+      "noProjection": "Sin aportaciones recientes para proyectar",
+      "reached": "¡Meta alcanzada!"
+    },
+    "summary": {
+      "saved": "Ahorrado",
+      "savedDetail": "de {target} en {count, plural, one {# meta} other {# metas}}",
+      "average": "Avance promedio",
+      "averageDetail": "Promedio del avance de tus metas",
+      "recommended": "Aportación sugerida",
+      "recommendedDetail": "Al mes, para completar todo en 12 meses",
+      "percent": "{value} %"
+    },
+    "attention": {
+      "title": "Requieren atención",
+      "dueSoon": "{count, plural, one {Vence en menos de 30 días: {names}} other {Vencen en menos de 30 días: {names}}}",
+      "atRisk": "{count, plural, one {En riesgo (menos de 50 % y 60 días o menos): {names}} other {En riesgo (menos de 50 % y 60 días o menos): {names}}}"
+    },
+    "detail": {
+      "saved": "Ahorrado",
+      "target": "Meta",
+      "remaining": "Falta",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "contributions": "{count, plural, one {Aportaciones (#)} other {Aportaciones (#)}}",
+      "reachedNote": "¡Ya alcanzaste esta meta! Para seguir aportando, sube el monto de la meta."
+    },
+    "projection": {
+      "title": "¿Cuándo llego?",
+      "monthly": "Aportación mensual",
+      "monthlyInvalid": "Escribe un monto válido.",
+      "monthlyHint": "Promedio de tus últimos 3 meses: {amount}.",
+      "useAverage": "Usar el promedio",
+      "useNeeded": "Usar lo necesario para llegar a tiempo",
+      "result": "Llegarías en {month} ({count, plural, one {# mes} other {# meses}})",
+      "none": "Sin aportar cada mes no llegarías a la meta.",
+      "reached": "Ya alcanzaste esta meta.",
+      "onTrack": "Antes de tu fecha límite ({date}).",
+      "behind": "Después de tu fecha límite ({date}).",
+      "overdue": "La fecha límite ({date}) ya pasó."
+    },
+    "recommendations": {
+      "title": "Recomendaciones",
+      "needed": "Para llegar a tiempo, aparta {amount} al mes.",
+      "twelveMonths": "Para completarla en 12 meses, aparta {amount} al mes.",
+      "dueSoon": "Vence en menos de 30 días.",
+      "atRisk": "Está en riesgo: lleva menos del 50 % y le quedan 60 días o menos.",
+      "reached": "¡Lo lograste! Puedes crear una nueva meta para seguir ahorrando.",
+      "noDueDate": "Ponle una fecha límite para saber si vas a tiempo."
+    },
+    "contributions": {
+      "add": "Agregar aportación",
+      "adding": "Agregando…",
+      "amount": "Monto",
+      "date": "Fecha",
+      "empty": "Todavía no hay aportaciones.",
+      "linked": "Ligada a un movimiento",
+      "remove": "Quitar la aportación de {amount} del {date}",
+      "removeTitle": "¿Quitar esta aportación?",
+      "removeDescription": "Se restarán {amount} (del {date}) de lo ahorrado en la meta.",
+      "removeConfirm": "Quitar aportación"
+    },
+    "form": {
+      "createTitle": "Nueva meta",
+      "createDescription": "¿Para qué estás ahorrando?",
+      "editTitle": "Editar meta",
+      "editDescription": "Cambia los datos de {name}.",
+      "name": "Nombre",
+      "namePlaceholder": "Ej. Viaje a Oaxaca",
+      "target": "Monto meta",
+      "currency": "Moneda",
+      "currencyFixed": "La moneda no se puede cambiar.",
+      "dueDate": "Fecha límite (opcional)",
+      "dueDatePlaceholder": "Sin fecha límite",
+      "dueDateHint": "Sin fecha, te decimos cuándo llegarías.",
+      "clearDueDate": "Quitar fecha límite",
+      "initialAmount": "¿Ya tienes algo ahorrado? (opcional)",
+      "initialAmountHint": "Lo registramos como tu primera aportación, con fecha de hoy.",
+      "create": "Crear meta",
+      "save": "Guardar cambios",
+      "saving": "Guardando…"
+    },
+    "validation": {
+      "nameRequired": "Escribe un nombre.",
+      "nameTooLong": "Máximo 100 caracteres.",
+      "amountRequired": "Escribe el monto.",
+      "amountInvalid": "Escribe un monto mayor a cero.",
+      "amountTooLarge": "El monto es demasiado grande.",
+      "dueDateInPast": "Elige hoy o una fecha futura.",
+      "initialInvalid": "Escribe un monto mayor a cero o déjalo vacío.",
+      "initialTooLarge": "El monto es demasiado grande.",
+      "dateRequired": "Elige la fecha.",
+      "dateInFuture": "La fecha no puede ser futura."
+    },
+    "delete": {
+      "title": "¿Eliminar {name}?",
+      "description": "La meta se eliminará. Esta acción no se puede deshacer.",
+      "withContributions": "Esta meta tiene aportaciones por {amount}. Se quitarán todas y después se eliminará la meta. No se puede deshacer.",
+      "confirm": "Eliminar meta",
+      "confirmAll": "Eliminar meta y aportaciones"
+    },
+    "toasts": {
+      "created": "Creamos tu meta {name}",
+      "updated": "Guardamos los cambios de {name}",
+      "noChanges": "No hubo cambios",
+      "deleted": "Eliminaste {name}",
+      "initialFailed": "La meta se creó, pero no pudimos guardar lo que ya tenías ahorrado: {error}",
+      "contributionAdded": "Agregamos tu aportación",
+      "contributionRemoved": "Quitamos la aportación de {amount}"
+    },
+    "errors": {
+      "duplicateName": "Ya tienes una meta con ese nombre.",
+      "alreadyReached": "Esta meta ya se alcanzó; sube el monto meta para seguir aportando.",
+      "hasContributions": "La meta tiene aportaciones; quítalas antes de eliminarla.",
+      "target": "El monto meta debe ser mayor a cero.",
+      "amount": "La aportación debe ser mayor a cero.",
+      "name": "Escribe un nombre.",
+      "contributionNotFound": "Esa aportación ya no existe.",
+      "notFound": "No encontramos esa meta."
+    }
+  },
+  "simulator": {
+    "title": "Simulador ¿Y si…?",
+    "subtitle": "Prueba cambios en tus ingresos y gastos y mira cómo quedaría tu saldo. No se guarda nada.",
+    "reset": "Restablecer",
+    "disclaimer": "Es una estimación: parte del saldo de tus cuentas y del promedio de tus movimientos; no incluye intereses, inflación ni cambios en tus deudas.",
+    "baseline": {
+      "title": "Hoy",
+      "source": "{count, plural, one {Promedio de tu último mes} other {Promedio de tus últimos # meses}}",
+      "balance": "Saldo actual",
+      "income": "Ingresos al mes",
+      "expenses": "Gastos al mes",
+      "net": "Te queda al mes",
+      "noData": "Aún no tenemos movimientos tuyos: el punto de partida es $0. Registra movimientos o conecta tu banco para un cálculo real; mientras, puedes probar escenarios."
+    },
+    "months": {
+      "title": "Meses a proyectar",
+      "label": "Meses a proyectar",
+      "value": "{count, plural, one {# mes} other {# meses}}",
+      "presets": "Atajos de meses"
+    },
+    "income": {
+      "title": "Ingresos",
+      "description": "¿Y si ganaras más o menos cada mes?",
+      "mode": "Cómo cambiar los ingresos",
+      "percentMode": "Cambio en %",
+      "amountMode": "Nuevo monto",
+      "percent": "Cambio en tus ingresos (%)",
+      "amount": "Ingreso mensual",
+      "percentHint": "Ej. 10 para un aumento, -20 si bajan.",
+      "result": "Ingreso mensual en el escenario: {amount}."
+    },
+    "monthly": {
+      "title": "Gastos mensuales",
+      "description": "Agrega un gasto nuevo o recorta uno que ya tienes.",
+      "kind": "Tipo de cambio",
+      "add": "Nuevo gasto",
+      "cut": "Recorte",
+      "name": "Concepto (opcional)",
+      "namePlaceholderAdd": "Ej. Nuevo auto",
+      "namePlaceholderCut": "Ej. Cancelar el gimnasio",
+      "amount": "Monto al mes",
+      "submitAdd": "Agregar gasto",
+      "submitCut": "Agregar recorte",
+      "defaultAdd": "Gasto mensual",
+      "defaultCut": "Recorte mensual",
+      "perMonthAdd": "Cada mes, más gasto",
+      "perMonthCut": "Cada mes, menos gasto",
+      "remove": "Quitar {name}"
+    },
+    "oneTime": {
+      "title": "Gasto único",
+      "description": "Un gasto que harías una sola vez: un viaje, una reparación, un enganche.",
+      "name": "Concepto (opcional)",
+      "namePlaceholder": "Ej. Viaje de fin de año",
+      "amount": "Monto",
+      "month": "Mes",
+      "submit": "Agregar gasto único",
+      "defaultName": "Gasto único",
+      "outOfRange": "Fuera de los meses proyectados",
+      "remove": "Quitar {name}"
+    },
+    "extraDebt": {
+      "title": "Pago extra a deudas",
+      "description": "¿Y si abonaras más cada mes a tus tarjetas o préstamos?",
+      "amount": "Pago extra al mes",
+      "note": "Lo contamos como un gasto mensual más: muestra el efecto en tu saldo, no cuánto baja tu deuda ni sus intereses."
+    },
+    "results": {
+      "title": "Resultados",
+      "endScenario": "Saldo con el escenario",
+      "endBaseline": "Saldo sin cambios",
+      "endNote": "Al final de {month}",
+      "difference": "Diferencia",
+      "differenceNote": {
+        "up": "Terminarías con más dinero",
+        "down": "Terminarías con menos dinero",
+        "flat": "Sin diferencia"
+      },
+      "negative": "Saldo negativo",
+      "negativeBaseline": "Sin cambios: {value}",
+      "neverNegative": "Nunca",
+      "negativeToday": "Ya hoy",
+      "negativeIn": "Desde {month}"
+    },
+    "chart": {
+      "title": "Saldo mes a mes",
+      "label": "Gráfica del saldo mes a mes. Usa las flechas para recorrer los meses.",
+      "roleDescription": "gráfica",
+      "today": "Hoy",
+      "baseline": "Sin cambios",
+      "scenario": "Escenario",
+      "net": "Al mes: {baseline} sin cambios · {scenario} con el escenario"
+    },
+    "table": {
+      "show": "Ver tabla",
+      "hide": "Ocultar tabla",
+      "caption": "Saldo por mes, sin cambios y con el escenario",
+      "month": "Mes",
+      "baseline": "Sin cambios",
+      "scenario": "Escenario",
+      "difference": "Diferencia"
+    },
+    "validation": {
+      "amountRequired": "Escribe el monto.",
+      "amountInvalid": "Escribe un monto válido.",
+      "amountTooLarge": "El monto es demasiado grande.",
+      "amountZero": "Escribe un monto mayor a cero.",
+      "percentInvalid": "Escribe un porcentaje, ej. 10 o -15.",
+      "percentRange": "Entre -100 % y 1000 %.",
+      "nameTooLong": "Máximo 60 caracteres.",
+      "monthInvalid": "Elige un mes del periodo."
     }
   }
 }

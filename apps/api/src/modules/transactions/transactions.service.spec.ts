@@ -621,7 +621,12 @@ describe('TransactionsService', () => {
       // Assert
       expect(prismaService.transaction.findFirst).toHaveBeenCalledWith({
         where: { id: mockTransaction.id, userId: mockUserId },
-        include: { attachments: true, ...TRANSACTION_PRESENTATION_INCLUDE },
+        include: {
+          attachments: true,
+          account: true,
+          category: true,
+          ...TRANSACTION_PRESENTATION_INCLUDE,
+        },
       });
       expect(result.id).toBe(mockTransaction.id);
     });
@@ -1527,6 +1532,173 @@ describe('TransactionsService', () => {
           select: { id: true },
         });
       });
+    });
+  });
+
+  describe('update rules for imported movements and transfers', () => {
+    const arrange = (existing: Record<string, unknown>) => {
+      prismaService.transaction.findFirst.mockResolvedValue({
+        ...mockTransaction,
+        transferFrom: null,
+        transferTo: null,
+        ...existing,
+      } as any);
+      prismaService.category.findFirst.mockResolvedValue({
+        id: 'cat-2',
+      } as any);
+      const mockTx = {
+        transaction: { update: jest.fn().mockResolvedValue(mockTransaction) },
+        account: { update: jest.fn() },
+      };
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
+      return mockTx;
+    };
+
+    it.each([TransactionSource.imported, TransactionSource.statement])(
+      '%s movements can change their category, without touching the balance',
+      async (source) => {
+        const mockTx = arrange({ source });
+        await service.update(mockTransaction.id, mockUserId, {
+          categoryId: 'cat-2',
+        });
+        expect(dataOf(mockTx.transaction.update)).toMatchObject({
+          categoryId: 'cat-2',
+          categorySource: 'manual',
+        });
+        expect(mockTx.account.update).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each([
+      { amount: 5 },
+      { description: 'x' },
+      { merchantName: 'x' },
+      { txnDate: new Date('2024-01-02') },
+      { isPending: true },
+    ])('imported movements reject %o', async (input) => {
+      arrange({ source: TransactionSource.imported });
+      await expect(
+        service.update(mockTransaction.id, mockUserId, {
+          categoryId: 'cat-2',
+          ...input,
+        }),
+      ).rejects.toThrow('only the category can change');
+    });
+
+    it('rejects a new amount on either side of a transfer', async () => {
+      arrange({
+        type: TransactionType.transfer,
+        transferFrom: { id: 'tr-1' },
+      });
+      await expect(
+        service.update(mockTransaction.id, mockUserId, { amount: 120 }),
+      ).rejects.toThrow(ValidationError);
+
+      arrange({
+        type: TransactionType.transfer,
+        transferTo: { id: 'tr-1' },
+      });
+      await expect(
+        service.update(mockTransaction.id, mockUserId, { amount: 120 }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('a transfer side can still change its description (same amount allowed)', async () => {
+      const mockTx = arrange({
+        type: TransactionType.transfer,
+        transferFrom: { id: 'tr-1' },
+      });
+      await service.update(mockTransaction.id, mockUserId, {
+        description: 'Rent',
+        amount: 100,
+      });
+      expect(dataOf(mockTx.transaction.update)).toMatchObject({
+        description: 'Rent',
+      });
+    });
+  });
+
+  describe('detail links', () => {
+    const side = (
+      id: string,
+      accountId: string,
+      name: string,
+      nickname?: string,
+    ) => ({
+      id,
+      accountId,
+      account: { name, metadata: nickname ? { nickname } : null },
+    });
+
+    it('returns the other side of a transfer with its account nickname', async () => {
+      prismaService.transfer.findFirst.mockResolvedValue({
+        fromTxnId: 't-out',
+        fromTxn: side('t-out', 'acc-1', 'Debit'),
+        toTxn: side('t-in', 'acc-2', 'Card', 'Mi tarjeta'),
+      } as any);
+
+      await expect(
+        service.findTransferCounterpart('t-out', mockUserId),
+      ).resolves.toEqual({
+        transactionId: 't-in',
+        accountId: 'acc-2',
+        accountName: 'Mi tarjeta',
+        direction: 'out',
+      });
+      expect(prismaService.transfer.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            OR: [{ fromTxnId: 't-out' }, { toTxnId: 't-out' }],
+            fromTxn: { userId: mockUserId },
+          },
+        }),
+      );
+
+      await expect(
+        service.findTransferCounterpart('t-in', mockUserId),
+      ).resolves.toMatchObject({
+        transactionId: 't-out',
+        accountName: 'Debit',
+        direction: 'in',
+      });
+    });
+
+    it('returns null when the movement is not a transfer', async () => {
+      prismaService.transfer.findFirst.mockResolvedValue(null);
+      await expect(
+        service.findTransferCounterpart('t-1', mockUserId),
+      ).resolves.toBeNull();
+    });
+
+    it("returns the recurring payment the movement paid (only the user's)", async () => {
+      const dueDate = new Date('2026-10-01T00:00:00Z');
+      prismaService.recurringOccurrence.findFirst.mockResolvedValue({
+        id: 'occ-1',
+        dueDate,
+        recurringExpense: { id: 'rec-1', name: 'Netflix' },
+      } as any);
+
+      await expect(
+        service.findRecurringPayment('t-1', mockUserId),
+      ).resolves.toEqual({
+        occurrenceId: 'occ-1',
+        recurringExpenseId: 'rec-1',
+        name: 'Netflix',
+        dueDate,
+      });
+      expect(prismaService.recurringOccurrence.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            transactionId: 't-1',
+            recurringExpense: { userId: mockUserId },
+          },
+        }),
+      );
+
+      prismaService.recurringOccurrence.findFirst.mockResolvedValue(null);
+      await expect(
+        service.findRecurringPayment('t-2', mockUserId),
+      ).resolves.toBeNull();
     });
   });
 });

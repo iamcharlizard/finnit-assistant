@@ -63,7 +63,11 @@ export function CategorizeRow({
           }
           className="min-w-0 flex-1"
         />
-        <RowMenu name={row.title} onRename={onRename} />
+        <RowMenu
+          name={row.title}
+          detailHref={`/transactions/${row.id}`}
+          onRename={onRename}
+        />
       </div>
       {row.suggestion ? (
         <div className="pl-14">

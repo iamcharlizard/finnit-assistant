@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { TransactionItem } from '@finnit/ui/components/finance/transaction-item';
 
@@ -15,6 +16,7 @@ export function TransactionRow({
   className?: string;
 }) {
   const t = useTranslations('finance');
+  const router = useRouter();
   return (
     <TransactionItem
       merchant={row.title}
@@ -28,6 +30,7 @@ export function TransactionRow({
       }
       amount={row.amount}
       icon={CATEGORY_ICONS[row.iconKey]}
+      onClick={() => router.push(`/transactions/${row.id}`)}
       variant={
         row.status === 'pending' || row.variant === 'neutral'
           ? 'pending'

@@ -3,6 +3,7 @@ import { UseGuards } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import {
   MonthlyReport,
+  CashFlowBaseline,
   CashFlowProjection,
   WhatIfInput,
   WhatIfResult,
@@ -34,6 +35,11 @@ export class ReportsResolver {
     monthsAhead: number,
   ): Promise<CashFlowProjection[]> {
     return this.reportsService.getCashFlowProjection(user.id, monthsAhead);
+  }
+
+  @Query(() => CashFlowBaseline)
+  async cashFlowBaseline(@CurrentUser() user: User): Promise<CashFlowBaseline> {
+    return this.reportsService.getCashFlowBaseline(user.id);
   }
 
   @Query(() => WhatIfResult)

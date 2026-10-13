@@ -15,6 +15,7 @@
     "@expo-google-fonts/ubuntu": "^0.4.1",
     "@expo/vector-icons": "^15.0.2",
     "@finnit/bank-connect": "workspace:*",
+    "@react-native-google-signin/google-signin": "^16.1.5",
     "@tailwindcss/postcss": "^4.3.0",
     "clsx": "^2.1.1",
     "expo": "~56.0.4",

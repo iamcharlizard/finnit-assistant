@@ -1,5 +1,5 @@
 import { useState, type ComponentProps } from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
@@ -15,6 +15,7 @@ import { router } from 'expo-router';
 type LoginFormState =
   | { status: 'idle' }
   | { status: 'submitting' }
+  | { status: 'google' }
   | { status: 'error'; message: string }
   | { status: 'success' };
 
@@ -36,8 +37,6 @@ const LIGHT = {
   socialBg: '#ffffff',
   socialBorder: '#e0e0e0',
   socialText: '#1a1b22',
-  appleBg: '#1a1b22',
-  appleText: '#ffffff',
   errorColor: '#ba1a1a',
   glowColor: undefined as string | undefined,
 };
@@ -60,8 +59,6 @@ const DARK = {
   socialBg: 'rgba(45, 52, 73, 0.3)',
   socialBorder: 'rgba(255, 255, 255, 0.1)',
   socialText: '#dae2fd',
-  appleBg: 'rgba(45, 52, 73, 0.3)',
-  appleText: '#dae2fd',
   errorColor: '#ff6b6b',
   glowColor: '0 0 22px rgba(0, 245, 255, 0.55)' as string | undefined,
 };
@@ -93,7 +90,7 @@ function Icon({
 export function LoginScreen() {
   const { isDark } = useTheme();
   const T = isDark ? DARK : LIGHT;
-  const { login } = useAuth();
+  const { login, signInWithGoogle } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -116,7 +113,24 @@ export function LoginScreen() {
     router.replace('/(app)/dashboard');
   }
 
+  async function handleGoogleLogin() {
+    setFormState({ status: 'google' });
+    const { error, cancelled } = await signInWithGoogle();
+    if (cancelled) {
+      setFormState({ status: 'idle' });
+      return;
+    }
+    if (error) {
+      setFormState({ status: 'error', message: error });
+      return;
+    }
+    setFormState({ status: 'success' });
+    router.replace('/(app)/dashboard');
+  }
+
   const isSubmitting = formState.status === 'submitting';
+  const isGoogleLoading = formState.status === 'google';
+  const isBusy = isSubmitting || isGoogleLoading;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: T.bg }}>
@@ -332,7 +346,7 @@ export function LoginScreen() {
                 {/* CTA button */}
                 <TwPressable
                   onPress={handleLogin}
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                   className="w-full rounded-[14px] flex-row items-center justify-center gap-2"
                   style={{
                     backgroundColor: T.btnBg,
@@ -342,7 +356,7 @@ export function LoginScreen() {
                   }}
                   accessibilityRole="button"
                   accessibilityLabel={isSubmitting ? 'Verificando credenciales' : 'Iniciar sesión'}
-                  accessibilityState={{ disabled: isSubmitting, busy: isSubmitting }}
+                  accessibilityState={{ disabled: isBusy, busy: isSubmitting }}
                 >
                   <TwText
                     className="text-[18px] leading-[24px]"
@@ -364,46 +378,31 @@ export function LoginScreen() {
                   <TwView className="flex-1" style={{ height: 1, backgroundColor: T.divider }} />
                 </TwView>
 
-                {/* Social buttons */}
-                <TwView className="flex-row gap-4">
-                  <TwPressable
-                    className="flex-1 flex-row items-center justify-center gap-2 rounded-[14px]"
-                    style={{
-                      borderWidth: 1,
-                      borderColor: T.socialBorder,
-                      backgroundColor: T.socialBg,
-                      minHeight: 50,
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Iniciar sesión con Google"
-                  >
+                {/* Social sign-in */}
+                <TwPressable
+                  onPress={handleGoogleLogin}
+                  disabled={isBusy}
+                  className="w-full flex-row items-center justify-center gap-2 rounded-[14px]"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: T.socialBorder,
+                    backgroundColor: T.socialBg,
+                    minHeight: 52,
+                    opacity: isBusy && !isGoogleLoading ? 0.6 : 1,
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={isGoogleLoading ? 'Iniciando sesión con Google' : 'Iniciar sesión con Google'}
+                  accessibilityState={{ disabled: isBusy, busy: isGoogleLoading }}
+                >
+                  {isGoogleLoading ? (
+                    <ActivityIndicator size="small" color={T.socialText} />
+                  ) : (
                     <MaterialCommunityIcons name="google" size={18} color={T.socialText} />
-                    <TwText className="text-[13px]" style={{ color: T.socialText, fontFamily: 'Ubuntu Medium' }}>
-                      Google
-                    </TwText>
-                  </TwPressable>
-
-                  <TwPressable
-                    className="flex-1 flex-row items-center justify-center gap-2 rounded-[14px]"
-                    style={{
-                      borderWidth: 1,
-                      borderColor: T.socialBorder,
-                      backgroundColor: T.appleBg,
-                      minHeight: 50,
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Iniciar sesión con Apple"
-                  >
-                    {process.env.EXPO_OS === 'ios' ? (
-                      <SymbolView name="apple.logo" tintColor={T.appleText} resizeMode="scaleAspectFit" style={{ width: 18, height: 18 }} />
-                    ) : (
-                      <MaterialCommunityIcons name="apple" size={18} color={T.appleText} />
-                    )}
-                    <TwText className="text-[13px]" style={{ color: T.appleText, fontFamily: 'Ubuntu Medium' }}>
-                      Apple
-                    </TwText>
-                  </TwPressable>
-                </TwView>
+                  )}
+                  <TwText className="text-[14px]" style={{ color: T.socialText, fontFamily: 'Ubuntu Medium' }}>
+                    {isGoogleLoading ? 'Conectando con Google…' : 'Continuar con Google'}
+                  </TwText>
+                </TwPressable>
 
               </FinnGlassView>
             </TwView>
@@ -411,19 +410,10 @@ export function LoginScreen() {
 
           {/* Footer */}
           <Animated.View entering={FadeInUp.duration(450).delay(220)}>
-            <TwView className="flex-row items-center justify-center flex-wrap gap-1 mt-8">
-              <TwText className="text-[14px]" style={{ color: T.textMuted, fontFamily: 'Ubuntu' }}>
-                ¿No tienes una cuenta?
+            <TwView className="items-center mt-8 px-4">
+              <TwText className="text-[14px] text-center" style={{ color: T.textMuted, fontFamily: 'Ubuntu' }}>
+                El acceso a Finnit es por invitación. Pide acceso al administrador.
               </TwText>
-              <TwPressable
-                accessibilityRole="link"
-                accessibilityLabel="Regístrate ahora"
-                style={{ minHeight: 44, justifyContent: 'center' }}
-              >
-                <TwText className="text-[14px]" style={{ color: T.accent, fontFamily: 'Ubuntu Medium' }}>
-                  Regístrate ahora
-                </TwText>
-              </TwPressable>
             </TwView>
           </Animated.View>
 

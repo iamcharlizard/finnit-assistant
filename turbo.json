@@ -12,7 +12,7 @@
         "dist/**",
         "storybook-static/**"
       ],
-      "env": ["FINNIT_API_URL"]
+      "env": ["FINNIT_API_URL", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"]
     },
     "lint": {
       "dependsOn": ["^lint"]

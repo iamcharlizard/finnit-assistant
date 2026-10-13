@@ -1,15 +1,19 @@
 import type { Metadata } from 'next';
 
 import { LoginForm } from '@/components/login-form';
+import { loginErrorMessage } from '@/lib/auth/google';
 
 export const metadata: Metadata = { title: 'Iniciar sesión' };
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string | string[] }>;
+  searchParams: Promise<{
+    next?: string | string[];
+    error?: string | string[];
+  }>;
 }) {
-  const { next } = await searchParams;
+  const { next, error } = await searchParams;
   return (
     <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-background px-4 py-14">
       <div
@@ -20,7 +24,10 @@ export default async function LoginPage({
         aria-hidden
         className="pointer-events-none absolute -right-16 -bottom-20 hidden size-[340px] rounded-full bg-[#00f5ff]/8 blur-3xl dark:block"
       />
-      <LoginForm next={typeof next === 'string' ? next : undefined} />
+      <LoginForm
+        next={typeof next === 'string' ? next : undefined}
+        error={loginErrorMessage(error) ?? undefined}
+      />
     </div>
   );
 }

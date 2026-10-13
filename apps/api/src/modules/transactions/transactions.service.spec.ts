@@ -335,8 +335,8 @@ describe('TransactionsService', () => {
       // Assert
       expect(prismaService.transaction.findMany).toHaveBeenCalledWith({
         where: { userId: mockUserId },
-        take: 10,
-        orderBy: { txnDate: 'desc' },
+        take: 11,
+        orderBy: [{ txnDate: 'desc' }, { id: 'desc' }],
         include: {
           account: true,
           category: true,
@@ -429,15 +429,48 @@ describe('TransactionsService', () => {
 
       // Assert
       expect(prismaService.transaction.findMany).toHaveBeenCalledWith({
-        where: { userId: mockUserId, id: { gt: 'cursor-123' } },
-        take: 5,
-        orderBy: { txnDate: 'desc' },
+        where: { userId: mockUserId },
+        take: 6,
+        orderBy: [{ txnDate: 'desc' }, { id: 'desc' }],
+        cursor: { id: 'cursor-123' },
+        skip: 1,
         include: {
           account: true,
           category: true,
           attachments: true,
         },
       });
+    });
+
+    it('reports a next page only when a row beyond the page exists', async () => {
+      // The real cursor helpers, not the spies of the tests above.
+      jest.restoreAllMocks();
+      const rows = [1, 2, 3].map((n) => ({
+        ...mockTransaction,
+        id: `transaction-${n}`,
+        account: null,
+        category: null,
+        attachments: [],
+      }));
+      prismaService.transaction.findMany.mockResolvedValue(rows as never);
+      prismaService.transaction.count.mockResolvedValue(3);
+
+      const firstPage = await service.findMany(mockUserId, { first: 2 });
+      expect(firstPage.edges.map((e) => e.node.id)).toEqual([
+        'transaction-1',
+        'transaction-2',
+      ]);
+      expect(firstPage.pageInfo.hasNextPage).toBe(true);
+      expect(firstPage.pageInfo.hasPreviousPage).toBe(false);
+
+      prismaService.transaction.findMany.mockResolvedValue(rows.slice(2) as never);
+      const lastPage = await service.findMany(mockUserId, {
+        first: 2,
+        after: firstPage.pageInfo.endCursor,
+      });
+      expect(lastPage.edges.map((e) => e.node.id)).toEqual(['transaction-3']);
+      expect(lastPage.pageInfo.hasNextPage).toBe(false);
+      expect(lastPage.pageInfo.hasPreviousPage).toBe(true);
     });
   });
 

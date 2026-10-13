@@ -89,12 +89,13 @@ export class AccountsService {
       where: { ...where, ...cursor } as Prisma.AccountWhereInput,
       take: limit,
       orderBy: { createdAt: 'desc' },
+      include: { creditCardTerms: true },
     });
 
     const totalCount = await this.prisma.account.count({ where });
 
     return PaginationUtil.createConnection(
-      accounts.map((account) => this.mapAccount(account)),
+      accounts.map((account) => this.mapAccountWithCreditCardTerms(account)),
       args,
       totalCount,
       (account) => PaginationUtil.encodeCursor(account.id),

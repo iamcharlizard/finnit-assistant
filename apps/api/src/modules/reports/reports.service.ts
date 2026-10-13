@@ -17,25 +17,22 @@ export class ReportsService {
     year: number,
     month: number,
   ): Promise<MonthlyReport> {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
+    // The whole month in UTC, like the dates imported from banks and
+    // statements (midnight UTC of the day): up to, not including, the 1st of
+    // the next month, so the last day counts entirely.
+    const txnDate = {
+      gte: new Date(Date.UTC(year, month - 1, 1)),
+      lt: new Date(Date.UTC(year, month, 1)),
+    };
 
     // Get income and expenses for the month
     const [incomeData, expenseData] = await Promise.all([
       this.prisma.transaction.aggregate({
-        where: {
-          userId,
-          type: 'income',
-          txnDate: { gte: startDate, lte: endDate },
-        },
+        where: { userId, type: 'income', txnDate },
         _sum: { amount: true },
       }),
       this.prisma.transaction.aggregate({
-        where: {
-          userId,
-          type: 'expense',
-          txnDate: { gte: startDate, lte: endDate },
-        },
+        where: { userId, type: 'expense', txnDate },
         _sum: { amount: true },
       }),
     ]);
@@ -49,7 +46,7 @@ export class ReportsService {
       where: {
         userId,
         type: 'expense',
-        txnDate: { gte: startDate, lte: endDate },
+        txnDate,
         categoryId: { not: null },
       },
       _sum: { amount: true },
@@ -83,7 +80,7 @@ export class ReportsService {
     return {
       year,
       month,
-      currency: userAccount?.currency || 'USD',
+      currency: userAccount?.currency || 'MXN',
       totalIncome,
       totalExpenses,
       netIncome: totalIncome - totalExpenses,
@@ -105,31 +102,31 @@ export class ReportsService {
       0,
     );
 
-    // Get average monthly income and expenses
+    // Average monthly income and expenses over the last 6 months, divided by
+    // the months the user actually has data for (a new user is not averaged
+    // against empty months).
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const window = { userId, txnDate: { gte: sixMonthsAgo } };
 
-    const [avgIncome, avgExpenses] = await Promise.all([
+    const [income, expenses, first] = await Promise.all([
       this.prisma.transaction.aggregate({
-        where: {
-          userId,
-          type: 'income',
-          txnDate: { gte: sixMonthsAgo },
-        },
-        _avg: { amount: true },
+        where: { ...window, type: 'income' },
+        _sum: { amount: true },
       }),
       this.prisma.transaction.aggregate({
-        where: {
-          userId,
-          type: 'expense',
-          txnDate: { gte: sixMonthsAgo },
-        },
-        _avg: { amount: true },
+        where: { ...window, type: 'expense' },
+        _sum: { amount: true },
+      }),
+      this.prisma.transaction.aggregate({
+        where: { ...window, type: { in: ['income', 'expense'] } },
+        _min: { txnDate: true },
       }),
     ]);
 
-    const monthlyIncome = Number(avgIncome._avg.amount || 0) * 30; // Approximate
-    const monthlyExpenses = Number(avgExpenses._avg.amount || 0) * 30;
+    const months = monthsOfData(first._min.txnDate);
+    const monthlyIncome = Number(income._sum.amount || 0) / months;
+    const monthlyExpenses = Number(expenses._sum.amount || 0) / months;
 
     const projections: CashFlowProjection[] = [];
     let projectedBalance = currentBalance;
@@ -188,4 +185,16 @@ export class ReportsService {
       totalSavings: currentBalance - startingBalance,
     };
   }
+}
+
+const AVERAGE_MONTH_DAYS = 30.44;
+
+/** Months between the first transaction and now, from 1 to 6. */
+export function monthsOfData(
+  firstTxnDate: Date | null,
+  now: Date = new Date(),
+): number {
+  if (!firstTxnDate) return 1;
+  const days = (now.getTime() - firstTxnDate.getTime()) / 86_400_000;
+  return Math.min(6, Math.max(1, Math.ceil(days / AVERAGE_MONTH_DAYS)));
 }

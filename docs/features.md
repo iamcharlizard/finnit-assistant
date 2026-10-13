@@ -23,9 +23,9 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | 8. Reportes e insights | 🟡 | 🟡 | 🟡 |
 | 9. Integración bancaria (Syncfy) | ✅ | ⏳ | 🟡 |
 | 10. Flujo de caja y proyecciones | ✅ | 🟡 | 🟡 |
-| 11. Notificaciones | 🟡 | ⏳ | ⏳ |
-| 12. Gastos recurrentes *(nuevo)* | ✅ | ⏳ | ⏳ |
-| 13. Estados de cuenta y conciliación *(nuevo)* | 🟡 | ⏳ | ⏳ |
+| 11. Notificaciones | 🟡 | ⏳ | 🟡 |
+| 12. Gastos recurrentes *(nuevo)* | ✅ | ⏳ | 🟡 |
+| 13. Estados de cuenta y conciliación *(nuevo)* | 🟡 | ⏳ | 🟡 |
 | 14. Panel administrativo *(nuevo)* | ✅ | — | ✅ |
 
 ## Detalle
@@ -49,9 +49,9 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| CRUD de cuentas (efectivo, débito, crédito, ahorro, e-wallet) | ✅ | 🟡 | 🟡 | Cards con datos mock. |
+| CRUD de cuentas (efectivo, débito, crédito, ahorro, e-wallet) | ✅ | 🟡 | 🟡 | Web: saldos reales de solo lectura (Inicio: disponible, deuda en tarjetas y patrimonio neto; Tarjetas: crédito y débito). Sin formularios de alta: las cuentas llegan al conectar el banco. Móvil: datos mock. |
 | Ajuste de saldo sin ingreso/gasto falso | ✅ | ⏳ | ⏳ | `adjustAccountBalance` (tipo `adjustment`). |
-| Términos de tarjeta de crédito (corte, pago, tasa) | ✅ | 🟡 | 🟡 | Modelo `CreditCardTerms`. |
+| Términos de tarjeta de crédito (corte, pago, tasa) | 🟡 | 🟡 | ✅ | Modelo `CreditCardTerms`; `accounts` ya los incluye. Web: próximo corte y fecha de pago en Tarjetas y en el Calendario. **Falta:** ninguna mutación permite capturarlos. |
 | Alta guiada con explicación de tipos | — | ⏳ | ⏳ | Es UI. |
 | Escaneo de tarjeta con foto | ⏳ | ⏳ | ⏳ | |
 
@@ -60,7 +60,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
 | Alta rápida (fecha, cuenta, monto, tipo, categoría) | ✅ | ⏳ | ⏳ | Sin formularios en clientes. |
-| Listado con filtros y paginación por cursor | ✅ | 🟡 | 🟡 | History con datos mock. |
+| Listado con filtros y paginación por cursor | ✅ | 🟡 | ✅ | Web: Historial agrupado por día, filtros en la URL (tipo, cuenta, categoría, fechas, búsqueda) y "Cargar más". Móvil: datos mock. |
 | Varias transacciones por cuenta en el mismo día | ✅ | — | — | Se quitó la restricción única `[userId, accountId, txnDate]` (migración `20261012120000`). |
 | Categorización sugerida por comercio | 🟡 | ⏳ | ⏳ | Busca por la primera palabra del comercio en transacciones previas; no aprende reglas. |
 | Transferencias entre cuentas | ✅ | ⏳ | ⏳ | `createTransfer`. |
@@ -84,7 +84,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
 | Presupuesto mensual y por categoría | ✅ | ⏳ | ⏳ | Incluye plantillas (`createBudgetFromTemplate`). |
-| Uso y resumen en tiempo real | ✅ | 🟡 | 🟡 | La UI de presupuesto usa datos mock. |
+| Uso y resumen en tiempo real | ✅ | 🟡 | ⏳ | Web: se quitó la tarjeta de presupuesto mock; aún no hay pantalla. Móvil: datos mock. |
 | Alertas 80% / 100% | 🟡 | ⏳ | ⏳ | Se calculan al consultar (`budgetAlerts`); no se envían como notificación. |
 
 ### 6. Deudas y tarjetas
@@ -108,8 +108,8 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Resumen mensual (ingresos, gastos por categoría, neto) | ✅ | 🟡 | 🟡 | `monthlyReport`. |
-| Comparativa con el mes anterior y tendencias 3–6 meses | ⏳ | 🟡 | 🟡 | Solo en la UI mock. |
+| Resumen mensual (ingresos, gastos por categoría, neto) | ✅ | 🟡 | ✅ | `monthlyReport` (cuenta el mes completo en UTC). Web: Inicio (ingresos y gastos del mes), Analytics (gasto, tasa de ahorro y gastos por categoría agrupados en la categoría principal) e Historial (top categorías). |
+| Comparativa con el mes anterior y tendencias 3–6 meses | ⏳ | 🟡 | ✅ | Web: Analytics pide 6 `monthlyReport` en una consulta (cambio vs. mes anterior, ingresos vs. gastos de 6 meses). Móvil: datos mock. |
 | Insights (gastos inusuales, top categorías) | ⏳ | ⏳ | ⏳ | |
 | Exportar a CSV | ⏳ | ⏳ | ⏳ | |
 
@@ -130,14 +130,14 @@ Belvo dejó de ofrecer datos bancarios de México (solo Brasil), por eso se usa 
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Proyección 30/60 días | ✅ | 🟡 | 🟡 | `cashFlowProjection`. |
+| Proyección 30/60 días | ✅ | 🟡 | ✅ | `cashFlowProjection`: saldo actual + promedio mensual de ingresos y gastos de los últimos 6 meses (o de los meses con datos). Web: Analytics → Flujo de caja, 6 meses. |
 | Simulador "What If" | ✅ | ⏳ | ⏳ | `whatIfScenario`. |
 
 ### 11. Notificaciones
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Listar / marcar como leídas | ✅ | ⏳ | ⏳ | |
+| Listar / marcar como leídas | ✅ | ⏳ | 🟡 | Web: la campana muestra el número real de no leídas; aún no hay lista. |
 | Recordatorios de gastos recurrentes | ✅ | — | — | Tarea diaria del módulo de gastos recurrentes. |
 | Generación automática (presupuesto, deudas, resúmenes) | ⏳ | — | — | |
 | Push / email | ⏳ | ⏳ | ⏳ | |
@@ -150,7 +150,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 |---|---|---|---|---|
 | CRUD de gastos recurrentes con frecuencia y tipo | ✅ | ⏳ | ⏳ | `recurringExpenses`, `create/update/deleteRecurringExpense`. Frecuencias: semanal, catorcenal, quincenal (15 y fin de mes), mensual, bimestral, trimestral, semestral, anual. |
 | Modo de seguimiento: automático / manual / solo recordatorio | ✅ | ⏳ | ⏳ | Manual: `markRecurringPaymentPaid`, `skipRecurringPayment`, `reopenRecurringPayment`. Automático: se marcará pagado al conciliar con la tarjeta (sección 13). |
-| Próximos pagos y costo mensual por tipo | ✅ | ⏳ | ⏳ | `upcomingPayments`, `recurringExpensesSummary` (por tipo y por cuenta). |
+| Próximos pagos y costo mensual por tipo | ✅ | ⏳ | ✅ | `upcomingPayments`, `recurringExpensesSummary` (por tipo y por cuenta). Web: Inicio (próximos 14 días) y Calendario (mes, por pagar y gasto fijo mensual). |
 | Meses sin intereses (progreso x de y) | ✅ | ⏳ | ⏳ | Cierra el plan al pagar la última mensualidad. |
 | Recordatorios generados | ✅ | ⏳ | ⏳ | Tarea diaria (6:00, hora CDMX): genera ocurrencias, marca vencidas las manuales y crea notificaciones 3 días antes. |
 
@@ -163,7 +163,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 | Catálogo de modelos de IA (Anthropic, OpenAI, Gemini) | ✅ | ⏳ | ⏳ | `aiModels`: activos/desactivados, predeterminado y orden de respaldo; solo administradores lo modifican, desde el panel (`/admin/ai`). Llaves por proveedor en variables de entorno. |
 | Revisión y confirmación de movimientos importados | ✅ | ⏳ | ⏳ | `statementImport`, `updateStatementLine` (ignorar, categoría, ligar a mano), `confirmStatementImport`, `reprocessStatementImport`. |
 | Conciliación con transacciones y gastos recurrentes | ✅ | ⏳ | ⏳ | No duplica compras ya registradas (mismo monto, ±3 días); marca pagados los recurrentes por patrón de comercio (±10 días, ±15% o ±50% si el monto es variable). |
-| Resumen del mes de la tarjeta vs total a pagar | ✅ | ⏳ | ⏳ | `cardMonthSummary`: total a pagar, recurrentes esperados vs cobrados, cargos nuevos. |
+| Resumen del mes de la tarjeta vs total a pagar | ✅ | ⏳ | 🟡 | `cardMonthSummary`: total a pagar, recurrentes esperados vs cobrados, cargos nuevos. Web: Tarjetas muestra recurrentes esperados y cobrados, saldo al corte, pago mínimo y pago para no generar intereses. |
 | Sincronización con el banco (Syncfy) | ✅ | ⏳ | ⏳ | Ver sección 9. |
 
 ### 14. Panel administrativo *(nuevo)*
@@ -185,6 +185,6 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 | Builds móviles (EAS) | ⏳ | |
 | CI de calidad en PRs (lint, tipos, tests) | ⏳ | |
 | Tests unitarios de la API | 🟡 | 6 de 11 módulos; 226 pasan, 8 omitidos que documentan bugs (`TODO(bug)`). `pnpm turbo run test --filter=@finnit/api`. |
-| Paginación por cursor consistente | ⏳ | **Bug:** transacciones y deudas ordenan por fecha pero paginan con `id > cursor`; se pueden saltar o repetir filas. |
+| Paginación por cursor consistente | 🟡 | Transacciones: corregido (cursor por fecha + id). **Bug pendiente:** deudas y cuentas ordenan por fecha pero paginan con `id > cursor`. |
 | Tests E2E | ⏳ | |
 | Logs y monitoreo | ⏳ | |

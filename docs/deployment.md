@@ -183,9 +183,9 @@ No hay registro abierto: un administrador da de alta a cada persona en el panel 
 1. En Dokploy, abre la app del ambiente → **Docker Terminal** (o `docker exec -it <contenedor> sh` en el servidor).
 2. Ejecuta:
    ```
-   node apps/api/dist/scripts/create-master.js --email <tu correo> --name "<tu nombre>"
+   node /repo/apps/api/dist/scripts/create-master.js --email <tu correo> --name "<tu nombre>"
    ```
-   Pide la contraseña sin mostrarla (mínimo 10 caracteres). No la pongas en la línea de comandos: quedaría en el historial.
+   La terminal de Dokploy abre en `/`; el código del contenedor está en `/repo`, por eso la ruta completa. El comando pide la contraseña sin mostrarla (mínimo 10 caracteres). No la pongas en la línea de comandos: quedaría en el historial.
 3. Entra a la web con ese correo y contraseña, o con Google si el correo es de una cuenta de Google.
 
 - Si ya hay un maestro, el comando se niega; con `--replace` le pasa el rol a otro usuario (el anterior sigue siendo administrador).

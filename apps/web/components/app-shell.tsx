@@ -17,7 +17,13 @@ import {
   activeNavHref,
 } from '@/lib/nav';
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  notificationCount,
+}: {
+  children: React.ReactNode;
+  notificationCount: number;
+}) {
   const pathname = usePathname();
   const user = useSessionUser();
   const sideItems = React.useMemo(
@@ -43,7 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <TopAppBar
           title={PAGE_TITLES[pathname] ?? 'Finnit'}
-          notificationCount={2}
+          notificationCount={notificationCount}
           avatarFallback={initials(user.name)}
         />
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-8 lg:pb-10">

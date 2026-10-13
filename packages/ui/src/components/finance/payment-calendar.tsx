@@ -17,6 +17,8 @@ interface PaymentCalendarProps {
   selectedDay?: number | null;
   onSelectDay?: (day: number) => void;
   viewMode?: CalendarViewMode;
+  /** Hide the MES/SEMANA toggle when the screen has no week view. */
+  showViewModes?: boolean;
   onViewModeChange?: (mode: CalendarViewMode) => void;
   onPrevMonth?: () => void;
   onNextMonth?: () => void;
@@ -42,6 +44,7 @@ function PaymentCalendar({
   selectedDay = null,
   onSelectDay,
   viewMode = 'month',
+  showViewModes = true,
   onViewModeChange,
   onPrevMonth,
   onNextMonth,
@@ -78,7 +81,7 @@ function PaymentCalendar({
           </button>
         </div>
 
-        <div className="flex gap-1">
+        <div className={cn('flex gap-1', !showViewModes && 'hidden')}>
           {VIEW_MODES.map((mode) => {
             const isActive = viewMode === mode.value;
             return (

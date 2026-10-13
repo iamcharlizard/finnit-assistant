@@ -10,7 +10,8 @@ interface SparkBar {
 interface AnalyticsHeroCardProps {
   label?: string;
   amount: string;
-  trendPercent: string;
+  /** The trend badge is only rendered when given. */
+  trendPercent?: string;
   trendDown?: boolean;
   sparkBars?: SparkBar[];
   className?: string;
@@ -55,11 +56,13 @@ function AnalyticsHeroCard({
             {amount}
           </p>
         </div>
-        <span className="flex items-center gap-1 rounded-lg bg-tertiary/12 px-2 py-1 text-[13px] font-bold text-tertiary">
-          <TrendIcon aria-hidden className="size-3" />
-          <span className="sr-only">{trendDown ? 'Bajó' : 'Subió'}</span>
-          {trendPercent}
-        </span>
+        {trendPercent ? (
+          <span className="flex items-center gap-1 rounded-lg bg-tertiary/12 px-2 py-1 text-[13px] font-bold text-tertiary">
+            <TrendIcon aria-hidden className="size-3" />
+            <span className="sr-only">{trendDown ? 'Bajó' : 'Subió'}</span>
+            {trendPercent}
+          </span>
+        ) : null}
       </div>
 
       <div aria-hidden className="flex h-16 items-end gap-1">

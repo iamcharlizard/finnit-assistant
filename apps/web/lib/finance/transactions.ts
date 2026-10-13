@@ -7,6 +7,7 @@ import {
   type CategoryIndex,
   type IconKey,
 } from './categories';
+import { accountLabel } from './accounts';
 import { dayHeading, dayKeyOf, shortDate, timeOf, type DayKey } from './dates';
 import { formatMoney } from './money';
 import type { ApiTransaction } from './types';
@@ -43,6 +44,8 @@ export function direction(tx: ApiTransaction): 'in' | 'out' | 'unknown' {
   if (tx.type === 'income') return 'in';
   if (tx.type === 'expense') return 'out';
   if (tx.type === 'transfer') {
+    if (tx.transferDirection) return tx.transferDirection;
+    // Transfers created before the API exposed the side carry it as a suffix.
     if (/\(outgoing\)$/i.test(tx.description ?? '')) return 'out';
     if (/\(incoming\)$/i.test(tx.description ?? '')) return 'in';
   }
@@ -93,7 +96,11 @@ export function toTransactionRow(
     id: tx.id,
     title: title(tx, t),
     category: categoryText(tx, t),
-    time: [tx.account?.name, withDate ? shortDate(day, locale) : null, time]
+    time: [
+      tx.account ? accountLabel(tx.account) : null,
+      withDate ? shortDate(day, locale) : null,
+      time,
+    ]
       .filter(Boolean)
       .join(' · '),
     amount: formatMoney(signed, tx.currency, locale, { sign }),

@@ -16,12 +16,25 @@ export interface ApiAccount {
     bank: string | null;
     last4: string | null;
     creditLimit: number | null;
+    /** The user's name for the account (feature 18). */
+    nickname?: string | null;
+    /** Card colors chosen by the user, '#RRGGBB'. */
+    design?: AccountDesign | null;
   } | null;
-  creditCardTerms: { statementDay: number; paymentDueDay: number } | null;
+  creditCardTerms: {
+    statementDay: number;
+    paymentDueDay: number;
+    interestRateAnnual?: number | null;
+  } | null;
+}
+
+export interface AccountDesign {
+  primaryColor: string;
+  secondaryColor?: string | null;
 }
 
 export const ACCOUNT_FIELDS =
-  'id name type currency balanceCurrent archived metadata { bank last4 creditLimit } creditCardTerms { statementDay paymentDueDay }';
+  'id name type currency balanceCurrent archived metadata { bank last4 creditLimit nickname design { primaryColor secondaryColor } } creditCardTerms { statementDay paymentDueDay interestRateAnnual }';
 
 export type TransactionType = 'income' | 'expense' | 'transfer' | 'adjustment';
 
@@ -36,13 +49,20 @@ export interface ApiTransaction {
   merchantName: string | null;
   isPending: boolean;
   source: string;
+  /** Transfers only: 'out' on the source account, 'in' on the destination. */
+  transferDirection?: 'in' | 'out' | null;
   accountId: string;
-  account: { id: string; name: string; type: AccountType } | null;
+  account: {
+    id: string;
+    name: string;
+    type: AccountType;
+    metadata?: { nickname?: string | null } | null;
+  } | null;
   category: { id: string; name: string; parentId: string | null } | null;
 }
 
 export const TRANSACTION_FIELDS =
-  'id type amount currency txnDate description merchantName isPending source accountId account { id name type } category { id name parentId }';
+  'id type amount currency txnDate description merchantName isPending source transferDirection accountId account { id name type metadata { nickname } } category { id name parentId }';
 
 export interface ApiCategory {
   id: string;

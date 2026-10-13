@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { ManualAccountLink } from '@/components/accounts/manual-account-link';
 import { ConnectBankFlow } from '@/components/bank-connect/connect-bank-flow';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -9,5 +10,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function ConnectBankPage() {
-  return <ConnectBankFlow />;
+  return (
+    <div className="flex flex-col gap-4">
+      <ConnectBankFlow />
+      <ManualAccountLink />
+    </div>
+  );
 }

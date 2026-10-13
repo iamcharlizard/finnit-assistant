@@ -3,12 +3,12 @@ import { CalendarClock } from 'lucide-react';
 
 import { Card } from '@finnit/ui/components/ui/card';
 
-import type { CardDetail } from '@/lib/cards/view';
+import type { AccountDetail } from '@/lib/accounts/view';
 
 /** Cut-off and payment dates, statement amounts and recurring charges. */
-export function CardFacts({ detail }: { detail: CardDetail }) {
+export function AccountFacts({ detail }: { detail: AccountDetail }) {
   const t = useTranslations('cards');
-  const isCredit = detail.card.kind === 'credit';
+  const isCredit = detail.account.type === 'credit';
   if (!isCredit) return null;
 
   return (

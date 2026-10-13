@@ -3,10 +3,10 @@ import { useTranslations } from 'next-intl';
 import { CreditLimitCard } from '@finnit/ui/components/finance/credit-limit-card';
 import { Card } from '@finnit/ui/components/ui/card';
 
-import type { CardSummary } from '@/lib/cards/view';
+import type { AccountSummary } from '@/lib/accounts/view';
 
 /** Credit used of the limit, or the debit account's balance. */
-export function CardBalance({ card }: { card: CardSummary }) {
+export function AccountBalance({ card }: { card: AccountSummary }) {
   const t = useTranslations('cards');
   const tu = useTranslations('ui.creditLimit');
   if (card.credit?.limit) {

@@ -67,7 +67,7 @@ export const NAV_SECTIONS: ReadonlyArray<NavSection> = [
   },
   {
     key: 'accounts',
-    items: [{ key: 'cards', href: '/cards', icon: CreditCard }],
+    items: [{ key: 'cards', href: '/accounts', icon: CreditCard }],
   },
   // Budgets, goals and debts arrive in later phases.
   { key: 'planning', items: [] },

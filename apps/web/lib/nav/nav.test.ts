@@ -53,6 +53,7 @@ describe('page titles', () => {
     assert.equal(pageTitleKey('/settings/banks/connect'), 'connectBank');
     assert.equal(pageTitleKey('/admin/users'), 'admin');
     assert.equal(pageTitleKey('/calendar'), 'recurring');
+    assert.equal(pageTitleKey('/accounts'), 'cards');
     assert.equal(pageTitleKey('/nowhere'), 'app');
   });
 });

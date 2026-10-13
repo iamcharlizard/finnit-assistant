@@ -171,7 +171,8 @@ El PDF se envía a la API del proveedor. Si no hay ningún modelo utilizable, es
   - Los datos no se mezclan con producción: el usuario de Syncfy se crea con el id del usuario de Finnit (`id_external`), y cada base tiene ids distintos.
   - Para probar sin bancos reales, cambia a la llave de sandbox; las conexiones creadas con una llave no se ven con la otra.
 - La app (web o móvil) obtiene un token con `createBankConnectSession` y envía usuario, contraseña y códigos del banco directo a Syncfy con `@finnit/bank-connect`; si el banco necesita algo que el formulario nativo no soporta, la web abre el widget de Syncfy. Finnit guarda solo los ids de Syncfy, nunca usuario ni contraseña del banco.
-- La API sincroniza a las 7:00 y 15:00 (CDMX). Pide a Syncfy que entre al banco como máximo cada 20 h por conexión (o cada hora si el usuario lo pide) y respeta `ready_in`; las lecturas son incrementales (`dt_refresh_from`) y reintenta con espera ante 429/5xx.
+- La API sincroniza a las 7:00 y 15:00 (CDMX), solo con `NODE_ENV=production` (production y testing). En local está apagado para no entrar al banco con una copia de datos reales; `BANK_SYNC_SCHEDULED=true|false` lo fuerza en cualquier ambiente. "Sincronizar ahora" funciona siempre.
+- Cada sincronización pide a Syncfy que entre al banco como máximo cada 20 h por conexión (o cada hora si el usuario lo pide) y respeta `ready_in`; las lecturas son incrementales (`dt_refresh_from`) y reintenta con espera ante 429/5xx.
 - Para adoptar una conexión creada fuera de la app (pruebas): `linkSyncfyUser(email, syncfyUser)` (solo administradores) y luego `registerBankConnection(idCredential)` como ese usuario.
 - Borrar una conexión en Finnit no la borra en Syncfy; hazlo desde Syncfy.
 - Revisa el límite de tu plan de Syncfy (credenciales y transacciones) antes de abrirlo a más usuarios.

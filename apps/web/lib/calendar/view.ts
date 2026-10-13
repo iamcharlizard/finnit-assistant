@@ -1,7 +1,11 @@
 import type { CalendarEvent } from '@finnit/ui/components/finance/calendar-day-cell';
 
 import type { Localizer } from '@/lib/i18n/translator';
-import { dayInMonth, summarizeBalances } from '@/lib/finance/accounts';
+import {
+  accountLabel,
+  dayInMonth,
+  summarizeBalances,
+} from '@/lib/finance/accounts';
 import {
   firstDayOf,
   formatMonthParam,
@@ -95,12 +99,12 @@ export function buildCalendarView(
     if (!terms || account.archived) continue;
     dayOf(dayInMonth(month, terms.statementDay)).cardDates.push({
       id: `${account.id}:statement`,
-      label: t('calendar.statementOf', { name: account.name }),
+      label: t('calendar.statementOf', { name: accountLabel(account) }),
       kind: 'statement',
     });
     dayOf(dayInMonth(month, terms.paymentDueDay)).cardDates.push({
       id: `${account.id}:payment`,
-      label: t('calendar.paymentDueOf', { name: account.name }),
+      label: t('calendar.paymentDueOf', { name: accountLabel(account) }),
       kind: 'payment',
     });
   }

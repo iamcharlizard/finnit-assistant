@@ -24,23 +24,29 @@ import {
   type Connection,
 } from '@/lib/finance/types';
 import {
-  buildCardDetail,
-  buildCards,
-  pickCard,
+  BANK_CONNECTIONS_FIELDS,
+  buildAccountDetail,
+  buildAccounts,
+  pickAccount,
+  type AccountDetail,
+  type AccountSummary,
   type BankConnectionInfo,
-  type CardDetail,
   type CardMonthSummaryData,
-  type CardSummary,
 } from './view';
 
-export interface CardsData {
-  cards: CardSummary[];
-  detail: CardDetail | null;
+export interface AccountsData {
+  accounts: AccountSummary[];
+  detail: AccountDetail | null;
+  showArchived: boolean;
+  archivedCount: number;
+  /** Every account name the user has (archived too): names are unique. */
+  existingNames: string[];
 }
 
-const CARDS_QUERY = `query Cards {
-  accounts(first: 100, archived: false) { edges { node { ${ACCOUNT_FIELDS} } } }
-  bankConnections { institution accounts { accountId mask creditLimit availableCredit } }
+// Archived accounts too: the toggle shows them and their names stay taken.
+const ACCOUNTS_QUERY = `query Accounts {
+  accounts(first: 100) { edges { node { ${ACCOUNT_FIELDS} } } }
+  bankConnections { ${BANK_CONNECTIONS_FIELDS} }
 }`;
 
 const CARD_DETAIL_QUERY = `query CardDetail($accountId: String!, $month: TransactionFilters!, $recent: Int!) {
@@ -66,27 +72,34 @@ const MAX_EXTRA_PAGES = 9;
 type AmountsPage = Connection<Pick<ApiTransaction, 'amount'>>;
 
 /**
- * The user's cards, and for the selected one (?card=…) its recent
+ * The user's accounts, and for the selected one (?account=…) its recent
  * movements, this month's spending and, for credit cards, the month summary.
  */
-export async function loadCards(
-  requested?: string | string[],
-): Promise<CardsData> {
-  const [{ accounts, bankConnections }, l] = await Promise.all([
+export async function loadAccounts({
+  requested,
+  showArchived = false,
+}: {
+  requested?: string | string[];
+  showArchived?: boolean;
+} = {}): Promise<AccountsData> {
+  const [{ accounts: connection, bankConnections }, l] = await Promise.all([
     serverGraphql<{
       accounts: Connection<ApiAccount>;
       bankConnections: BankConnectionInfo[];
-    }>(CARDS_QUERY),
+    }>(ACCOUNTS_QUERY),
     getLocalizer(),
   ]);
 
-  const cards = buildCards(
-    accounts.edges.map((e) => e.node),
-    bankConnections,
-    l,
-  );
-  const card = pickCard(cards, requested);
-  if (!card) return { cards, detail: null };
+  const all = connection.edges.map((e) => e.node);
+  const accounts = buildAccounts(all, bankConnections, l, { showArchived });
+  const base = {
+    accounts,
+    showArchived,
+    archivedCount: all.filter((a) => a.archived).length,
+    existingNames: all.map((a) => a.name),
+  };
+  const card = pickAccount(accounts, requested);
+  if (!card) return { ...base, detail: null };
 
   const today = todayKey();
   const month = monthOf(today);
@@ -107,7 +120,7 @@ export async function loadCards(
       month: monthFilter,
       recent: 8,
     }),
-    card.kind === 'credit'
+    card.type === 'credit'
       ? serverGraphql<{ cardMonthSummary: CardMonthSummaryData }>(
           CARD_SUMMARY_QUERY,
           { accountId: card.id, ...month },
@@ -129,8 +142,8 @@ export async function loadCards(
 
   const categories = indexCategories(detail.categories);
   return {
-    cards,
-    detail: buildCardDetail(
+    ...base,
+    detail: buildAccountDetail(
       card,
       {
         today,

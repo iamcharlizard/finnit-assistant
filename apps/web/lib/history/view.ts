@@ -1,4 +1,5 @@
 import type { Localizer, Translate } from '@/lib/i18n/translator';
+import { accountLabel } from '@/lib/finance/accounts';
 import { spendingByCategory } from '@/lib/finance/breakdown';
 import {
   categoryLabel,
@@ -60,7 +61,7 @@ export function accountOptions(
 ): Option[] {
   return accounts.map((a) => ({
     value: a.id,
-    label: `${a.name} · ${t(`finance.accountTypes.${a.type}`)}`,
+    label: `${accountLabel(a)} · ${t(`finance.accountTypes.${a.type}`)}`,
   }));
 }
 

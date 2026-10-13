@@ -66,10 +66,129 @@
   },
   "newEntry": {
     "title": "Nuevo movimiento",
-    "description": "Muy pronto podrás registrar tus movimientos desde aquí.",
+    "description": "¿Qué quieres registrar?",
     "expense": "Gasto",
     "income": "Ingreso",
-    "transfer": "Transferencia"
+    "transfer": "Transferencia",
+    "kindHints": {
+      "expense": "Una compra o un pago",
+      "income": "Dinero que recibiste",
+      "transfer": "Entre tus cuentas o pago de tarjeta"
+    },
+    "back": "Regresar",
+    "titles": {
+      "expense": "Nuevo gasto",
+      "income": "Nuevo ingreso",
+      "transfer": "Nueva transferencia",
+      "cardPayment": "Pago de tarjeta",
+      "duplicates": "¿Ya está registrado?",
+      "upload": "Comprobante"
+    },
+    "fields": {
+      "amount": "Monto",
+      "amountPlaceholder": "0.00",
+      "account": "Cuenta",
+      "accountPlaceholder": "Elige una cuenta",
+      "accountSearch": "Buscar cuenta",
+      "accountEmpty": "No encontramos cuentas.",
+      "date": "Fecha",
+      "datePlaceholder": "Elige una fecha",
+      "merchantExpense": "Comercio o concepto",
+      "merchantExpensePlaceholder": "Ej. Oxxo, renta, súper",
+      "merchantIncome": "Origen o concepto",
+      "merchantIncomePlaceholder": "Ej. Nómina, venta, reembolso",
+      "note": "Nota (opcional)",
+      "notePlaceholder": "Algo que quieras recordar",
+      "category": "Categoría (opcional)",
+      "categoryPlaceholder": "Elige una categoría",
+      "categorySearch": "Buscar categoría",
+      "categoryEmpty": "No encontramos categorías.",
+      "categorySuggested": "Sugerida según tus movimientos anteriores.",
+      "attachment": "Comprobante (opcional)",
+      "attachmentTitle": "Arrastra una foto o un PDF, o haz clic para elegir",
+      "attachmentHint": "Imagen o PDF, hasta 10 MB",
+      "attachmentDragActive": "Suelta el archivo aquí",
+      "attachmentRemove": "Quitar {name}",
+      "attachmentTooLarge": "{name} pesa más de {max}.",
+      "attachmentWrongType": "{name} no es una imagen ni un PDF.",
+      "from": "Desde",
+      "fromPlaceholder": "Cuenta de origen",
+      "to": "Hacia",
+      "toPlaceholder": "Cuenta o tarjeta de destino",
+      "toEmpty": "No tienes otra cuenta en la misma moneda.",
+      "transferDescription": "Descripción (opcional)",
+      "transferDescriptionPlaceholder": "Ej. Ahorro del mes",
+      "available": "Disponible: {amount}",
+      "owed": "Debes: {amount}"
+    },
+    "cardPaymentHint": "Es un pago de tarjeta: el dinero sale de la cuenta de origen y reduce lo que debes en la tarjeta.",
+    "transferHint": "Para pagar una tarjeta de crédito, elígela como destino.",
+    "defaultTransferDescription": "Transferencia a {account}",
+    "defaultCardPaymentDescription": "Pago de tarjeta {account}",
+    "noAccounts": {
+      "title": "Primero necesitas una cuenta",
+      "description": "Conecta tu banco o agrega una cuenta para registrar movimientos."
+    },
+    "noTransferAccounts": "Para transferir necesitas al menos dos cuentas en la misma moneda, y una de ellas de débito, efectivo, ahorro o monedero.",
+    "submit": {
+      "expense": "Registrar gasto",
+      "income": "Registrar ingreso",
+      "transfer": "Registrar transferencia",
+      "cardPayment": "Registrar pago"
+    },
+    "checking": "Revisando…",
+    "saving": "Guardando…",
+    "validation": {
+      "amountRequired": "Escribe el monto.",
+      "amountInvalid": "Escribe un monto mayor a cero, por ejemplo 150.50.",
+      "amountTooLarge": "El monto es demasiado grande.",
+      "accountRequired": "Elige una cuenta.",
+      "dateRequired": "Elige la fecha.",
+      "dateInFuture": "La fecha no puede ser posterior a hoy.",
+      "fromRequired": "Elige de qué cuenta sale el dinero.",
+      "toRequired": "Elige a qué cuenta llega el dinero.",
+      "sameAccount": "Elige dos cuentas distintas.",
+      "currencyMismatch": "Las dos cuentas deben tener la misma moneda."
+    },
+    "errors": {
+      "network": "No pudimos conectar con Finnit. Revisa tu conexión.",
+      "sessionEnded": "Tu sesión terminó. Vuelve a iniciar sesión.",
+      "insufficientBalance": "La cuenta de origen no tiene saldo suficiente.",
+      "sameAccount": "Elige dos cuentas distintas.",
+      "currencyMismatch": "Las dos cuentas deben tener la misma moneda.",
+      "notFound": "Ya no encontramos la cuenta o la categoría. Cierra y vuelve a intentarlo.",
+      "invalid": "Revisa los datos e intenta de nuevo.",
+      "createFailed": "No pudimos registrar el movimiento. Intenta de nuevo.",
+      "loadFailed": "No pudimos cargar tus cuentas.",
+      "uploadNetwork": "No pudimos subir el comprobante. Revisa tu conexión.",
+      "uploadTooLarge": "El archivo pesa más de 10 MB.",
+      "uploadInvalid": "Solo se aceptan imágenes (JPG, PNG, WEBP o HEIC) o PDF.",
+      "uploadFailed": "No pudimos subir el comprobante."
+    },
+    "duplicates": {
+      "description": "Encontramos {count, plural, one {un movimiento parecido} other {# movimientos parecidos}} en esta cuenta, con el mismo monto y en fechas cercanas.",
+      "attachHint": "Si eliges uno, le agregaremos el comprobante.",
+      "isThis": "Es este",
+      "createAnyway": "Registrar de todos modos",
+      "noDescription": "Sin descripción"
+    },
+    "upload": {
+      "created": "El movimiento ya quedó registrado.",
+      "uploading": "Subiendo el comprobante…",
+      "progress": "{percent}%",
+      "retry": "Reintentar",
+      "skip": "Cerrar sin comprobante"
+    },
+    "toasts": {
+      "expense": "Gasto registrado",
+      "income": "Ingreso registrado",
+      "transfer": "Transferencia registrada",
+      "cardPayment": "Pago de tarjeta registrado",
+      "withAttachment": "Con su comprobante.",
+      "withoutAttachment": "Sin comprobante: no se pudo subir.",
+      "attached": "Comprobante agregado al movimiento que ya tenías.",
+      "alreadyRegistered": "Listo, ese movimiento ya estaba registrado."
+    }
   },
   "errors": {
     "network": "No pudimos conectar con Finnit. Revisa tu conexión.",
@@ -204,26 +323,18 @@
     "count": "{shown} de {total, plural, one {# movimiento} other {# movimientos}}"
   },
   "cards": {
-    "title": "Mis Tarjetas",
     "count": "{count, plural, one {# tarjeta} other {# tarjetas}}",
-    "emptyTitle": "Aún no tienes tarjetas",
-    "emptyDescription": "Conecta tu banco para ver aquí tus tarjetas de crédito y débito, su saldo y sus fechas de corte.",
     "expensesOf": "Gastos · {month}",
     "movementsOf": "Movimientos de {name}",
     "noMovementsTitle": "Sin movimientos",
-    "noMovementsDescription": "Esta tarjeta aún no tiene movimientos.",
-    "tier": {
-      "credit": "CRÉDITO",
-      "debit": "DÉBITO"
-    },
-    "carouselLabel": "Carrusel de tarjetas",
-    "selected": "{name} · Seleccionada",
+    "noMovementsDescription": "Esta cuenta aún no tiene movimientos.",
+    "carouselLabel": "Cuentas de {group}",
     "availableCredit": "Crédito disponible: {amount}",
     "currentDebt": "Deuda actual",
     "availableBalance": "Saldo disponible",
     "noLimit": "Sin límite de crédito registrado para esta tarjeta.",
     "factsTitle": "Corte y pago",
-    "noFacts": "Aún no tenemos el día de corte de esta tarjeta ni su estado de cuenta de este mes.",
+    "noFacts": "Aún no tenemos el día de corte de esta tarjeta ni su estado de cuenta de este mes. Agrégalo desde Editar.",
     "recurringSummary": "{count, plural, one {# cargo recurrente} other {# cargos recurrentes}} este periodo: {expected} esperado, {paid} ya cobrado.",
     "facts": {
       "due": "{date} · {relative}",
@@ -233,7 +344,177 @@
       "statementBalanceOn": "Saldo al corte ({date})",
       "statementBalance": "Saldo al corte",
       "noInterest": "Pago para no generar intereses",
-      "minimum": "Pago mínimo"
+      "minimum": "Pago mínimo",
+      "interestRate": "Tasa anual",
+      "percent": "{rate} %"
+    }
+  },
+  "accounts": {
+    "title": "Cuentas y tarjetas",
+    "count": "{count, plural, one {# cuenta} other {# cuentas}}",
+    "add": "Agregar cuenta",
+    "edit": "Editar",
+    "editLabel": "Editar {name}",
+    "showArchived": "Mostrar archivadas ({count})",
+    "emptyTitle": "Aún no tienes cuentas",
+    "emptyDescription": "Conecta tu banco para importar tus cuentas y movimientos, o agrega una cuenta a mano.",
+    "groups": {
+      "credit": "Tarjetas de crédito",
+      "debit": "Débito y efectivo",
+      "savings": "Ahorro y otras"
+    },
+    "tier": {
+      "cash": "EFECTIVO",
+      "credit": "CRÉDITO",
+      "debit": "DÉBITO",
+      "ewallet": "MONEDERO",
+      "savings": "AHORRO"
+    },
+    "status": {
+      "linked": "Conectada",
+      "manual": "Manual",
+      "archived": "Archivada"
+    },
+    "tile": {
+      "owed": "Debes {amount}",
+      "available": "Saldo {amount}",
+      "select": "Ver {name}"
+    },
+    "cardBalance": "Saldo",
+    "detailTitle": "Detalle",
+    "manualLink": {
+      "question": "¿Tu banco no aparece?",
+      "action": "Agrégala manualmente"
+    },
+    "wizard": {
+      "title": "Agregar cuenta",
+      "description": "Para bancos que no podemos conectar, o si prefieres registrar tus movimientos a mano.",
+      "stepOf": "Paso {current} de {total}: {step}",
+      "steps": {
+        "type": "Tipo",
+        "details": "Datos",
+        "money": "Saldo",
+        "design": "Diseño"
+      },
+      "typeQuestion": "¿Qué quieres agregar?",
+      "types": {
+        "debit": {
+          "title": "Cuenta de débito",
+          "hint": "Nómina, cheques o tarjeta de débito"
+        },
+        "credit": {
+          "title": "Tarjeta de crédito",
+          "hint": "Con fecha de corte y de pago"
+        },
+        "cash": {
+          "title": "Efectivo",
+          "hint": "El dinero de tu cartera"
+        },
+        "savings": {
+          "title": "Ahorro",
+          "hint": "Cuenta de ahorro, inversión o apartado"
+        }
+      },
+      "bank": "Banco",
+      "bankOptional": "Banco (opcional)",
+      "bankPlaceholder": "Elige tu banco",
+      "bankSearch": "Busca tu banco…",
+      "bankEmpty": "No encontramos ese banco. Elige «Otro».",
+      "bankOther": "Otro",
+      "bankOtherLabel": "Nombre del banco",
+      "bankOtherPlaceholder": "Ej. Caja Popular Mexicana",
+      "nickname": "Apodo (opcional)",
+      "nicknamePlaceholder": "Ej. Tarjeta del súper",
+      "nicknameHint": "Solo tú lo ves. Lo usamos en toda la app en lugar del nombre.",
+      "last4": "Últimos 4 dígitos (opcional)",
+      "last4Placeholder": "1234",
+      "currency": "Moneda",
+      "currencies": {
+        "MXN": "Pesos mexicanos (MXN)",
+        "USD": "Dólares (USD)"
+      },
+      "balance": "Saldo actual",
+      "balanceHint": "Lo registramos como saldo inicial: no cuenta como ingreso del mes.",
+      "debt": "Deuda actual",
+      "debtHint": "Lo que debes hoy en la tarjeta. Lo registramos como saldo inicial, no como gasto del mes.",
+      "creditLimit": "Límite de crédito",
+      "termsTitle": "Corte y pago",
+      "statementDay": "Día de corte",
+      "paymentDueDay": "Día límite de pago",
+      "dayPlaceholder": "1 a 31",
+      "interestRate": "Tasa de interés anual (opcional)",
+      "interestRatePlaceholder": "Ej. 45.5",
+      "designIntro": "Elige cómo se ve tu tarjeta. Puedes cambiarlo cuando quieras.",
+      "nameNote": "La guardaremos como «{name}».",
+      "back": "Atrás",
+      "next": "Siguiente",
+      "create": "Crear cuenta",
+      "creating": "Creando…",
+      "doneTitle": "Agregamos {name}",
+      "termsFailed": "La cuenta quedó creada, pero no pudimos guardar el corte y el pago ({error}). Agrégalos desde Editar.",
+      "viewAccount": "Ver cuenta"
+    },
+    "design": {
+      "title": "Diseño",
+      "modeLabel": "Estilo de la tarjeta",
+      "preset": "Predeterminado",
+      "solid": "Un color",
+      "gradient": "Degradado",
+      "primary": "Color principal",
+      "secondary": "Segundo color",
+      "preview": "Vista previa",
+      "textNote": "El color del texto se ajusta solo para que siempre se lea bien.",
+      "swatches": "Colores sugeridos",
+      "custom": "Color personalizado",
+      "hex": "Código hexadecimal",
+      "colors": {
+        "teal": "Verde azulado",
+        "ocean": "Océano",
+        "indigo": "Índigo",
+        "purple": "Morado",
+        "magenta": "Magenta",
+        "red": "Rojo",
+        "orange": "Naranja",
+        "yellow": "Amarillo",
+        "green": "Verde",
+        "graphite": "Grafito"
+      }
+    },
+    "editDialog": {
+      "title": "Editar cuenta",
+      "description": "Personaliza cómo ves {name}.",
+      "originalName": "Nombre en Finnit: {name}",
+      "linkedNote": "Esta cuenta se importa de tu banco: el banco, los dígitos y el límite vienen de ahí y no se pueden cambiar.",
+      "accountData": "Datos de la cuenta",
+      "readOnlyBank": "Banco: {bank}",
+      "readOnlyLast4": "Terminación: {last4}",
+      "hasTerms": "Registrar corte y pago",
+      "hasTermsHint": "Apágalo para quitar el corte y el pago de esta tarjeta.",
+      "save": "Guardar",
+      "saving": "Guardando…"
+    },
+    "archive": {
+      "archive": "Archivar",
+      "unarchive": "Desarchivar",
+      "confirmTitle": "¿Archivar {name}?",
+      "confirmDescription": "Dejará de aparecer en tus cuentas, saldos y calendario. Sus movimientos se conservan y puedes desarchivarla cuando quieras.",
+      "confirm": "Archivar",
+      "working": "Guardando…",
+      "archivedNote": "Esta cuenta está archivada: no cuenta en tus saldos."
+    },
+    "errors": {
+      "required": "Elige qué quieres agregar.",
+      "bankRequired": "Elige o escribe el banco.",
+      "last4": "Escribe exactamente 4 dígitos.",
+      "amount": "Escribe una cantidad válida.",
+      "notNegative": "No puede ser negativo.",
+      "positive": "Debe ser mayor a 0.",
+      "day": "Escribe un día del 1 al 31.",
+      "rate": "Escribe una tasa entre 0 y 200.",
+      "nicknameLength": "El apodo puede tener hasta 40 caracteres.",
+      "hex": "Usa el formato #RRGGBB.",
+      "duplicateName": "Ya tienes una cuenta con ese nombre.",
+      "notFound": "No encontramos esta cuenta."
     }
   },
   "calendar": {

@@ -259,6 +259,22 @@ describe('transactions', () => {
     );
   });
 
+  it('prefers the transfer side the API reports over the description', () => {
+    const base = tx({
+      type: 'transfer',
+      merchantName: null,
+      description: 'Pago de tarjeta Oro',
+    });
+    assert.equal(direction(base), 'unknown');
+    assert.equal(direction({ ...base, transferDirection: 'out' }), 'out');
+    assert.equal(direction({ ...base, transferDirection: 'in' }), 'in');
+    assert.equal(
+      toTransactionRow({ ...base, transferDirection: 'out' }, CATEGORIES, es)
+        .title,
+      'Pago de tarjeta Oro',
+    );
+  });
+
   it('shows bank dates without a time and groups by day, newest first', () => {
     const rows = [
       toTransactionRow(

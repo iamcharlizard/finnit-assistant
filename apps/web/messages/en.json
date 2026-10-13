@@ -66,10 +66,129 @@
   },
   "newEntry": {
     "title": "New transaction",
-    "description": "Soon you'll be able to record your transactions here.",
+    "description": "What do you want to record?",
     "expense": "Expense",
     "income": "Income",
-    "transfer": "Transfer"
+    "transfer": "Transfer",
+    "kindHints": {
+      "expense": "A purchase or a payment",
+      "income": "Money you received",
+      "transfer": "Between your accounts or a card payment"
+    },
+    "back": "Back",
+    "titles": {
+      "expense": "New expense",
+      "income": "New income",
+      "transfer": "New transfer",
+      "cardPayment": "Card payment",
+      "duplicates": "Already recorded?",
+      "upload": "Receipt"
+    },
+    "fields": {
+      "amount": "Amount",
+      "amountPlaceholder": "0.00",
+      "account": "Account",
+      "accountPlaceholder": "Choose an account",
+      "accountSearch": "Search accounts",
+      "accountEmpty": "No accounts found.",
+      "date": "Date",
+      "datePlaceholder": "Pick a date",
+      "merchantExpense": "Merchant or concept",
+      "merchantExpensePlaceholder": "E.g. Starbucks, rent, groceries",
+      "merchantIncome": "Source or concept",
+      "merchantIncomePlaceholder": "E.g. Salary, sale, refund",
+      "note": "Note (optional)",
+      "notePlaceholder": "Anything you want to remember",
+      "category": "Category (optional)",
+      "categoryPlaceholder": "Choose a category",
+      "categorySearch": "Search categories",
+      "categoryEmpty": "No categories found.",
+      "categorySuggested": "Suggested from your past transactions.",
+      "attachment": "Receipt (optional)",
+      "attachmentTitle": "Drag a photo or a PDF here, or click to choose",
+      "attachmentHint": "Image or PDF, up to 10 MB",
+      "attachmentDragActive": "Drop the file here",
+      "attachmentRemove": "Remove {name}",
+      "attachmentTooLarge": "{name} is larger than {max}.",
+      "attachmentWrongType": "{name} is not an image or a PDF.",
+      "from": "From",
+      "fromPlaceholder": "Source account",
+      "to": "To",
+      "toPlaceholder": "Destination account or card",
+      "toEmpty": "You have no other account in the same currency.",
+      "transferDescription": "Description (optional)",
+      "transferDescriptionPlaceholder": "E.g. Monthly savings",
+      "available": "Available: {amount}",
+      "owed": "You owe: {amount}"
+    },
+    "cardPaymentHint": "This is a card payment: the money leaves the source account and lowers what you owe on the card.",
+    "transferHint": "To pay a credit card, choose it as the destination.",
+    "defaultTransferDescription": "Transfer to {account}",
+    "defaultCardPaymentDescription": "Card payment {account}",
+    "noAccounts": {
+      "title": "You need an account first",
+      "description": "Connect your bank or add an account to record transactions."
+    },
+    "noTransferAccounts": "To transfer you need at least two accounts in the same currency, one of them a debit, cash, savings or e-wallet account.",
+    "submit": {
+      "expense": "Record expense",
+      "income": "Record income",
+      "transfer": "Record transfer",
+      "cardPayment": "Record payment"
+    },
+    "checking": "Checking…",
+    "saving": "Saving…",
+    "validation": {
+      "amountRequired": "Enter the amount.",
+      "amountInvalid": "Enter an amount greater than zero, e.g. 150.50.",
+      "amountTooLarge": "The amount is too large.",
+      "accountRequired": "Choose an account.",
+      "dateRequired": "Choose the date.",
+      "dateInFuture": "The date can't be later than today.",
+      "fromRequired": "Choose the account the money leaves.",
+      "toRequired": "Choose the account the money goes to.",
+      "sameAccount": "Choose two different accounts.",
+      "currencyMismatch": "Both accounts must have the same currency."
+    },
+    "errors": {
+      "network": "We couldn't reach Finnit. Check your connection.",
+      "sessionEnded": "Your session ended. Please sign in again.",
+      "insufficientBalance": "The source account doesn't have enough balance.",
+      "sameAccount": "Choose two different accounts.",
+      "currencyMismatch": "Both accounts must have the same currency.",
+      "notFound": "We can no longer find the account or the category. Close and try again.",
+      "invalid": "Check the details and try again.",
+      "createFailed": "We couldn't record the transaction. Try again.",
+      "loadFailed": "We couldn't load your accounts.",
+      "uploadNetwork": "We couldn't upload the receipt. Check your connection.",
+      "uploadTooLarge": "The file is larger than 10 MB.",
+      "uploadInvalid": "Only images (JPG, PNG, WEBP or HEIC) or PDFs are accepted.",
+      "uploadFailed": "We couldn't upload the receipt."
+    },
+    "duplicates": {
+      "description": "We found {count, plural, one {a similar transaction} other {# similar transactions}} in this account, with the same amount and nearby dates.",
+      "attachHint": "If you pick one, we'll add the receipt to it.",
+      "isThis": "This is it",
+      "createAnyway": "Record anyway",
+      "noDescription": "No description"
+    },
+    "upload": {
+      "created": "The transaction is already recorded.",
+      "uploading": "Uploading the receipt…",
+      "progress": "{percent}%",
+      "retry": "Retry",
+      "skip": "Close without receipt"
+    },
+    "toasts": {
+      "expense": "Expense recorded",
+      "income": "Income recorded",
+      "transfer": "Transfer recorded",
+      "cardPayment": "Card payment recorded",
+      "withAttachment": "With its receipt.",
+      "withoutAttachment": "Without receipt: it couldn't be uploaded.",
+      "attached": "Receipt added to the transaction you already had.",
+      "alreadyRegistered": "Done, that transaction was already recorded."
+    }
   },
   "errors": {
     "network": "We couldn't reach Finnit. Check your connection.",
@@ -204,26 +323,18 @@
     "count": "{shown} of {total, plural, one {# transaction} other {# transactions}}"
   },
   "cards": {
-    "title": "My cards",
     "count": "{count, plural, one {# card} other {# cards}}",
-    "emptyTitle": "You don't have any cards yet",
-    "emptyDescription": "Connect your bank to see your credit and debit cards here, with their balance and statement dates.",
-    "expensesOf": "Expenses · {month}",
+    "expensesOf": "Spending · {month}",
     "movementsOf": "{name} transactions",
     "noMovementsTitle": "No transactions",
-    "noMovementsDescription": "This card has no transactions yet.",
-    "tier": {
-      "credit": "CREDIT",
-      "debit": "DEBIT"
-    },
-    "carouselLabel": "Card carousel",
-    "selected": "{name} · Selected",
+    "noMovementsDescription": "This account has no transactions yet.",
+    "carouselLabel": "{group} accounts",
     "availableCredit": "Available credit: {amount}",
     "currentDebt": "Current debt",
     "availableBalance": "Available balance",
     "noLimit": "No credit limit recorded for this card.",
     "factsTitle": "Statement and payment",
-    "noFacts": "We don't know this card's statement day or this month's statement yet.",
+    "noFacts": "We don't have this card's statement day or this month's statement yet. Add it from Edit.",
     "recurringSummary": "{count, plural, one {# recurring charge} other {# recurring charges}} this period: {expected} expected, {paid} already charged.",
     "facts": {
       "due": "{date} · {relative}",
@@ -233,7 +344,177 @@
       "statementBalanceOn": "Statement balance ({date})",
       "statementBalance": "Statement balance",
       "noInterest": "Payment to avoid interest",
-      "minimum": "Minimum payment"
+      "minimum": "Minimum payment",
+      "interestRate": "Annual rate",
+      "percent": "{rate}%"
+    }
+  },
+  "accounts": {
+    "title": "Accounts & cards",
+    "count": "{count, plural, one {# account} other {# accounts}}",
+    "add": "Add account",
+    "edit": "Edit",
+    "editLabel": "Edit {name}",
+    "showArchived": "Show archived ({count})",
+    "emptyTitle": "No accounts yet",
+    "emptyDescription": "Connect your bank to import your accounts and transactions, or add an account by hand.",
+    "groups": {
+      "credit": "Credit cards",
+      "debit": "Debit & cash",
+      "savings": "Savings & other"
+    },
+    "tier": {
+      "cash": "CASH",
+      "credit": "CREDIT",
+      "debit": "DEBIT",
+      "ewallet": "E-WALLET",
+      "savings": "SAVINGS"
+    },
+    "status": {
+      "linked": "Connected",
+      "manual": "Manual",
+      "archived": "Archived"
+    },
+    "tile": {
+      "owed": "You owe {amount}",
+      "available": "Balance {amount}",
+      "select": "View {name}"
+    },
+    "cardBalance": "Balance",
+    "detailTitle": "Details",
+    "manualLink": {
+      "question": "Can't find your bank?",
+      "action": "Add it manually"
+    },
+    "wizard": {
+      "title": "Add account",
+      "description": "For banks we can't connect, or if you'd rather track your transactions by hand.",
+      "stepOf": "Step {current} of {total}: {step}",
+      "steps": {
+        "type": "Type",
+        "details": "Details",
+        "money": "Balance",
+        "design": "Design"
+      },
+      "typeQuestion": "What would you like to add?",
+      "types": {
+        "debit": {
+          "title": "Debit account",
+          "hint": "Payroll, checking or debit card"
+        },
+        "credit": {
+          "title": "Credit card",
+          "hint": "With statement and payment dates"
+        },
+        "cash": {
+          "title": "Cash",
+          "hint": "The money in your wallet"
+        },
+        "savings": {
+          "title": "Savings",
+          "hint": "Savings, investment or a stash"
+        }
+      },
+      "bank": "Bank",
+      "bankOptional": "Bank (optional)",
+      "bankPlaceholder": "Choose your bank",
+      "bankSearch": "Search your bank…",
+      "bankEmpty": "We couldn't find that bank. Choose “Other”.",
+      "bankOther": "Other",
+      "bankOtherLabel": "Bank name",
+      "bankOtherPlaceholder": "E.g. Caja Popular Mexicana",
+      "nickname": "Nickname (optional)",
+      "nicknamePlaceholder": "E.g. Grocery card",
+      "nicknameHint": "Only you see it. We use it across the app instead of the name.",
+      "last4": "Last 4 digits (optional)",
+      "last4Placeholder": "1234",
+      "currency": "Currency",
+      "currencies": {
+        "MXN": "Mexican pesos (MXN)",
+        "USD": "US dollars (USD)"
+      },
+      "balance": "Current balance",
+      "balanceHint": "We record it as the opening balance: it doesn't count as this month's income.",
+      "debt": "Current debt",
+      "debtHint": "What you owe on the card today. We record it as the opening balance, not as this month's spending.",
+      "creditLimit": "Credit limit",
+      "termsTitle": "Statement and payment",
+      "statementDay": "Statement day",
+      "paymentDueDay": "Payment due day",
+      "dayPlaceholder": "1 to 31",
+      "interestRate": "Annual interest rate (optional)",
+      "interestRatePlaceholder": "E.g. 45.5",
+      "designIntro": "Choose how your card looks. You can change it anytime.",
+      "nameNote": "We'll save it as “{name}”.",
+      "back": "Back",
+      "next": "Next",
+      "create": "Create account",
+      "creating": "Creating…",
+      "doneTitle": "{name} was added",
+      "termsFailed": "The account was created, but we couldn't save its statement and payment days ({error}). Add them from Edit.",
+      "viewAccount": "View account"
+    },
+    "design": {
+      "title": "Design",
+      "modeLabel": "Card style",
+      "preset": "Default",
+      "solid": "One color",
+      "gradient": "Gradient",
+      "primary": "Main color",
+      "secondary": "Second color",
+      "preview": "Preview",
+      "textNote": "The text color adjusts itself so it's always easy to read.",
+      "swatches": "Suggested colors",
+      "custom": "Custom color",
+      "hex": "Hex code",
+      "colors": {
+        "teal": "Teal",
+        "ocean": "Ocean",
+        "indigo": "Indigo",
+        "purple": "Purple",
+        "magenta": "Magenta",
+        "red": "Red",
+        "orange": "Orange",
+        "yellow": "Yellow",
+        "green": "Green",
+        "graphite": "Graphite"
+      }
+    },
+    "editDialog": {
+      "title": "Edit account",
+      "description": "Personalize how you see {name}.",
+      "originalName": "Name in Finnit: {name}",
+      "linkedNote": "This account is imported from your bank: the bank, digits and limit come from there and can't be changed.",
+      "accountData": "Account details",
+      "readOnlyBank": "Bank: {bank}",
+      "readOnlyLast4": "Ending in: {last4}",
+      "hasTerms": "Track statement and payment",
+      "hasTermsHint": "Turn it off to remove this card's statement and payment days.",
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "archive": {
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "confirmTitle": "Archive {name}?",
+      "confirmDescription": "It will no longer show in your accounts, balances and calendar. Its transactions are kept and you can unarchive it anytime.",
+      "confirm": "Archive",
+      "working": "Saving…",
+      "archivedNote": "This account is archived: it doesn't count in your balances."
+    },
+    "errors": {
+      "required": "Choose what you'd like to add.",
+      "bankRequired": "Choose or type the bank.",
+      "last4": "Type exactly 4 digits.",
+      "amount": "Type a valid amount.",
+      "notNegative": "It can't be negative.",
+      "positive": "It must be greater than 0.",
+      "day": "Type a day from 1 to 31.",
+      "rate": "Type a rate between 0 and 200.",
+      "nicknameLength": "The nickname can be up to 40 characters.",
+      "hex": "Use the #RRGGBB format.",
+      "duplicateName": "You already have an account with that name.",
+      "notFound": "We couldn't find this account."
     }
   },
   "calendar": {

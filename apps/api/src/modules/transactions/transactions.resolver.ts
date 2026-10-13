@@ -1,4 +1,12 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  ResolveField,
+  Parent,
+  Context,
+} from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import {
@@ -14,11 +22,28 @@ import {
   Transaction,
   TransactionConnection,
 } from '../../common/types/models/transaction.model';
+import { TransferDirectionLoader } from './transfer-direction.loader';
 
 @Resolver(() => Transaction)
 @UseGuards(JwtAuthGuard)
 export class TransactionsResolver {
-  constructor(private readonly transactionsService: TransactionsService) {}
+  constructor(
+    private readonly transactionsService: TransactionsService,
+    private readonly transferDirections: TransferDirectionLoader,
+  ) {}
+
+  @ResolveField('transferDirection', () => String, {
+    nullable: true,
+    description:
+      'For transfers: "out" on the source account, "in" on the destination; null otherwise',
+  })
+  async transferDirection(
+    @Parent() transaction: Transaction,
+    @Context('req') req: object,
+  ): Promise<string | null> {
+    if (transaction.type !== 'transfer') return null;
+    return this.transferDirections.load(req, transaction.id);
+  }
 
   @Query(() => TransactionConnection)
   async transactions(

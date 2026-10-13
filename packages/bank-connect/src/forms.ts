@@ -1,3 +1,4 @@
+import { messagesFor, type Locale } from './messages';
 import type { FieldValues, Site, SiteField, TwofaField } from './types';
 
 /** Login field types the native form can render. */
@@ -53,7 +54,9 @@ export interface FieldError {
 export function validateFields(
   fields: (SiteField | TwofaField)[],
   values: FieldValues,
+  locale?: Locale,
 ): FieldError[] {
+  const texts = messagesFor(locale).fields;
   const errors: FieldError[] = [];
   for (const field of fields) {
     if (field.type === 'externalAction') continue;
@@ -61,20 +64,19 @@ export function validateFields(
     const empty = value === undefined || String(value).trim() === '';
     const required = 'required' in field ? field.required !== false : true;
     if (empty) {
-      if (required)
-        errors.push({ name: field.name, message: 'Este dato es obligatorio' });
+      if (required) errors.push({ name: field.name, message: texts.required });
       continue;
     }
     const options = field.options ?? null;
     if (options && !options.some((o) => String(o.value) === String(value))) {
-      errors.push({ name: field.name, message: 'Elige una de las opciones' });
+      errors.push({ name: field.name, message: texts.invalidOption });
       continue;
     }
     const pattern = 'validation' in field ? field.validation : null;
     if (pattern) {
       try {
         if (!new RegExp(pattern).test(String(value))) {
-          errors.push({ name: field.name, message: 'El formato no es válido' });
+          errors.push({ name: field.name, message: texts.invalidFormat });
         }
       } catch {
         // A pattern Syncfy sends that JS can't compile: let the bank decide.

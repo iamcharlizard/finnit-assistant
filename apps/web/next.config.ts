@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
     // multipart overhead; /api/files rejects anything above 10.5 MB itself.
     proxyClientMaxBodySize: '11mb',
   },
+  async redirects() {
+    // "Mis tarjetas" became "Cuentas y tarjetas"; the query (?card=…) is kept.
+    return [{ source: '/cards', destination: '/accounts', permanent: false }];
+  },
 };
 
 // Reads the request config from ./i18n/request.ts.

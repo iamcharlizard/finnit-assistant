@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '@finnit/ui/components/ui/button';
 import { BodyMd, TitleLg } from '@finnit/ui/components/ui/typography';
 
+import { ManualAccountLink } from '@/components/accounts/manual-account-link';
 import { BankConnectionCard } from '@/components/bank-connect/bank-connection-card';
 import { fetchBankConnections } from '@/lib/bank-connect/connections';
 
@@ -40,6 +41,8 @@ export default async function BanksPage() {
           <BankConnectionCard key={connection.id} connection={connection} />
         ))
       )}
+
+      <ManualAccountLink />
     </div>
   );
 }

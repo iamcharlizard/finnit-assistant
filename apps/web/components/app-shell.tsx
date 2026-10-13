@@ -5,10 +5,11 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { TopAppBar } from '@finnit/ui/components/navigation/top-app-bar';
+import { Toaster } from '@finnit/ui/components/ui/toaster';
 
 import { AppBottomNav } from '@/components/navigation/app-bottom-nav';
 import { AppSideNav } from '@/components/navigation/app-side-nav';
-import { NewEntrySheet } from '@/components/navigation/new-entry-sheet';
+import { NewEntrySheet } from '@/components/new-entry/new-entry-sheet';
 import { initials, useSessionUser } from '@/components/session-provider';
 import { activeNavHref, visibleSections } from '@/lib/nav/sections';
 import { pageTitleKey } from '@/lib/nav/titles';
@@ -32,7 +33,7 @@ export function AppShell({
     sections.flatMap((s) => s.items.map((i) => i.href)),
     pathname,
   );
-  // Phase 2 replaces this placeholder with the create flow.
+  // "Nuevo movimiento" (the "+" buttons).
   const [adding, setAdding] = React.useState(false);
   const handleAdd = () => setAdding(true);
 
@@ -69,6 +70,7 @@ export function AppShell({
         className="lg:hidden"
       />
       <NewEntrySheet open={adding} onOpenChange={setAdding} />
+      <Toaster position="top-center" closeButton={false} />
     </div>
   );
 }

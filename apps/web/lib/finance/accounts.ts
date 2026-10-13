@@ -6,7 +6,7 @@ import {
   type DayKey,
 } from './dates';
 import { DEFAULT_CURRENCY, roundCents } from './money';
-import type { ApiAccount } from './types';
+import type { AccountDesign, ApiAccount } from './types';
 
 export interface CurrencyBalance {
   currency: string;
@@ -80,4 +80,35 @@ export function dayInMonth(
   dayOfMonth: number,
 ): number {
   return Math.min(Math.max(1, Math.round(dayOfMonth)), daysInMonth(m));
+}
+
+type Labelled = {
+  name: string;
+  metadata?: { nickname?: string | null } | null;
+};
+
+/** How an account shows everywhere: the user's nickname, else its name. */
+export function accountLabel(account: Labelled): string {
+  const nickname = account.metadata?.nickname?.trim();
+  return nickname || account.name;
+}
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+/**
+ * The user's card colors, or null to use the preset look. A gradient keeps
+ * its second color only when both are valid '#RRGGBB'.
+ */
+export function accountDesign(account: {
+  metadata?: { design?: AccountDesign | null } | null;
+}): { primaryColor: string; secondaryColor: string | null } | null {
+  const design = account.metadata?.design;
+  if (!design || !HEX_COLOR.test(design.primaryColor ?? '')) return null;
+  return {
+    primaryColor: design.primaryColor.toUpperCase(),
+    secondaryColor:
+      design.secondaryColor && HEX_COLOR.test(design.secondaryColor)
+        ? design.secondaryColor.toUpperCase()
+        : null,
+  };
 }

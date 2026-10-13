@@ -99,8 +99,19 @@ describe('TransfersService', () => {
     const dates = mockTx.transaction.create.mock.calls.map(
       ([args]) => args.data.txnDate,
     );
-    return { transfer, dates };
+    const descriptions = mockTx.transaction.create.mock.calls.map(
+      ([args]) => (args.data as { description?: string }).description,
+    );
+    return { transfer, dates, descriptions };
   };
+
+  it('keeps the same description on both sides, with no English side suffix', async () => {
+    const { descriptions } = await createWith();
+    expect(descriptions).toEqual([
+      'Transfer to Account to',
+      'Transfer to Account to',
+    ]);
+  });
 
   it('dates both sides with the Mexico City day of the given moment', async () => {
     // Oct 13, 22:30 in Mexico City.

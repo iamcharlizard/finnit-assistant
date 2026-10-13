@@ -3,6 +3,7 @@ import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { AccountsService } from './accounts.service';
 import { PrismaService } from '../../services/prisma.service';
 import {
+  ConflictError,
   InvalidAccountTypeError,
   NotFoundError,
   ValidationError,
@@ -71,6 +72,23 @@ describe('AccountsService', () => {
     const mockTxWith = () => ({
       account: { create: jest.fn() },
       transaction: { create: jest.fn() },
+    });
+
+    it('turns a duplicate account name into a ConflictError', async () => {
+      const { Prisma } =
+        jest.requireActual<typeof import('@finnit/database')>(
+          '@finnit/database',
+        );
+      prismaService.$transaction.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: 'test',
+        }),
+      );
+
+      await expect(service.create(mockUserId, createInput)).rejects.toThrow(
+        ConflictError,
+      );
     });
 
     it('creates the account and its opening balance as an adjustment in one transaction', async () => {

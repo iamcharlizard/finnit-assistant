@@ -9,6 +9,7 @@ import {
   CreditCardTermsInput,
 } from './dto/account.dto';
 import {
+  ConflictError,
   InvalidAccountTypeError,
   NotFoundError,
   ValidationError,
@@ -42,35 +43,45 @@ export class AccountsService {
 
     // The account and its opening balance are created together. The opening
     // balance is an adjustment, so it never counts as income or spending.
-    return await this.prisma.$transaction(async (tx) => {
-      const account = await tx.account.create({
-        data: {
-          userId,
-          type: input.type,
-          name: input.name,
-          currency: input.currency,
-          balanceCurrent: input.initialBalance,
-          ...(metadata && { metadata }),
-        },
-      });
-
-      if (input.initialBalance !== 0) {
-        await tx.transaction.create({
+    return await this.prisma
+      .$transaction(async (tx) => {
+        const account = await tx.account.create({
           data: {
             userId,
-            accountId: account.id,
-            type: TransactionType.adjustment,
-            amount: Math.abs(input.initialBalance),
+            type: input.type,
+            name: input.name,
             currency: input.currency,
-            txnDate: localToday(),
-            description: OPENING_BALANCE_DESCRIPTION,
-            source: TransactionSource.manual,
+            balanceCurrent: input.initialBalance,
+            ...(metadata && { metadata }),
           },
         });
-      }
 
-      return this.mapAccount(account);
-    });
+        if (input.initialBalance !== 0) {
+          await tx.transaction.create({
+            data: {
+              userId,
+              accountId: account.id,
+              type: TransactionType.adjustment,
+              amount: Math.abs(input.initialBalance),
+              currency: input.currency,
+              txnDate: localToday(),
+              description: OPENING_BALANCE_DESCRIPTION,
+              source: TransactionSource.manual,
+            },
+          });
+        }
+
+        return this.mapAccount(account);
+      })
+      .catch((error: unknown) => {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          throw new ConflictError('An account with this name already exists');
+        }
+        throw error;
+      });
   }
 
   async findMany(

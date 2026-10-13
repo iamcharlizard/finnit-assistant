@@ -27,7 +27,7 @@ export const PAGE_TITLES: ReadonlyArray<
   ['/recurring', 'recurring'],
   ['/recurring/[...rest]', 'recurring'],
   ['/calendar', 'recurring'],
-  ['/cards', 'cards'],
+  ['/accounts', 'cards'],
   ['/analytics', 'analytics'],
   ['/statements', 'statements'],
   ['/statements/[...rest]', 'statements'],

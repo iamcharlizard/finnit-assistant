@@ -1,3 +1,4 @@
+import { messagesFor, type Locale } from './messages';
 import type { CreatedCredential, FieldValues, JobStatus, Site } from './types';
 
 const API_URL = 'https://api.syncfy.com/v1';
@@ -29,6 +30,8 @@ export class SyncfyConnectClient {
   constructor(
     private readonly token: string,
     private readonly fetchFn: typeof fetch = (...args) => fetch(...args),
+    /** Language of the error messages (Spanish by default). */
+    private readonly locale?: Locale,
   ) {}
 
   /** Institutions available for connection (production catalog). */
@@ -87,9 +90,7 @@ export class SyncfyConnectClient {
         signal: controller.signal,
       });
     } catch {
-      throw new SyncfyRequestError(
-        'No pudimos comunicarnos con el servicio de conexión bancaria',
-      );
+      throw new SyncfyRequestError(messagesFor(this.locale).client.unreachable);
     } finally {
       clearTimeout(timer);
     }
@@ -100,8 +101,8 @@ export class SyncfyConnectClient {
     if (!response.ok || !json) {
       throw new SyncfyRequestError(
         response.status === 401
-          ? 'La sesión de conexión expiró; vuelve a intentarlo'
-          : 'El servicio de conexión bancaria respondió con un error',
+          ? messagesFor(this.locale).client.sessionExpired
+          : messagesFor(this.locale).client.serviceError,
         response.status,
       );
     }

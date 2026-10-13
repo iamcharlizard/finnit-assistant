@@ -74,7 +74,7 @@ export class TransfersService {
           amount: input.amount,
           currency: fromAccount.currency,
           txnDate,
-          description: `${description} (outgoing)`,
+          description,
           source: TransactionSource.manual,
         },
       });
@@ -88,7 +88,7 @@ export class TransfersService {
           amount: input.amount,
           currency: toAccount.currency,
           txnDate,
-          description: `${description} (incoming)`,
+          description,
           source: TransactionSource.manual,
         },
       });

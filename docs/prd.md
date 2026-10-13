@@ -26,9 +26,11 @@ Deliver a functional prototype that allows a user to:
 Checkboxes reflect the **API** state, verified against the code. Per-platform status (API / mobile / web) lives in [features.md](./features.md), the source of truth for progress.
 
 ### 1. User Authentication & Security 🟡 PARTIAL
-- [x] Sign up/login with secure JWT-based auth.
-- [x] Password hashing, refresh tokens, and session handling.
-- [x] Single-tenant per account, roles: `owner`.
+- [x] Invitation-only access: no public sign-up; admins add each user from the admin panel.
+- [x] Login with email + password (assigned by an admin) or with Google (only for users already added), JWT-based.
+- [x] Password hashing, refresh tokens, and session handling; disabling a user ends their sessions.
+- [x] Roles: `user`, `admin`, plus one master admin.
+- [x] Admin panel (web): user access, AI models and AI features.
 - [x] Privacy guarantee: user data fully isolated.
 - [ ] Account recovery via email (reset token flow exists; no email is sent yet).
 
@@ -184,7 +186,8 @@ Nothing generates notifications yet (no scheduled jobs).
 Detailed, verified status per feature and platform: [features.md](./features.md).
 
 **Implemented:**
-- **Authentication**: sign up, sign in, refresh tokens, password reset token flow (no email delivery yet).
+- **Authentication**: invitation-only (no sign-up), sign in with password or Google, refresh tokens with revocation, password reset token flow (no email delivery yet).
+- **Admin**: master admin (CLI), admins, user access management, AI models and per-feature AI settings.
 - **Accounts**: multi-account support (cash, debit, credit, savings, e-wallet), balance adjustments, credit card terms.
 - **Transactions**: CRUD, merchant-based category suggestion, filtering, attachment records (URL only).
 - **Transfers**: inter-account transfers with atomic validation.

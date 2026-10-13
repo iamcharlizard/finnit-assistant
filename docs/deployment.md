@@ -1,4 +1,4 @@
-# Despliegue de la API
+# Despliegue
 
 La API (`apps/api`) corre en un servidor Hetzner CAX11 (ARM, Nuremberg) administrado con **Dokploy**. Cada ambiente tiene su propio PostgreSQL en el mismo servidor, dentro del proyecto Finnit de Dokploy. El servidor es compartido con otros proyectos.
 
@@ -18,7 +18,7 @@ Cada ambiente tiene su propia base de datos y su propio `JWT_SECRET`: los datos 
 ```
 push a main o testing ──► GitHub Actions (runner arm64)
                            1. docker build (apps/api/Dockerfile)
-                           2. smoke test: Postgres 18 temporal + migraciones + /health + signUp/signIn/me
+                           2. smoke test: Postgres 18 temporal + migraciones + /health + create-master/signIn/me
                            3. push a ghcr.io/iamcharlizard/finnit-api:{sha-xxxxxxx, latest|testing}
                            4. POST /api/application.deploy en Dokploy (app del ambiente)
                                     │
@@ -81,7 +81,7 @@ Repite estos pasos para cada ambiente, usando los valores de la tabla de abajo.
    ANTHROPIC_API_KEY=<opcional>
    OPENAI_API_KEY=<opcional>
    GEMINI_API_KEY=<opcional>
-   ADMIN_EMAILS=<emails que pueden administrar el catálogo de modelos de IA, separados por comas>
+   GOOGLE_CLIENT_IDS=<opcional: Client IDs de Google (web, iOS, Android) separados por comas; ver "Login con Google">
    SYNCFY_API_KEY=<opcional: conexión bancaria con Syncfy; ver "Conexión bancaria (Syncfy)">
    ```
 4. **Domains**: el dominio de la tabla, *Path* `/`, *Container Port* `3000`, HTTPS con Let's Encrypt, *Strip Path* desactivado. Crea antes el registro **A** en el DNS (`api` o `api-test` → IPv4 del servidor).
@@ -155,7 +155,8 @@ En desarrollo local, el servicio `s3` de `docker-compose.yml` (s3mock en el puer
 Los bancos sin parser local se leen con IA. Los modelos disponibles están en el catálogo `AiModel` (Anthropic, OpenAI y Gemini):
 
 - La query `aiModels` lista el catálogo e indica para cada modelo si está activo, si es el predeterminado y si se puede usar (`usable`): activo **y** con la llave de su proveedor configurada.
-- Solo los emails de `ADMIN_EMAILS` pueden activar o desactivar modelos, elegir el predeterminado o cambiar el orden (`updateAiModel`, `createAiModel`, `deleteAiModel`).
+- Solo los administradores pueden activar o desactivar modelos, elegir el predeterminado o cambiar el orden, desde el panel (`/admin/ai`) o con `updateAiModel`, `createAiModel` y `deleteAiModel`.
+- Cada funcionalidad de IA (hoy solo `statement_parsing`, "Leer estados de cuenta en PDF") se puede apagar y tener su propio modelo, con o sin respaldo en los demás modelos activos (`aiFeatures`, `updateAiFeature`). Apagada, esos estados de cuenta quedan en `failed`.
 - Se prueba primero el modelo predeterminado; si falla, los demás modelos activos con soporte de PDF, en orden de `sortOrder`. Un modelo desactivado nunca se usa.
 - Las llaves van por proveedor en las variables `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` y `GEMINI_API_KEY`, nunca en la base de datos.
 
@@ -171,9 +172,56 @@ El PDF se envía a la API del proveedor. Si no hay ningún modelo utilizable, es
   - Para probar sin bancos reales, cambia a la llave de sandbox; las conexiones creadas con una llave no se ven con la otra.
 - La app (web o móvil) obtiene un token con `createBankConnectSession` y envía usuario, contraseña y códigos del banco directo a Syncfy con `@finnit/bank-connect`; si el banco necesita algo que el formulario nativo no soporta, la web abre el widget de Syncfy. Finnit guarda solo los ids de Syncfy, nunca usuario ni contraseña del banco.
 - La API sincroniza a las 7:00 y 15:00 (CDMX). Pide a Syncfy que entre al banco como máximo cada 20 h por conexión (o cada hora si el usuario lo pide) y respeta `ready_in`; las lecturas son incrementales (`dt_refresh_from`) y reintenta con espera ante 429/5xx.
-- Para adoptar una conexión creada fuera de la app (pruebas): `linkSyncfyUser(email, syncfyUser)` (solo `ADMIN_EMAILS`) y luego `registerBankConnection(idCredential)` como ese usuario.
+- Para adoptar una conexión creada fuera de la app (pruebas): `linkSyncfyUser(email, syncfyUser)` (solo administradores) y luego `registerBankConnection(idCredential)` como ese usuario.
 - Borrar una conexión en Finnit no la borra en Syncfy; hazlo desde Syncfy.
 - Revisa el límite de tu plan de Syncfy (credenciales y transacciones) antes de abrirlo a más usuarios.
+
+### Usuario maestro y acceso
+
+No hay registro abierto: un administrador da de alta a cada persona en el panel de la web (`/admin/users`). Cada ambiente necesita un **usuario maestro**, que puede nombrar a otros administradores. Créalo después del primer despliegue con la migración `20261014090000_admin_access_and_ai_features`:
+
+1. En Dokploy, abre la app del ambiente → **Docker Terminal** (o `docker exec -it <contenedor> sh` en el servidor).
+2. Ejecuta:
+   ```
+   node apps/api/dist/scripts/create-master.js --email <tu correo> --name "<tu nombre>"
+   ```
+   Pide la contraseña sin mostrarla (mínimo 10 caracteres). No la pongas en la línea de comandos: quedaría en el historial.
+3. Entra a la web con ese correo y contraseña, o con Google si el correo es de una cuenta de Google.
+
+- Si ya hay un maestro, el comando se niega; con `--replace` le pasa el rol a otro usuario (el anterior sigue siendo administrador).
+- Si el maestro pierde su contraseña, vuelve a ejecutar el comando con su correo: asigna la nueva contraseña y cierra sus sesiones.
+- Desactivar a un usuario o cambiarle la contraseña cierra sus sesiones abiertas (en máximo 15 minutos, la vida del access token).
+
+### Login con Google
+
+Google solo inicia sesión: la persona entra si su correo de Google es el de un usuario dado de alta y activo. Nunca crea cuentas.
+
+**1. Proyecto y pantalla de consentimiento** (una vez, sirve para todos los ambientes), en [console.cloud.google.com](https://console.cloud.google.com):
+1. Crea el proyecto `Finnit`.
+2. *Google Auth Platform → Get started*: nombre de la app "Finnit", correo de soporte, audiencia **External**, correo de contacto.
+3. *Branding*: página principal, política de privacidad y dominio autorizado `<dominio>`. Sin logo no hace falta la verificación de marca.
+4. *Data access*: solo `openid`, `email` y `profile`. Son permisos no sensibles, sin revisión de Google.
+5. *Audience*: **Publish app** (pasar a "In production"). En "Testing" solo entran los correos de prueba que agregues ahí, con un máximo de 100.
+
+**2. Clientes OAuth** (*Google Auth Platform → Clients → Create client*):
+
+| Cliente | Tipo | Configuración |
+|---|---|---|
+| Finnit Web | Web application | Orígenes: `http://localhost:3001`, `https://app-test.<dominio>`, `https://app.<dominio>`. URIs de redirección: los mismos orígenes + `/api/auth/google/callback` |
+| Finnit iOS | iOS | Bundle ID `com.karlhub.finnitapp` |
+| Finnit Android | Android | Paquete `com.karlhub.finnitapp` + SHA-1 de la llave de firma: la de debug (`keytool -list -v -keystore ~/.android/debug.keystore -storepass android`) para desarrollo, y la de release / Play App Signing al publicar (un cliente por llave) |
+
+Los previews de Vercel con URL aleatoria no pueden usar Google: solo los dominios registrados.
+
+**3. Variables:**
+
+| Dónde | Variable | Valor |
+|---|---|---|
+| API (Dokploy, cada ambiente) | `GOOGLE_CLIENT_IDS` | Client IDs de Web, iOS y Android, separados por comas |
+| Web (Vercel, cada ambiente) | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Client ID y secret de "Finnit Web" |
+| Móvil (`apps/finnit-app/.env`) | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`, `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`, `EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME` | Client ID web, Client ID iOS y el *iOS URL scheme* del cliente iOS |
+
+En el móvil, el login con Google necesita un *development build* (`npx expo run:ios` / `run:android` o EAS); no funciona en Expo Go.
 
 ### 3. Secretos en GitHub
 
@@ -198,7 +246,10 @@ La web (`apps/web`) se desplegará en **Vercel**, después de validar la API en 
 1. En `apps/web/.env.local`: `FINNIT_API_URL=https://api-test.<dominio>`
 2. `pnpm web:dev` y abre http://localhost:3001.
 
-Solo el servidor de Next habla con la API: el navegador llama a `/api/graphql` de la propia web, que agrega el token desde cookies httpOnly. Por eso la API no necesita CORS para la web; la única variable de la web es `FINNIT_API_URL`, y debe apuntar a la API de su mismo ambiente (testing → `api-test`, production → `api`).
+Solo el servidor de Next habla con la API: el navegador llama a `/api/graphql` de la propia web, que agrega el token desde cookies httpOnly. Por eso la API no necesita CORS para la web. Variables de la web:
+
+- `FINNIT_API_URL`: la API de su mismo ambiente (testing → `api-test`, production → `api`).
+- `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`: el cliente "Finnit Web" (ver "Login con Google"). Sin ellas, el botón de Google muestra que no está disponible.
 
 ## Rollback
 

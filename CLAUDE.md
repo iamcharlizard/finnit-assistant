@@ -38,6 +38,7 @@ All 11 original GraphQL modules implemented, plus recurring expenses in `apps/ap
 | Statements (PDF import + reconciliation) | `src/modules/statements/` (+ `src/modules/storage/` for S3) |
 | AI model catalog + providers (Anthropic, OpenAI, Gemini) | `src/modules/ai/` |
 | Bank connections (Syncfy aggregation) | `src/modules/bank-connections/` |
+| Admin (user access; master/admin rules) | `src/modules/admin/` |
 
 Auto-generated schema at `apps/api/src/schema.gql`.
 
@@ -67,8 +68,9 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - Environments: branch `main` → **production** (image tag `latest`); branch `testing` → **testing** (image tag `testing`). Work flows `feature/*` → `testing` → `main`.
 - The container runs `prisma migrate deploy` on start, so migrations must be backwards-compatible.
 - Bank connection UI (web and mobile) drives `BankConnectFlow` from `@finnit/bank-connect` (framework-agnostic steps: consent → pick bank → login form → second factors → register → link accounts); each app only renders the current step (web: `components/bank-connect/`, routes `/settings/banks` and `/settings/banks/connect`). Underneath it uses `@finnit/bank-connect`: the device gets a session from `createBankConnectSession`, renders the bank's login form and second-factor prompts natively, and sends them straight to Syncfy (never to the Finnit API); on success it calls `registerBankConnection`. Sites or second factors it can't render (`isNativeSupported`, `needsWidget`) fall back to Syncfy's widget. `pnpm --filter @finnit/bank-connect sandbox-check` runs the flow against Syncfy's sandbox (needs `SYNCFY_API_KEY_SANDBOX`).
+- Access is invitation-only: there is no `signUp`. Admins (`User.role = admin`; one `isMaster`, created per environment with `node apps/api/dist/scripts/create-master.js`) add users in the web admin panel (`/admin`, module `src/modules/admin/`). Guard admin operations with `@UseGuards(JwtAuthGuard, AdminGuard)` (`MasterGuard` for master-only). Users sign in with an admin-assigned password or with Google (`signInWithGoogle`, ID token audience in `GOOGLE_CLIENT_IDS`; it never creates users). Disabling a user or changing their password bumps `User.tokenVersion`, which invalidates their tokens (`isSessionValid`).
 - Files: every user file (statements, attachments, future uploads) goes to the private S3 bucket through `S3StorageService` (`src/modules/storage/`), under `users/<userId>/<kind>/<id>.<ext>`. Never public objects or pre-signed URLs: serve files through an authenticated API endpoint that checks ownership in the database (see `sendFile`). Detect file types from the bytes (`detectFileType`), not from names.
-- `apps/api/scripts/smoke-test.sh <image>` boots an image against a throwaway Postgres (health + signUp/signIn/me).
+- `apps/api/scripts/smoke-test.sh <image>` boots an image against a throwaway Postgres (health + create-master + signIn/me).
 - Known gaps: `eslint` reports ~777 errors in the API, so CI does not gate on lint or tests yet.
 
 ### Database Migrations Applied
@@ -77,6 +79,8 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261012120000_recurring_expenses_and_statements` (rollback: `packages/database/scripts/rollbacks/`)
 - `20261012180000_ai_model_catalog`
 - `20261013090000_syncfy_bank_sync`
+- `20261013120000_private_attachments`
+- `20261014090000_admin_access_and_ai_features`
 
 Migrations with hand-edited SQL wrap their body in `BEGIN; … COMMIT;`: Prisma does not run a migration in a transaction, so a failure would leave it half applied.
 

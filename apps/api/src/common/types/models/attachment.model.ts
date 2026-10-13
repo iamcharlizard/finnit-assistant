@@ -1,6 +1,10 @@
-import { ObjectType, Field, InputType } from '@nestjs/graphql';
-import { IsString, IsOptional, IsNumber, IsUrl } from 'class-validator';
+import { ObjectType, Field, Int } from '@nestjs/graphql';
 
+/**
+ * A file attached to a transaction (receipt, invoice, payment proof). Files
+ * live in the private S3 bucket and are only served by the API to the owner:
+ * GET {downloadPath} with the user's Bearer token.
+ */
 @ObjectType()
 export class Attachment {
   @Field({ description: 'Unique identifier for the attachment' })
@@ -9,68 +13,24 @@ export class Attachment {
   @Field({ description: 'ID of the transaction this attachment belongs to' })
   transactionId: string;
 
-  @Field({ description: 'URL where the file is stored' })
-  fileUrl: string;
+  @Field({ nullable: true, description: 'Original file name' })
+  fileName?: string;
 
   @Field({
     description: 'MIME type of the file (e.g., image/jpeg, application/pdf)',
   })
   fileType: string;
 
-  @Field({ nullable: true, description: 'File size in bytes' })
+  @Field(() => Int, { nullable: true, description: 'File size in bytes' })
   fileSize?: number;
 
-  @Field({ nullable: true, description: 'Additional metadata in JSON format' })
-  extra?: string;
+  @Field({
+    nullable: true,
+    description:
+      'API path to download the file (authenticated, owner only); null for legacy external links',
+  })
+  downloadPath?: string;
 
   @Field({ description: 'When the file was uploaded' })
   uploadedAt: Date;
-}
-
-@InputType()
-export class CreateAttachmentInput {
-  @Field({ description: 'ID of the transaction this attachment belongs to' })
-  @IsString()
-  transactionId: string;
-
-  @Field({ description: 'URL where the file is stored' })
-  @IsUrl()
-  fileUrl: string;
-
-  @Field({ description: 'MIME type of the file' })
-  @IsString()
-  fileType: string;
-
-  @Field({ nullable: true, description: 'File size in bytes' })
-  @IsOptional()
-  @IsNumber()
-  fileSize?: number;
-
-  @Field({ nullable: true, description: 'Additional metadata in JSON format' })
-  @IsOptional()
-  @IsString()
-  extra?: string;
-}
-
-@InputType()
-export class UpdateAttachmentInput {
-  @Field({ nullable: true, description: 'URL where the file is stored' })
-  @IsOptional()
-  @IsUrl()
-  fileUrl?: string;
-
-  @Field({ nullable: true, description: 'MIME type of the file' })
-  @IsOptional()
-  @IsString()
-  fileType?: string;
-
-  @Field({ nullable: true, description: 'File size in bytes' })
-  @IsOptional()
-  @IsNumber()
-  fileSize?: number;
-
-  @Field({ nullable: true, description: 'Additional metadata in JSON format' })
-  @IsOptional()
-  @IsString()
-  extra?: string;
 }

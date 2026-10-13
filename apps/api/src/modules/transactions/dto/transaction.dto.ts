@@ -178,27 +178,3 @@ export class TransactionsArgs {
   @IsOptional()
   filters?: TransactionFilters;
 }
-
-@InputType()
-export class CreateAttachmentInput {
-  @Field()
-  @IsString()
-  transactionId: string;
-
-  @Field()
-  @IsString()
-  fileUrl: string;
-
-  @Field()
-  @IsString()
-  fileType: string;
-
-  @Field({ nullable: true })
-  @IsOptional()
-  @IsNumber()
-  fileSize?: number;
-
-  @Field({ nullable: true })
-  @IsOptional()
-  extra?: string;
-}

@@ -23,35 +23,37 @@ Deliver a functional prototype that allows a user to:
 
 ## ✅ Core Features (MVP)
 
-### 1. User Authentication & Security ✅ IMPLEMENTED
+Checkboxes reflect the **API** state, verified against the code. Per-platform status (API / mobile / web) lives in [features.md](./features.md), the source of truth for progress.
+
+### 1. User Authentication & Security 🟡 PARTIAL
 - [x] Sign up/login with secure JWT-based auth.
 - [x] Password hashing, refresh tokens, and session handling.
 - [x] Single-tenant per account, roles: `owner`.
 - [x] Privacy guarantee: user data fully isolated.
-- [x] Account recovery via email.
+- [ ] Account recovery via email (reset token flow exists; no email is sent yet).
 
 ---
 
 ### 2. Accounts & Balances ✅ IMPLEMENTED
-- [x] Guided account creation with explanations of account types (cash, debit, credit, savings, e-wallets).
+- [x] Account CRUD for cash, debit, credit, savings and e-wallets.
+- [ ] Guided account creation with explanations of account types (client UI).
 - [ ] Optional card photo scan to auto-fill details (name, last 4 digits, bank, color).
-- [x] Suggestions for default accounts (e.g., "Always create a cash account").
 - [x] Balance adjustments without generating false income/expense.
 - [x] "Balance correction" transaction type for transparency.
-- [x] Clear difference between transfers and transactions, with examples.
-- [x] Automatic detection of internal transfers for linked accounts.
+- [x] Clear difference between transfers and transactions.
+- [ ] Automatic detection of internal transfers for linked accounts.
 
 ---
 
-### 3. Transactions ✅ IMPLEMENTED
+### 3. Transactions 🟡 PARTIAL
 - [x] Quick add: date, account, amount, type (income/expense/transfer), category.
-- [x] Smart capture: receipt photos, SMS/notification parsing (where allowed).
-- [x] Auto-categorization based on merchant name with user learning.
-- [x] Recurring entries as reminders until confirmed as paid.
-- [x] Option to mark recurring payments as completed with proof.
-- [x] Auto-suggestion of recurrence from detected patterns.
+- [ ] Multiple transactions per account on the same day (blocked by a unique constraint; fix planned).
+- [ ] Smart capture: receipt photos, SMS/notification parsing (where allowed).
+- [x] Category suggestion based on merchant name (no learning from corrections yet).
+- [ ] Recurring entries as reminders until confirmed as paid (see feature 12).
+- [ ] Auto-suggestion of recurrence from detected patterns.
 - [ ] Calendar view + optional mobile widget.
-- [x] Attachments for receipts, invoices, payment confirmations.
+- [ ] Attachments for receipts, invoices, payment confirmations (only a URL is stored; no S3 upload).
 - [ ] Integration with Banxico for CEP retrieval (interbank transfers).
 - [x] Search & filter by date, account, category, text.
 
@@ -59,62 +61,84 @@ Deliver a functional prototype that allows a user to:
 
 ### 4. Categories ✅ IMPLEMENTED
 - [x] Default hierarchical category list (e.g., "Food > Groceries").
-- [x] CRUD for user-defined categories with interactive UI.
-- [x] Merchant "memory rules" for auto-categorization.
+- [x] CRUD for user-defined categories.
+- [ ] Merchant "memory rules" for auto-categorization.
 
 ---
 
 ### 5. Budgets ✅ IMPLEMENTED
 - [x] Monthly and category-based budgets.
-- [x] Budget assistant that considers fixed expenses and historical spending.
-- [x] Real-time tracking with supportive suggestions.
-- [x] Alerts at 80%/100% usage with advice.
+- [x] Budget templates.
+- [x] Real-time usage tracking.
+- [x] Alerts at 80%/100% usage (computed on query; not pushed as notifications).
 
 ---
 
 ### 6. Debts & Credit Cards ✅ IMPLEMENTED
-- [x] Guided registration for debts (loans, credit cards).
-- [x] Pre-filled parameters for known banks (editable).
-- [x] Custom interest rates for loans.
+- [x] Debt registration (loans, credit cards) with custom interest rates.
+- [ ] Pre-filled parameters for known banks (editable).
 - [x] Credit cards as special accounts with statement/payment dates.
-- [x] Avalanche and snowball payoff strategies with explanations.
-- [x] Calendar-based repayment plan.
+- [x] Avalanche and snowball payoff strategies.
+- [x] Repayment plan.
 
 ---
 
-### 7. Goals & Savings ✅ IMPLEMENTED
-- [x] Goal setup with target amount and due date.
-- [x] Manual contributions and progress tracking.
-- [x] Suggestions to save when projected end-of-month balance is positive.
+### 7. Goals & Savings 🟡 PARTIAL
+- [x] Goal setup with target amount and due date, and progress tracking.
+- [ ] Contributions, edit and delete exposed in GraphQL (implemented in the service only).
+- [ ] Suggestions to save when projected end-of-month balance is positive (service only).
 
 ---
 
-### 8. Reports & Insights ✅ IMPLEMENTED
+### 8. Reports & Insights 🟡 PARTIAL
 - [x] Monthly summary: income, expenses by category, net balance.
-- [x] Insights: top categories, unusual expenses, comparisons.
-- [x] 3–6 month trends.
-- [x] CSV export.
+- [ ] Insights: top categories, unusual expenses, comparisons.
+- [ ] 3–6 month trends.
+- [ ] CSV export.
 
 ---
 
-### 9. Bank & Fintech Integrations 🚧 PARTIAL
-- [x] Integration with Belvo, Paybook, or similar for auto-import.
-- [x] Weekly reconciliation for balances and transactions.
-- [x] Detection of internal transfers between linked accounts.
+### 9. Bank & Fintech Integrations ✅ IMPLEMENTED (Syncfy)
+- [x] Bank connection through an aggregator (Syncfy; Belvo no longer covers Mexican banks). Users connect in Syncfy's widget; Finnit never handles bank logins.
+- [x] Automatic import of movements, twice a day, deduplicated and reconciled with statements and recurring expenses.
+- [ ] Weekly reconciliation review.
+- [ ] Detection of internal transfers between linked accounts.
 
 ---
 
 ### 10. Cash Flow & Projections ✅ IMPLEMENTED
-- [x] Cash flow forecast for 30/60 days with recurring transactions, debts, and goals.
+- [x] Cash flow forecast for 30/60 days.
 - [x] "What If" simulations for extra payments, income changes, or new expenses.
 
 ---
 
-### 11. Essential Notifications ✅ IMPLEMENTED
-- [x] Budget usage alerts (80%/100%).
-- [x] Upcoming credit card/loan payments.
-- [x] Recurring transaction reminders.
-- [x] Weekly/monthly summaries.
+### 11. Essential Notifications 🟡 PARTIAL
+- [x] List notifications and mark them as read.
+- [ ] Budget usage alerts (80%/100%).
+- [ ] Upcoming credit card/loan payments.
+- [ ] Recurring transaction reminders.
+- [ ] Weekly/monthly summaries.
+
+Nothing generates notifications yet (no scheduled jobs).
+
+---
+
+### 12. Recurring Expenses ⏳ PENDING
+- [ ] Recurring commitments with frequency (weekly, biweekly, semimonthly, monthly, bimonthly, quarterly, semiannual, yearly) and kind (subscription, utility, loan, installment/MSI, insurance, housing, membership, other).
+- [ ] Tracking mode per expense: `automatic` (marked paid when reconciled with the card), `manual` (user confirms), `reminder` (no payment state).
+- [ ] Upcoming payments and normalized monthly cost by kind and account.
+- [ ] Installment (MSI) progress.
+- [ ] Generated reminders.
+
+---
+
+### 13. Card Statements & Reconciliation ⏳ PENDING
+- [ ] Upload the monthly statement PDF (stored in AWS S3).
+- [ ] Extraction: local Banamex parser, Claude API fallback for other formats.
+- [ ] Review and confirm imported movements.
+- [ ] Reconcile statement lines with existing transactions and automatic recurring expenses.
+- [ ] Card month summary vs. amount due.
+- [x] Same flow fed by the bank sync (Syncfy).
 
 ---
 
@@ -156,37 +180,28 @@ Deliver a functional prototype that allows a user to:
 
 ## 📊 Scope Implemented
 
-### ✅ **COMPLETED FEATURES (GraphQL API)**
-**Core MVP Implementation:**
-- **Authentication System**: JWT-based auth with refresh tokens, password reset
-- **Account Management**: Multi-account support (cash, debit, credit, savings, e-wallet)
-- **Transaction Engine**: CRUD operations, auto-categorization, attachments, filtering
-- **Transfer System**: Inter-account transfers with atomic validation
-- **Category System**: Hierarchical categories with merchant learning
-- **Budget Management**: Monthly budgets with real-time usage tracking and alerts
-- **Debt Management**: Loan/credit card tracking with payoff strategies (avalanche/snowball)
-- **Goal Tracking**: Financial goals with contribution tracking and progress analytics
-- **Notification System**: Real-time alerts with GraphQL subscriptions
-- **Reports & Analytics**: Monthly summaries, cash flow projections, "What If" scenarios
-- **Bank Integration Framework**: Ready for Belvo/Paybook integration
+### 🟡 **GraphQL API**
+Detailed, verified status per feature and platform: [features.md](./features.md).
 
-### 🎯 **API ARCHITECTURE DELIVERED**
-- **GraphQL Schema**: Code-first NestJS implementation with 11 modules
-- **Cursor Pagination**: Efficient pagination on all list operations
-- **Type Safety**: Comprehensive DTOs and input validation
-- **Error Handling**: Typed GraphQL errors with business-specific codes
-- **Security**: JWT guards, user isolation, input sanitization
-- **Performance**: Optimized queries, N+1 prevention, caching strategies
-- **Testing**: Jest unit tests for 6 of 11 modules (auth, accounts, budgets, debts, goals, transactions); categories, transfers, notifications, reports and users still lack tests; no E2E tests yet
+**Implemented:**
+- **Authentication**: sign up, sign in, refresh tokens, password reset token flow (no email delivery yet).
+- **Accounts**: multi-account support (cash, debit, credit, savings, e-wallet), balance adjustments, credit card terms.
+- **Transactions**: CRUD, merchant-based category suggestion, filtering, attachment records (URL only).
+- **Transfers**: inter-account transfers with atomic validation.
+- **Categories**: hierarchical defaults and user categories.
+- **Budgets**: monthly/category budgets, templates, usage and alerts on query.
+- **Debts**: loans and credit cards, payments, avalanche/snowball strategies.
+- **Goals**: create, list and progress (contributions not exposed yet).
+- **Notifications**: list and mark as read (nothing generates them yet).
+- **Reports**: monthly summary, cash flow projection, "What If" scenarios.
 
-### 🚀 **PRODUCTION READY**
-The GraphQL API is fully functional and ready for frontend integration with:
-- Complete CRUD operations for all financial entities
-- Real-time data with subscriptions
-- Comprehensive business logic validation
-- Security and performance optimizations
+**Architecture:** code-first NestJS GraphQL (11 modules), cursor pagination, DTOs separate from Prisma entities, typed errors, JWT guards with per-user isolation.
 
-Pending before production: CI pipeline, remaining tests, and a hosting decision (see `dev-plans/next-steps-checklist.md`).
+**Testing:** Jest unit tests for 6 of 11 modules (auth, accounts, budgets, debts, goals, transactions); no E2E tests yet.
+
+**Deployment:** Docker image deployed with Dokploy on Hetzner, with `production` (`main`) and `testing` (`testing`) environments ([deployment.md](./deployment.md)).
+
+**Not implemented:** CSV export, email delivery, weekly reconciliation review.
 
 ### 🟡 **MOBILE APP (Expo) — UI with mock data**
 - Expo Router app (`apps/finnit-app`) with login, dashboard, history, analytics, calendar, cards and settings screens (NativeWind v5).

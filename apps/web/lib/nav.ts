@@ -33,4 +33,6 @@ export const PAGE_TITLES: Record<string, string> = {
   '/calendar': 'Calendario',
   '/cards': 'Tarjetas',
   '/settings': 'Configuración',
+  '/settings/banks': 'Bancos conectados',
+  '/settings/banks/connect': 'Conectar banco',
 };

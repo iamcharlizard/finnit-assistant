@@ -215,7 +215,7 @@ describe('BudgetsService', () => {
       // Assert
       expect(prismaService.budget.findFirst).toHaveBeenCalledWith({
         where: { id: mockBudgetId, userId: mockUserId },
-        include: { categories: { include: { category: true } } },
+        include: { categories: true },
       });
       expect(result.id).toBe(mockBudgetId);
     });
@@ -229,29 +229,37 @@ describe('BudgetsService', () => {
     });
   });
 
-  describe('findByMonth', () => {
-    it('should return budget for specific month and year', async () => {
+  describe('getCurrentBudget', () => {
+    beforeEach(() => {
+      jest.useFakeTimers().setSystemTime(new Date(2024, 0, 15));
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('should return the budget for the current month and year', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
 
       // Act
-      const result = await (service as any).findByMonth(mockUserId, 2024, 1);
+      const result = await service.getCurrentBudget(mockUserId);
 
       // Assert
       expect(prismaService.budget.findFirst).toHaveBeenCalledWith({
         where: { userId: mockUserId, year: 2024, month: 1 },
-        include: { categories: { include: { category: true } } },
+        include: { categories: true },
       });
       expect(result?.year).toBe(2024);
       expect(result?.month).toBe(1);
     });
 
-    it('should return null when budget not found for month', async () => {
+    it('should return null when no budget exists for the current month', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(null);
 
       // Act
-      const result = await (service as any).findByMonth(mockUserId, 2024, 12);
+      const result = await service.getCurrentBudget(mockUserId);
 
       // Assert
       expect(result).toBeNull();
@@ -271,25 +279,58 @@ describe('BudgetsService', () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
       const updatedBudget = { ...mockBudget, amountTotal: updateInput.amountTotal };
-
-      prismaService.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          bUDGET_CATEGORY: {
-            deleteMany: jest.fn(),
-            createMany: jest.fn(),
-          },
-          budget: {
-            update: jest.fn().mockResolvedValue(updatedBudget),
-          },
-        };
-        return callback(mockTx as any);
-      });
+      const mockTx = {
+        bUDGET_CATEGORY: {
+          deleteMany: jest.fn(),
+          createMany: jest.fn(),
+        },
+        budget: {
+          update: jest.fn().mockResolvedValue(updatedBudget),
+          findUnique: jest.fn().mockResolvedValue(updatedBudget),
+        },
+      };
+      prismaService.$transaction.mockImplementation(async (callback: any) =>
+        callback(mockTx),
+      );
 
       // Act
       const result = await service.update(mockBudgetId, mockUserId, updateInput);
 
       // Assert
+      expect(mockTx.budget.update).toHaveBeenCalledWith({
+        where: { id: mockBudgetId },
+        data: { amountTotal: updateInput.amountTotal },
+      });
+      expect(mockTx.budget.findUnique).toHaveBeenCalledWith({
+        where: { id: mockBudgetId },
+        include: { categories: true },
+      });
       expect(result.amountTotal).toBe(updateInput.amountTotal);
+    });
+
+    it('should not touch category caps when no categories are provided', async () => {
+      // Arrange
+      prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
+      const mockTx = {
+        bUDGET_CATEGORY: {
+          deleteMany: jest.fn(),
+          createMany: jest.fn(),
+        },
+        budget: {
+          update: jest.fn().mockResolvedValue(mockBudget),
+          findUnique: jest.fn().mockResolvedValue(mockBudget),
+        },
+      };
+      prismaService.$transaction.mockImplementation(async (callback: any) =>
+        callback(mockTx),
+      );
+
+      // Act
+      await service.update(mockBudgetId, mockUserId, { amountTotal: 100 });
+
+      // Assert
+      expect(mockTx.bUDGET_CATEGORY.deleteMany).not.toHaveBeenCalled();
+      expect(mockTx.bUDGET_CATEGORY.createMany).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundError when budget not found', async () => {
@@ -319,6 +360,7 @@ describe('BudgetsService', () => {
           },
           budget: {
             update: jest.fn().mockResolvedValue(mockBudget),
+            findUnique: jest.fn().mockResolvedValue(mockBudget),
           },
         };
         return callback(mockTx as any);
@@ -370,209 +412,265 @@ describe('BudgetsService', () => {
     });
   });
 
-  describe('calculateUsage', () => {
-    it('should calculate budget usage for specific month', async () => {
+  describe('getBudgetUsage', () => {
+    it('should calculate usage per budgeted category', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
-
-      // Mock transaction aggregations
-      (prismaService.transaction.aggregate as jest.Mock)
-        .mockResolvedValueOnce({ _sum: { amount: 1800.00 } }) // Total expenses
-        .mockResolvedValueOnce({ _sum: { amount: 250.00 } }); // Category expenses
+      (prismaService.transaction.aggregate as jest.Mock).mockResolvedValueOnce({
+        _sum: { amount: 250.0 },
+      });
 
       // Act
-      const result = await (service as any).calculateUsage(mockUserId, 2024, 1);
+      const result = await service.getBudgetUsage(mockBudgetId, mockUserId);
 
       // Assert
-      expect(result).toEqual(expect.objectContaining({
-        budgetId: mockBudget.id,
-        totalBudget: Number(mockBudget.amountTotal),
-        totalSpent: 1800.00,
-        remainingBudget: 200.00, // 2000 - 1800
-        utilizationPercentage: 90.0, // 1800/2000 * 100
-      }));
-      expect(result.categories).toHaveLength(1);
-      expect(result.categories[0]).toEqual(expect.objectContaining({
-        categoryId: mockCategoryId,
-        categoryName: 'Food & Dining',
-        budgetAmount: 300.00,
-        spentAmount: 250.00,
-        remainingAmount: 50.00,
-        utilizationPercentage: 83.33,
-        isOverBudget: false,
-      }));
+      expect(prismaService.budget.findFirst).toHaveBeenCalledWith({
+        where: { id: mockBudgetId, userId: mockUserId },
+        include: { categories: true },
+      });
+      expect(prismaService.transaction.aggregate).toHaveBeenCalledWith({
+        where: {
+          userId: mockUserId,
+          categoryId: mockCategoryId,
+          type: 'expense',
+          txnDate: {
+            gte: new Date(2024, 0, 1),
+            lte: new Date(2024, 0, 31),
+          },
+        },
+        _sum: { amount: true },
+      });
+      expect(result).toEqual([
+        {
+          categoryId: mockCategoryId,
+          budgeted: 300,
+          spent: 250,
+          remaining: 50,
+          percentage: 83.33,
+        },
+      ]);
     });
 
-    it('should return null when no budget exists for month', async () => {
+    it('should report negative remaining when over budget', async () => {
+      // Arrange
+      prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
+      (prismaService.transaction.aggregate as jest.Mock).mockResolvedValueOnce({
+        _sum: { amount: 400.0 },
+      });
+
+      // Act
+      const [usage] = await service.getBudgetUsage(mockBudgetId, mockUserId);
+
+      // Assert
+      expect(usage.remaining).toBe(-100);
+      expect(usage.percentage).toBe(133.33);
+    });
+
+    it('should treat a null aggregate sum as zero spent', async () => {
+      // Arrange
+      prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
+      (prismaService.transaction.aggregate as jest.Mock).mockResolvedValueOnce({
+        _sum: { amount: null },
+      });
+
+      // Act
+      const [usage] = await service.getBudgetUsage(mockBudgetId, mockUserId);
+
+      // Assert
+      expect(usage.spent).toBe(0);
+      expect(usage.remaining).toBe(300);
+      expect(usage.percentage).toBe(0);
+    });
+
+    it('should throw NotFoundError when budget not found', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(null);
 
-      // Act
-      const result = await (service as any).calculateUsage(mockUserId, 2024, 12);
-
-      // Assert
-      expect(result).toBeNull();
-    });
-
-    it('should handle over-budget scenarios', async () => {
-      // Arrange
-      prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
-
-      // Mock over-budget spending
-      (prismaService.transaction.aggregate as jest.Mock)
-        .mockResolvedValueOnce({ _sum: { amount: 2500.00 } }) // Total over budget
-        .mockResolvedValueOnce({ _sum: { amount: 400.00 } }); // Category over budget
-
-      // Act
-      const result = await (service as any).calculateUsage(mockUserId, 2024, 1);
-
-      // Assert
-      expect(result!.totalSpent).toBe(2500.00);
-      expect(result!.remainingBudget).toBe(-500.00); // Negative remaining
-      expect(result!.utilizationPercentage).toBe(125.0); // Over 100%
-      expect(result!.categories[0].isOverBudget).toBe(true);
-    });
-
-    it('should handle null total budget amount', async () => {
-      // Arrange
-      const budgetWithoutTotal = { ...mockBudget, amountTotal: null };
-      prismaService.budget.findFirst.mockResolvedValue(budgetWithoutTotal as any);
-
-      (prismaService.transaction.aggregate as jest.Mock)
-        .mockResolvedValueOnce({ _sum: { amount: 1500.00 } })
-        .mockResolvedValueOnce({ _sum: { amount: 250.00 } });
-
-      // Act
-      const result = await (service as any).calculateUsage(mockUserId, 2024, 1);
-
-      // Assert
-      expect(result!.totalBudget).toBeNull();
-      expect(result!.remainingBudget).toBeNull();
-      expect(result!.utilizationPercentage).toBeNull();
+      // Act & Assert
+      await expect(
+        service.getBudgetUsage('non-existent', mockUserId),
+      ).rejects.toThrow(NotFoundError);
     });
   });
 
-  describe('getAlerts', () => {
-    it('should return budget alerts for categories over threshold', async () => {
+  describe('getBudgetSummary', () => {
+    it('should summarize totals and category usage for the month', async () => {
       // Arrange
-      const budgetUsage = {
-        budgetId: mockBudget.id,
-        year: 2024,
-        month: 1,
-        totalBudget: 2000.00,
-        totalSpent: 1800.00,
-        remainingBudget: 200.00,
-        utilizationPercentage: 90.0,
-        categories: [
-          {
-            categoryId: mockCategoryId,
-            categoryName: 'Food & Dining',
-            budgetAmount: 300.00,
-            spentAmount: 280.00,
-            remainingAmount: 20.00,
-            utilizationPercentage: 93.33,
-            isOverBudget: false,
-          },
-        ],
-      };
-
-      jest.spyOn(service as any, 'calculateUsage').mockResolvedValue(budgetUsage);
+      prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
+      (prismaService.transaction.aggregate as jest.Mock)
+        .mockResolvedValueOnce({ _sum: { amount: 270.0 } }) // total expenses
+        .mockResolvedValueOnce({ _sum: { amount: 250.0 } }); // category expenses
 
       // Act
-      const result = await (service as any).getAlerts(mockUserId, 2024, 1, 85); // 85% threshold
+      const result = await service.getBudgetSummary(mockUserId, 2024, 1);
 
       // Assert
-      expect(result).toHaveLength(2); // Total budget and category alerts
-      expect(result[0]).toEqual(expect.objectContaining({
-        type: 'TOTAL_BUDGET_WARNING',
-        severity: 'high',
-        message: expect.stringContaining('90%'),
-      }));
-      expect(result[1]).toEqual(expect.objectContaining({
-        type: 'CATEGORY_BUDGET_WARNING',
-        severity: 'high',
-        categoryId: mockCategoryId,
-        categoryName: 'Food & Dining',
-      }));
+      expect(result).toEqual({
+        budgetId: mockBudgetId,
+        year: 2024,
+        month: 1,
+        totalBudgeted: 300, // sum of category caps
+        totalSpent: 270,
+        totalRemaining: 30,
+        overallPercentage: 90,
+        categoryCount: 1,
+        categoriesOverBudget: 0,
+        categoriesNearBudget: 1, // 83.33%
+        categoryUsage: [
+          {
+            categoryId: mockCategoryId,
+            budgeted: 300,
+            spent: 250,
+            remaining: 50,
+            percentage: 83.33,
+          },
+        ],
+      });
     });
 
-    it('should return over-budget alerts', async () => {
+    it('should count categories over budget', async () => {
       // Arrange
-      const overBudgetUsage = {
-        budgetId: mockBudget.id,
-        year: 2024,
-        month: 1,
-        totalBudget: 2000.00,
-        totalSpent: 2200.00,
-        remainingBudget: -200.00,
-        utilizationPercentage: 110.0,
-        categories: [
-          {
-            categoryId: mockCategoryId,
-            categoryName: 'Food & Dining',
-            budgetAmount: 300.00,
-            spentAmount: 350.00,
-            remainingAmount: -50.00,
-            utilizationPercentage: 116.67,
-            isOverBudget: true,
-          },
-        ],
-      };
-
-      jest.spyOn(service as any, 'calculateUsage').mockResolvedValue(overBudgetUsage);
+      prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
+      (prismaService.transaction.aggregate as jest.Mock)
+        .mockResolvedValueOnce({ _sum: { amount: 500.0 } })
+        .mockResolvedValueOnce({ _sum: { amount: 400.0 } });
 
       // Act
-      const result = await (service as any).getAlerts(mockUserId, 2024, 1, 100);
+      const result = await service.getBudgetSummary(mockUserId, 2024, 1);
 
       // Assert
+      expect(result.totalRemaining).toBe(-200);
+      expect(result.overallPercentage).toBe(166.67);
+      expect(result.categoriesOverBudget).toBe(1);
+      expect(result.categoriesNearBudget).toBe(0);
+    });
+
+    it('should throw NotFoundError when no budget exists for the month', async () => {
+      // Arrange
+      prismaService.budget.findFirst.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(
+        service.getBudgetSummary(mockUserId, 2024, 12),
+      ).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  describe('getBudgetAlerts', () => {
+    const budgetWithCategories = {
+      ...mockBudget,
+      categories: [
+        {
+          id: 'budget-category-1',
+          budgetId: mockBudgetId,
+          categoryId: 'cat-food',
+          capAmount: 300.0,
+          category: { id: 'cat-food', name: 'Food & Dining' },
+        },
+        {
+          id: 'budget-category-2',
+          budgetId: mockBudgetId,
+          categoryId: 'cat-fun',
+          capAmount: 100.0,
+          category: { id: 'cat-fun', name: 'Entertainment' },
+        },
+        {
+          id: 'budget-category-3',
+          budgetId: mockBudgetId,
+          categoryId: 'cat-rent',
+          capAmount: 1000.0,
+          category: { id: 'cat-rent', name: 'Rent' },
+        },
+      ],
+    };
+
+    beforeEach(() => {
+      jest.useFakeTimers().setSystemTime(new Date(2024, 0, 15));
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('should return alerts for categories at or above 80%, sorted by percentage', async () => {
+      // Arrange
+      prismaService.budget.findFirst.mockResolvedValue(budgetWithCategories as any);
+      (prismaService.transaction.aggregate as jest.Mock)
+        .mockResolvedValueOnce({ _sum: { amount: 280.0 } }) // food: 93.33%
+        .mockResolvedValueOnce({ _sum: { amount: 120.0 } }) // fun: 120%
+        .mockResolvedValueOnce({ _sum: { amount: 500.0 } }); // rent: 50%
+
+      // Act
+      const result = await service.getBudgetAlerts(mockUserId);
+
+      // Assert
+      expect(prismaService.budget.findFirst).toHaveBeenCalledWith({
+        where: { userId: mockUserId, year: 2024, month: 1 },
+        include: { categories: { include: { category: true } } },
+      });
       expect(result).toHaveLength(2);
-      expect(result[0].type).toBe('TOTAL_BUDGET_EXCEEDED');
-      expect(result[0].severity).toBe('critical');
-      expect(result[1].type).toBe('CATEGORY_BUDGET_EXCEEDED');
-      expect(result[1].severity).toBe('critical');
+      expect(result[0]).toEqual({
+        categoryId: 'cat-fun',
+        categoryName: 'Entertainment',
+        budgeted: 100,
+        spent: 120,
+        percentage: 120,
+        severity: 'high',
+        message: 'Budget exceeded by 20',
+      });
+      expect(result[1]).toEqual({
+        categoryId: 'cat-food',
+        categoryName: 'Food & Dining',
+        budgeted: 300,
+        spent: 280,
+        percentage: 93.33,
+        severity: 'medium',
+        message: '6.67% of budget remaining',
+      });
     });
 
-    it('should return empty array when no alerts', async () => {
+    it('should use low severity between 80% and 90%', async () => {
       // Arrange
-      const goodUsage = {
-        budgetId: mockBudget.id,
-        year: 2024,
-        month: 1,
-        totalBudget: 2000.00,
-        totalSpent: 1000.00,
-        remainingBudget: 1000.00,
-        utilizationPercentage: 50.0,
-        categories: [
-          {
-            categoryId: mockCategoryId,
-            categoryName: 'Food & Dining',
-            budgetAmount: 300.00,
-            spentAmount: 150.00,
-            remainingAmount: 150.00,
-            utilizationPercentage: 50.0,
-            isOverBudget: false,
-          },
-        ],
-      };
-
-      jest.spyOn(service as any, 'calculateUsage').mockResolvedValue(goodUsage);
+      prismaService.budget.findFirst.mockResolvedValue({
+        ...budgetWithCategories,
+        categories: [budgetWithCategories.categories[0]],
+      } as any);
+      (prismaService.transaction.aggregate as jest.Mock).mockResolvedValueOnce({
+        _sum: { amount: 250.0 },
+      });
 
       // Act
-      const result = await (service as any).getAlerts(mockUserId, 2024, 1, 80);
+      const result = await service.getBudgetAlerts(mockUserId);
 
       // Assert
-      expect(result).toHaveLength(0);
+      expect(result).toHaveLength(1);
+      expect(result[0].severity).toBe('low');
+    });
+
+    it('should return empty array when no category reaches the threshold', async () => {
+      // Arrange
+      prismaService.budget.findFirst.mockResolvedValue(budgetWithCategories as any);
+      (prismaService.transaction.aggregate as jest.Mock).mockResolvedValue({
+        _sum: { amount: 10.0 },
+      });
+
+      // Act
+      const result = await service.getBudgetAlerts(mockUserId);
+
+      // Assert
+      expect(result).toEqual([]);
     });
 
     it('should return empty array when no budget exists', async () => {
       // Arrange
-      jest.spyOn(service as any, 'calculateUsage').mockResolvedValue(null);
+      prismaService.budget.findFirst.mockResolvedValue(null);
 
       // Act
-      const result = await (service as any).getAlerts(mockUserId, 2024, 12, 80);
+      const result = await service.getBudgetAlerts(mockUserId);
 
       // Assert
-      expect(result).toHaveLength(0);
+      expect(result).toEqual([]);
+      expect(prismaService.transaction.aggregate).not.toHaveBeenCalled();
     });
   });
 
@@ -592,9 +690,9 @@ describe('BudgetsService', () => {
         createdAt: mockBudget.createdAt,
         categories: mockBudget.categories.map((cat) => ({
           id: cat.id,
+          budgetId: cat.budgetId,
           categoryId: cat.categoryId,
           capAmount: Number(cat.capAmount),
-          category: cat.category,
         })),
       });
     });
@@ -607,7 +705,7 @@ describe('BudgetsService', () => {
       const result = service['mapBudget'](budgetWithNullTotal as any);
 
       // Assert
-      expect(result.amountTotal).toBeNull();
+      expect(result.amountTotal).toBeUndefined();
     });
 
     it('should handle empty categories', () => {

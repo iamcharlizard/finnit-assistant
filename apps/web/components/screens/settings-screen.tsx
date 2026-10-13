@@ -1,12 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import {
   BellRing,
   ChevronRight,
   Fingerprint,
+  Landmark,
   Lock,
   LogOut,
   Moon,
@@ -21,10 +22,11 @@ import { SettingsSection } from '@finnit/ui/components/settings/settings-section
 import { Button } from '@finnit/ui/components/ui/button';
 import { Switch } from '@finnit/ui/components/ui/switch';
 
-import { MOCK_USER } from '@/lib/mocks/user';
+import { signOut } from '@/app/login/actions';
+import { useSessionUser } from '@/components/session-provider';
 
 export function SettingsScreen() {
-  const router = useRouter();
+  const user = useSessionUser();
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   const [toggles, setToggles] = React.useState({
@@ -39,12 +41,25 @@ export function SettingsScreen() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
-      <ProfileCard
-        name={MOCK_USER.name}
-        email={MOCK_USER.email}
-        isPremium
-        isVerified
-      />
+      <ProfileCard name={user.name} email={user.email} isPremium isVerified />
+
+      <SettingsSection title="Bancos" icon={Landmark} iconColor="var(--brand)">
+        <Link
+          href="/settings/banks"
+          className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+        >
+          <SettingRow
+            label="Bancos conectados"
+            description="Importa tus movimientos automáticamente"
+            icon={Landmark}
+          >
+            <ChevronRight
+              aria-hidden
+              className="size-4 text-on-surface-variant"
+            />
+          </SettingRow>
+        </Link>
+      </SettingsSection>
 
       <SettingsSection
         title="Seguridad"
@@ -123,15 +138,16 @@ export function SettingsScreen() {
         </SettingRow>
       </SettingsSection>
 
-      <Button
-        variant="destructive"
-        size="lg"
-        className="mt-4 rounded-[20px] text-base font-bold"
-        // TODO: clear the session once auth is wired to the API.
-        onClick={() => router.push('/login')}
-      >
-        <LogOut className="size-5" /> Cerrar Sesión
-      </Button>
+      <form action={signOut} className="mt-4 flex flex-col">
+        <Button
+          type="submit"
+          variant="destructive"
+          size="lg"
+          className="rounded-[20px] text-base font-bold"
+        >
+          <LogOut className="size-5" /> Cerrar Sesión
+        </Button>
+      </form>
 
       <p className="text-center text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">
         Finnit v1.0.0 • Built for the future

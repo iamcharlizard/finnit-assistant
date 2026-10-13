@@ -1,11 +1,19 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
+import {
+  S3StorageService,
+  type StoredObject,
+} from '../storage/s3-storage.service';
+import { detectFileType, safeFileName } from '../storage/file-type.util';
+
+export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+export const MAX_ATTACHMENTS_PER_TRANSACTION = 10;
 import { PrismaService } from '../../services/prisma.service';
 import {
   CreateTransactionInput,
   UpdateTransactionInput,
   TransactionsArgs,
   TransactionFilters,
-  CreateAttachmentInput,
 } from './dto/transaction.dto';
 import {
   NotFoundError,
@@ -23,7 +31,10 @@ import { AccountMetadata } from '../../common/types/models/account-metadata.mode
 
 @Injectable()
 export class TransactionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: S3StorageService,
+  ) {}
 
   async create(
     userId: string,
@@ -134,7 +145,10 @@ export class TransactionsService {
     const totalCount = await this.prisma.transaction.count({ where });
 
     return PaginationUtil.createConnection(
-      transactions.map((transaction) => this.mapTransaction(transaction)),
+      transactions.map((transaction) => ({
+        ...this.mapTransaction(transaction),
+        attachments: transaction.attachments.map((a) => this.mapAttachment(a)),
+      })),
       args,
       totalCount,
       (transaction) => PaginationUtil.encodeCursor(transaction.id),
@@ -153,7 +167,10 @@ export class TransactionsService {
       throw new NotFoundError('Transaction not found');
     }
 
-    return this.mapTransaction(transaction);
+    return {
+      ...this.mapTransaction(transaction),
+      attachments: transaction.attachments.map((a) => this.mapAttachment(a)),
+    };
   }
 
   async update(
@@ -281,43 +298,95 @@ export class TransactionsService {
     return true;
   }
 
-  async addAttachment(
+  /**
+   * Stores a receipt/invoice in the private bucket and attaches it to the
+   * user's transaction. The type comes from the file's bytes, not the name.
+   */
+  async uploadAttachment(
     userId: string,
-    input: CreateAttachmentInput,
+    transactionId: string,
+    file: { buffer: Buffer; size: number; originalname?: string },
   ): Promise<Attachment> {
-    // Validate transaction belongs to user
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      throw new ValidationError('The file exceeds 10 MB');
+    }
+    const type = detectFileType(file.buffer);
+    if (!type) {
+      throw new ValidationError(
+        'Only PDF, JPEG, PNG, WEBP or HEIC files are allowed',
+      );
+    }
     const transaction = await this.prisma.transaction.findFirst({
-      where: { id: input.transactionId, userId },
+      where: { id: transactionId, userId },
+      select: { id: true, _count: { select: { attachments: true } } },
     });
-
     if (!transaction) {
       throw new NotFoundError('Transaction not found');
     }
+    if (transaction._count.attachments >= MAX_ATTACHMENTS_PER_TRANSACTION) {
+      throw new ValidationError(
+        `A transaction can have at most ${MAX_ATTACHMENTS_PER_TRANSACTION} attachments`,
+      );
+    }
 
-    const attachment = await this.prisma.attachment.create({
-      data: input,
+    const id = randomUUID();
+    const fileKey = S3StorageService.key(
+      userId,
+      'attachments',
+      id,
+      type.extension,
+    );
+    await this.storage.put(fileKey, file.buffer, type.mime);
+    try {
+      const attachment = await this.prisma.attachment.create({
+        data: {
+          id,
+          transactionId,
+          fileKey,
+          fileName: safeFileName(
+            file.originalname,
+            `adjunto.${type.extension}`,
+          ),
+          fileType: type.mime,
+          fileSize: file.size,
+        },
+      });
+      return this.mapAttachment(attachment);
+    } catch (error) {
+      await this.storage.delete(fileKey);
+      throw error;
+    }
+  }
+
+  /** The attachment's file, only for the owner of the transaction. */
+  async openAttachment(
+    id: string,
+    userId: string,
+  ): Promise<{ file: StoredObject; fileName: string; fileType: string }> {
+    const attachment = await this.prisma.attachment.findFirst({
+      where: { id, transaction: { userId } },
     });
-
-    return this.mapAttachment(attachment);
+    if (!attachment?.fileKey) {
+      throw new NotFoundError('Attachment not found');
+    }
+    return {
+      file: await this.storage.open(attachment.fileKey),
+      fileName: attachment.fileName ?? `adjunto-${id}`,
+      fileType: attachment.fileType,
+    };
   }
 
   async removeAttachment(id: string, userId: string): Promise<boolean> {
     const attachment = await this.prisma.attachment.findFirst({
-      where: {
-        id,
-        transaction: { userId },
-      },
-      include: { transaction: true },
+      where: { id, transaction: { userId } },
     });
 
     if (!attachment) {
       throw new NotFoundError('Attachment not found');
     }
 
-    await this.prisma.attachment.delete({
-      where: { id },
-    });
-
+    await this.prisma.attachment.delete({ where: { id } });
+    if (attachment.fileKey) await this.storage.delete(attachment.fileKey);
     return true;
   }
 
@@ -703,16 +772,9 @@ export class TransactionsService {
           }
         : undefined,
       attachments:
-        transaction.attachments?.map((attachment) => ({
-          id: attachment.id,
-          transactionId: attachment.transactionId,
-          fileUrl: attachment.fileUrl,
-          fileType: attachment.fileType,
-          fileSize: attachment.fileSize || undefined,
-          extra:
-            typeof attachment.extra === 'string' ? attachment.extra : undefined,
-          uploadedAt: attachment.uploadedAt,
-        })) || [],
+        transaction.attachments?.map((attachment) =>
+          this.mapAttachment(attachment),
+        ) ?? [],
     };
   }
 
@@ -722,11 +784,12 @@ export class TransactionsService {
     return {
       id: attachment.id,
       transactionId: attachment.transactionId,
-      fileUrl: attachment.fileUrl,
+      fileName: attachment.fileName ?? undefined,
       fileType: attachment.fileType,
-      fileSize: attachment.fileSize || undefined,
-      extra:
-        typeof attachment.extra === 'string' ? attachment.extra : undefined,
+      fileSize: attachment.fileSize ?? undefined,
+      downloadPath: attachment.fileKey
+        ? `/attachments/${attachment.id}/file`
+        : undefined,
       uploadedAt: attachment.uploadedAt,
     };
   }

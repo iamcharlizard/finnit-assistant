@@ -82,12 +82,13 @@ describe('AuthService', () => {
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: { email: signUpInput.email },
       });
-      expect(mockedBcrypt.hash).toHaveBeenCalledWith(signUpInput.password, 12);
+      // Passwords are hashed with PBKDF2 (salt:hash, hex encoded), not bcrypt
+      expect(mockedBcrypt.hash).not.toHaveBeenCalled();
       expect(prismaService.user.create).toHaveBeenCalledWith({
         data: {
           name: signUpInput.name,
           email: signUpInput.email,
-          passwordHash: 'hashed-password',
+          passwordHash: expect.stringMatching(/^[0-9a-f]{32}:[0-9a-f]{128}$/),
         },
       });
       expect(result).toEqual({
@@ -322,10 +323,12 @@ describe('AuthService', () => {
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: { id: payload.userId },
       });
-      expect(mockedBcrypt.hash).toHaveBeenCalledWith(resetPasswordInput.newPassword, 12);
+      expect(mockedBcrypt.hash).not.toHaveBeenCalled();
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: mockUser.id },
-        data: { passwordHash: 'new-hashed-password' },
+        data: {
+          passwordHash: expect.stringMatching(/^[0-9a-f]{32}:[0-9a-f]{128}$/),
+        },
       });
       expect(result).toBe(true);
     });
@@ -455,17 +458,41 @@ describe('AuthService', () => {
   });
 
   describe('edge cases and error handling', () => {
-    it('should handle bcrypt hash failure during signup', async () => {
-      // Arrange
-      prismaService.user.findUnique.mockResolvedValue(null);
-      (mockedBcrypt.hash as jest.Mock).mockRejectedValue(new Error('Hashing failed'));
-
-      // Act & Assert
-      await expect(service.signUp({
+    it('should store a password hash that verifies with the same password on signIn', async () => {
+      // Arrange: capture the PBKDF2 hash written on signUp
+      prismaService.user.findUnique.mockResolvedValueOnce(null);
+      prismaService.user.create.mockResolvedValue(mockUser);
+      prismaService.category.create.mockResolvedValue({ id: 'category-1' } as any);
+      jwtService.sign.mockReturnValue('token');
+      await service.signUp({
         name: 'Test User',
         email: 'test@example.com',
         password: 'password123',
-      })).rejects.toThrow('Hashing failed');
+      });
+      const storedHash = (prismaService.user.create.mock.calls[0][0] as any).data
+        .passwordHash as string;
+
+      // Act: sign in using the stored PBKDF2 hash
+      prismaService.user.findUnique.mockResolvedValueOnce({
+        ...mockUser,
+        passwordHash: storedHash,
+      });
+      const ok = await service.signIn({
+        email: 'test@example.com',
+        password: 'password123',
+      });
+
+      // Assert
+      expect(ok.user.id).toBe(mockUser.id);
+      expect(mockedBcrypt.compare).not.toHaveBeenCalled();
+
+      prismaService.user.findUnique.mockResolvedValueOnce({
+        ...mockUser,
+        passwordHash: storedHash,
+      });
+      await expect(
+        service.signIn({ email: 'test@example.com', password: 'wrong' }),
+      ).rejects.toThrow(UnauthorizedError);
     });
 
     it('should handle database error during user creation', async () => {

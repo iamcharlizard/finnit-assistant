@@ -26,6 +26,25 @@ services:
       timeout: 5s
       retries: 5
 
+  # S3-compatible storage for statement PDFs in local development.
+  # API env: S3_ENDPOINT=http://localhost:9090 S3_BUCKET=finnit-files-local
+  #          AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local
+  # (MinIO no longer publishes images; s3mock does not check credentials.)
+  s3:
+    image: adobe/s3mock:4.8.0
+    container_name: finnit-s3
+    restart: unless-stopped
+    environment:
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: finnit-files-local
+      COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT: 'true'
+      COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /data
+    ports:
+      - "${S3_PORT:-9090}:9090"
+    volumes:
+      - s3_data:/data
+    networks:
+      - finnit-network
+
   # Opcional: pgAdmin para administración visual de la base de datos
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -48,6 +67,8 @@ volumes:
   postgres18_data:
     driver: local
   pgadmin_data:
+    driver: local
+  s3_data:
     driver: local
 
 networks:

@@ -1,0 +1,29 @@
+{
+  "name": "@finnit/bank-connect",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Headless bank connection with Syncfy for web and React Native: bank logins go from the device straight to Syncfy, never to Finnit.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check-types": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test src/*.test.ts",
+    "sandbox-check": "tsx scripts/sandbox-check.ts"
+  },
+  "devDependencies": {
+    "@finnit/typescript-config": "workspace:*",
+    "@types/node": "^25.9.1",
+    "tsx": "^4.22.3",
+    "typescript": "5.9.3"
+  }
+}

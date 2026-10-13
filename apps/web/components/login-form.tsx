@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import {
   Apple,
   ArrowRight,
@@ -19,35 +18,14 @@ import { GoogleIcon } from '@finnit/ui/components/ui/google-icon';
 import { InputWithIcon } from '@finnit/ui/components/ui/input-with-icon';
 import { BodyMd, HeadlineLg } from '@finnit/ui/components/ui/typography';
 
-type LoginFormState =
-  | { status: 'idle' }
-  | { status: 'submitting' }
-  | { status: 'error'; message: string };
+import { signIn, type SignInState } from '@/app/login/actions';
 
-export function LoginForm() {
-  const router = useRouter();
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
+export function LoginForm({ next }: { next?: string }) {
+  const [state, formAction, isSubmitting] = React.useActionState<
+    SignInState,
+    FormData
+  >(signIn, {});
   const [showPassword, setShowPassword] = React.useState(false);
-  const [formState, setFormState] = React.useState<LoginFormState>({
-    status: 'idle',
-  });
-
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!email.trim() || !password) {
-      setFormState({
-        status: 'error',
-        message: 'Por favor completa todos los campos.',
-      });
-      return;
-    }
-    // TODO: call the `signIn` mutation; UI-only for now (mock data phase).
-    setFormState({ status: 'submitting' });
-    router.push('/dashboard');
-  }
-
-  const isSubmitting = formState.status === 'submitting';
 
   return (
     <div className="relative w-full max-w-[440px]">
@@ -64,19 +42,17 @@ export function LoginForm() {
       </div>
 
       <GlassCard className="rounded-[28px] p-8 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
-        <form
-          onSubmit={handleSubmit}
-          noValidate
-          className="flex flex-col gap-5"
-        >
+        <form action={formAction} noValidate className="flex flex-col gap-5">
+          {next ? <input type="hidden" name="next" value={next} /> : null}
           <InputWithIcon
             label="Correo electrónico"
             iconLeft={AtSign}
+            name="email"
             type="email"
             autoComplete="email"
             placeholder="nombre@ejemplo.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            defaultValue={state.email}
+            required
           />
 
           <InputWithIcon
@@ -95,15 +71,15 @@ export function LoginForm() {
               showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
             }
             onIconRightClick={() => setShowPassword((v) => !v)}
+            name="password"
             type={showPassword ? 'text' : 'password'}
             autoComplete="current-password"
             placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            required
           />
 
           <div className="flex min-h-11 items-center gap-3 px-1">
-            <Checkbox id="remember" />
+            <Checkbox id="remember" name="remember" />
             <label
               htmlFor="remember"
               className="text-sm text-on-surface-variant"
@@ -112,13 +88,13 @@ export function LoginForm() {
             </label>
           </div>
 
-          {formState.status === 'error' ? (
+          {state.error ? (
             <p
               role="alert"
               aria-live="polite"
               className="px-1 text-[13px] text-expense"
             >
-              {formState.message}
+              {state.error}
             </p>
           ) : null}
 

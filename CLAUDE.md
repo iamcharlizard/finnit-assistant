@@ -19,7 +19,7 @@ Finnit Assistant is a cross-platform personal finance assistant built as a Turbo
 ## Current Implementation Status (as of 2026-10-11)
 
 ### ✅ Backend API — feature complete
-All 11 GraphQL modules implemented in `apps/api/`:
+All 11 original GraphQL modules implemented, plus recurring expenses in `apps/api/`:
 
 | Module | Location |
 |--------|----------|
@@ -34,10 +34,16 @@ All 11 GraphQL modules implemented in `apps/api/`:
 | Debts | `src/modules/debts/` |
 | Notifications | `src/modules/notifications/` |
 | Reports | `src/modules/reports/` |
+| Recurring expenses | `src/modules/recurring-expenses/` |
+| Statements (PDF import + reconciliation) | `src/modules/statements/` (+ `src/modules/storage/` for S3) |
+| AI model catalog + providers (Anthropic, OpenAI, Gemini) | `src/modules/ai/` |
+| Bank connections (Syncfy aggregation) | `src/modules/bank-connections/` |
 
 Auto-generated schema at `apps/api/src/schema.gql`.
 
-Unit tests exist for auth (service + resolver), accounts, budgets, debts, goals, transactions. Missing: categories, transfers, notifications, reports, users. No E2E tests and no CI workflow (only Claude GitHub workflows).
+Unit tests exist for auth (service + resolver), accounts, budgets, debts, goals, transactions. Missing: categories, transfers, notifications, reports, users. No E2E tests, and CI only builds and deploys the API (no lint/test gate).
+
+Feature-by-feature status (API / mobile / web), verified against the code: `docs/features.md`. Keep it updated when a feature lands; the PRD checkboxes follow it.
 
 ### 🟡 Mobile App — UI built, data mostly mocked
 `apps/finnit-app/` is an Expo Router app styled with NativeWind v5:
@@ -47,7 +53,8 @@ Unit tests exist for auth (service + resolver), accounts, budgets, debts, goals,
 - Finance components live in `components/features/finance/`.
 
 ### 🟡 Web App — UI built with mock data
-- `apps/web/` (`@finnit/web`): Next.js 16 App Router, port 3001. Routes mirror mobile: `/login` and `app/(app)/` (dashboard, history, analytics, calendar, cards, settings). `components/app-shell.tsx` renders `SideNav` (≥ lg) or `TopAppBar` + `BottomNavBar`. Screens live in `components/screens/`, mock data in `lib/mocks/` (to be replaced by GraphQL). Login is UI-only. Theme via `next-themes` (class strategy).
+- `apps/web/` (`@finnit/web`): Next.js 16 App Router, port 3001. Routes mirror mobile: `/login` and `app/(app)/` (dashboard, history, analytics, calendar, cards, settings). `components/app-shell.tsx` renders `SideNav` (≥ lg) or `TopAppBar` + `BottomNavBar`. Screens live in `components/screens/`, mock data in `lib/mocks/` (to be replaced by GraphQL). Theme via `next-themes` (class strategy).
+- Web auth (backend-for-frontend): login/logout are server actions (`app/login/actions.ts`) that keep the API tokens in httpOnly cookies (`lib/auth/cookies.ts`); browser JS never sees them. `proxy.ts` (Next 16's middleware) renews the access token with the refresh token and guards routes. Server components read the user with `getCurrentUser()`; client components call GraphQL through `POST /api/graphql`, which adds the token (same-origin only). The Next server reaches the API at `FINNIT_API_URL` (default `http://localhost:3000` in development).
 - `packages/ui/` (`@finnit/ui`): shadcn/ui (new-york) on Radix (`radix-ui` package) + Tailwind v4. Ships TypeScript source (consumers transpile it). Import per file, e.g. `@finnit/ui/components/finance/payment-item`. Folders: `components/ui` (shadcn primitives + typography), `components/finance`, `components/navigation`, `components/settings`. Design tokens in `src/styles/globals.css` are ported from `apps/finnit-app/global.css` (light on `:root`, dark on `.dark`).
   - Web components keep the mobile names/props, with web conventions: `symbolName` → `icon: LucideIcon`, `onPress` → `onClick`.
   - Use relative imports inside `packages/ui`. If you add `@theme` font sizes or radii, register them in `src/lib/utils.ts` (`extendTailwindMerge`) or `cn()` will drop them.
@@ -59,18 +66,26 @@ Unit tests exist for auth (service + resolver), accounts, budgets, debts, goals,
 - API: Docker image (`apps/api/Dockerfile`, arm64) built and smoke-tested by `.github/workflows/deploy-api.yml`, pushed to GHCR and deployed to a Hetzner CAX11 managed with Dokploy. Each environment has its own Postgres on the same server inside the Dokploy project. Setup and rollback: `docs/deployment.md`.
 - Environments: branch `main` → **production** (image tag `latest`); branch `testing` → **testing** (image tag `testing`). Work flows `feature/*` → `testing` → `main`.
 - The container runs `prisma migrate deploy` on start, so migrations must be backwards-compatible.
+- Bank connection UI (web and mobile) drives `BankConnectFlow` from `@finnit/bank-connect` (framework-agnostic steps: consent → pick bank → login form → second factors → register → link accounts); each app only renders the current step (web: `components/bank-connect/`, routes `/settings/banks` and `/settings/banks/connect`). Underneath it uses `@finnit/bank-connect`: the device gets a session from `createBankConnectSession`, renders the bank's login form and second-factor prompts natively, and sends them straight to Syncfy (never to the Finnit API); on success it calls `registerBankConnection`. Sites or second factors it can't render (`isNativeSupported`, `needsWidget`) fall back to Syncfy's widget. `pnpm --filter @finnit/bank-connect sandbox-check` runs the flow against Syncfy's sandbox (needs `SYNCFY_API_KEY_SANDBOX`).
+- Files: every user file (statements, attachments, future uploads) goes to the private S3 bucket through `S3StorageService` (`src/modules/storage/`), under `users/<userId>/<kind>/<id>.<ext>`. Never public objects or pre-signed URLs: serve files through an authenticated API endpoint that checks ownership in the database (see `sendFile`). Detect file types from the bytes (`detectFileType`), not from names.
 - `apps/api/scripts/smoke-test.sh <image>` boots an image against a throwaway Postgres (health + signUp/signIn/me).
-- Known gaps: all API Jest suites fail to run and `eslint` reports ~777 errors, so CI does not gate on them yet.
+- Known gaps: `eslint` reports ~777 errors in the API, so CI does not gate on lint or tests yet.
 
 ### Database Migrations Applied
 - `20250813091847_init`
 - `20250823110041_unique_indexes_created`
+- `20261012120000_recurring_expenses_and_statements` (rollback: `packages/database/scripts/rollbacks/`)
+- `20261012180000_ai_model_catalog`
+- `20261013090000_syncfy_bank_sync`
+
+Migrations with hand-edited SQL wrap their body in `BEGIN; … COMMIT;`: Prisma does not run a migration in a transaction, so a failure would leave it half applied.
 
 ## Docs Index
 
 | File | Purpose |
 |------|---------|
 | `docs/prd.md` | Product Requirements (MVP) |
+| `docs/features.md` | Feature inventory with real status per platform (source of truth for progress) |
 | `docs/user-stories.md` | User stories by feature |
 | `docs/tech-stack.md` | Technology decisions |
 | `docs/er-diagram.md` | Entity-relationship diagram (Mermaid) |
@@ -107,6 +122,7 @@ finnit-assistant/
 │   ├── web/          — Next.js web app (@finnit/web)
 │   └── storybook/    — Storybook for @finnit/ui (@finnit/storybook)
 ├── packages/
+│   ├── bank-connect/ — Headless Syncfy bank connection for web + React Native (@finnit/bank-connect)
 │   ├── database/     — Prisma schema + generated client (@finnit/database)
 │   ├── eslint-config/
 │   ├── typescript-config/

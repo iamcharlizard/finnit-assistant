@@ -351,40 +351,21 @@ describe('AuthResolver', () => {
     });
   });
 
-  describe('me (getCurrentUser)', () => {
-    const mockContext = {
-      req: {
-        user: { userId: mockUser.id },
-      },
-    };
-
-    it('should return current user data', async () => {
-      // Arrange
-      authService.getCurrentUser.mockResolvedValue(mockUser);
-
+  describe('me', () => {
+    it('should return the user injected by @CurrentUser', () => {
       // Act
-      const result = await resolver.me(mockContext as any);
+      const result = resolver.me(mockUser as any);
 
       // Assert
-      expect(authService.getCurrentUser).toHaveBeenCalledWith(mockUser.id);
-      expect(result).toEqual(mockUser);
+      expect(result).toBe(mockUser);
     });
 
-    it('should throw NotFoundError when user not found', async () => {
-      // Arrange
-      authService.getCurrentUser.mockRejectedValue(new NotFoundError('User not found'));
+    it('should not hit the auth service (user is resolved by the guard)', () => {
+      // Act
+      resolver.me(mockUser as any);
 
-      // Act & Assert
-      await expect(resolver.me(mockContext as any)).rejects.toThrow(NotFoundError);
-    });
-
-    it('should handle missing user context', async () => {
-      // Arrange
-      const contextWithoutUser = { req: {} };
-
-      // Act & Assert
-      // This would typically be handled by the guard, but testing edge case
-      await expect(resolver.me(contextWithoutUser as any)).rejects.toThrow();
+      // Assert
+      expect(authService.getCurrentUser).not.toHaveBeenCalled();
     });
 
     it('should require authentication', async () => {
@@ -512,20 +493,15 @@ describe('AuthResolver', () => {
   });
 
   describe('GraphQL specific behavior', () => {
-    it('should handle GraphQL context correctly', async () => {
+    it('should return the current user as-is from the GraphQL request', () => {
       // Arrange
-      const graphqlContext = {
-        req: { user: { userId: mockUser.id } },
-        res: {},
-      };
-      authService.getCurrentUser.mockResolvedValue(mockUser);
+      const currentUser = { ...mockUser };
 
       // Act
-      const result = await resolver.me(graphqlContext as any);
+      const result = resolver.me(currentUser as any);
 
       // Assert
       expect(result).toEqual(mockUser);
-      expect(authService.getCurrentUser).toHaveBeenCalledWith(mockUser.id);
     });
 
     it('should work with GraphQL subscriptions context', async () => {

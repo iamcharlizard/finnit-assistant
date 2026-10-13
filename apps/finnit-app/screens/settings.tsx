@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { TwView, TwText, TwPressable, TwScrollView } from '@/lib/tw';
 import { TwAnimatedView } from '@/lib/tw/animated';
 import { TopAppBar } from '@/components/navigation/top-app-bar';
+import { ConnectedBanksSection } from '@/components/features/bank-connect/connected-banks-section';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -193,6 +194,11 @@ export function SettingsScreen() {
               <TwText style={{ fontFamily: 'Ubuntu Medium', fontSize: 14, color: P.primary }}>Editar Perfil</TwText>
             </TwPressable>
           </TwView>
+        </TwAnimatedView>
+
+        {/* Connected banks section */}
+        <TwAnimatedView entering={FadeInUp.duration(300).delay(60)} className="mb-4">
+          <ConnectedBanksSection />
         </TwAnimatedView>
 
         {/* Security section */}

@@ -71,9 +71,109 @@ Repite estos pasos para cada ambiente, usando los valores de la tabla de abajo.
    GRAPHQL_INTROSPECTION=<según la tabla>
    ```
    `NODE_ENV=production` también en testing: así testing se comporta igual que producción. Sin `JWT_SECRET` la API no arranca.
+
+   Para archivos (estados de cuenta y adjuntos), IA y banco (opcionales; sin ellas la API arranca, pero subir archivos responde 503):
+   ```
+   AWS_REGION=<región del bucket, p. ej. us-east-2>
+   S3_BUCKET=<bucket del ambiente, ver "Almacenamiento de archivos">
+   AWS_ACCESS_KEY_ID=<access key del usuario IAM del ambiente>
+   AWS_SECRET_ACCESS_KEY=<secret del usuario IAM del ambiente>
+   ANTHROPIC_API_KEY=<opcional>
+   OPENAI_API_KEY=<opcional>
+   GEMINI_API_KEY=<opcional>
+   ADMIN_EMAILS=<emails que pueden administrar el catálogo de modelos de IA, separados por comas>
+   SYNCFY_API_KEY=<opcional: conexión bancaria con Syncfy; ver "Conexión bancaria (Syncfy)">
+   ```
 4. **Domains**: el dominio de la tabla, *Path* `/`, *Container Port* `3000`, HTTPS con Let's Encrypt, *Strip Path* desactivado. Crea antes el registro **A** en el DNS (`api` o `api-test` → IPv4 del servidor).
 5. **Advanced → Resources**: límites según la tabla.
 6. Copia el `applicationId` (último segmento de la URL de la app en Dokploy).
+
+### Almacenamiento de archivos (S3)
+
+Todos los archivos (estados de cuenta y adjuntos de transacciones) van a un bucket **privado** por ambiente. Solo la API los lee y escribe, con las llaves de su usuario IAM; nunca hay URLs públicas ni pre-firmadas. Los usuarios descargan sus archivos por la API (`GET /statements/:id/file`, `GET /attachments/:id/file`) con su token, y la API comprueba en la base de datos que el archivo sea suyo antes de leerlo de S3. Las llaves de los objetos son `users/<userId>/<tipo>/<id>.<ext>`.
+
+**1. Bucket**, uno por ambiente (en los ejemplos, `finnit-files-prod` y `finnit-files-test`), en la región de `AWS_REGION`:
+
+| Ajuste | Valor |
+|---|---|
+| Block Public Access | Las 4 opciones activadas |
+| Object Ownership | *Bucket owner enforced* (ACLs deshabilitadas) |
+| Default encryption | SSE-S3 (o SSE-KMS con *Bucket Key*, y entonces `S3_KMS_KEY_ID`) |
+| Versioning | Activado (protege contra borrados accidentales) |
+| Lifecycle | Expirar versiones no actuales a los 30 días; abortar *multipart uploads* incompletos a los 7 días |
+| CORS | Ninguno (el navegador nunca habla con S3) |
+| Static website hosting | Desactivado |
+| Server access logging / CloudTrail data events | Recomendado en producción |
+
+**2. Bucket policy** (sustituye `<ACCOUNT_ID>`, el bucket y el usuario IAM). Rechaza conexiones sin TLS y cualquier acceso a objetos que no venga del usuario de la API:
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyInsecureTransport",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:*",
+      "Resource": ["arn:aws:s3:::finnit-files-prod", "arn:aws:s3:::finnit-files-prod/*"],
+      "Condition": { "Bool": { "aws:SecureTransport": "false" } }
+    },
+    {
+      "Sid": "OnlyTheApiReadsAndWritesObjects",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::finnit-files-prod/*",
+      "Condition": {
+        "ArnNotEquals": { "aws:PrincipalArn": "arn:aws:iam::<ACCOUNT_ID>:user/finnit-api-prod" }
+      }
+    }
+  ]
+}
+```
+La segunda regla solo afecta a los objetos: tu usuario administrador sigue pudiendo cambiar la configuración del bucket.
+
+**3. Usuario IAM** `finnit-api-prod` (y `finnit-api-test` para su bucket), sin acceso a consola, con solo esta política:
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
+    "Resource": "arn:aws:s3:::finnit-files-prod/users/*"
+  }]
+}
+```
+Si usas SSE-KMS, agrega `kms:Encrypt`, `kms:Decrypt` y `kms:GenerateDataKey` sobre esa llave. Genera una *access key*, ponla en Dokploy (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) y rótala periódicamente.
+
+**4. Variables** en Dokploy: `S3_BUCKET`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` y, opcionales, `S3_KMS_KEY_ID` y `S3_EXPECTED_BUCKET_OWNER` (tu *account id*: la API rechaza operar si el bucket es de otra cuenta).
+
+En desarrollo local, el servicio `s3` de `docker-compose.yml` (s3mock en el puerto 9090) sustituye a AWS; las variables están en `apps/api/.env.example`.
+
+### Modelos de IA
+
+Los bancos sin parser local se leen con IA. Los modelos disponibles están en el catálogo `AiModel` (Anthropic, OpenAI y Gemini):
+
+- La query `aiModels` lista el catálogo e indica para cada modelo si está activo, si es el predeterminado y si se puede usar (`usable`): activo **y** con la llave de su proveedor configurada.
+- Solo los emails de `ADMIN_EMAILS` pueden activar o desactivar modelos, elegir el predeterminado o cambiar el orden (`updateAiModel`, `createAiModel`, `deleteAiModel`).
+- Se prueba primero el modelo predeterminado; si falla, los demás modelos activos con soporte de PDF, en orden de `sortOrder`. Un modelo desactivado nunca se usa.
+- Las llaves van por proveedor en las variables `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` y `GEMINI_API_KEY`, nunca en la base de datos.
+
+El PDF se envía a la API del proveedor. Si no hay ningún modelo utilizable, esos estados de cuenta quedan en `failed` con un mensaje que lo indica.
+
+### Conexión bancaria (Syncfy)
+
+- `SYNCFY_API_KEY` habilita la conexión bancaria. Cada llave (sandbox o producción) ve sus propios usuarios y conexiones.
+- **Testing usa por ahora la llave de producción**, para probar con bancos reales. Consecuencias:
+  - Las conexiones de testing cuentan para el límite del plan de Syncfy.
+  - Testing también sincroniza a las 7:00 y 15:00, y esas sincronizaciones entran a los bancos reales.
+  - Los datos no se mezclan con producción: el usuario de Syncfy se crea con el id del usuario de Finnit (`id_external`), y cada base tiene ids distintos.
+  - Para probar sin bancos reales, cambia a la llave de sandbox; las conexiones creadas con una llave no se ven con la otra.
+- La app (web o móvil) obtiene un token con `createBankConnectSession` y envía usuario, contraseña y códigos del banco directo a Syncfy con `@finnit/bank-connect`; si el banco necesita algo que el formulario nativo no soporta, la web abre el widget de Syncfy. Finnit guarda solo los ids de Syncfy, nunca usuario ni contraseña del banco.
+- La API sincroniza a las 7:00 y 15:00 (CDMX). Pide a Syncfy que entre al banco como máximo cada 20 h por conexión (o cada hora si el usuario lo pide) y respeta `ready_in`; las lecturas son incrementales (`dt_refresh_from`) y reintenta con espera ante 429/5xx.
+- Para adoptar una conexión creada fuera de la app (pruebas): `linkSyncfyUser(email, syncfyUser)` (solo `ADMIN_EMAILS`) y luego `registerBankConnection(idCredential)` como ese usuario.
+- Borrar una conexión en Finnit no la borra en Syncfy; hazlo desde Syncfy.
+- Revisa el límite de tu plan de Syncfy (credenciales y transacciones) antes de abrirlo a más usuarios.
 
 ### 3. Secretos en GitHub
 
@@ -90,6 +190,15 @@ Opcional: en `production` activa *Required reviewers* para aprobar cada desplieg
 ### 4. Primer despliegue
 
 Haz push a la rama del ambiente o usa *Actions → Deploy API → Run workflow* eligiendo la rama. Comprueba `https://<dominio del ambiente>/health` → `{"status":"ok"}`.
+
+## Web app
+
+La web (`apps/web`) se desplegará en **Vercel**, después de validar la API en testing. Mientras tanto se prueba en local contra la API de testing:
+
+1. En `apps/web/.env.local`: `FINNIT_API_URL=https://api-test.<dominio>`
+2. `pnpm web:dev` y abre http://localhost:3001.
+
+Solo el servidor de Next habla con la API: el navegador llama a `/api/graphql` de la propia web, que agrega el token desde cookies httpOnly. Por eso la API no necesita CORS para la web; la única variable de la web es `FINNIT_API_URL`, y debe apuntar a la API de su mismo ambiente (testing → `api-test`, production → `api`).
 
 ## Rollback
 

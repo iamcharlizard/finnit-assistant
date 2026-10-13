@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { TransactionsService } from './transactions.service';
 import { PrismaService } from '../../services/prisma.service';
+import { S3StorageService } from '../storage/s3-storage.service';
 import {
   NotFoundError,
   ValidationError,
@@ -12,6 +13,7 @@ import { PaginationUtil } from '../../common/utils/pagination.util';
 describe('TransactionsService', () => {
   let service: TransactionsService;
   let prismaService: DeepMockProxy<PrismaService>;
+  let storage: DeepMockProxy<S3StorageService>;
 
   const mockUserId = 'user-1';
   const mockAccountId = 'account-1';
@@ -55,6 +57,7 @@ describe('TransactionsService', () => {
 
   beforeEach(async () => {
     prismaService = mockDeep<PrismaService>();
+    storage = mockDeep<S3StorageService>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -63,6 +66,7 @@ describe('TransactionsService', () => {
           provide: PrismaService,
           useValue: prismaService,
         },
+        { provide: S3StorageService, useValue: storage },
       ],
     }).compile();
 
@@ -161,7 +165,9 @@ describe('TransactionsService', () => {
       jest
         .spyOn(service as any, 'suggestCategoryForMerchant')
         .mockResolvedValue(suggestedCategory);
-      prismaService.category.findFirst.mockResolvedValue(suggestedCategory as any);
+      prismaService.category.findFirst.mockResolvedValue(
+        suggestedCategory as any,
+      );
 
       const createdTransaction = {
         ...mockTransaction,
@@ -331,34 +337,38 @@ describe('TransactionsService', () => {
         where: { userId: mockUserId },
         take: 10,
         orderBy: { txnDate: 'desc' },
+        include: {
+          account: true,
+          category: true,
+          attachments: true,
+        },
+      });
+      expect(prismaService.transaction.count).toHaveBeenCalledWith({
+        where: { userId: mockUserId },
       });
       expect(result.totalCount).toBe(2);
     });
 
     it('should apply filters when provided', async () => {
       // Arrange
+      const startDate = new Date('2024-01-01');
+      const endDate = new Date('2024-01-31');
       const args = {
         first: 10,
         filters: {
           accountId: mockAccountId,
           type: TransactionType.expense,
           categoryId: mockCategoryId,
-          startDate: new Date('2024-01-01'),
-          endDate: new Date('2024-01-31'),
-          merchantName: 'Test Store',
-          minAmount: 50,
-          maxAmount: 200,
+          source: TransactionSource.manual,
+          isPending: false,
+          startDate,
+          endDate,
+          search: 'Test Store',
         },
       };
 
       prismaService.transaction.findMany.mockResolvedValue([mockTransaction]);
       prismaService.transaction.count.mockResolvedValue(1);
-
-      jest
-        .spyOn(service as any, 'applyFilters')
-        .mockImplementation((where: any, filters: any) => {
-          Object.assign(where, filters);
-        });
 
       jest.spyOn(PaginationUtil, 'createConnection').mockReturnValue({
         edges: [],
@@ -375,10 +385,25 @@ describe('TransactionsService', () => {
       await service.findMany(mockUserId, args);
 
       // Assert
-      expect(service['applyFilters']).toHaveBeenCalledWith(
-        { userId: mockUserId },
-        args.filters,
+      const expectedWhere = {
+        userId: mockUserId,
+        accountId: mockAccountId,
+        categoryId: mockCategoryId,
+        type: TransactionType.expense,
+        source: TransactionSource.manual,
+        isPending: false,
+        txnDate: { gte: startDate, lte: endDate },
+        OR: [
+          { description: { contains: 'Test Store', mode: 'insensitive' } },
+          { merchantName: { contains: 'Test Store', mode: 'insensitive' } },
+        ],
+      };
+      expect(prismaService.transaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expectedWhere }),
       );
+      expect(prismaService.transaction.count).toHaveBeenCalledWith({
+        where: expectedWhere,
+      });
     });
 
     it('should handle cursor pagination', async () => {
@@ -407,6 +432,11 @@ describe('TransactionsService', () => {
         where: { userId: mockUserId, id: { gt: 'cursor-123' } },
         take: 5,
         orderBy: { txnDate: 'desc' },
+        include: {
+          account: true,
+          category: true,
+          attachments: true,
+        },
       });
     });
   });
@@ -419,9 +449,14 @@ describe('TransactionsService', () => {
         attachments: [
           {
             id: 'attachment-1',
-            fileUrl: 'https://example.com/file.pdf',
-            fileType: 'pdf',
+            transactionId: 'transaction-1',
+            fileKey: 'users/u/attachments/a.pdf',
+            fileName: 'ticket.pdf',
+            fileUrl: null,
+            fileType: 'application/pdf',
             fileSize: 1024,
+            extra: null,
+            uploadedAt: new Date('2024-01-01'),
           },
         ],
       };
@@ -448,6 +483,42 @@ describe('TransactionsService', () => {
       await expect(
         service.findById('non-existent', mockUserId),
       ).rejects.toThrow(NotFoundError);
+    });
+
+    it('should return the attachments loaded with the transaction', async () => {
+      // Arrange
+      prismaService.transaction.findFirst.mockResolvedValue({
+        ...mockTransaction,
+        attachments: [
+          {
+            id: 'attachment-1',
+            transactionId: mockTransaction.id,
+            fileKey: 'users/u/attachments/attachment-1.pdf',
+            fileName: 'ticket.pdf',
+            fileUrl: null,
+            fileType: 'application/pdf',
+            fileSize: 1024,
+            extra: null,
+            uploadedAt: new Date('2024-01-01'),
+          },
+        ],
+      } as any);
+
+      // Act
+      const result = await service.findById(mockTransaction.id, mockUserId);
+
+      // Assert
+      expect(result.attachments).toEqual([
+        {
+          id: 'attachment-1',
+          transactionId: mockTransaction.id,
+          fileName: 'ticket.pdf',
+          fileType: 'application/pdf',
+          fileSize: 1024,
+          downloadPath: '/attachments/attachment-1/file',
+          uploadedAt: new Date('2024-01-01'),
+        },
+      ]);
     });
   });
 
@@ -559,26 +630,75 @@ describe('TransactionsService', () => {
   });
 
   describe('delete', () => {
+    const noLinks = {
+      transferFrom: null,
+      transferTo: null,
+      debtPayment: null,
+      goalContributions: [],
+    };
+
+    it.each([
+      ['part of a transfer (from)', { transferFrom: { id: 'transfer-1' } }],
+      ['part of a transfer (to)', { transferTo: { id: 'transfer-1' } }],
+      ['a debt payment', { debtPayment: { id: 'payment-1' } }],
+      ['linked to goal contributions', { goalContributions: [{ id: 'gc-1' }] }],
+    ])(
+      'should throw ValidationError when the transaction is %s',
+      async (_label, links) => {
+        // Arrange
+        prismaService.transaction.findFirst.mockResolvedValue({
+          ...mockTransaction,
+          ...noLinks,
+          ...links,
+        } as any);
+
+        // Act & Assert
+        await expect(
+          service.delete(mockTransaction.id, mockUserId),
+        ).rejects.toThrow(ValidationError);
+        expect(prismaService.$transaction).not.toHaveBeenCalled();
+      },
+    );
+
     it('should successfully delete manual transaction with balance adjustment', async () => {
       // Arrange
       const manualTransaction = {
         ...mockTransaction,
+        ...noLinks,
         source: TransactionSource.manual,
       };
-      prismaService.transaction.findFirst.mockResolvedValue(manualTransaction);
+      prismaService.transaction.findFirst.mockResolvedValue(
+        manualTransaction as any,
+      );
 
-      prismaService.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          transaction: { delete: jest.fn() },
-          account: { update: jest.fn() },
-        };
-        return callback(mockTx as any);
-      });
+      const mockTx = {
+        transaction: { delete: jest.fn() },
+        account: { update: jest.fn() },
+      };
+      prismaService.$transaction.mockImplementation(async (callback: any) =>
+        callback(mockTx),
+      );
 
       // Act
       const result = await service.delete(mockTransaction.id, mockUserId);
 
       // Assert
+      expect(prismaService.transaction.findFirst).toHaveBeenCalledWith({
+        where: { id: mockTransaction.id, userId: mockUserId },
+        include: {
+          transferFrom: true,
+          transferTo: true,
+          debtPayment: true,
+          goalContributions: true,
+        },
+      });
+      expect(mockTx.account.update).toHaveBeenCalledWith({
+        where: { id: mockAccountId },
+        data: { balanceCurrent: { increment: 100 } },
+      });
+      expect(mockTx.transaction.delete).toHaveBeenCalledWith({
+        where: { id: mockTransaction.id },
+      });
       expect(result).toBe(true);
     });
 
@@ -612,13 +732,16 @@ describe('TransactionsService', () => {
       // Arrange
       const expenseTransaction = {
         ...mockTransaction,
+        ...noLinks,
         type: TransactionType.expense,
         amount: 100.0,
         source: TransactionSource.manual,
         isPending: false,
       };
 
-      prismaService.transaction.findFirst.mockResolvedValue(expenseTransaction);
+      prismaService.transaction.findFirst.mockResolvedValue(
+        expenseTransaction as any,
+      );
 
       let balanceAdjustment: number | undefined;
       prismaService.$transaction.mockImplementation(async (callback) => {
@@ -645,11 +768,14 @@ describe('TransactionsService', () => {
       // Arrange
       const pendingTransaction = {
         ...mockTransaction,
+        ...noLinks,
         source: TransactionSource.manual,
         isPending: true,
       };
 
-      prismaService.transaction.findFirst.mockResolvedValue(pendingTransaction);
+      prismaService.transaction.findFirst.mockResolvedValue(
+        pendingTransaction as any,
+      );
 
       let accountUpdateCalled = false;
       prismaService.$transaction.mockImplementation(async (callback) => {
@@ -692,80 +818,86 @@ describe('TransactionsService', () => {
         isPending: mockTransaction.isPending,
         isRecurringInstance: mockTransaction.isRecurringInstance,
         source: mockTransaction.source,
-        externalId: mockTransaction.externalId,
+        externalId: undefined, // null is normalized to undefined
         createdAt: mockTransaction.createdAt,
         updatedAt: mockTransaction.updatedAt,
-        attachments: [],
       });
     });
 
-    it('should handle transaction with attachments', () => {
+    it('should map attachments via mapTransactionWithRelations', () => {
       // Arrange
       const transactionWithAttachments = {
         ...mockTransaction,
+        account: null,
+        category: null,
         attachments: [
           {
             id: 'attachment-1',
             transactionId: mockTransaction.id,
+            fileKey: null,
+            fileName: null,
             fileUrl: 'https://example.com/receipt.jpg',
             fileType: 'image/jpeg',
             fileSize: 2048,
-            extra: { metadata: 'test' },
+            extra: 'ocr-text',
             uploadedAt: new Date('2024-01-01'),
           },
         ],
       };
 
       // Act
-      const result = service['mapTransaction'](transactionWithAttachments);
+      const result = service['mapTransactionWithRelations'](
+        transactionWithAttachments as any,
+      );
 
-      // Assert
+      // Assert: legacy external links are not downloadable through the API.
       expect(result.attachments!).toHaveLength(1);
       expect(result.attachments![0]).toEqual({
         id: 'attachment-1',
         transactionId: mockTransaction.id,
-        fileUrl: 'https://example.com/receipt.jpg',
+        fileName: undefined,
         fileType: 'image/jpeg',
         fileSize: 2048,
-        extra: { metadata: 'test' },
+        downloadPath: undefined,
         uploadedAt: new Date('2024-01-01'),
       });
+      expect(result.account).toBeUndefined();
+      expect(result.category).toBeUndefined();
     });
   });
 
   describe('suggestCategoryForMerchant', () => {
-    it('should return suggested category based on merchant history', async () => {
+    it('should return the most frequent category among similar merchants', async () => {
       // Arrange
-      const merchantName = 'Starbucks';
-      const suggestedCategory = { id: 'food-category', name: 'Food & Dining' };
-
-      prismaService.transaction.findFirst.mockResolvedValue({
-        categoryId: suggestedCategory.id,
-        category: suggestedCategory,
-      } as any);
+      prismaService.transaction.findMany.mockResolvedValue([
+        { categoryId: 'food-category' },
+        { categoryId: 'coffee-category' },
+        { categoryId: 'coffee-category' },
+      ] as any);
 
       // Act
       const result = await service['suggestCategoryForMerchant'](
         mockUserId,
-        merchantName,
+        'Starbucks Reserve',
       );
 
       // Assert
-      expect(prismaService.transaction.findFirst).toHaveBeenCalledWith({
+      expect(prismaService.transaction.findMany).toHaveBeenCalledWith({
         where: {
           userId: mockUserId,
-          merchantName: { contains: merchantName, mode: 'insensitive' },
+          merchantName: { contains: 'Starbucks', mode: 'insensitive' },
           categoryId: { not: null },
         },
         include: { category: true },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { txnDate: 'desc' },
+        take: 5,
       });
-      expect(result).toEqual(suggestedCategory);
+      expect(result).toEqual({ id: 'coffee-category' });
     });
 
     it('should return null when no similar merchant found', async () => {
       // Arrange
-      prismaService.transaction.findFirst.mockResolvedValue(null);
+      prismaService.transaction.findMany.mockResolvedValue([]);
 
       // Act
       const result = await service['suggestCategoryForMerchant'](
@@ -775,6 +907,18 @@ describe('TransactionsService', () => {
 
       // Assert
       expect(result).toBeNull();
+    });
+
+    it('should return null without querying when merchant name is empty', async () => {
+      // Act
+      const result = await service['suggestCategoryForMerchant'](
+        mockUserId,
+        '',
+      );
+
+      // Assert
+      expect(result).toBeNull();
+      expect(prismaService.transaction.findMany).not.toHaveBeenCalled();
     });
   });
 
@@ -841,7 +985,9 @@ describe('TransactionsService', () => {
       };
 
       prismaService.account.findFirst.mockResolvedValue(mockAccount as any);
-      prismaService.category.findFirst.mockResolvedValue(globalDefaultCategory as any);
+      prismaService.category.findFirst.mockResolvedValue(
+        globalDefaultCategory as any,
+      );
 
       prismaService.$transaction.mockImplementation(async (callback) => {
         const mockTx = {

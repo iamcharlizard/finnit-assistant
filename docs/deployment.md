@@ -79,6 +79,7 @@ Repite estos pasos para cada ambiente, usando los valores de la tabla de abajo.
    AWS_ACCESS_KEY_ID=<access key del usuario IAM del ambiente>
    AWS_SECRET_ACCESS_KEY=<secret del usuario IAM del ambiente>
    ANTHROPIC_API_KEY=<opcional>
+   GOOGLE_API_KEY=<opcional: Google Cloud Translation para traducir las categorías que crean los usuarios; sin ella se traducen con IA>
    OPENAI_API_KEY=<opcional>
    GEMINI_API_KEY=<opcional>
    GOOGLE_CLIENT_IDS=<opcional: Client IDs de Google (web, iOS, Android) separados por comas; ver "Login con Google">
@@ -161,6 +162,16 @@ Los bancos sin parser local se leen con IA. Los modelos disponibles están en el
 - Las llaves van por proveedor en las variables `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` y `GEMINI_API_KEY`, nunca en la base de datos.
 
 El PDF se envía a la API del proveedor. Si no hay ningún modelo utilizable, esos estados de cuenta quedan en `failed` con un mensaje que lo indica.
+
+### Traducción de categorías
+
+Las categorías se guardan con su nombre original en inglés y una traducción por idioma (es, en). Las predeterminadas vienen traducidas. Las que crea o renombra un usuario se traducen con **Google Cloud Translation** (`GOOGLE_API_KEY`).
+
+Para obtener la llave, en el proyecto Finnit de Google Cloud:
+1. Activa *Cloud Translation API*.
+2. Crea una API key restringida a esa API.
+
+Si Google falla, se usa la funcionalidad de IA `translation`. Si también falla, se guarda el texto tal cual en los dos idiomas. Nunca bloquea la creación de la categoría.
 
 ### Conexión bancaria (Syncfy)
 

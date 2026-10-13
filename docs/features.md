@@ -2,7 +2,7 @@
 
 Inventario de funcionalidades y su estado **real**, verificado contra el código. Es la fuente de verdad del avance; [prd.md](./prd.md) describe el alcance y [user-stories.md](./user-stories.md) los criterios de aceptación.
 
-**Última revisión:** 14 de octubre de 2026
+**Última revisión:** 15 de octubre de 2026
 
 **Leyenda:** ✅ hecho · 🟡 parcial · ⏳ pendiente · — no aplica
 
@@ -57,7 +57,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 |---|---|---|---|---|
 | CRUD de cuentas (efectivo, débito, crédito, ahorro, e-wallet) | ✅ | 🟡 | 🟡 | Web: saldos reales de solo lectura (Inicio: disponible, deuda en tarjetas y patrimonio neto; Tarjetas: crédito y débito). Sin formularios de alta: las cuentas llegan al conectar el banco. Móvil: datos mock. |
 | Ajuste de saldo sin ingreso/gasto falso | ✅ | ⏳ | ⏳ | `adjustAccountBalance` (tipo `adjustment`). |
-| Términos de tarjeta de crédito (corte, pago, tasa) | 🟡 | 🟡 | ✅ | Modelo `CreditCardTerms`; `accounts` ya los incluye. Web: próximo corte y fecha de pago en Tarjetas y en el Calendario. **Falta:** ninguna mutación permite capturarlos. |
+| Términos de tarjeta de crédito (corte, pago, tasa) | ✅ | 🟡 | ✅ | Modelo `CreditCardTerms`; `accounts` ya los incluye. Web: próximo corte y fecha de pago en Tarjetas y en el Calendario. `setCreditCardTerms` / `removeCreditCardTerms`; falta el formulario (fase 2). |
 | Alta guiada con explicación de tipos | — | ⏳ | ⏳ | Es UI. |
 | Escaneo de tarjeta con foto | ⏳ | ⏳ | ⏳ | |
 
@@ -107,8 +107,8 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
 | Crear meta y ver progreso | ✅ | ⏳ | ⏳ | `createGoal`, `goalProgress`. |
-| Editar / borrar meta, registrar aportaciones | 🟡 | ⏳ | ⏳ | Existe en el servicio, **no expuesto** en el resolver. |
-| Proyección y sugerencias de ahorro | 🟡 | ⏳ | ⏳ | `getGoalProjection`/`getGoalRecommendations` en el servicio, **no expuestos**. |
+| Editar / borrar meta, registrar aportaciones | ✅ | ⏳ | ⏳ | `updateGoal`, `deleteGoal`, `addGoalContribution`, `removeGoalContribution`, `goalContributions`. |
+| Proyección y sugerencias de ahorro | ✅ | ⏳ | ⏳ | `goalProjection`, `goalRecommendations`. |
 
 ### 8. Reportes e insights
 
@@ -212,8 +212,8 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Renombrar cuenta o tarjeta (solo visible al usuario) | ⏳ | ⏳ | ⏳ | Se conserva el nombre del banco. |
-| Diseño: un color o degradado de dos; texto con contraste automático | ⏳ | ⏳ | ⏳ | Contraste WCAG AA. |
+| Renombrar cuenta o tarjeta (solo visible al usuario) | ✅ | ⏳ | ⏳ | `metadata.nickname`; `updateAccount` combina el JSON en vez de reemplazarlo. |
+| Diseño: un color o degradado de dos; texto con contraste automático | ✅ | ⏳ | 🟡 | `metadata.design`. UI: `bank-payment-card` con `primaryColor`/`secondaryColor` y `readableTextColor` (WCAG AA); falta el editor (fase 2). |
 
 ### 19. Flujo para crear movimientos *(nuevo)*
 
@@ -221,17 +221,24 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 |---|---|---|---|---|
 | Elegir gasto, ingreso o transferencia | ✅ | ⏳ | ⏳ | `createTransaction`, `createTransfer`. |
 | Capturar ticket para crear un gasto | ⏳ | ⏳ | ⏳ | Usa la extracción de tickets (sección 3, [document-ocr.md](./document-ocr.md)). |
-| Aviso de duplicado contra movimientos sincronizados | ⏳ | ⏳ | ⏳ | Ofrece adjuntar el ticket al movimiento existente. |
-| Fecha en hora local | ⏳ | — | — | **Bug:** hoy `txnDate` guarda la fecha UTC. |
+| Aviso de duplicado contra movimientos sincronizados | ✅ | ⏳ | ⏳ | `similarTransactions`. Ofrece adjuntar el ticket al movimiento existente. |
+| Fecha en hora local | ✅ | — | — | `toLocalDateOnly`: se guarda el día de CDMX. |
 
 ### 20. Cuentas y tarjetas manuales *(nuevo)*
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
 | Alta manual de débito y crédito | ✅ | ⏳ | ⏳ | `createAccount`. |
-| Corte, fecha de pago y tasa de la tarjeta | ⏳ | ⏳ | ⏳ | Falta la mutación para `CreditCardTerms`. |
-| Saldo inicial sin contarlo como ingreso o gasto | ⏳ | — | — | **Bug:** hoy crea una transacción de ingreso/gasto. |
+| Corte, fecha de pago y tasa de la tarjeta | ✅ | ⏳ | ⏳ | `setCreditCardTerms`. |
+| Saldo inicial sin contarlo como ingreso o gasto | ✅ | — | — | Se registra como ajuste ("Initial balance") en la misma transacción de BD. |
 | Ligar después una cuenta manual a una conexión bancaria | 🟡 | ⏳ | ⏳ | `linkBankAccount` ya acepta una cuenta existente. |
+
+### Idiomas *(nuevo)*
+
+| Funcionalidad | API | Móvil | Web | Notas |
+|---|---|---|---|---|
+| Interfaz en español e inglés | ✅ | ⏳ | ✅ | Web con `next-intl`; selector en Ajustes (`updateMyPreferences`, `User.locale`). |
+| Categorías traducidas | ✅ | ⏳ | ✅ | `CategoryTranslation` (en/es); las del usuario se traducen con Google Cloud Translation (respaldo con IA). |
 
 ## Plataforma
 
@@ -242,6 +249,6 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 | Builds móviles (EAS) | ⏳ | |
 | CI de calidad en PRs (lint, tipos, tests) | ⏳ | |
 | Tests unitarios de la API | 🟡 | 515 pasan, 6 omitidos que documentan bugs (`TODO(bug)`); faltan categorías, transferencias, notificaciones y usuarios. `pnpm turbo run test --filter=@finnit/api`. |
-| Paginación por cursor consistente | 🟡 | Transacciones: corregido (cursor por fecha + id). **Bug pendiente:** deudas y cuentas ordenan por fecha pero paginan con `id > cursor`. |
+| Paginación por cursor consistente | ✅ | Transacciones, cuentas y deudas paginan por (campo de orden, id). |
 | Tests E2E | ⏳ | |
 | Logs y monitoreo | ⏳ | |

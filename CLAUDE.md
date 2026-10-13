@@ -55,6 +55,8 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 
 ### 🟡 Web App — UI built with mock data
 - `apps/web/` (`@finnit/web`): Next.js 16 App Router, port 3001. Routes mirror mobile: `/login` and `app/(app)/` (dashboard, history, analytics, calendar, cards, settings). `components/app-shell.tsx` renders `SideNav` (≥ lg) or `TopAppBar` + `BottomNavBar`. Screens live in `components/screens/` and get real data: each `page.tsx` loads it on the server in one GraphQL request (`lib/<area>/load.ts` with `serverGraphql` from `lib/api/server-graphql.ts`), pure mappers in `lib/<area>/view.ts` and `lib/finance/` turn it into plain props (money and dates formatted deterministically in America/Mexico_City), and the client screen only renders. History filters live in the URL; "Cargar más" uses `gql`. Theme via `next-themes` (class strategy).
+- i18n: `next-intl` without locale in the URL. Locale = `User.locale` (saved with `updateMyPreferences`), then the `NEXT_LOCALE` cookie, then `es`; login uses cookie / Accept-Language. Messages in `apps/web/messages/{es,en}.json` (keys type-checked; a test checks both files match). Never hardcode UI text: server `getTranslations`, client `useTranslations`, view builders take a `Localizer`. Category names come translated from the API (`Category.name` by `x-locale` header or the user's locale; `originalName` is English; `CategoryTranslation` table; user-created names are translated with Google Cloud Translation, AI fallback). `packages/ui` components take labels as props with English defaults.
+- Files from the browser go through `app/api/files/[...path]` (whitelisted REST paths, same-origin, token injection, 10 MB). Navigation sections in `lib/nav/`; dates are stored as the local (America/Mexico_City) day via `toLocalDateOnly`.
 - Web auth (backend-for-frontend): login/logout are server actions (`app/login/actions.ts`) that keep the API tokens in httpOnly cookies (`lib/auth/cookies.ts`); browser JS never sees them. `proxy.ts` (Next 16's middleware) renews the access token with the refresh token and guards routes. Server components read the user with `getCurrentUser()`; client components call GraphQL through `POST /api/graphql`, which adds the token (same-origin only). The Next server reaches the API at `FINNIT_API_URL` (default `http://localhost:3000` in development).
 - `packages/ui/` (`@finnit/ui`): shadcn/ui (new-york) on Radix (`radix-ui` package) + Tailwind v4. Ships TypeScript source (consumers transpile it). Import per file, e.g. `@finnit/ui/components/finance/payment-item`. Folders: `components/ui` (shadcn primitives + typography), `components/finance`, `components/navigation`, `components/settings`. Design tokens in `src/styles/globals.css` are ported from `apps/finnit-app/global.css` (light on `:root`, dark on `.dark`).
   - Web components keep the mobile names/props, with web conventions: `symbolName` → `icon: LucideIcon`, `onPress` → `onClick`.
@@ -81,6 +83,7 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261013090000_syncfy_bank_sync`
 - `20261013120000_private_attachments`
 - `20261014090000_admin_access_and_ai_features`
+- `20261015090000_category_i18n_and_ai_features` + `20261015090100_ai_feature_defaults` (enum values added in one file can't be used in the same transaction, so the seed rows live in a second file)
 
 Migrations with hand-edited SQL wrap their body in `BEGIN; … COMMIT;`: Prisma does not run a migration in a transaction, so a failure would leave it half applied.
 
@@ -96,6 +99,7 @@ Migrations with hand-edited SQL wrap their body in `BEGIN; … COMMIT;`: Prisma 
 | `docs/data-dictionary.md` | Field-level data definitions |
 | `docs/database-monorepo-integration.md` | DB ↔ API integration guide |
 | `docs/deployment.md` | API deployment (Dokploy + GitHub Actions) and rollback |
+| `docs/document-ocr.md` | Receipt photos and statement OCR: engine comparison, design and task list |
 | `packages/database/prisma/schema.prisma` | Authoritative DB schema |
 | `dev-plans/progress.md` | Sprint progress tracker |
 | `dev-plans/next-steps-checklist.md` | Prioritized task list |

@@ -1,6 +1,8 @@
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { CalendarClock } from 'lucide-react';
+import { CalendarClock, FileUp } from 'lucide-react';
 
+import { Button } from '@finnit/ui/components/ui/button';
 import { Card } from '@finnit/ui/components/ui/card';
 
 import type { AccountDetail } from '@/lib/accounts/view';
@@ -8,6 +10,7 @@ import type { AccountDetail } from '@/lib/accounts/view';
 /** Cut-off and payment dates, statement amounts and recurring charges. */
 export function AccountFacts({ detail }: { detail: AccountDetail }) {
   const t = useTranslations('cards');
+  const ts = useTranslations('statements');
   const isCredit = detail.account.type === 'credit';
   if (!isCredit) return null;
 
@@ -40,6 +43,13 @@ export function AccountFacts({ detail }: { detail: AccountDetail }) {
           })}
         </p>
       ) : null}
+      <Button variant="outline" size="sm" className="self-start" asChild>
+        <Link
+          href={`/statements?account=${encodeURIComponent(detail.account.id)}`}
+        >
+          <FileUp aria-hidden /> {ts('uploadFromAccount')}
+        </Link>
+      </Button>
     </Card>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { TransactionItemWithStatus } from '@finnit/ui/components/finance/transaction-item-with-status';
 
@@ -9,6 +10,7 @@ import type { TransactionRow } from '@/lib/finance/transactions';
 /** A transaction row with its status (history). */
 export function TransactionStatusRow({ row }: { row: TransactionRow }) {
   const t = useTranslations('finance');
+  const router = useRouter();
   const pending = row.status === 'pending';
   return (
     <TransactionItemWithStatus
@@ -24,6 +26,7 @@ export function TransactionStatusRow({ row }: { row: TransactionRow }) {
         pending || row.variant === 'neutral' ? 'pending' : row.variant
       }
       icon={CATEGORY_ICONS[row.iconKey]}
+      onClick={() => router.push(`/transactions/${row.id}`)}
     />
   );
 }

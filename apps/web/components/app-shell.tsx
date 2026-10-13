@@ -10,6 +10,7 @@ import { Toaster } from '@finnit/ui/components/ui/toaster';
 import { AppBottomNav } from '@/components/navigation/app-bottom-nav';
 import { AppSideNav } from '@/components/navigation/app-side-nav';
 import { NewEntrySheet } from '@/components/new-entry/new-entry-sheet';
+import { NotificationsSheet } from '@/components/notifications/notifications-sheet';
 import { initials, useSessionUser } from '@/components/session-provider';
 import { activeNavHref, visibleSections } from '@/lib/nav/sections';
 import { pageTitleKey } from '@/lib/nav/titles';
@@ -36,6 +37,8 @@ export function AppShell({
   // "Nuevo movimiento" (the "+" buttons).
   const [adding, setAdding] = React.useState(false);
   const handleAdd = () => setAdding(true);
+  // The bell's panel (latest notifications).
+  const [notificationsOpen, setNotificationsOpen] = React.useState(false);
 
   return (
     <div className="flex min-h-dvh bg-background">
@@ -50,6 +53,7 @@ export function AppShell({
         <TopAppBar
           title={t(pageTitleKey(pathname))}
           notificationCount={notificationCount}
+          onNotificationsClick={() => setNotificationsOpen(true)}
           avatarFallback={initials(user.name)}
           notificationsLabel={(count) =>
             count > 0
@@ -70,6 +74,11 @@ export function AppShell({
         className="lg:hidden"
       />
       <NewEntrySheet open={adding} onOpenChange={setAdding} />
+      <NotificationsSheet
+        open={notificationsOpen}
+        onOpenChange={setNotificationsOpen}
+        unreadCount={notificationCount}
+      />
       <Toaster position="top-center" closeButton={false} />
     </div>
   );

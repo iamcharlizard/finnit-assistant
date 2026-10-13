@@ -773,6 +773,287 @@
       "evidence": "{count, plural, one {Seen # time} other {Seen # times}}"
     }
   },
+  "budgets": {
+    "title": "Budgets",
+    "subtitle": "Set a limit for your month and for each category, and see how much you have spent.",
+    "edit": "Edit",
+    "deletedCategory": "Deleted category",
+    "delete": {
+      "action": "Delete",
+      "title": "Delete the {month} budget?",
+      "description": "The month's limit and category caps are removed. Your transactions don't change.",
+      "confirm": "Delete budget"
+    },
+    "toasts": {
+      "created": "{month} budget created",
+      "updated": "{month} budget updated",
+      "copied": "Your budget was copied to {month}",
+      "deleted": "{month} budget deleted"
+    },
+    "overview": {
+      "title": "Spent this month",
+      "of": "of {amount}",
+      "barLabel": "You have used {percent}% of your budget",
+      "over": "You went over by {amount}",
+      "left": "{amount} left",
+      "used": "{percent}% used",
+      "explicitTotal": "Includes all your spending this month. Your category caps add up to {amount}.",
+      "capsTotal": "Includes all your spending this month. The limit is the sum of your category caps."
+    },
+    "caps": {
+      "title": "Category caps",
+      "empty": "This budget has no category caps. Edit it to add some.",
+      "spentOf": "{spent} of {cap}",
+      "barLabel": "{category}: {percent}% of the cap",
+      "over": "Over by {amount}",
+      "reached": "Cap reached",
+      "left": "{amount} left"
+    },
+    "alerts": {
+      "title": "Alerts",
+      "over": "You went over the {category} cap by {amount}.",
+      "reached": "You reached the {category} cap.",
+      "warning": "You have used {percent}% of the {category} cap; {amount} left."
+    },
+    "outside": {
+      "title": "Spending no cap counts",
+      "uncategorized": "{amount} without a category.",
+      "categorize": "Categorize",
+      "uncapped": "{amount} in categories without a cap."
+    },
+    "empty": {
+      "title": "You don't have a budget for {month} yet",
+      "description": "Set how much you want to spend this month and, if you like, a cap for each category. We let you know at 80% and 100%.",
+      "create": "Create budget",
+      "copy": "Copy from {month}"
+    },
+    "suggestions": {
+      "title": "Suggestion based on your spending",
+      "description": "Your average per category over {count, plural, one {the last month} other {the last # months}}, rounded up.",
+      "average": "Average: {amount}",
+      "total": "Suggested total: {amount}",
+      "use": "Use suggestion"
+    },
+    "form": {
+      "createTitle": "New budget for {month}",
+      "editTitle": "{month} budget",
+      "description": "A limit for the month, caps per category, or both.",
+      "total": "Monthly limit (optional)",
+      "totalPlaceholder": "e.g. 20000",
+      "totalHint": "Leave it empty to use the sum of the caps as your limit.",
+      "caps": "Category caps",
+      "noCaps": "No category caps.",
+      "addCap": "Add category",
+      "capsSum": "Caps total: {amount}",
+      "capsHint": "A category's cap includes its subcategories.",
+      "totalBelowCaps": "Your monthly limit is below the sum of your caps ({amount}). You can save it like this, but check it is what you want.",
+      "fixErrors": "Check the highlighted fields.",
+      "saving": "Saving…",
+      "save": "Save changes",
+      "create": "Create budget",
+      "category": "Category",
+      "categoryPlaceholder": "Choose a category",
+      "categorySearch": "Search categories…",
+      "noResults": "No results.",
+      "capAmount": "Cap for {category}",
+      "capPlaceholder": "Cap",
+      "remove": "Remove {category}",
+      "newCap": "new category"
+    },
+    "validation": {
+      "empty": "Add a monthly limit or at least one category cap.",
+      "totalInvalid": "Enter an amount greater than 0.",
+      "totalTooLarge": "The amount is too large.",
+      "categoryRequired": "Choose a category.",
+      "categoryRepeated": "This category already has a cap.",
+      "amountRequired": "Enter the cap.",
+      "amountInvalid": "Enter an amount greater than 0.",
+      "amountTooLarge": "The amount is too large."
+    },
+    "errors": {
+      "exists": "There is already a budget for that month. Reload the page.",
+      "templateGone": "The budget you wanted to copy no longer exists.",
+      "notFound": "This budget no longer exists. Reload the page.",
+      "repeatedCategory": "A category is repeated in the caps.",
+      "category": "One of the categories no longer exists."
+    },
+    "card": {
+      "title": "{month} budget",
+      "link": "See budget",
+      "of": "of {amount}",
+      "barLabel": "You have used {percent}% of your budget",
+      "over": "You went over by {amount}",
+      "left": "{percent}% used · {amount} left"
+    }
+  },
+  "debts": {
+    "title": "Debts",
+    "subtitle": "What you owe, your payments and the plan to pay it off.",
+    "new": "New debt",
+    "kinds": {
+      "loan": "Loan",
+      "card": "Card",
+      "other": "Other"
+    },
+    "empty": {
+      "title": "You have no debts registered",
+      "description": "Add your loans and cards to see how much you owe, record your payments and build a plan to get out of debt."
+    },
+    "summary": {
+      "owed": "Total owed",
+      "owedDetail": "{count, plural, =0 {No active debts} one {# active debt} other {# active debts}}{paidOff, plural, =0 {} one { · # paid off} other { · # paid off}}",
+      "minimums": "Monthly minimum payments",
+      "minimumsDetail": "Sum of the minimums of your active debts",
+      "rate": "Average rate",
+      "rateUnknown": "Add your debts' rates to calculate it",
+      "rateMissing": "Weighted by balance; {count, plural, one {# debt has no rate} other {# debts have no rate}}",
+      "rateDetail": "Annual, weighted by what you owe on each"
+    },
+    "list": {
+      "title": "Your debts"
+    },
+    "card": {
+      "rate": "{rate} a year",
+      "noRate": "No rate",
+      "minPayment": "Minimum {amount}",
+      "account": "Account: {account}",
+      "paidOff": "Paid off",
+      "overdue": "Overdue",
+      "more": "More actions for {name}",
+      "pay": "Record payment",
+      "edit": "Edit",
+      "delete": "Delete",
+      "remaining": "Left to pay",
+      "of": "of {amount}",
+      "paidLabel": "Paid: {percent}%",
+      "paid": "You have paid {amount} ({percent}%)",
+      "due": "Due {date}"
+    },
+    "delete": {
+      "title": "Delete {name}?",
+      "description": "The debt is removed. A debt with recorded payments can't be deleted.",
+      "confirm": "Delete debt"
+    },
+    "toasts": {
+      "created": "{name} added",
+      "updated": "{name} updated",
+      "deleted": "{name} deleted",
+      "paid": "Payment to {name} recorded",
+      "noChanges": "Nothing changed"
+    },
+    "form": {
+      "createTitle": "New debt",
+      "editTitle": "Edit debt",
+      "createDescription": "A loan, a card or any money you owe.",
+      "editDescription": "Change the details of {name}.",
+      "name": "Name",
+      "namePlaceholder": "e.g. Car loan",
+      "kind": "Type",
+      "principal": "Debt amount",
+      "principalHint": "What you borrowed, or what you owed when you added it. Your payments are subtracted from it.",
+      "rate": "Annual interest rate (%)",
+      "ratePlaceholder": "e.g. 36",
+      "minPayment": "Monthly minimum payment",
+      "startDate": "Start date",
+      "dueDate": "Due date",
+      "datePlaceholder": "Choose a date",
+      "clearDate": "Remove date",
+      "account": "Linked account (optional)",
+      "accountPlaceholder": "No account",
+      "accountSearch": "Search accounts…",
+      "noResults": "No results.",
+      "accountHint": "The account this debt is paid from or belongs to.",
+      "accountCardHint": "It is a credit card: your payments will be recorded as transfers to this card.",
+      "fixErrors": "Check the highlighted fields.",
+      "saving": "Saving…",
+      "save": "Save changes",
+      "create": "Add debt"
+    },
+    "validation": {
+      "nameRequired": "Enter a name.",
+      "nameTooLong": "The name is too long.",
+      "principalRequired": "Enter the amount.",
+      "principalInvalid": "Enter an amount greater than 0.",
+      "principalTooLarge": "The amount is too large.",
+      "principalBelowPaid": "It can't be less than what you have paid.",
+      "rateInvalid": "Enter a rate between 0 and 100.",
+      "minPaymentInvalid": "Enter an amount greater than 0.",
+      "dueBeforeStart": "It must be after the start date."
+    },
+    "payment": {
+      "title": "Record payment",
+      "description": "{name}: {amount} left to pay.",
+      "transferNote": "It will be recorded as a transfer from the account you choose to your {card} card.",
+      "expenseNote": "It will be recorded as an expense from the account you choose.",
+      "amount": "Amount",
+      "date": "Payment date",
+      "datePlaceholder": "Choose a date",
+      "account": "Which account did it come from?",
+      "accountPlaceholder": "Choose an account",
+      "accountSearch": "Search accounts…",
+      "noResults": "No results.",
+      "noSources": "You have no open peso accounts to record the payment from.",
+      "noSourcesTransfer": "You need a debit, cash or savings account in the card's currency to record the payment.",
+      "category": "Category (optional)",
+      "categoryPlaceholder": "No category",
+      "categorySearch": "Search categories…",
+      "saving": "Recording…",
+      "submit": "Record payment",
+      "movementDescription": "Payment to {name}"
+    },
+    "paymentValidation": {
+      "amountRequired": "Enter the amount.",
+      "amountInvalid": "Enter an amount greater than 0.",
+      "amountTooMuch": "It is more than what is left to pay.",
+      "dateRequired": "Choose the date.",
+      "dateInFuture": "The date can't be in the future.",
+      "accountRequired": "Choose the account."
+    },
+    "plan": {
+      "title": "Plan to get out of debt",
+      "subtitle": "Pay the minimum on all of them and put the extra money on one at a time. When one is paid off, its payment moves to the next.",
+      "extra": "Extra payment per month",
+      "extraHint": "What you can pay each month on top of the minimums.",
+      "extraInvalid": "Enter a valid amount.",
+      "error": "We couldn't calculate the plan. Try again.",
+      "assumptions": "Estimate with your current balances and rates, with no new charges. Debts without a rate are calculated without interest.",
+      "never": "Never",
+      "months": "{count, plural, =0 {Already paid off} one {# month} other {# months}}",
+      "recommended": "Best for you",
+      "debtFree": "Debt-free in",
+      "interest": "Total interest",
+      "order": "Payment order",
+      "stepDetail": "{months} · interest {interest}",
+      "strategies": {
+        "avalanche": {
+          "name": "Avalanche",
+          "description": "Highest rate first: you pay less interest."
+        },
+        "snowball": {
+          "name": "Snowball",
+          "description": "Smallest balance first: you pay off debts sooner."
+        }
+      },
+      "verdict": {
+        "never": "With these payments some debt is never paid off: its interest is more than what you pay. Raise your extra payment or check the minimums.",
+        "saves": "{strategy} saves you {amount} in interest.",
+        "faster": "{strategy} gets you debt-free {count, plural, one {# month} other {# months}} sooner.",
+        "same": "With your debts, both strategies give the same result."
+      }
+    },
+    "errors": {
+      "hasPayments": "A debt with recorded payments can't be deleted.",
+      "duplicateName": "You already have a debt with that name.",
+      "overpayment": "The payment is more than what is left to pay.",
+      "insufficientBalance": "The account doesn't have enough balance for this payment.",
+      "currency": "The account and the card are in different currencies.",
+      "account": "The linked account no longer exists.",
+      "principalBelowPaid": "The amount can't be less than what you have paid.",
+      "notFound": "This debt no longer exists. Reload the page.",
+      "paymentUndone": "We couldn't record the payment: {reason} No transaction was saved.",
+      "paymentNotLinked": "We saved the transaction, but couldn't link it to the debt: {reason}"
+    }
+  },
   "analytics": {
     "emptyTitle": "No data to analyze yet",
     "emptyDescription": "Connect your bank: with your transactions you'll see your spending by category, your income and expense trend and a projection of your balance.",
@@ -1344,6 +1625,541 @@
       "duplicate": "You already have an alias with that text.",
       "notFound": "That alias no longer exists.",
       "category": "That category no longer exists."
+    }
+  },
+  "transaction": {
+    "back": "Back",
+    "viewDetail": "View details",
+    "types": {
+      "income": "Income",
+      "expense": "Expense",
+      "transfer": "Transfer",
+      "adjustment": "Adjustment or payment"
+    },
+    "detailsTitle": "Details",
+    "fields": {
+      "date": "Date",
+      "account": "Account",
+      "category": "Category",
+      "source": "Source",
+      "status": "Status",
+      "merchant": "Merchant",
+      "description": "Description",
+      "original": "Original text",
+      "transfer": "Transfer",
+      "recurring": "Recurring payment"
+    },
+    "sources": {
+      "manual": "Added by hand",
+      "bank": "Bank",
+      "statement": "Card statement",
+      "receipt": "Receipt",
+      "sms": "SMS"
+    },
+    "private": "Private",
+    "privateHint": "This movement is private: lists and searches only show its name.",
+    "showOriginal": "Show original",
+    "hideOriginal": "Hide original",
+    "counterpartTo": "To {account}",
+    "counterpartFrom": "From {account}",
+    "recurringPaid": "{name} · due {date}",
+    "edit": "Edit",
+    "rename": "Rename",
+    "delete": "Delete",
+    "editTitle": "Edit movement",
+    "editDescription": "Change this movement's details. The account balance updates on its own.",
+    "editImported": "It comes from the bank or a card statement: only its category can change. To change how its name shows, use “Rename”.",
+    "editTransfer": "A transfer's amount and date don't change; if they're wrong, delete it from the other account and create it again.",
+    "form": {
+      "amount": "Amount",
+      "date": "Date",
+      "datePlaceholder": "Pick a date",
+      "category": "Category",
+      "categoryPlaceholder": "Uncategorized",
+      "categorySearch": "Search categories",
+      "noResults": "No results",
+      "merchant": "Merchant",
+      "merchantPlaceholder": "E.g. Oxxo",
+      "description": "Description",
+      "descriptionPlaceholder": "Notes about the movement",
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "validation": {
+      "amountRequired": "Enter the amount.",
+      "amountInvalid": "Enter an amount above zero.",
+      "amountTooLarge": "The amount is too large.",
+      "dateRequired": "Pick the date.",
+      "dateInFuture": "The date can't be in the future."
+    },
+    "toasts": {
+      "saved": "Movement updated",
+      "noChanges": "Nothing changed",
+      "renamed": "Name updated",
+      "nameRemoved": "Name removed",
+      "deleted": "Movement deleted",
+      "attachmentUploaded": "File attached",
+      "attachmentRemoved": "File deleted"
+    },
+    "deleteTitle": "Delete this movement?",
+    "deleteDescription": "It will be removed from your movements and the balance of {account} will be adjusted. This can't be undone.",
+    "deleteBlocked": {
+      "imported": "Movements from the bank or card statements can't be deleted.",
+      "transfer": "Transfers can't be deleted from here."
+    },
+    "attachments": {
+      "title": "Attachments",
+      "empty": "No attachments.",
+      "unnamed": "File",
+      "download": "Download {name}",
+      "remove": "Delete {name}",
+      "removeTitle": "Delete the file?",
+      "removeDescription": "{name} will be deleted. This can't be undone.",
+      "dropTitle": "Drag a file or tap to choose one",
+      "dropHint": "PDF or image (JPG, PNG, WEBP or HEIC), up to 10 MB.",
+      "dragActive": "Drop the file here",
+      "tooLarge": "{name} is larger than {max}.",
+      "wrongType": "{name} is not a PDF or an image.",
+      "removeFile": "Remove {name}",
+      "upload": "Attach",
+      "uploading": "Uploading… {percent}%"
+    },
+    "errors": {
+      "transfer": "Transfers can't be deleted or change their amount from here.",
+      "debtPayment": "This movement is a debt payment; remove it from Debts.",
+      "goal": "This movement has savings goal contributions; remove them first.",
+      "imported": "Bank movements only allow changing the category.",
+      "category": "That category no longer exists. Pick another one.",
+      "attachmentNotFound": "That file no longer exists.",
+      "notFound": "This movement no longer exists."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Reminders for your payments and alerts about your money.",
+    "recent": "Recent",
+    "markAllRead": "Mark all as read",
+    "seeAll": "See all",
+    "empty": "You have no notifications.",
+    "emptyUnread": "You have no unread notifications.",
+    "emptyDescription": "Reminders for your recurring payments show up here.",
+    "unread": "Unread",
+    "loadFailed": "We couldn't load your notifications.",
+    "filterLabel": "Filter notifications",
+    "filters": {
+      "all": "All",
+      "unread": "Unread"
+    },
+    "count": "{shown} of {total}",
+    "allRead": "All your notifications are read",
+    "types": {
+      "budget": "Budget",
+      "debt_due": "Debt",
+      "recurring": "Recurring payment",
+      "summary": "Summary"
+    }
+  },
+  "statements": {
+    "title": "Card statements",
+    "subtitle": "Upload your card's PDF to review and record its movements.",
+    "uploadFromAccount": "Upload statement",
+    "upload": {
+      "title": "Upload a statement",
+      "card": "Credit card",
+      "cardPlaceholder": "Choose the card",
+      "noCards": "Add a credit card to upload its statement.",
+      "addCard": "Go to Accounts",
+      "dropTitle": "Drag the PDF or tap to choose it",
+      "dropHint": "The statement PDF, up to 10 MB.",
+      "dragActive": "Drop the PDF here",
+      "tooLarge": "{name} is larger than {max}.",
+      "wrongType": "{name} is not a PDF.",
+      "removeFile": "Remove {name}",
+      "submit": "Upload",
+      "uploading": "Uploading…",
+      "cardRequired": "Choose a card.",
+      "fileRequired": "Choose the PDF."
+    },
+    "uploadErrors": {
+      "network": "We couldn't upload the file. Check your connection.",
+      "tooLarge": "The file is larger than 10 MB.",
+      "notPdf": "The file is not a PDF.",
+      "notCredit": "Statements can only be uploaded for credit cards.",
+      "accountNotFound": "We can't find that card anymore.",
+      "failed": "We couldn't upload the statement. Try again."
+    },
+    "listTitle": "Uploaded",
+    "emptyTitle": "No statements uploaded yet",
+    "emptyDescription": "Upload your card's PDF and Finnit compares it with your movements.",
+    "count": "{shown} of {total}",
+    "unknownAccount": "Deleted account",
+    "periodPending": "Period not read yet",
+    "uploadedOn": "Uploaded {date}",
+    "balance": "Statement balance: {amount}",
+    "differenceShort": "Difference: {amount}",
+    "status": {
+      "uploaded": "Uploaded",
+      "processing": "Processing",
+      "needs_review": "To review",
+      "confirmed": "Confirmed",
+      "failed": "Failed"
+    },
+    "parser": "Read with {parser}",
+    "parserAi": "AI: {model}",
+    "parserAiAny": "AI",
+    "facts": {
+      "previousBalance": "Previous balance",
+      "totalCharges": "Charges",
+      "totalCredits": "Credits",
+      "statementBalance": "Statement balance",
+      "minimumPayment": "Minimum payment",
+      "noInterestPayment": "Payment to avoid interest",
+      "statementDate": "Statement date",
+      "paymentDueDate": "Payment due date"
+    },
+    "check": {
+      "title": "Balance check",
+      "computed": "Previous balance + movements",
+      "statement": "Statement balance",
+      "difference": "Difference",
+      "ok": "The movements add up to the statement balance.",
+      "mismatch": "The movements don't add up to the statement balance: some are missing or misread. Review them before confirming."
+    },
+    "processing": "We're reading your statement…",
+    "processingHint": "It takes a few seconds. You can leave and come back later.",
+    "timeout": "Still processing. Reload the page in a moment.",
+    "reload": "Reload",
+    "failedTitle": "We couldn't read this statement",
+    "reprocess": "Reprocess",
+    "reprocessWith": "Read with",
+    "parsers": {
+      "auto": "Automatic",
+      "banamex_v1": "Banamex",
+      "ai": "AI"
+    },
+    "download": "Download PDF",
+    "back": "Card statements",
+    "kinds": {
+      "charge": "Charge",
+      "payment": "Payment",
+      "refund": "Refund",
+      "fee": "Fee",
+      "interest": "Interest",
+      "installment": "Installment",
+      "deposit": "Deposit"
+    },
+    "lineStatus": {
+      "pending": "New",
+      "matched": "Already recorded",
+      "created": "Created",
+      "ignored": "Ignored"
+    },
+    "lines": {
+      "title": "Movements ({count})",
+      "empty": "No movements were extracted.",
+      "summary": "{pending} new · {matched} already recorded · {ignored} ignored",
+      "summaryConfirmed": "{created} created · {matched} already recorded · {ignored} ignored",
+      "ignore": "Ignore",
+      "restore": "Restore",
+      "link": "Link to a movement",
+      "unlink": "Unlink",
+      "viewTransaction": "View movement",
+      "installments": "Installment {value}",
+      "recurring": "Recurring payment: {name}",
+      "category": "Category of {name}",
+      "categoryPlaceholder": "Uncategorized",
+      "categorySearch": "Search categories",
+      "noResults": "No results",
+      "menu": "Actions for {name}"
+    },
+    "linkDialog": {
+      "title": "Link to a movement",
+      "description": "Movements on this card for {amount}, up to 3 days before or after {date}.",
+      "empty": "We found no similar movements. If it isn't recorded, leave it as new.",
+      "searching": "Searching…",
+      "choose": "Link"
+    },
+    "confirm": "Confirm",
+    "confirmTitle": "Confirm the statement?",
+    "confirmDescription": "{count, plural, one {# new movement} other {# new movements}} will be created in {account} and linked recurring payments will be marked as paid.",
+    "confirmed": "Done: {created, plural, one {# movement created} other {# movements created}} and {matched} already recorded.",
+    "delete": "Delete",
+    "deleteTitle": "Delete this statement?",
+    "deleteDescription": "The PDF and its extracted movements will be deleted. Your recorded movements don't change.",
+    "deleted": "Statement deleted",
+    "errors": {
+      "alreadyLinked": "That movement is already linked to another line.",
+      "notOnCard": "That movement is not from this card.",
+      "notInReview": "This statement is no longer in review. Reload the page.",
+      "confirmedDelete": "A confirmed statement can't be deleted: its movements already exist.",
+      "confirmedReprocess": "A confirmed statement can't be reprocessed.",
+      "processing": "Wait until it finishes processing.",
+      "recurringPaid": "That recurring payment is already paid.",
+      "category": "That category no longer exists. Pick another one.",
+      "notFound": "This statement no longer exists."
+    },
+    "factsTitle": "Statement summary"
+  },
+  "goals": {
+    "title": "Savings goals",
+    "subtitle": "Save for what you want and see when you'll get there.",
+    "new": "New goal",
+    "empty": {
+      "title": "No goals yet",
+      "description": "Create a goal (a trip, an emergency fund, a car down payment) and log your contributions to see when you'll reach it.",
+      "cta": "Create my first goal"
+    },
+    "status": {
+      "reached": "Reached",
+      "onTrack": "On track",
+      "behind": "Behind",
+      "overdue": "Overdue",
+      "noDueDate": "No date"
+    },
+    "card": {
+      "open": "View details of {name}",
+      "progressLabel": "{percent}% saved",
+      "of": "of {target}",
+      "remaining": "{amount} to go",
+      "dueTerm": "Due date",
+      "projectionTerm": "Projection",
+      "due": "Due {date}",
+      "noDueDate": "No due date",
+      "dueToday": "Due today",
+      "daysLeft": "{count, plural, one {# day left} other {# days left}}",
+      "daysOverdue": "{count, plural, one {Overdue by # day} other {Overdue by # days}}",
+      "projection": "You'd get there in {month}",
+      "noProjection": "No recent contributions to project from",
+      "reached": "Goal reached!"
+    },
+    "summary": {
+      "saved": "Saved",
+      "savedDetail": "of {target} across {count, plural, one {# goal} other {# goals}}",
+      "average": "Average progress",
+      "averageDetail": "Average progress of your goals",
+      "recommended": "Suggested saving",
+      "recommendedDetail": "Per month, to finish everything in 12 months",
+      "percent": "{value}%"
+    },
+    "attention": {
+      "title": "Need attention",
+      "dueSoon": "{count, plural, one {Due within 30 days: {names}} other {Due within 30 days: {names}}}",
+      "atRisk": "{count, plural, one {At risk (under 50% with 60 days or less): {names}} other {At risk (under 50% with 60 days or less): {names}}}"
+    },
+    "detail": {
+      "saved": "Saved",
+      "target": "Target",
+      "remaining": "To go",
+      "edit": "Edit",
+      "delete": "Delete",
+      "contributions": "{count, plural, one {Contributions (#)} other {Contributions (#)}}",
+      "reachedNote": "You've reached this goal! To keep contributing, raise its target."
+    },
+    "projection": {
+      "title": "When will I get there?",
+      "monthly": "Monthly contribution",
+      "monthlyInvalid": "Enter a valid amount.",
+      "monthlyHint": "Your last 3 months' average: {amount}.",
+      "useAverage": "Use the average",
+      "useNeeded": "Use what's needed to make it on time",
+      "result": "You'd get there in {month} ({count, plural, one {# month} other {# months}})",
+      "none": "Without saving each month you wouldn't reach the goal.",
+      "reached": "You've already reached this goal.",
+      "onTrack": "Before your due date ({date}).",
+      "behind": "After your due date ({date}).",
+      "overdue": "The due date ({date}) has passed."
+    },
+    "recommendations": {
+      "title": "Recommendations",
+      "needed": "To make it on time, set aside {amount} a month.",
+      "twelveMonths": "To finish it in 12 months, set aside {amount} a month.",
+      "dueSoon": "It's due within 30 days.",
+      "atRisk": "It's at risk: under 50% with 60 days or less left.",
+      "reached": "You did it! Create a new goal to keep saving.",
+      "noDueDate": "Give it a due date to know whether you're on time."
+    },
+    "contributions": {
+      "add": "Add contribution",
+      "adding": "Adding…",
+      "amount": "Amount",
+      "date": "Date",
+      "empty": "No contributions yet.",
+      "linked": "Linked to a transaction",
+      "remove": "Remove the {amount} contribution from {date}",
+      "removeTitle": "Remove this contribution?",
+      "removeDescription": "{amount} (from {date}) will be taken off the goal's savings.",
+      "removeConfirm": "Remove contribution"
+    },
+    "form": {
+      "createTitle": "New goal",
+      "createDescription": "What are you saving for?",
+      "editTitle": "Edit goal",
+      "editDescription": "Change the details of {name}.",
+      "name": "Name",
+      "namePlaceholder": "E.g. Trip to Oaxaca",
+      "target": "Target amount",
+      "currency": "Currency",
+      "currencyFixed": "The currency can't be changed.",
+      "dueDate": "Due date (optional)",
+      "dueDatePlaceholder": "No due date",
+      "dueDateHint": "Without a date, we'll tell you when you'd get there.",
+      "clearDueDate": "Remove due date",
+      "initialAmount": "Already saved something? (optional)",
+      "initialAmountHint": "We'll log it as your first contribution, dated today.",
+      "create": "Create goal",
+      "save": "Save changes",
+      "saving": "Saving…"
+    },
+    "validation": {
+      "nameRequired": "Enter a name.",
+      "nameTooLong": "100 characters max.",
+      "amountRequired": "Enter the amount.",
+      "amountInvalid": "Enter an amount greater than zero.",
+      "amountTooLarge": "The amount is too large.",
+      "dueDateInPast": "Pick today or a future date.",
+      "initialInvalid": "Enter an amount greater than zero or leave it empty.",
+      "initialTooLarge": "The amount is too large.",
+      "dateRequired": "Pick the date.",
+      "dateInFuture": "The date can't be in the future."
+    },
+    "delete": {
+      "title": "Delete {name}?",
+      "description": "The goal will be deleted. This can't be undone.",
+      "withContributions": "This goal has {amount} in contributions. All of them will be removed and then the goal deleted. This can't be undone.",
+      "confirm": "Delete goal",
+      "confirmAll": "Delete goal and contributions"
+    },
+    "toasts": {
+      "created": "Your goal {name} was created",
+      "updated": "Saved the changes to {name}",
+      "noChanges": "Nothing changed",
+      "deleted": "You deleted {name}",
+      "initialFailed": "The goal was created, but we couldn't save what you'd already saved: {error}",
+      "contributionAdded": "Contribution added",
+      "contributionRemoved": "Removed the {amount} contribution"
+    },
+    "errors": {
+      "duplicateName": "You already have a goal with that name.",
+      "alreadyReached": "This goal is already reached; raise its target to keep contributing.",
+      "hasContributions": "The goal has contributions; remove them before deleting it.",
+      "target": "The target amount must be greater than zero.",
+      "amount": "The contribution must be greater than zero.",
+      "name": "Enter a name.",
+      "contributionNotFound": "That contribution no longer exists.",
+      "notFound": "We couldn't find that goal."
+    }
+  },
+  "simulator": {
+    "title": "What-if simulator",
+    "subtitle": "Try changes to your income and expenses and see where your balance would land. Nothing is saved.",
+    "reset": "Reset",
+    "disclaimer": "This is an estimate: it starts from your accounts' balance and your average transactions; it doesn't include interest, inflation or changes to your debts.",
+    "baseline": {
+      "title": "Today",
+      "source": "{count, plural, one {Average of your last month} other {Average of your last # months}}",
+      "balance": "Current balance",
+      "income": "Income per month",
+      "expenses": "Expenses per month",
+      "net": "Left each month",
+      "noData": "We don't have any of your transactions yet: the starting point is $0. Add transactions or connect your bank for a real estimate; meanwhile, you can try scenarios."
+    },
+    "months": {
+      "title": "Months to project",
+      "label": "Months to project",
+      "value": "{count, plural, one {# month} other {# months}}",
+      "presets": "Month shortcuts"
+    },
+    "income": {
+      "title": "Income",
+      "description": "What if you earned more or less each month?",
+      "mode": "How to change income",
+      "percentMode": "Change in %",
+      "amountMode": "New amount",
+      "percent": "Change in your income (%)",
+      "amount": "Monthly income",
+      "percentHint": "E.g. 10 for a raise, -20 if it drops.",
+      "result": "Monthly income in the scenario: {amount}."
+    },
+    "monthly": {
+      "title": "Monthly expenses",
+      "description": "Add a new expense or cut one you already have.",
+      "kind": "Kind of change",
+      "add": "New expense",
+      "cut": "Cut",
+      "name": "Description (optional)",
+      "namePlaceholderAdd": "E.g. New car",
+      "namePlaceholderCut": "E.g. Cancel the gym",
+      "amount": "Amount per month",
+      "submitAdd": "Add expense",
+      "submitCut": "Add cut",
+      "defaultAdd": "Monthly expense",
+      "defaultCut": "Monthly cut",
+      "perMonthAdd": "Every month, more spending",
+      "perMonthCut": "Every month, less spending",
+      "remove": "Remove {name}"
+    },
+    "oneTime": {
+      "title": "One-time expense",
+      "description": "Something you'd pay once: a trip, a repair, a down payment.",
+      "name": "Description (optional)",
+      "namePlaceholder": "E.g. Year-end trip",
+      "amount": "Amount",
+      "month": "Month",
+      "submit": "Add one-time expense",
+      "defaultName": "One-time expense",
+      "outOfRange": "Beyond the projected months",
+      "remove": "Remove {name}"
+    },
+    "extraDebt": {
+      "title": "Extra debt payment",
+      "description": "What if you paid more to your cards or loans each month?",
+      "amount": "Extra payment per month",
+      "note": "We count it as one more monthly expense: it shows the effect on your balance, not how much your debt or its interest goes down."
+    },
+    "results": {
+      "title": "Results",
+      "endScenario": "Balance with the scenario",
+      "endBaseline": "Balance without changes",
+      "endNote": "At the end of {month}",
+      "difference": "Difference",
+      "differenceNote": {
+        "up": "You'd end up with more money",
+        "down": "You'd end up with less money",
+        "flat": "No difference"
+      },
+      "negative": "Negative balance",
+      "negativeBaseline": "Without changes: {value}",
+      "neverNegative": "Never",
+      "negativeToday": "Already today",
+      "negativeIn": "From {month}"
+    },
+    "chart": {
+      "title": "Balance month by month",
+      "label": "Chart of the balance month by month. Use the arrow keys to move through the months.",
+      "roleDescription": "chart",
+      "today": "Today",
+      "baseline": "Without changes",
+      "scenario": "Scenario",
+      "net": "Per month: {baseline} without changes · {scenario} with the scenario"
+    },
+    "table": {
+      "show": "Show table",
+      "hide": "Hide table",
+      "caption": "Balance per month, without changes and with the scenario",
+      "month": "Month",
+      "baseline": "Without changes",
+      "scenario": "Scenario",
+      "difference": "Difference"
+    },
+    "validation": {
+      "amountRequired": "Enter the amount.",
+      "amountInvalid": "Enter a valid amount.",
+      "amountTooLarge": "The amount is too large.",
+      "amountZero": "Enter an amount greater than zero.",
+      "percentInvalid": "Enter a percentage, e.g. 10 or -15.",
+      "percentRange": "Between -100% and 1000%.",
+      "nameTooLong": "60 characters max.",
+      "monthInvalid": "Pick a month in the period."
     }
   }
 }

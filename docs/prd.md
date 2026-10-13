@@ -48,14 +48,15 @@ Checkboxes reflect the **API** state, verified against the code. Per-platform st
 ---
 
 ### 3. Transactions 🟡 PARTIAL
-- [x] Quick add: date, account, amount, type (income/expense/transfer), category.
-- [ ] Multiple transactions per account on the same day (blocked by a unique constraint; fix planned).
-- [ ] Smart capture: receipt photos, SMS/notification parsing (where allowed).
+- [x] Quick add: date, account, amount, type (income/expense/transfer), category (API; client flow in feature 19).
+- [x] Multiple transactions per account on the same day.
+- [ ] Smart capture: receipt photos (see feature 14), SMS/notification parsing (where allowed).
 - [x] Category suggestion based on merchant name (no learning from corrections yet).
-- [ ] Recurring entries as reminders until confirmed as paid (see feature 12).
-- [ ] Auto-suggestion of recurrence from detected patterns.
-- [ ] Calendar view + optional mobile widget.
-- [ ] Attachments for receipts, invoices, payment confirmations (only a URL is stored; no S3 upload).
+- [x] Recurring entries as reminders until confirmed as paid (see feature 12).
+- [ ] Auto-suggestion of recurrence from detected patterns (see feature 15).
+- [x] Calendar view (web; see feature 15 for the recurring payments calendar).
+- [ ] Optional mobile widget.
+- [x] Attachments for receipts, invoices, payment confirmations (private S3 bucket).
 - [ ] Integration with Banxico for CEP retrieval (interbank transfers).
 - [x] Search & filter by date, account, category, text.
 
@@ -64,7 +65,7 @@ Checkboxes reflect the **API** state, verified against the code. Per-platform st
 ### 4. Categories ✅ IMPLEMENTED
 - [x] Default hierarchical category list (e.g., "Food > Groceries").
 - [x] CRUD for user-defined categories.
-- [ ] Merchant "memory rules" for auto-categorization.
+- [ ] Merchant "memory rules" for auto-categorization (see feature 16).
 
 ---
 
@@ -118,29 +119,106 @@ Checkboxes reflect the **API** state, verified against the code. Per-platform st
 - [x] List notifications and mark them as read.
 - [ ] Budget usage alerts (80%/100%).
 - [ ] Upcoming credit card/loan payments.
-- [ ] Recurring transaction reminders.
+- [x] Recurring transaction reminders (daily job, 3 days before).
 - [ ] Weekly/monthly summaries.
-
-Nothing generates notifications yet (no scheduled jobs).
-
----
-
-### 12. Recurring Expenses ⏳ PENDING
-- [ ] Recurring commitments with frequency (weekly, biweekly, semimonthly, monthly, bimonthly, quarterly, semiannual, yearly) and kind (subscription, utility, loan, installment/MSI, insurance, housing, membership, other).
-- [ ] Tracking mode per expense: `automatic` (marked paid when reconciled with the card), `manual` (user confirms), `reminder` (no payment state).
-- [ ] Upcoming payments and normalized monthly cost by kind and account.
-- [ ] Installment (MSI) progress.
-- [ ] Generated reminders.
+- [ ] Push / email delivery.
 
 ---
 
-### 13. Card Statements & Reconciliation ⏳ PENDING
-- [ ] Upload the monthly statement PDF (stored in AWS S3).
-- [ ] Extraction: local Banamex parser, Claude API fallback for other formats.
-- [ ] Review and confirm imported movements.
-- [ ] Reconcile statement lines with existing transactions and automatic recurring expenses.
-- [ ] Card month summary vs. amount due.
+### 12. Recurring Expenses ✅ IMPLEMENTED (API)
+- [x] Recurring commitments with frequency (weekly, biweekly, semimonthly, monthly, bimonthly, quarterly, semiannual, yearly) and kind (subscription, utility, loan, installment/MSI, insurance, housing, membership, other).
+- [x] Tracking mode per expense: `automatic` (marked paid when reconciled with the card), `manual` (user confirms), `reminder` (no payment state).
+- [x] Upcoming payments and normalized monthly cost by kind and account.
+- [x] Installment (MSI) progress.
+- [x] Generated reminders.
+- [ ] Screen, calendar and suggestions: see feature 15.
+
+---
+
+### 13. Card Statements & Reconciliation 🟡 PARTIAL
+- [x] Upload the monthly statement PDF (stored in AWS S3).
+- [x] Extraction: local Banamex parser, AI model catalog (Anthropic, OpenAI, Gemini) for other formats.
+- [x] Review and confirm imported movements (API; no client screen yet).
+- [x] Reconcile statement lines with existing transactions and automatic recurring expenses.
+- [x] Card month summary vs. amount due.
 - [x] Same flow fed by the bank sync (Syncfy).
+- [ ] Scanned statements: OCR on our server before any AI fallback (see feature 14).
+- [ ] Fall back to AI only when the local extraction does not balance (previous balance + charges − credits ≠ cut-off balance).
+
+---
+
+### 14. Receipt Capture & Document OCR ⏳ PENDING
+Local, open-source extraction first; AI only as a fallback. Research, OCR engine comparison and task list: [document-ocr.md](./document-ocr.md).
+- [ ] Internal OCR service (`ocr` container: RapidOCR with PP-OCRv5 models, CPU/arm64), not publicly exposed.
+- [ ] Receipt photo upload (web and mobile) stored in the private S3 bucket.
+- [ ] Extraction without AI: CFDI QR code (issuer tax ID, total, UUID), then OCR + rules for total, date, merchant tax ID and VAT.
+- [ ] AI fallback only when total or date are missing, sending OCR text (not the image), behind a per-feature AI setting.
+- [ ] Draft for review: the user confirms; one receipt = one transaction (no line items).
+- [ ] Avoid duplicates: on confirm, attach the photo to a matching existing movement (same account, amount, date ±3 days) instead of creating a new one.
+- [ ] Merchant tax ID → name → category table that learns from confirmations.
+- [ ] (Optional) On-device OCR preview on mobile (ML Kit / Apple Vision).
+
+---
+
+### 15. Recurring Payments Screen & Suggestions ⏳ PENDING
+A dedicated screen to see and manage recurring payments (feature 12), fed by what the bank sync already imported.
+- [ ] Calendar of the period with **day / week / month** views, and next to it the list of payments of that period (due, paid, skipped, overdue).
+- [ ] Add, edit, pause and delete a recurring payment; mark an occurrence as paid or skipped.
+- [ ] **Suggested recurring payments** section, detected from synced movements: same merchant (or alias, feature 17), similar amount (±15%, wider for utilities) and a regular interval (weekly, biweekly, monthly, yearly…), seen at least 2–3 times.
+- [ ] Each suggestion shows the evidence (dates and amounts found) and can be **added with one click** (name, amount, frequency, next date, account and tracking mode pre-filled) or dismissed (it doesn't come back).
+- [ ] Detection runs without AI. **AI (optional, per-feature AI setting)** only classifies the suggestion: kind (subscription, utility, loan…), category and a friendly name. The user always confirms; nothing is created automatically.
+- [ ] Once added, the movements that originated the suggestion are linked to it (past occurrences marked as paid).
+
+---
+
+### 16. Card Movements Categorization ⏳ PENDING
+A section to review and categorize every movement of a card or account in bulk.
+- [ ] List of movements of the selected account and period, grouping uncategorized ones first.
+- [ ] **AI categorization** (per-feature AI setting): suggests a category for each uncategorized movement using merchant, description, amount and the user's own category tree. Suggestions are shown as pending until accepted (one by one or all at once).
+- [ ] **Manual override**: move one or several movements to another category (select + choose category, or drag and drop on web).
+- [ ] Learn from corrections: a correction creates or updates a merchant rule (merchant → category) so future movements of that merchant are categorized without AI (closes "merchant memory rules", feature 4).
+- [ ] Only data needed to categorize is sent to the AI provider (no account numbers or balances).
+
+---
+
+### 17. Merchant Aliases (display names & privacy) ⏳ PENDING
+Show a different name for some movements: to keep a payment private when someone else sees the screen, or to rename cryptic bank descriptions.
+- [ ] Alias rules: **match** (contains, starts with, exact, or regular expression for advanced users; case- and accent-insensitive) on the original description/merchant → **display name**, optional category and optional "private" flag.
+- [ ] One-off alias for a single movement (without creating a rule).
+- [ ] The original description is kept and never modified; it is hidden by default and can be revealed on demand (e.g. "ver original").
+- [ ] **Private** aliases also hide the original in lists, search results and exports.
+- [ ] Rules apply to existing and future movements (synced, imported from statements or created by hand), and are used by recurring suggestions (feature 15) and categorization (feature 16).
+- [ ] Rule preview: shows which movements match before saving.
+
+---
+
+### 18. Account & Card Personalization ⏳ PENDING
+- [ ] Rename an account or card (nickname visible only to the user; the bank's original name is kept).
+- [ ] Card design: one color or a two-color gradient; the text color (white or dark) is picked automatically to keep WCAG AA contrast.
+- [ ] Preset palette plus custom color; preview of the card while editing.
+- [ ] The nickname and design are used everywhere the account appears (dashboard, cards, history, filters, forms).
+
+---
+
+### 19. Transaction Creation Flow ⏳ PENDING
+One flow on web and mobile to register movements by hand.
+- [ ] First step: choose **expense, income or transfer between accounts**.
+- [ ] Expense / income: amount, account, date, category (suggested from merchant rules), description, optional attachment.
+- [ ] Transfer: from account, to account, amount, date; credit card payments are a transfer to the card.
+- [ ] **Capture receipt** (expenses only): take or upload a photo; the receipt extraction (feature 14) pre-fills amount, date and merchant; the user confirms; the photo stays attached.
+- [ ] Avoid duplicates: warn when a synced movement with the same account, amount and close date already exists, and offer to attach the receipt to it instead.
+- [ ] Dates in the user's local time (fix: today the date is stored in UTC and can move to the next day).
+
+---
+
+### 20. Manual Accounts & Cards ⏳ PENDING
+For banks Syncfy doesn't support or when the connection fails.
+- [ ] Add a debit account or a credit card by hand: bank (list of Mexican banks or free text), nickname, last 4 digits, currency, current balance (debit) or current debt + credit limit (credit).
+- [ ] Credit cards: statement (cut-off) day, payment due day and optional interest rate (saves `CreditCardTerms`, today there is no mutation for it).
+- [ ] The initial balance is recorded as an opening balance adjustment, not as income or expense of the month.
+- [ ] Manual accounts accept manual movements (feature 19) and statement PDFs (feature 13).
+- [ ] Later, a manual account can be linked to a bank connection without losing its history.
+- [ ] Personalization (feature 18) available from creation.
 
 ---
 
@@ -151,10 +229,11 @@ Nothing generates notifications yet (no scheduled jobs).
 | Frontend     | Next.js (Vercel)   |
 | Mobile       | React Native (Expo)|
 | Backend      | NestJS (GraphQL)   |
-| DB           | PostgreSQL (Railway)|
-| Storage      | AWS S3             |
-| Hosting      | Vercel (FE) + Railway (BE) |
-| Bank APIs    | Belvo / Paybook    |
+| DB           | PostgreSQL (Dokploy on Hetzner) |
+| Storage      | AWS S3 (private bucket) |
+| Hosting      | Vercel (web) + Dokploy on Hetzner (API) |
+| Bank APIs    | Syncfy (formerly Paybook) |
+| AI           | Anthropic, OpenAI, Gemini (admin-managed catalog) |
 
 ---
 

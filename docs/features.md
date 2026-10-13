@@ -27,6 +27,12 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | 12. Gastos recurrentes *(nuevo)* | ✅ | ⏳ | 🟡 |
 | 13. Estados de cuenta y conciliación *(nuevo)* | 🟡 | ⏳ | 🟡 |
 | 14. Panel administrativo *(nuevo)* | ✅ | — | ✅ |
+| 15. Pantalla de pagos recurrentes y sugerencias *(nuevo)* | 🟡 | ⏳ | ⏳ |
+| 16. Clasificación de movimientos *(nuevo)* | ⏳ | ⏳ | ⏳ |
+| 17. Alias de movimientos *(nuevo)* | ⏳ | ⏳ | ⏳ |
+| 18. Personalización de cuentas y tarjetas *(nuevo)* | ⏳ | ⏳ | ⏳ |
+| 19. Flujo para crear movimientos *(nuevo)* | 🟡 | ⏳ | ⏳ |
+| 20. Cuentas y tarjetas manuales *(nuevo)* | 🟡 | ⏳ | ⏳ |
 
 ## Detalle
 
@@ -66,7 +72,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Transferencias entre cuentas | ✅ | ⏳ | ⏳ | `createTransfer`. |
 | Detección automática de transferencias internas | ⏳ | — | — | |
 | Adjuntos (tickets, comprobantes) | ✅ | ⏳ | ⏳ | `POST /transactions/:id/attachments` (PDF, JPEG, PNG, WEBP, HEIC; máx. 10 MB, 10 por transacción) al bucket privado; descarga solo del dueño en `GET /attachments/:id/file`. |
-| Captura por foto de ticket / SMS | ⏳ | ⏳ | ⏳ | |
+| Captura por foto de ticket / SMS | ⏳ | ⏳ | ⏳ | Plan de OCR para tickets (sin IA primero): [document-ocr.md](./document-ocr.md). |
 | CEP de Banxico | ⏳ | ⏳ | ⏳ | |
 | Etiquetas (tags) | ⏳ | ⏳ | ⏳ | Modelo `Tag` sin API. |
 
@@ -176,15 +182,66 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 | Modelos de IA | ✅ | — | ✅ | `/admin/ai`: activar, predeterminado, orden, alta y baja. |
 | Funcionalidades de IA | ✅ | — | ✅ | `aiFeatures` / `updateAiFeature`: hoy solo "Leer estados de cuenta en PDF"; se enciende o apaga, con modelo propio y respaldos opcionales. |
 
+### 15. Pantalla de pagos recurrentes y sugerencias *(nuevo)*
+
+| Funcionalidad | API | Móvil | Web | Notas |
+|---|---|---|---|---|
+| Calendario día / semana / mes con la lista de pagos del periodo | ✅ | ⏳ | ⏳ | La API ya da `upcomingPayments` y `recurringExpenses`; falta la pantalla. |
+| Alta, edición, pausa y baja; marcar pagado u omitido | ✅ | ⏳ | ⏳ | |
+| Sugerencias detectadas en los movimientos sincronizados | ⏳ | ⏳ | ⏳ | Sin IA: mismo comercio (o alias), monto parecido e intervalo regular, visto 2–3 veces. Agregar con un clic o descartar. |
+| Clasificación de la sugerencia con IA (tipo, categoría, nombre) | ⏳ | — | — | Opcional, como funcionalidad de IA del panel; el usuario siempre confirma. |
+
+### 16. Clasificación de movimientos *(nuevo)*
+
+| Funcionalidad | API | Móvil | Web | Notas |
+|---|---|---|---|---|
+| Lista por cuenta y periodo, primero los sin categoría | 🟡 | ⏳ | ⏳ | `transactions` ya filtra por cuenta y fechas. |
+| Sugerencia de categoría con IA, aceptar una por una o todas | ⏳ | ⏳ | ⏳ | Funcionalidad de IA del panel; solo se envía comercio, descripción y monto. |
+| Mover uno o varios movimientos a otra categoría | 🟡 | ⏳ | ⏳ | Hoy solo `updateTransaction` de uno en uno. |
+| Reglas de comercio que aprenden de las correcciones | ⏳ | — | — | Mismo pendiente que la sección 4. |
+
+### 17. Alias de movimientos *(nuevo)*
+
+| Funcionalidad | API | Móvil | Web | Notas |
+|---|---|---|---|---|
+| Reglas de alias (contiene, empieza con, exacto o expresión regular) | ⏳ | ⏳ | ⏳ | Nombre a mostrar, categoría y "privado" opcionales; vista previa de coincidencias. |
+| Alias para un solo movimiento | ⏳ | ⏳ | ⏳ | |
+| Nombre original oculto, visible a demanda | ⏳ | ⏳ | ⏳ | El original nunca se modifica; los privados tampoco aparecen en búsquedas ni exportaciones. |
+
+### 18. Personalización de cuentas y tarjetas *(nuevo)*
+
+| Funcionalidad | API | Móvil | Web | Notas |
+|---|---|---|---|---|
+| Renombrar cuenta o tarjeta (solo visible al usuario) | ⏳ | ⏳ | ⏳ | Se conserva el nombre del banco. |
+| Diseño: un color o degradado de dos; texto con contraste automático | ⏳ | ⏳ | ⏳ | Contraste WCAG AA. |
+
+### 19. Flujo para crear movimientos *(nuevo)*
+
+| Funcionalidad | API | Móvil | Web | Notas |
+|---|---|---|---|---|
+| Elegir gasto, ingreso o transferencia | ✅ | ⏳ | ⏳ | `createTransaction`, `createTransfer`. |
+| Capturar ticket para crear un gasto | ⏳ | ⏳ | ⏳ | Usa la extracción de tickets (sección 3, [document-ocr.md](./document-ocr.md)). |
+| Aviso de duplicado contra movimientos sincronizados | ⏳ | ⏳ | ⏳ | Ofrece adjuntar el ticket al movimiento existente. |
+| Fecha en hora local | ⏳ | — | — | **Bug:** hoy `txnDate` guarda la fecha UTC. |
+
+### 20. Cuentas y tarjetas manuales *(nuevo)*
+
+| Funcionalidad | API | Móvil | Web | Notas |
+|---|---|---|---|---|
+| Alta manual de débito y crédito | ✅ | ⏳ | ⏳ | `createAccount`. |
+| Corte, fecha de pago y tasa de la tarjeta | ⏳ | ⏳ | ⏳ | Falta la mutación para `CreditCardTerms`. |
+| Saldo inicial sin contarlo como ingreso o gasto | ⏳ | — | — | **Bug:** hoy crea una transacción de ingreso/gasto. |
+| Ligar después una cuenta manual a una conexión bancaria | 🟡 | ⏳ | ⏳ | `linkBankAccount` ya acepta una cuenta existente. |
+
 ## Plataforma
 
 | Funcionalidad | Estado | Notas |
 |---|---|---|
 | Despliegue de la API (Dokploy, production + testing) | ✅ | [deployment.md](./deployment.md) |
-| Despliegue web | ⏳ | |
+| Despliegue web (Vercel) | ✅ | Rama `testing` y `main`; variables en [deployment.md](./deployment.md). |
 | Builds móviles (EAS) | ⏳ | |
 | CI de calidad en PRs (lint, tipos, tests) | ⏳ | |
-| Tests unitarios de la API | 🟡 | 6 de 11 módulos; 226 pasan, 8 omitidos que documentan bugs (`TODO(bug)`). `pnpm turbo run test --filter=@finnit/api`. |
+| Tests unitarios de la API | 🟡 | 515 pasan, 6 omitidos que documentan bugs (`TODO(bug)`); faltan categorías, transferencias, notificaciones y usuarios. `pnpm turbo run test --filter=@finnit/api`. |
 | Paginación por cursor consistente | 🟡 | Transacciones: corregido (cursor por fecha + id). **Bug pendiente:** deudas y cuentas ordenan por fecha pero paginan con `id > cursor`. |
 | Tests E2E | ⏳ | |
 | Logs y monitoreo | ⏳ | |

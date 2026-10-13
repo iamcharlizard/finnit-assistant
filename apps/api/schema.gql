@@ -1282,6 +1282,11 @@ type Transaction {
   isRecurringInstance: Boolean!
   merchantName: String
   source: String!
+
+  """
+  For transfers: "out" on the source account, "in" on the destination; null otherwise
+  """
+  transferDirection: String
   txnDate: DateTime!
   type: String!
   updatedAt: DateTime!

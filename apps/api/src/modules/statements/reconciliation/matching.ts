@@ -108,17 +108,29 @@ export function matchTransactions(
   return result;
 }
 
+/**
+ * Whether a movement's text (already `normalizeText`-ed) belongs to a
+ * recurring expense: its merchant pattern appears in it, or, without a
+ * pattern, the expense name does. Also used by recurring suggestions to skip
+ * merchants the user already tracks.
+ */
+export function identifiesRecurring(
+  normalizedText: string,
+  expense: { merchantPattern: string | null; expenseName: string },
+): boolean {
+  if (expense.merchantPattern) {
+    return normalizedText.includes(normalizeText(expense.merchantPattern));
+  }
+  // Without a pattern, the expense name must appear in the line.
+  const name = normalizeText(expense.expenseName);
+  return name.length >= 3 && normalizedText.includes(name);
+}
+
 function identifies(
   line: LineToMatch,
   occurrence: CandidateOccurrence,
 ): boolean {
-  const text = lineText(line);
-  if (occurrence.merchantPattern) {
-    return text.includes(normalizeText(occurrence.merchantPattern));
-  }
-  // Without a pattern, the expense name must appear in the line.
-  const name = normalizeText(occurrence.expenseName);
-  return name.length >= 3 && text.includes(name);
+  return identifiesRecurring(lineText(line), occurrence);
 }
 
 function amountFits(

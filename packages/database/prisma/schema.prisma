@@ -218,6 +218,8 @@ model User {
   reconciliations   ReconciliationSession[]
   tags              Tag[]
   Debt              Debt[]
+
+  recurringSuggestionStates RecurringSuggestionState[]
 }
 
 model Account {
@@ -276,6 +278,8 @@ model Category {
   budgetCaps        BUDGET_CATEGORY[]
   recurringExpenses RecurringExpense[]
   translations      CategoryTranslation[]
+
+  recurringSuggestionStates RecurringSuggestionState[]
 
   @@unique([userId, name], name: "category_user_name_unique")
   @@unique([userId, key], name: "category_user_key_unique")
@@ -421,6 +425,31 @@ model RecurringOccurrence {
 
   @@unique([recurringExpenseId, dueDate])
   @@index([status, dueDate])
+}
+
+/// What happened to a detected recurring-payment suggestion (feature 15):
+/// dismissed, accepted, or classified by AI (cached so the AI runs once per
+/// suggestion). `fingerprint` identifies the detected group (merchant +
+/// currency), it is not a foreign key.
+model RecurringSuggestionState {
+  id           String                @id @default(uuid())
+  userId       String
+  fingerprint  String                @db.VarChar(64)
+  dismissedAt  DateTime?
+  acceptedAt   DateTime?
+  aiName       String?
+  aiKind       RecurringExpenseKind?
+  aiCategoryId String?
+  aiModel      String? // provider model id that classified it
+  classifiedAt DateTime?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aiCategory Category? @relation(fields: [aiCategoryId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, fingerprint])
+  @@index([aiCategoryId])
 }
 
 model StatementImport {

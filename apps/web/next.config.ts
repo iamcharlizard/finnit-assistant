@@ -12,7 +12,12 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     // "Mis tarjetas" became "Cuentas y tarjetas"; the query (?card=…) is kept.
-    return [{ source: '/cards', destination: '/accounts', permanent: false }];
+    // The payments calendar became "Pagos recurrentes"; /recurring reads
+    // the old ?month=YYYY-MM.
+    return [
+      { source: '/cards', destination: '/accounts', permanent: false },
+      { source: '/calendar', destination: '/recurring', permanent: false },
+    ];
   },
 };
 

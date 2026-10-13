@@ -273,7 +273,7 @@
     "incomeOf": "Income · {month}",
     "expensesOf": "Expenses · {month}",
     "upcoming": "Upcoming payments",
-    "calendarLink": "Calendar",
+    "calendarLink": "See all",
     "noUpcomingTitle": "No upcoming payments",
     "noUpcomingDescription": "You have no recurring payments in the next {days} days.",
     "recent": "Recent activity",
@@ -517,27 +517,247 @@
       "notFound": "We couldn't find this account."
     }
   },
-  "calendar": {
-    "title": "Payment calendar",
-    "subtitle": "Your recurring payments and your cards' dates.",
-    "emptyTitle": "You don't have recurring payments yet",
-    "emptyDescription": "Once you add your recurring expenses (subscriptions, utilities, monthly fees) you'll see here when each one is due.",
-    "dueIn": "Due in {month}",
-    "pendingCount": "{count, plural, one {# pending payment} other {# pending payments}}",
-    "fixedMonthly": "Fixed monthly expenses",
-    "fixedMonthlyHint": "Average of your recurring expenses",
-    "dayTitle": "{month} {day}",
-    "nothingDue": "Nothing due this day",
-    "monthPayments": "{month} payments",
-    "noMonthPayments": "No payments this month",
-    "showMonth": "Show whole month",
-    "statementOf": "{name} statement",
-    "paymentDueOf": "{name} payment due",
-    "events": {
-      "payments": "{count} payments",
-      "statement": "Statement",
-      "cardPayment": "Card payment",
-      "cards": "Cards"
+  "recurring": {
+    "title": "Recurring payments",
+    "subtitle": "Your subscriptions, utilities and monthly fees: when each one is due and what you've already paid.",
+    "new": "New recurring payment",
+    "summary": {
+      "toPay": "To pay",
+      "toPayDetail": "{count, plural, =0 {Nothing pending} one {# payment} other {# payments}} · {period}",
+      "paid": "Paid",
+      "paidDetail": "{count, plural, =0 {No payments yet} one {# payment} other {# payments}} · {period}",
+      "fixedMonthly": "Fixed monthly spending",
+      "fixedMonthlyDetail": "{count, plural, =0 {No active payments} one {Average of # active payment} other {Average of # active payments}}"
+    },
+    "calendar": {
+      "views": {
+        "day": "Day",
+        "week": "Week",
+        "month": "Month"
+      },
+      "viewSwitcher": "Calendar view",
+      "today": "Today",
+      "previous": {
+        "day": "Previous day",
+        "week": "Previous week",
+        "month": "Previous month"
+      },
+      "next": {
+        "day": "Next day",
+        "week": "Next week",
+        "month": "Next month"
+      },
+      "more": "+{count} more",
+      "eventCount": "{count, plural, one {# payment} other {# payments}}",
+      "noEvents": "No payments this day."
+    },
+    "panel": {
+      "dayTitle": "Payments on {date}",
+      "periodTitle": "Payments · {period}",
+      "showPeriod": "Show whole period",
+      "emptyDay": "Nothing due this day",
+      "emptyPeriod": "Nothing due in this period"
+    },
+    "status": {
+      "upcoming": "To pay",
+      "paid": "Paid",
+      "skipped": "Skipped",
+      "missed": "Not paid",
+      "overdue": "Overdue",
+      "reminder": "Reminder"
+    },
+    "actions": {
+      "pay": "Mark paid",
+      "payLabel": "Mark {name} as paid",
+      "skip": "Skip",
+      "skipLabel": "Skip {name} this period",
+      "reopen": "Reopen",
+      "reopenLabel": "Reopen the {name} payment",
+      "edit": "Edit",
+      "editLabel": "Edit {name}",
+      "more": "More actions for {name}",
+      "pause": "Pause",
+      "resume": "Resume",
+      "delete": "Delete"
+    },
+    "toasts": {
+      "pay": "{name} marked as paid",
+      "skip": "{name} skipped this period",
+      "reopen": "{name} is pending again",
+      "created": "{name} added to your recurring payments",
+      "updated": "{name} changes saved",
+      "noChanges": "Nothing changed",
+      "paused": "{name} is paused",
+      "resumed": "{name} is active again",
+      "deleted": "{name} deleted",
+      "accepted": "{name} added to your recurring payments",
+      "dismissed": "Suggestion {name} dismissed"
+    },
+    "cardDates": {
+      "statement": "{name} statement",
+      "paymentDue": "{name} payment due"
+    },
+    "list": {
+      "title": "My recurring payments",
+      "count": "{count, plural, one {# recurring payment} other {# recurring payments}}",
+      "filterKind": "Filter by kind",
+      "filterStatus": "Filter by status",
+      "allKinds": "All kinds",
+      "status": {
+        "active": "Active",
+        "paused": "Paused",
+        "all": "All"
+      },
+      "perMonth": "≈ {amount} a month",
+      "next": "Next: {when}",
+      "paused": "Paused",
+      "installments": "{paid} of {total} payments",
+      "emptyTitle": "You don't have recurring payments yet",
+      "emptyDescription": "Add your subscriptions, utilities and monthly fees to know when each one is due.",
+      "emptyFiltered": "No payments match the filters"
+    },
+    "frequencies": {
+      "weekly": "Weekly",
+      "biweekly": "Every 14 days",
+      "semimonthly": "Twice a month (15th and month end)",
+      "monthly": "Monthly",
+      "bimonthly": "Every 2 months",
+      "quarterly": "Quarterly",
+      "semiannual": "Every 6 months",
+      "yearly": "Yearly"
+    },
+    "frequencyShort": {
+      "weekly": "Weekly",
+      "biweekly": "Every 14 days",
+      "semimonthly": "Twice a month",
+      "monthly": "Monthly",
+      "bimonthly": "Every 2 months",
+      "quarterly": "Quarterly",
+      "semiannual": "Every 6 months",
+      "yearly": "Yearly"
+    },
+    "frequencyEvery": {
+      "weekly": "Every {interval} weeks",
+      "biweekly": "Every {interval} fortnights",
+      "semimonthly": "Every {interval} half-months",
+      "monthly": "Every {interval} months",
+      "bimonthly": "Every {interval} two-month periods",
+      "quarterly": "Every {interval} quarters",
+      "semiannual": "Every {interval} half-years",
+      "yearly": "Every {interval} years"
+    },
+    "trackingModes": {
+      "automatic": {
+        "label": "Automatic",
+        "help": "Charged by itself (direct debit or your card). We mark it paid when we find it in your bank or statement."
+      },
+      "manual": {
+        "label": "Manual",
+        "help": "You pay it and confirm it here. We remind you before it's due."
+      },
+      "reminder": {
+        "label": "Reminder only",
+        "help": "We only remind you when it's due; we don't track whether it was paid."
+      }
+    },
+    "form": {
+      "createTitle": "New recurring payment",
+      "createDescription": "Add a payment that repeats to see it on your calendar.",
+      "editTitle": "Edit recurring payment",
+      "editDescription": "Change the details of {name}.",
+      "suggestionTitle": "Add suggested payment",
+      "suggestionDescription": "Review what we found in your transactions and adjust anything you need.",
+      "suggestionNote": "Found in your {merchant} transactions. Once added, those transactions count as payments already made.",
+      "name": "Name",
+      "namePlaceholder": "E.g. Netflix",
+      "kind": "Kind",
+      "trackingMode": "How do we track it?",
+      "frequency": "Frequency",
+      "interval": "Every",
+      "intervalHint": "1 = every period; 2 = every other one.",
+      "startDate": "First payment",
+      "startDateHint": "Later ones keep this day of the month.",
+      "endDate": "Last payment (optional)",
+      "endDatePlaceholder": "No end date",
+      "clearEndDate": "Remove end date",
+      "datePlaceholder": "Pick a date",
+      "amount": "Amount",
+      "currency": "Currency",
+      "currencyFixed": "The currency can't be changed after creating it.",
+      "variable": "The amount varies",
+      "variableHint": "For utilities like power or water: we use the amount as an estimate.",
+      "installmentsTotal": "Number of payments",
+      "installmentsPaid": "Payments already made",
+      "account": "Account or card",
+      "accountPlaceholder": "No account",
+      "accountSearch": "Search accounts",
+      "category": "Category",
+      "categoryPlaceholder": "No category",
+      "categorySearch": "Search categories",
+      "noResults": "No results",
+      "merchantPattern": "Text on your bank",
+      "merchantPatternPlaceholder": "E.g. NETFLIX",
+      "merchantPatternHint": "Text that shows up on the bank or statement line, e.g. NETFLIX. We use it to recognize the payment.",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional",
+      "fixErrors": "Check the highlighted fields.",
+      "create": "Create payment",
+      "save": "Save",
+      "accept": "Add",
+      "saving": "Saving…"
+    },
+    "validation": {
+      "nameRequired": "Enter a name.",
+      "nameTooLong": "100 characters at most.",
+      "amountRequired": "Enter the amount.",
+      "amountInvalid": "Enter an amount greater than zero.",
+      "amountTooLarge": "The amount is too large.",
+      "intervalInvalid": "Enter a number from 1 to 12.",
+      "startDateRequired": "Pick the first payment's date.",
+      "endBeforeStart": "Must be on or after the first payment.",
+      "installmentsRequired": "Enter how many payments there are.",
+      "installmentsInvalid": "Enter a whole number from 1 to 999.",
+      "installmentsPaidInvalid": "Enter a whole number.",
+      "installmentsPaidTooMany": "Can't be more than the number of payments.",
+      "patternTooLong": "100 characters at most.",
+      "notesTooLong": "500 characters at most."
+    },
+    "delete": {
+      "title": "Delete {name}?",
+      "description": "The recurring payment and its payment history are deleted. Your transactions are kept.",
+      "confirm": "Delete"
+    },
+    "errors": {
+      "duplicateName": "You already have a recurring payment with that name.",
+      "amount": "The amount must be greater than zero.",
+      "interval": "The repetition must be a number from 1 to 12.",
+      "endDate": "The last payment must be on or after the first one.",
+      "installments": "Enter how many payments there are.",
+      "installmentsPaid": "Payments made can't be more than the total.",
+      "account": "We couldn't find that account.",
+      "category": "We couldn't find that category.",
+      "notFound": "This recurring payment no longer exists.",
+      "paymentNotFound": "This payment no longer exists.",
+      "alreadyPaid": "This payment was already marked as paid.",
+      "reopenFirst": "Reopen the payment before skipping it.",
+      "suggestionGone": "This suggestion is no longer available."
+    },
+    "suggestions": {
+      "title": "Suggested",
+      "subtitle": "Payments that repeat in your transactions and you haven't added yet.",
+      "loading": "Looking for repeating payments in your transactions…",
+      "empty": "We didn't find new recurring payments in your transactions.",
+      "loadError": "We couldn't load the suggestions.",
+      "retry": "Try again",
+      "add": "Add",
+      "addLabel": "Add {name}",
+      "dismiss": "Dismiss",
+      "dismissLabel": "Dismiss {name}",
+      "variable": "Variable amount",
+      "nextDue": "next {date}",
+      "ai": "Classified with AI",
+      "confidence": "Confidence {percent}%",
+      "evidence": "{count, plural, one {Seen # time} other {Seen # times}}"
     }
   },
   "analytics": {
@@ -897,24 +1117,6 @@
     "notifications": "Notifications",
     "notificationsUnread": "Notifications, {count, plural, one {# new} other {# new}}",
     "userProfile": "User profile",
-    "paymentCalendar": {
-      "label": "Payment calendar, {month}",
-      "previousMonth": "Previous month",
-      "nextMonth": "Next month",
-      "monthView": "MONTH",
-      "monthViewLabel": "Month view",
-      "weekView": "WEEK",
-      "weekViewLabel": "Week view",
-      "weekdays": {
-        "mon": "MON",
-        "tue": "TUE",
-        "wed": "WED",
-        "thu": "THU",
-        "fri": "FRI",
-        "sat": "SAT",
-        "sun": "SUN"
-      }
-    },
     "creditLimit": {
       "title": "Credit limit",
       "of": "of {total}",

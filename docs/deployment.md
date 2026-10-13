@@ -79,6 +79,7 @@ Repite estos pasos para cada ambiente, usando los valores de la tabla de abajo.
    AWS_ACCESS_KEY_ID=<access key del usuario IAM del ambiente>
    AWS_SECRET_ACCESS_KEY=<secret del usuario IAM del ambiente>
    ANTHROPIC_API_KEY=<opcional>
+   ANTHROPIC_WORKSPACE_ID=<solo si la llave no está ligada a un workspace de Anthropic>
    GOOGLE_API_KEY=<opcional: Google Cloud Translation para traducir las categorías que crean los usuarios; sin ella se traducen con IA>
    OPENAI_API_KEY=<opcional>
    GEMINI_API_KEY=<opcional>

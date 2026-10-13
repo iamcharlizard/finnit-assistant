@@ -2,6 +2,20 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+"""Overrides of the suggested values; omitted fields keep them"""
+input AcceptRecurringSuggestionInput {
+  accountId: ID
+  amount: Float
+  categoryId: ID
+  frequency: RecurringFrequency
+  interval: Int
+  isVariableAmount: Boolean
+  kind: RecurringExpenseKind
+  name: String
+  startDate: DateTime
+  trackingMode: RecurringTrackingMode
+}
+
 type Account {
   archived: Boolean!
   balanceCurrent: Float!
@@ -698,6 +712,10 @@ type MonthlyReport {
 }
 
 type Mutation {
+  """
+  Creates the recurring expense of a suggestion and links its past movements as paid occurrences
+  """
+  acceptRecurringSuggestion(fingerprint: ID!, input: AcceptRecurringSuggestionInput): RecurringExpense!
   addGoalContribution(input: CreateGoalContributionInput!): GoalContribution!
   adjustAccountBalance(input: AdjustBalanceInput!): Account!
 
@@ -750,6 +768,7 @@ type Mutation {
 
   """Admin only. Blocks sign-in and ends their open sessions."""
   disableUser(id: ID!): AdminUser!
+  dismissRecurringSuggestion(fingerprint: ID!): Boolean!
 
   """Admin only"""
   enableUser(id: ID!): AdminUser!
@@ -976,6 +995,11 @@ type Query {
     trackingMode: RecurringTrackingMode
   ): RecurringExpenseConnection!
   recurringExpensesSummary: RecurringExpensesSummary!
+
+  """
+  Recurring payments detected in the movements (not dismissed, not accepted yet), most confident first
+  """
+  recurringSuggestions(accountId: ID): [RecurringSuggestion!]!
   rootCategories: [Category!]!
 
   """
@@ -1104,6 +1128,49 @@ type RecurringOccurrence {
   recurringExpenseId: String!
   status: OccurrenceStatus!
   transactionId: String
+}
+
+"""A recurring payment detected in the synced movements, not saved yet"""
+type RecurringSuggestion {
+  account: Account
+
+  """Median of the occurrences"""
+  amount: Float!
+  category: Category
+
+  """"ai" when the AI named and classified it"""
+  classifiedBy: String
+
+  """0..1"""
+  confidence: Float!
+  currency: String!
+
+  """Stable id of the detected group (merchant + currency)"""
+  fingerprint: ID!
+  frequency: RecurringFrequency!
+  interval: Int!
+  isVariableAmount: Boolean!
+  kind: RecurringExpenseKind!
+
+  """
+  Normalized merchant, e.g. "APPLE COM BILL"
+  """
+  merchant: String!
+
+  """Last occurrence + cadence (date only)"""
+  nextDueDate: DateTime!
+
+  """Newest first"""
+  occurrences: [RecurringSuggestionOccurrence!]!
+
+  """AI name if classified, else the merchant"""
+  suggestedName: String!
+}
+
+type RecurringSuggestionOccurrence {
+  amount: Float!
+  date: DateTime!
+  transactionId: ID!
 }
 
 """

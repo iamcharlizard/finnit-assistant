@@ -273,7 +273,7 @@
     "incomeOf": "Ingresos · {month}",
     "expensesOf": "Gastos · {month}",
     "upcoming": "Próximos pagos",
-    "calendarLink": "Calendario",
+    "calendarLink": "Ver todos",
     "noUpcomingTitle": "Sin pagos próximos",
     "noUpcomingDescription": "No tienes pagos recurrentes en los próximos {days} días.",
     "recent": "Actividad reciente",
@@ -517,27 +517,247 @@
       "notFound": "No encontramos esta cuenta."
     }
   },
-  "calendar": {
-    "title": "Calendario de Pagos",
-    "subtitle": "Tus pagos recurrentes y las fechas de tus tarjetas.",
-    "emptyTitle": "Aún no tienes pagos recurrentes",
-    "emptyDescription": "Cuando registres tus gastos recurrentes (suscripciones, servicios, mensualidades) verás aquí cuándo vence cada uno.",
-    "dueIn": "Por pagar en {month}",
-    "pendingCount": "{count, plural, one {# pago pendiente} other {# pagos pendientes}}",
-    "fixedMonthly": "Gastos fijos al mes",
-    "fixedMonthlyHint": "Promedio de tus gastos recurrentes",
-    "dayTitle": "{day} de {month}",
-    "nothingDue": "Nada vence este día",
-    "monthPayments": "Pagos de {month}",
-    "noMonthPayments": "Sin pagos este mes",
-    "showMonth": "Ver todo el mes",
-    "statementOf": "Corte de {name}",
-    "paymentDueOf": "Límite de pago de {name}",
-    "events": {
-      "payments": "{count} pagos",
-      "statement": "Corte",
-      "cardPayment": "Pago TDC",
-      "cards": "Tarjetas"
+  "recurring": {
+    "title": "Pagos recurrentes",
+    "subtitle": "Tus suscripciones, servicios y mensualidades: cuándo vence cada uno y qué ya pagaste.",
+    "new": "Nuevo pago recurrente",
+    "summary": {
+      "toPay": "Por pagar",
+      "toPayDetail": "{count, plural, =0 {Nada pendiente} one {# pago} other {# pagos}} · {period}",
+      "paid": "Pagado",
+      "paidDetail": "{count, plural, =0 {Sin pagos aún} one {# pago} other {# pagos}} · {period}",
+      "fixedMonthly": "Gasto fijo mensual",
+      "fixedMonthlyDetail": "{count, plural, =0 {Sin pagos activos} one {Promedio de # pago activo} other {Promedio de # pagos activos}}"
+    },
+    "calendar": {
+      "views": {
+        "day": "Día",
+        "week": "Semana",
+        "month": "Mes"
+      },
+      "viewSwitcher": "Vista del calendario",
+      "today": "Hoy",
+      "previous": {
+        "day": "Día anterior",
+        "week": "Semana anterior",
+        "month": "Mes anterior"
+      },
+      "next": {
+        "day": "Día siguiente",
+        "week": "Semana siguiente",
+        "month": "Mes siguiente"
+      },
+      "more": "+{count} más",
+      "eventCount": "{count, plural, one {# pago} other {# pagos}}",
+      "noEvents": "Sin pagos este día."
+    },
+    "panel": {
+      "dayTitle": "Pagos del {date}",
+      "periodTitle": "Pagos · {period}",
+      "showPeriod": "Ver todo el periodo",
+      "emptyDay": "Nada vence este día",
+      "emptyPeriod": "Nada vence en este periodo"
+    },
+    "status": {
+      "upcoming": "Por pagar",
+      "paid": "Pagado",
+      "skipped": "Omitido",
+      "missed": "No pagado",
+      "overdue": "Vencido",
+      "reminder": "Recordatorio"
+    },
+    "actions": {
+      "pay": "Marcar pagado",
+      "payLabel": "Marcar {name} como pagado",
+      "skip": "Omitir",
+      "skipLabel": "Omitir {name} en este periodo",
+      "reopen": "Reabrir",
+      "reopenLabel": "Reabrir el pago de {name}",
+      "edit": "Editar",
+      "editLabel": "Editar {name}",
+      "more": "Más acciones para {name}",
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "delete": "Eliminar"
+    },
+    "toasts": {
+      "pay": "Marcamos {name} como pagado",
+      "skip": "Omitiste {name} en este periodo",
+      "reopen": "{name} volvió a quedar pendiente",
+      "created": "Agregamos {name} a tus pagos recurrentes",
+      "updated": "Guardamos los cambios de {name}",
+      "noChanges": "No hubo cambios",
+      "paused": "{name} quedó en pausa",
+      "resumed": "{name} está activo de nuevo",
+      "deleted": "Eliminaste {name}",
+      "accepted": "Agregamos {name} a tus pagos recurrentes",
+      "dismissed": "Descartamos la sugerencia {name}"
+    },
+    "cardDates": {
+      "statement": "Corte de {name}",
+      "paymentDue": "Límite de pago de {name}"
+    },
+    "list": {
+      "title": "Mis pagos recurrentes",
+      "count": "{count, plural, one {# pago recurrente} other {# pagos recurrentes}}",
+      "filterKind": "Filtrar por tipo",
+      "filterStatus": "Filtrar por estado",
+      "allKinds": "Todos los tipos",
+      "status": {
+        "active": "Activos",
+        "paused": "En pausa",
+        "all": "Todos"
+      },
+      "perMonth": "≈ {amount} al mes",
+      "next": "Próximo: {when}",
+      "paused": "En pausa",
+      "installments": "{paid} de {total} pagos",
+      "emptyTitle": "Aún no tienes pagos recurrentes",
+      "emptyDescription": "Agrega tus suscripciones, servicios y mensualidades para saber cuándo vence cada uno.",
+      "emptyFiltered": "Ningún pago coincide con los filtros"
+    },
+    "frequencies": {
+      "weekly": "Semanal",
+      "biweekly": "Catorcenal (cada 14 días)",
+      "semimonthly": "Quincenal (día 15 y fin de mes)",
+      "monthly": "Mensual",
+      "bimonthly": "Bimestral",
+      "quarterly": "Trimestral",
+      "semiannual": "Semestral",
+      "yearly": "Anual"
+    },
+    "frequencyShort": {
+      "weekly": "Semanal",
+      "biweekly": "Catorcenal",
+      "semimonthly": "Quincenal",
+      "monthly": "Mensual",
+      "bimonthly": "Bimestral",
+      "quarterly": "Trimestral",
+      "semiannual": "Semestral",
+      "yearly": "Anual"
+    },
+    "frequencyEvery": {
+      "weekly": "Cada {interval} semanas",
+      "biweekly": "Cada {interval} catorcenas",
+      "semimonthly": "Cada {interval} quincenas",
+      "monthly": "Cada {interval} meses",
+      "bimonthly": "Cada {interval} bimestres",
+      "quarterly": "Cada {interval} trimestres",
+      "semiannual": "Cada {interval} semestres",
+      "yearly": "Cada {interval} años"
+    },
+    "trackingModes": {
+      "automatic": {
+        "label": "Automático",
+        "help": "Se cobra solo (domiciliado o a tu tarjeta). Lo marcamos pagado al encontrarlo en tu banco o estado de cuenta."
+      },
+      "manual": {
+        "label": "Manual",
+        "help": "Tú lo pagas y lo confirmas aquí. Te avisamos antes de que venza."
+      },
+      "reminder": {
+        "label": "Solo recordatorio",
+        "help": "Solo te avisamos cuándo vence; no llevamos control de si ya se pagó."
+      }
+    },
+    "form": {
+      "createTitle": "Nuevo pago recurrente",
+      "createDescription": "Registra un pago que se repite para verlo en tu calendario.",
+      "editTitle": "Editar pago recurrente",
+      "editDescription": "Cambia los datos de {name}.",
+      "suggestionTitle": "Agregar pago sugerido",
+      "suggestionDescription": "Revisa lo que encontramos en tus movimientos y ajusta lo que necesites.",
+      "suggestionNote": "Detectado en tus movimientos de {merchant}. Al agregarlo, esos movimientos quedan como pagos ya hechos.",
+      "name": "Nombre",
+      "namePlaceholder": "Ej. Netflix",
+      "kind": "Tipo",
+      "trackingMode": "¿Cómo lo registramos?",
+      "frequency": "Frecuencia",
+      "interval": "Cada",
+      "intervalHint": "1 = cada periodo; 2 = uno sí y uno no.",
+      "startDate": "Primer pago",
+      "startDateHint": "Los siguientes conservan este día del mes.",
+      "endDate": "Último pago (opcional)",
+      "endDatePlaceholder": "Sin fecha de fin",
+      "clearEndDate": "Quitar fecha de fin",
+      "datePlaceholder": "Elige una fecha",
+      "amount": "Monto",
+      "currency": "Moneda",
+      "currencyFixed": "La moneda no se puede cambiar después de crearlo.",
+      "variable": "El monto varía",
+      "variableHint": "Para servicios como luz o agua: tomamos el monto como estimado.",
+      "installmentsTotal": "Número de pagos",
+      "installmentsPaid": "Pagos ya hechos",
+      "account": "Cuenta o tarjeta",
+      "accountPlaceholder": "Sin cuenta",
+      "accountSearch": "Buscar cuenta",
+      "category": "Categoría",
+      "categoryPlaceholder": "Sin categoría",
+      "categorySearch": "Buscar categoría",
+      "noResults": "Sin resultados",
+      "merchantPattern": "Texto en tu banco",
+      "merchantPatternPlaceholder": "Ej. NETFLIX",
+      "merchantPatternHint": "Texto que aparece en el movimiento del banco o del estado de cuenta, por ejemplo NETFLIX. Lo usamos para reconocer el pago.",
+      "notes": "Notas",
+      "notesPlaceholder": "Opcional",
+      "fixErrors": "Revisa los campos marcados.",
+      "create": "Crear pago",
+      "save": "Guardar",
+      "accept": "Agregar",
+      "saving": "Guardando…"
+    },
+    "validation": {
+      "nameRequired": "Escribe un nombre.",
+      "nameTooLong": "Máximo 100 caracteres.",
+      "amountRequired": "Escribe el monto.",
+      "amountInvalid": "Escribe un monto mayor a cero.",
+      "amountTooLarge": "El monto es demasiado grande.",
+      "intervalInvalid": "Escribe un número del 1 al 12.",
+      "startDateRequired": "Elige la fecha del primer pago.",
+      "endBeforeStart": "Debe ser igual o posterior al primer pago.",
+      "installmentsRequired": "Escribe cuántos pagos son.",
+      "installmentsInvalid": "Escribe un número entero del 1 al 999.",
+      "installmentsPaidInvalid": "Escribe un número entero.",
+      "installmentsPaidTooMany": "No puede ser mayor al número de pagos.",
+      "patternTooLong": "Máximo 100 caracteres.",
+      "notesTooLong": "Máximo 500 caracteres."
+    },
+    "delete": {
+      "title": "¿Eliminar {name}?",
+      "description": "Se borra el pago recurrente y su historial de pagos. Tus movimientos no se borran.",
+      "confirm": "Eliminar"
+    },
+    "errors": {
+      "duplicateName": "Ya tienes un pago recurrente con ese nombre.",
+      "amount": "El monto debe ser mayor a cero.",
+      "interval": "La repetición debe ser un número del 1 al 12.",
+      "endDate": "El último pago debe ser igual o posterior al primero.",
+      "installments": "Indica cuántos pagos son.",
+      "installmentsPaid": "Los pagos hechos no pueden ser más que el total.",
+      "account": "No encontramos esa cuenta.",
+      "category": "No encontramos esa categoría.",
+      "notFound": "Este pago recurrente ya no existe.",
+      "paymentNotFound": "Este pago ya no existe.",
+      "alreadyPaid": "Este pago ya estaba marcado como pagado.",
+      "reopenFirst": "Reabre el pago antes de omitirlo.",
+      "suggestionGone": "Esta sugerencia ya no está disponible."
+    },
+    "suggestions": {
+      "title": "Sugeridos",
+      "subtitle": "Pagos que se repiten en tus movimientos y aún no registras.",
+      "loading": "Buscando pagos que se repiten en tus movimientos…",
+      "empty": "No encontramos pagos recurrentes nuevos en tus movimientos.",
+      "loadError": "No pudimos cargar las sugerencias.",
+      "retry": "Reintentar",
+      "add": "Agregar",
+      "addLabel": "Agregar {name}",
+      "dismiss": "Descartar",
+      "dismissLabel": "Descartar {name}",
+      "variable": "Monto variable",
+      "nextDue": "próximo {date}",
+      "ai": "Clasificado con IA",
+      "confidence": "Confianza {percent}%",
+      "evidence": "{count, plural, one {Visto # vez} other {Visto # veces}}"
     }
   },
   "analytics": {
@@ -897,24 +1117,6 @@
     "notifications": "Notificaciones",
     "notificationsUnread": "Notificaciones, {count, plural, one {# nueva} other {# nuevas}}",
     "userProfile": "Perfil de usuario",
-    "paymentCalendar": {
-      "label": "Calendario de pagos, {month}",
-      "previousMonth": "Mes anterior",
-      "nextMonth": "Mes siguiente",
-      "monthView": "MES",
-      "monthViewLabel": "Vista mensual",
-      "weekView": "SEMANA",
-      "weekViewLabel": "Vista semanal",
-      "weekdays": {
-        "mon": "LUN",
-        "tue": "MAR",
-        "wed": "MIÉ",
-        "thu": "JUE",
-        "fri": "VIE",
-        "sat": "SÁB",
-        "sun": "DOM"
-      }
-    },
     "creditLimit": {
       "title": "Límite de crédito",
       "of": "de {total}",

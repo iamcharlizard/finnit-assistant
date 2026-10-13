@@ -17,8 +17,22 @@ export class AnthropicProvider implements AiProviderClient {
   readonly apiKeyEnv = 'ANTHROPIC_API_KEY';
   private readonly client?: Anthropic;
 
-  constructor(apiKey = process.env.ANTHROPIC_API_KEY, client?: Anthropic) {
-    this.client = client ?? (apiKey ? new Anthropic({ apiKey }) : undefined);
+  constructor(
+    apiKey = process.env.ANTHROPIC_API_KEY,
+    client?: Anthropic,
+    // Keys that aren't scoped to a workspace must name one on every request.
+    workspaceId = process.env.ANTHROPIC_WORKSPACE_ID?.trim(),
+  ) {
+    this.client =
+      client ??
+      (apiKey
+        ? new Anthropic({
+            apiKey,
+            ...(workspaceId && {
+              defaultHeaders: { 'anthropic-workspace-id': workspaceId },
+            }),
+          })
+        : undefined);
   }
 
   get isConfigured(): boolean {

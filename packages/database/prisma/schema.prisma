@@ -176,6 +176,22 @@ enum AiProvider {
   google
 }
 
+/// Who set a transaction's category (or proposed a pending suggestion).
+enum CategorySource {
+  manual // the user picked it
+  rule // a merchant rule, an alias with a category, or the frequency heuristic
+  ai // AI suggestion the user accepted
+  bank // came with a bank import
+}
+
+/// How a merchant alias pattern is compared with the original text.
+enum AliasMatchType {
+  contains
+  starts_with
+  exact
+  regex // Postgres ~* (case-insensitive), evaluated only in the database
+}
+
 enum ImportedLineStatus {
   pending // will become a new transaction on confirm
   matched // linked to an existing transaction
@@ -220,6 +236,8 @@ model User {
   Debt              Debt[]
 
   recurringSuggestionStates RecurringSuggestionState[]
+  merchantAliases           MerchantAlias[]
+  merchantRules             MerchantRule[]
 }
 
 model Account {
@@ -274,12 +292,15 @@ model Category {
   user              User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
   parent            Category?             @relation("category_to_self", fields: [parentId], references: [id], onDelete: SetNull)
   children          Category[]            @relation("category_to_self")
-  transactions      Transaction[]
+  transactions      Transaction[]         @relation("transaction_category")
   budgetCaps        BUDGET_CATEGORY[]
   recurringExpenses RecurringExpense[]
   translations      CategoryTranslation[]
 
   recurringSuggestionStates RecurringSuggestionState[]
+  suggestedForTransactions  Transaction[]              @relation("transaction_suggested_category")
+  merchantAliases           MerchantAlias[]
+  merchantRules             MerchantRule[]
 
   @@unique([userId, name], name: "category_user_name_unique")
   @@unique([userId, key], name: "category_user_key_unique")
@@ -317,12 +338,24 @@ model Transaction {
   isRecurringInstance Boolean           @default(false)
   source              TransactionSource
   externalId          String?           @unique
+  // Merchant aliases (feature 17). The original description/merchant is never
+  // modified. aliasId is the matching alias rule, materialized whenever the
+  // user's aliases change; aliasName/isPrivate are one-off overrides.
+  aliasId             String?
+  aliasName           String?
+  isPrivate           Boolean           @default(false)
+  // Categorization (feature 16). null categorySource: set before it existed.
+  categorySource      CategorySource?
+  suggestedCategoryId String? // pending suggestion, not applied yet
+  suggestedBy         CategorySource? // 'rule' | 'ai'
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account  Account   @relation(fields: [accountId], references: [id], onDelete: Restrict)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account           Account        @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category          Category?      @relation("transaction_category", fields: [categoryId], references: [id], onDelete: SetNull)
+  alias             MerchantAlias? @relation(fields: [aliasId], references: [id], onDelete: SetNull)
+  suggestedCategory Category?      @relation("transaction_suggested_category", fields: [suggestedCategoryId], references: [id], onDelete: SetNull)
 
   // Relaciones inversas para Transfer (1–1)
   transferFrom Transfer? @relation("transfer_from")
@@ -338,6 +371,52 @@ model Transaction {
   @@index([userId, txnDate(sort: Desc)])
   @@index([userId, accountId, txnDate(sort: Desc)])
   @@index([source])
+  @@index([aliasId])
+  @@index([suggestedCategoryId])
+}
+
+/// Display name (and optional category / privacy) for the movements whose
+/// original text matches `pattern` (feature 17). Matching runs in SQL
+/// (unaccent + lower, or ~* for regex) and is materialized in
+/// Transaction.aliasId.
+model MerchantAlias {
+  id          String         @id @default(uuid())
+  userId      String
+  matchType   AliasMatchType
+  pattern     String         @db.VarChar(200)
+  displayName String         @db.VarChar(80)
+  categoryId  String?
+  isPrivate   Boolean        @default(false)
+  priority    Int            @default(0)
+  active      Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  transactions Transaction[]
+
+  @@index([userId, active])
+  @@index([categoryId])
+}
+
+/// Learned merchant -> category (feature 16): created when the user
+/// categorizes or accepts a suggestion. `pattern` is the normalized merchant
+/// (normalizeMerchant); lookups compare it without spaces.
+model MerchantRule {
+  id         String   @id @default(uuid())
+  userId     String
+  pattern    String   @db.VarChar(200)
+  categoryId String
+  hits       Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pattern])
+  @@index([categoryId])
 }
 
 model Transfer {

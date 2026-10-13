@@ -98,6 +98,8 @@ describe('accountLabel and accountDesign', () => {
       txnDate: '2026-10-12T12:00:00.000Z',
       description: 'Café',
       merchantName: null,
+      displayName: 'Café',
+      isPrivate: false,
       isPending: false,
       source: 'manual',
       accountId: 'a',

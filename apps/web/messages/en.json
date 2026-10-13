@@ -38,7 +38,8 @@
       "cards": "Accounts & cards",
       "analytics": "Analytics",
       "settings": "Settings",
-      "admin": "Administration"
+      "admin": "Administration",
+      "categorize": "Categorize transactions"
     },
     "short": {
       "dashboard": "Home",
@@ -62,7 +63,8 @@
     "admin": "Administration",
     "adminUsers": "Users · Administration",
     "adminAi": "AI · Administration",
-    "login": "Sign in"
+    "login": "Sign in",
+    "aliases": "Transaction aliases"
   },
   "newEntry": {
     "title": "New transaction",
@@ -235,6 +237,7 @@
     "adjustment": "Adjustment or payment",
     "pending": "Pending",
     "completed": "Completed",
+    "private": "Private",
     "withPending": "{time} · Pending",
     "inCurrency": "{amount} in {currency}",
     "accountTypes": {
@@ -816,7 +819,12 @@
     "weeklySummary": "Weekly summary",
     "weeklySummaryDescription": "Email",
     "signOut": "Sign out",
-    "version": "Finnit v1.0.0 • Built for the future"
+    "version": "Finnit v1.0.0 • Built for the future",
+    "movements": "Transactions",
+    "aliases": "Transaction aliases",
+    "aliasesDescription": "Rename transactions or make them private",
+    "categorize": "Categorize transactions",
+    "categorizeDescription": "Give many a category at once"
   },
   "banks": {
     "title": "Connected banks",
@@ -1136,6 +1144,196 @@
       "premium": "Premium",
       "verified": "Verified account",
       "avatar": "User avatar: {name}"
+    }
+  },
+  "categorize": {
+    "title": "Categorize transactions",
+    "subtitle": "Review your transactions and give them a category, one at a time or many at once.",
+    "aliasesLink": "Transaction aliases",
+    "filters": {
+      "account": "Account",
+      "allAccounts": "All accounts",
+      "show": "Show",
+      "shows": {
+        "uncategorized": "Uncategorized",
+        "suggested": "With suggestion",
+        "all": "All"
+      },
+      "allTime": "All time",
+      "byMonth": "By month",
+      "period": "Period"
+    },
+    "count": "{shown} of {total, plural, one {# transaction} other {# transactions}}",
+    "selectAll": "Select all",
+    "selectRow": "Select {name}",
+    "selected": "{count, plural, one {# selected} other {# selected}}",
+    "clearSelection": "Clear selection",
+    "actionsLabel": "Actions for the selected transactions",
+    "moveTo": "Move to…",
+    "searchCategory": "Search category…",
+    "noCategories": "No results.",
+    "apply": "Move",
+    "applying": "Moving…",
+    "remember": "Remember for this merchant",
+    "notCategorizable": "No category (transfer or adjustment)",
+    "suggest": "Suggest with AI",
+    "suggesting": "Asking for suggestions…",
+    "suggestHint": "Only merchant, description, amount and your categories are sent.",
+    "suggestion": "Suggestion: {category}",
+    "acceptSuggestion": "Accept suggestion {category}",
+    "rejectSuggestion": "Reject suggestion {category}",
+    "acceptAll": "Accept all ({count})",
+    "rejectAll": "Reject all ({count})",
+    "aiUnavailable": "AI isn't available right now; you can categorize manually.",
+    "dismiss": "Dismiss notice",
+    "tooMany": "Only the first {max} will be sent.",
+    "sources": {
+      "manual": "Manual",
+      "rule": "By rule",
+      "ai": "AI",
+      "bank": "Bank"
+    },
+    "rowMenu": "More actions for {name}",
+    "rename": "Rename",
+    "renameDialog": {
+      "title": "Rename transaction",
+      "description": "Only changes how this transaction shows. The bank's original text is kept.",
+      "original": "Original: {text}",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "E.g. Dinner with Ana",
+      "private": "Private",
+      "privateHint": "Lists and searches show only this name; the original only in the detail.",
+      "remove": "Remove name",
+      "save": "Save",
+      "saving": "Saving…",
+      "required": "Enter a name.",
+      "tooLong": "Up to {max} characters."
+    },
+    "toasts": {
+      "categorized": "{count, plural, one {# transaction categorized} other {# transactions categorized}}",
+      "accepted": "{count, plural, one {# suggestion accepted} other {# suggestions accepted}}",
+      "rejected": "{count, plural, one {# suggestion rejected} other {# suggestions rejected}}",
+      "suggested": "{count, plural, one {# new suggestion} other {# new suggestions}}",
+      "renamed": "Name saved",
+      "aliasRemoved": "Name removed"
+    },
+    "empty": {
+      "uncategorizedTitle": "Everything is categorized 🎉",
+      "uncategorizedDescription": "There are no uncategorized transactions in this period.",
+      "suggestedTitle": "No pending suggestions",
+      "suggestedDescription": "Select uncategorized transactions and use “Suggest with AI”.",
+      "allTitle": "No transactions",
+      "allDescription": "There are no transactions in this period.",
+      "seeAllTime": "See all time"
+    },
+    "errors": {
+      "tooMany": "Too many transactions at once.",
+      "category": "That category no longer exists.",
+      "notFound": "Some transactions no longer exist. Reload the page."
+    }
+  },
+  "aliases": {
+    "title": "Transaction aliases",
+    "subtitle": "Show a different name on matching transactions: rename cryptic bank descriptions or keep a payment private.",
+    "new": "New alias",
+    "count": "{count, plural, one {# alias} other {# aliases}}",
+    "emptyTitle": "No aliases yet",
+    "emptyDescription": "Create one to rename transactions like “CLIP MX*TACOS 2231”.",
+    "matchTypes": {
+      "contains": "Contains",
+      "starts_with": "Starts with",
+      "exact": "Exact",
+      "regex": "Regular expression (advanced)"
+    },
+    "matchShort": {
+      "contains": "Contains",
+      "starts_with": "Starts with",
+      "exact": "Exact",
+      "regex": "Regex"
+    },
+    "private": "Private",
+    "inactive": "Inactive",
+    "activeLabel": "Enable alias {name}",
+    "matches": "{count, plural, =0 {No matches} one {# match} other {# matches}}",
+    "priority": "Priority {priority}",
+    "noCategory": "Category unchanged",
+    "edit": "Edit",
+    "editLabel": "Edit alias {name}",
+    "delete": "Delete",
+    "deleteLabel": "Delete alias {name}",
+    "categorizeLink": "Categorize transactions",
+    "form": {
+      "createTitle": "New alias",
+      "editTitle": "Edit alias",
+      "description": "Applies to your current and future transactions. The original text is never changed.",
+      "matchType": "How to match",
+      "matchTypeHints": {
+        "contains": "The text appears anywhere. E.g. “uber” finds “UBER *TRIP 8812”.",
+        "starts_with": "The text is at the start. E.g. “clip mx” finds “CLIP MX*TACOS 2231”.",
+        "exact": "The whole text is the same, ignoring case and accents. E.g. “netflix.com”.",
+        "regex": "For advanced users. E.g. “^oxxo (gas|tienda)” or “spei.*nomina”."
+      },
+      "pattern": "Text to match",
+      "patternHint": "Case and accents don't matter.",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "E.g. Tacos Don Güero",
+      "category": "Category (optional)",
+      "categoryPlaceholder": "Keep the category",
+      "searchCategory": "Search category…",
+      "noCategories": "No results.",
+      "private": "Private",
+      "privateHint": "Lists and searches show only the alias; the original name only in the detail.",
+      "advanced": "Advanced options",
+      "priority": "Priority",
+      "priorityHint": "When several rules match a transaction, the highest priority wins.",
+      "active": "Active",
+      "save": "Save",
+      "create": "Create alias",
+      "saving": "Saving…"
+    },
+    "validation": {
+      "patternRequired": "Enter the text to match.",
+      "patternTooLong": "Up to {max} characters.",
+      "invalidRegex": "The regular expression isn't valid.",
+      "displayNameRequired": "Enter the display name.",
+      "displayNameTooLong": "Up to {max} characters.",
+      "priority": "Use a whole number between {min} and {max}."
+    },
+    "preview": {
+      "title": "Preview",
+      "idle": "Enter the text to match to see which transactions match.",
+      "loading": "Looking for matches…",
+      "count": "{count, plural, =0 {Matches no transactions} one {Matches # transaction} other {Matches # transactions}}",
+      "more": "Showing {shown} of {count}.",
+      "failed": "We couldn't compute the preview."
+    },
+    "deleteDialog": {
+      "title": "Delete the alias “{name}”?",
+      "description": "Transactions will show their original name again.",
+      "confirm": "Delete"
+    },
+    "rules": {
+      "title": "Learned category rules",
+      "description": "Created when you categorize a transaction with “Remember for this merchant”.",
+      "empty": "No rules yet. Categorize transactions to create them.",
+      "hits": "{count, plural, one {# use} other {# uses}}",
+      "deleteLabel": "Delete rule {pattern}",
+      "deleteTitle": "Delete the rule “{pattern}”?",
+      "deleteDescription": "Already categorized transactions don't change; new ones from this merchant will arrive uncategorized.",
+      "confirm": "Delete"
+    },
+    "toasts": {
+      "created": "Alias “{name}” created",
+      "updated": "Alias “{name}” saved",
+      "deleted": "Alias deleted",
+      "activated": "Alias enabled",
+      "deactivated": "Alias disabled",
+      "ruleDeleted": "Rule deleted"
+    },
+    "errors": {
+      "duplicate": "You already have an alias with that text.",
+      "notFound": "That alias no longer exists.",
+      "category": "That category no longer exists."
     }
   }
 }

@@ -40,7 +40,8 @@ export function DuplicateReview({
           >
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-on-background">
-                {match.merchantName ||
+                {match.displayName ||
+                  match.merchantName ||
                   match.description ||
                   t('duplicates.noDescription')}
               </p>

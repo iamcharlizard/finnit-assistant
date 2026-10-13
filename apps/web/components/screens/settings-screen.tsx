@@ -14,6 +14,8 @@ import {
   Moon,
   Paintbrush,
   ShieldCheck,
+  Tags,
+  Text,
   Type,
   UserCog,
 } from 'lucide-react';
@@ -70,6 +72,43 @@ export function SettingsScreen() {
             label={t('connectedBanks')}
             description={t('connectedBanksDescription')}
             icon={Landmark}
+          >
+            <ChevronRight
+              aria-hidden
+              className="size-4 text-on-surface-variant"
+            />
+          </SettingRow>
+        </Link>
+      </SettingsSection>
+
+      <SettingsSection
+        title={t('movements')}
+        icon={Tags}
+        iconColor="var(--highlight)"
+      >
+        <Link
+          href="/settings/aliases"
+          className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+        >
+          <SettingRow
+            label={t('aliases')}
+            description={t('aliasesDescription')}
+            icon={Text}
+          >
+            <ChevronRight
+              aria-hidden
+              className="size-4 text-on-surface-variant"
+            />
+          </SettingRow>
+        </Link>
+        <Link
+          href="/transactions/categorize"
+          className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+        >
+          <SettingRow
+            label={t('categorize')}
+            description={t('categorizeDescription')}
+            icon={Tags}
           >
             <ChevronRight
               aria-hidden

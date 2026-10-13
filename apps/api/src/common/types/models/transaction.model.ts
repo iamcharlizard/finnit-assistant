@@ -1,4 +1,5 @@
-import { ObjectType, Field, Int } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Int, registerEnumType } from '@nestjs/graphql';
+import { CategorySource } from '@finnit/database';
 import { Account } from './account.model';
 import { Category } from './category.model';
 import { Attachment } from './attachment.model';
@@ -7,6 +8,11 @@ import {
   Connection,
   PageInfo,
 } from '../../../common/types/pagination.types';
+
+registerEnumType(CategorySource, {
+  name: 'CategorySource',
+  description: 'Who set the category (or proposed a pending suggestion)',
+});
 
 @ObjectType()
 export class Transaction {
@@ -66,6 +72,43 @@ export class Transaction {
 
   @Field(() => [Attachment], { nullable: true })
   attachments?: Attachment[];
+
+  @Field({
+    description:
+      'Name to show: one-off alias, else the matching alias rule, else merchantName, else description',
+  })
+  displayName: string;
+
+  @Field({
+    description:
+      'Private (one-off or alias rule): description, merchantName and originalDescription are null except in transaction(id)',
+  })
+  isPrivate: boolean;
+
+  @Field(() => String, {
+    nullable: true,
+    description:
+      'merchantName ?? description, never modified. Null for private movements except in transaction(id)',
+  })
+  originalDescription?: string | null;
+
+  @Field(() => ID, {
+    nullable: true,
+    description: 'Merchant alias rule matching this movement',
+  })
+  aliasId?: string | null;
+
+  @Field({ description: 'A one-off display name is set on this movement' })
+  hasOwnAlias: boolean;
+
+  @Field(() => CategorySource, { nullable: true })
+  categorySource?: CategorySource | null;
+
+  @Field(() => Category, {
+    nullable: true,
+    description: 'Pending AI/rule suggestion, not applied until accepted',
+  })
+  suggestedCategory?: Category | null;
 }
 
 @ObjectType()

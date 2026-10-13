@@ -14,6 +14,7 @@ export type PageTitleKey =
   | 'statements'
   | 'settings'
   | 'banks'
+  | 'aliases'
   | 'connectBank'
   | 'admin';
 
@@ -35,6 +36,7 @@ export const PAGE_TITLES: ReadonlyArray<
   ['/settings', 'settings'],
   ['/settings/banks', 'banks'],
   ['/settings/banks/connect', 'connectBank'],
+  ['/settings/aliases', 'aliases'],
   ['/admin', 'admin'],
   ['/admin/[...rest]', 'admin'],
 ];

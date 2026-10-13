@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PrismaService } from '../../services/prisma.service';
 import { AiModule } from '../ai/ai.module';
 import { CategoriesModule } from '../categories/categories.module';
+import { CategorizationModule } from '../categorization/categorization.module';
 import { RecurringExpensesModule } from '../recurring-expenses/recurring-expenses.module';
 import { StorageModule } from '../storage/storage.module';
 import { StatementParserRegistry } from './parsing/statement-parser.registry';
@@ -12,7 +13,13 @@ import { StatementsResolver } from './statements.resolver';
 import { StatementsService } from './statements.service';
 
 @Module({
-  imports: [AiModule, CategoriesModule, RecurringExpensesModule, StorageModule],
+  imports: [
+    AiModule,
+    CategoriesModule,
+    CategorizationModule,
+    RecurringExpensesModule,
+    StorageModule,
+  ],
   controllers: [StatementsController],
   providers: [
     StatementsService,

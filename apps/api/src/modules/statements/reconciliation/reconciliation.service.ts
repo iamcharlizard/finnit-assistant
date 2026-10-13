@@ -7,6 +7,7 @@ import {
 } from '@finnit/database';
 import { PrismaService } from '../../../services/prisma.service';
 import { CategoriesService } from '../../categories/categories.service';
+import { MerchantRulesService } from '../../categorization/merchant-rules.service';
 import { addDays } from '../../recurring-expenses/schedule.util';
 import { matchOccurrences, matchTransactions, LineToMatch } from './matching';
 
@@ -23,6 +24,7 @@ export class ReconciliationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly categories: CategoriesService,
+    private readonly rules: MerchantRulesService,
   ) {}
 
   async reconcileStatement(statementImportId: string): Promise<void> {
@@ -130,6 +132,11 @@ export class ReconciliationService {
       occurrences.map((o) => [o.id, o.recurringExpense.categoryId]),
     );
 
+    // Merchant rules the user taught come before the frequency guess.
+    const ruleMatches = await this.rules.match(
+      userId,
+      sorted.map((line) => line.merchant ?? line.description),
+    );
     const suggestions = new Map<string, string | null>();
     for (const line of sorted) {
       const occurrenceId = occurrenceMatches.get(line.id) ?? null;
@@ -139,6 +146,9 @@ export class ReconciliationService {
         (occurrenceId && expenseCategory.get(occurrenceId)) ||
         line.suggestedCategoryId;
       const merchant = line.merchant ?? line.description;
+      if (!categoryId && merchant) {
+        categoryId = ruleMatches.get(merchant)?.categoryId ?? null;
+      }
       if (!categoryId && merchant) {
         if (!suggestions.has(merchant)) {
           const category = await this.categories.suggestCategoryForMerchant(

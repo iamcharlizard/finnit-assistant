@@ -27,6 +27,7 @@ import {
   RecurringExpensesService,
 } from '../recurring-expenses.service';
 import { addDays, toDateOnly } from '../schedule.util';
+import { presentTransaction } from '../../transactions/transaction.mapper';
 import {
   DetectedSuggestion,
   FREQUENCY_DAYS,
@@ -273,6 +274,9 @@ export class RecurringSuggestionsService {
           merchantName: true,
           description: true,
           source: true,
+          aliasName: true,
+          isPrivate: true,
+          alias: { select: { displayName: true, isPrivate: true } },
         },
       }),
       this.prisma.recurringExpense.findMany({
@@ -282,17 +286,31 @@ export class RecurringSuggestionsService {
     ]);
 
     return detectRecurring(
-      transactions.map((t) => ({
-        id: t.id,
-        date: t.txnDate,
-        amount: Number(t.amount),
-        currency: t.currency,
-        accountId: t.accountId,
-        categoryId: t.categoryId,
-        merchantName: t.merchantName,
-        description: t.description,
-        source: t.source,
-      })),
+      transactions.map((t) => {
+        // Merchant aliases (feature 17): group and name by the display name,
+        // and never expose the original text of private movements.
+        const aliased = Boolean(t.aliasName?.trim() || t.alias || t.isPrivate);
+        const shown = aliased
+          ? presentTransaction({
+              merchantName: t.merchantName,
+              description: t.description,
+              aliasName: t.aliasName ?? null,
+              isPrivate: t.isPrivate ?? false,
+              alias: t.alias,
+            })
+          : null;
+        return {
+          id: t.id,
+          date: t.txnDate,
+          amount: Number(t.amount),
+          currency: t.currency,
+          accountId: t.accountId,
+          categoryId: t.categoryId,
+          merchantName: shown ? shown.displayName : t.merchantName,
+          description: shown ? null : t.description,
+          source: t.source,
+        };
+      }),
       { userId, today, existing },
     );
   }

@@ -6,6 +6,7 @@ import {
   ResolveField,
   Parent,
   Context,
+  ID,
 } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
@@ -23,6 +24,7 @@ import {
   TransactionConnection,
 } from '../../common/types/models/transaction.model';
 import { TransferDirectionLoader } from './transfer-direction.loader';
+import { TransactionAliasInput } from '../categorization/dto/merchant-alias.dto';
 
 @Resolver(() => Transaction)
 @UseGuards(JwtAuthGuard)
@@ -53,7 +55,10 @@ export class TransactionsResolver {
     return this.transactionsService.findMany(user.id, args);
   }
 
-  @Query(() => Transaction)
+  @Query(() => Transaction, {
+    description:
+      'One movement; unlike lists, it includes the original text of private movements',
+  })
   async transaction(
     @CurrentUser() user: User,
     @Args('id') id: string,
@@ -87,6 +92,18 @@ export class TransactionsResolver {
     @Args('input') input: UpdateTransactionInput,
   ): Promise<Transaction> {
     return this.transactionsService.update(id, user.id, input);
+  }
+
+  @Mutation(() => Transaction, {
+    description:
+      'One-off display name and/or privacy for one movement (no alias rule). displayName null or "" clears it',
+  })
+  async setTransactionAlias(
+    @CurrentUser() user: User,
+    @Args('id', { type: () => ID }) id: string,
+    @Args('input') input: TransactionAliasInput,
+  ): Promise<Transaction> {
+    return this.transactionsService.setAlias(id, user.id, input);
   }
 
   @Mutation(() => Boolean)

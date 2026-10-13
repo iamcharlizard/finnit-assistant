@@ -39,6 +39,7 @@ All 11 original GraphQL modules implemented, plus recurring expenses in `apps/ap
 | AI model catalog + providers (Anthropic, OpenAI, Gemini) | `src/modules/ai/` |
 | Bank connections (Syncfy aggregation) | `src/modules/bank-connections/` |
 | Admin (user access; master/admin rules) | `src/modules/admin/` |
+| Categorization (merchant rules, aliases, AI suggestions) | `src/modules/categorization/` |
 
 Auto-generated schema at `apps/api/src/schema.gql`.
 
@@ -85,6 +86,7 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261014090000_admin_access_and_ai_features`
 - `20261015090000_category_i18n_and_ai_features` + `20261015090100_ai_feature_defaults` (enum values added in one file can't be used in the same transaction, so the seed rows live in a second file)
 - `20261016090000_recurring_suggestion_state`
+- `20261017090000_merchant_rules_and_aliases` (enables the `unaccent` extension)
 
 Migrations with hand-edited SQL wrap their body in `BEGIN; … COMMIT;`: Prisma does not run a migration in a transaction, so a failure would leave it half applied.
 

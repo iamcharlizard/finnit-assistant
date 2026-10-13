@@ -34,6 +34,12 @@ describe('nav sections', () => {
     assert.equal(activeNavHref(hrefs, '/settings/banks'), '/settings');
     assert.equal(activeNavHref(hrefs, '/admin/ai'), '/admin');
     assert.equal(activeNavHref(hrefs, '/settingsx'), null);
+    // History and categorize live side by side in "Movimientos".
+    const tx = ['/history', '/transactions/categorize'];
+    assert.equal(
+      activeNavHref(tx, '/transactions/categorize'),
+      '/transactions/categorize',
+    );
   });
 });
 
@@ -51,6 +57,7 @@ describe('page titles', () => {
     assert.equal(pageTitleKey('/transactions/categorize'), 'categorize');
     assert.equal(pageTitleKey('/transactions/123'), 'transaction');
     assert.equal(pageTitleKey('/settings/banks/connect'), 'connectBank');
+    assert.equal(pageTitleKey('/settings/aliases'), 'aliases');
     assert.equal(pageTitleKey('/admin/users'), 'admin');
     assert.equal(pageTitleKey('/calendar'), 'recurring');
     assert.equal(pageTitleKey('/accounts'), 'cards');

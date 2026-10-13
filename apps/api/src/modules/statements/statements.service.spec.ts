@@ -23,6 +23,8 @@ import {
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import { StatementParseError } from './parsing/parsed-statement';
+import { MerchantRulesService } from '../categorization/merchant-rules.service';
+import { MerchantAliasesService } from '../categorization/merchant-aliases.service';
 
 const d = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
@@ -33,6 +35,8 @@ describe('StatementsService', () => {
   let parsers: DeepMockProxy<StatementParserRegistry>;
   let reconciliation: DeepMockProxy<ReconciliationService>;
   let recurring: DeepMockProxy<RecurringExpensesService>;
+  let rules: DeepMockProxy<MerchantRulesService>;
+  let aliases: DeepMockProxy<MerchantAliasesService>;
 
   const userId = 'user-1';
   const pdf = Buffer.from('%PDF-1.7 statement');
@@ -105,6 +109,9 @@ describe('StatementsService', () => {
     parsers = mockDeep<StatementParserRegistry>();
     reconciliation = mockDeep<ReconciliationService>();
     recurring = mockDeep<RecurringExpensesService>();
+    rules = mockDeep<MerchantRulesService>();
+    rules.match.mockResolvedValue(new Map());
+    aliases = mockDeep<MerchantAliasesService>();
     prisma.$transaction.mockImplementation(
       (fn: unknown) => (fn as (tx: unknown) => unknown)(prisma) as never,
     );
@@ -117,6 +124,8 @@ describe('StatementsService', () => {
         { provide: StatementParserRegistry, useValue: parsers },
         { provide: ReconciliationService, useValue: reconciliation },
         { provide: RecurringExpensesService, useValue: recurring },
+        { provide: MerchantRulesService, useValue: rules },
+        { provide: MerchantAliasesService, useValue: aliases },
         LineMaterializerService,
       ],
     }).compile();

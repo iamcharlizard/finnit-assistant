@@ -140,7 +140,11 @@ export class TransactionFilters {
   @IsDateString()
   endDate?: Date;
 
-  @Field({ nullable: true })
+  @Field({
+    nullable: true,
+    description:
+      'Matches the display name, and the original text only for non-private movements',
+  })
   @IsOptional()
   @IsString()
   search?: string;
@@ -149,6 +153,23 @@ export class TransactionFilters {
   @IsOptional()
   @IsBoolean()
   isPending?: boolean;
+
+  @Field(() => Boolean, {
+    nullable: true,
+    description:
+      'true: only movements without a category; false: only with one',
+  })
+  @IsOptional()
+  @IsBoolean()
+  uncategorized?: boolean | null;
+
+  @Field(() => Boolean, {
+    nullable: true,
+    description: 'true: only movements with a pending category suggestion',
+  })
+  @IsOptional()
+  @IsBoolean()
+  hasSuggestion?: boolean | null;
 }
 
 @ArgsType()

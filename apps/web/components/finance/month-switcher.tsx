@@ -10,10 +10,13 @@ export function MonthSwitcher({
   label,
   prevHref,
   nextHref,
+  as: Heading = 'h1',
 }: {
   label: string;
   prevHref: string;
   nextHref: string | null;
+  /** The label's element: h1 when the month is the page's title. */
+  as?: 'h1' | 'h2' | 'p';
 }) {
   const t = useTranslations('monthSwitcher');
   return (
@@ -21,9 +24,9 @@ export function MonthSwitcher({
       <Link href={prevHref} aria-label={t('previous')} className={ARROW}>
         <ChevronLeft aria-hidden className="size-5" />
       </Link>
-      <h1 className="min-w-40 text-center text-xl font-bold text-on-background">
+      <Heading className="min-w-40 text-center text-xl font-bold text-on-background">
         {label}
-      </h1>
+      </Heading>
       {nextHref ? (
         <Link href={nextHref} aria-label={t('next')} className={ARROW}>
           <ChevronRight aria-hidden className="size-5" />

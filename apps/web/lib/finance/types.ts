@@ -59,10 +59,20 @@ export interface ApiTransaction {
     metadata?: { nickname?: string | null } | null;
   } | null;
   category: { id: string; name: string; parentId: string | null } | null;
+  /** What to show: the alias (rule or one-off) or the merchant/description. */
+  displayName: string;
+  /** A private alias: lists show only `displayName`, never the original. */
+  isPrivate: boolean;
+  /** The alias rule applied, if any. */
+  aliasId?: string | null;
+  /** Renamed one by one (setTransactionAlias), without a rule. */
+  hasOwnAlias?: boolean;
 }
 
 export const TRANSACTION_FIELDS =
-  'id type amount currency txnDate description merchantName isPending source transferDirection accountId account { id name type metadata { nickname } } category { id name parentId }';
+  'id type amount currency txnDate description merchantName displayName isPrivate aliasId hasOwnAlias isPending source transferDirection accountId account { id name type metadata { nickname } } category { id name parentId }';
+
+export type CategorySource = 'manual' | 'rule' | 'ai' | 'bank';
 
 export interface ApiCategory {
   id: string;

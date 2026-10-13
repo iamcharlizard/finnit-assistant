@@ -38,7 +38,8 @@
       "cards": "Cuentas y tarjetas",
       "analytics": "Análisis",
       "settings": "Ajustes",
-      "admin": "Administración"
+      "admin": "Administración",
+      "categorize": "Clasificar movimientos"
     },
     "short": {
       "dashboard": "Inicio",
@@ -62,7 +63,8 @@
     "admin": "Administración",
     "adminUsers": "Usuarios · Administración",
     "adminAi": "IA · Administración",
-    "login": "Iniciar sesión"
+    "login": "Iniciar sesión",
+    "aliases": "Alias de movimientos"
   },
   "newEntry": {
     "title": "Nuevo movimiento",
@@ -235,6 +237,7 @@
     "adjustment": "Ajuste o pago",
     "pending": "Pendiente",
     "completed": "Completado",
+    "private": "Privado",
     "withPending": "{time} · Pendiente",
     "inCurrency": "{amount} en {currency}",
     "accountTypes": {
@@ -816,7 +819,12 @@
     "weeklySummary": "Resumen semanal",
     "weeklySummaryDescription": "Correo",
     "signOut": "Cerrar sesión",
-    "version": "Finnit v1.0.0 • Hecho para el futuro"
+    "version": "Finnit v1.0.0 • Hecho para el futuro",
+    "movements": "Movimientos",
+    "aliases": "Alias de movimientos",
+    "aliasesDescription": "Renombra movimientos o hazlos privados",
+    "categorize": "Clasificar movimientos",
+    "categorizeDescription": "Asigna categorías a varios a la vez"
   },
   "banks": {
     "title": "Bancos conectados",
@@ -1136,6 +1144,196 @@
       "premium": "Premium",
       "verified": "Cuenta verificada",
       "avatar": "Avatar del usuario: {name}"
+    }
+  },
+  "categorize": {
+    "title": "Clasificar movimientos",
+    "subtitle": "Revisa y asigna categoría a tus movimientos, uno por uno o varios a la vez.",
+    "aliasesLink": "Alias de movimientos",
+    "filters": {
+      "account": "Cuenta",
+      "allAccounts": "Todas las cuentas",
+      "show": "Mostrar",
+      "shows": {
+        "uncategorized": "Sin categoría",
+        "suggested": "Con sugerencia",
+        "all": "Todos"
+      },
+      "allTime": "Todo el tiempo",
+      "byMonth": "Por mes",
+      "period": "Periodo"
+    },
+    "count": "{shown} de {total, plural, one {# movimiento} other {# movimientos}}",
+    "selectAll": "Seleccionar todo",
+    "selectRow": "Seleccionar {name}",
+    "selected": "{count, plural, one {# seleccionado} other {# seleccionados}}",
+    "clearSelection": "Quitar selección",
+    "actionsLabel": "Acciones para los movimientos seleccionados",
+    "moveTo": "Mover a…",
+    "searchCategory": "Buscar categoría…",
+    "noCategories": "Sin resultados.",
+    "apply": "Mover",
+    "applying": "Moviendo…",
+    "remember": "Recordar para este comercio",
+    "notCategorizable": "Sin categoría (transferencia o ajuste)",
+    "suggest": "Sugerir con IA",
+    "suggesting": "Pidiendo sugerencias…",
+    "suggestHint": "Solo se envían comercio, descripción, monto y tus categorías.",
+    "suggestion": "Sugerencia: {category}",
+    "acceptSuggestion": "Aceptar sugerencia {category}",
+    "rejectSuggestion": "Rechazar sugerencia {category}",
+    "acceptAll": "Aceptar todas ({count})",
+    "rejectAll": "Rechazar todas ({count})",
+    "aiUnavailable": "La IA no está disponible ahora; puedes clasificar manualmente.",
+    "dismiss": "Cerrar aviso",
+    "tooMany": "Solo se enviarán los primeros {max}.",
+    "sources": {
+      "manual": "Manual",
+      "rule": "Por regla",
+      "ai": "IA",
+      "bank": "Banco"
+    },
+    "rowMenu": "Más acciones para {name}",
+    "rename": "Renombrar",
+    "renameDialog": {
+      "title": "Renombrar movimiento",
+      "description": "Solo cambia cómo se ve este movimiento. El texto original del banco se conserva.",
+      "original": "Original: {text}",
+      "displayName": "Nombre a mostrar",
+      "displayNamePlaceholder": "Ej. Cena con Ana",
+      "private": "Privado",
+      "privateHint": "En listas y búsquedas solo se verá este nombre; el original solo en el detalle.",
+      "remove": "Quitar nombre",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "required": "Escribe un nombre.",
+      "tooLong": "Máximo {max} caracteres."
+    },
+    "toasts": {
+      "categorized": "{count, plural, one {# movimiento clasificado} other {# movimientos clasificados}}",
+      "accepted": "{count, plural, one {# sugerencia aceptada} other {# sugerencias aceptadas}}",
+      "rejected": "{count, plural, one {# sugerencia rechazada} other {# sugerencias rechazadas}}",
+      "suggested": "{count, plural, one {# sugerencia nueva} other {# sugerencias nuevas}}",
+      "renamed": "Nombre guardado",
+      "aliasRemoved": "Se quitó el nombre"
+    },
+    "empty": {
+      "uncategorizedTitle": "Todo clasificado 🎉",
+      "uncategorizedDescription": "No hay movimientos sin categoría en este periodo.",
+      "suggestedTitle": "Sin sugerencias pendientes",
+      "suggestedDescription": "Selecciona movimientos sin categoría y usa «Sugerir con IA».",
+      "allTitle": "Sin movimientos",
+      "allDescription": "No hay movimientos en este periodo.",
+      "seeAllTime": "Ver todo el tiempo"
+    },
+    "errors": {
+      "tooMany": "Son demasiados movimientos a la vez.",
+      "category": "Esa categoría ya no existe.",
+      "notFound": "Algunos movimientos ya no existen. Recarga la página."
+    }
+  },
+  "aliases": {
+    "title": "Alias de movimientos",
+    "subtitle": "Muestra otro nombre en los movimientos que coincidan: renombra descripciones crípticas del banco o mantén privado un pago.",
+    "new": "Nuevo alias",
+    "count": "{count, plural, one {# alias} other {# alias}}",
+    "emptyTitle": "Aún no tienes alias",
+    "emptyDescription": "Crea uno para renombrar movimientos como «CLIP MX*TACOS 2231».",
+    "matchTypes": {
+      "contains": "Contiene",
+      "starts_with": "Empieza con",
+      "exact": "Exacto",
+      "regex": "Expresión regular (avanzado)"
+    },
+    "matchShort": {
+      "contains": "Contiene",
+      "starts_with": "Empieza con",
+      "exact": "Exacto",
+      "regex": "Regex"
+    },
+    "private": "Privado",
+    "inactive": "Inactivo",
+    "activeLabel": "Activar alias {name}",
+    "matches": "{count, plural, =0 {Sin coincidencias} one {# coincidencia} other {# coincidencias}}",
+    "priority": "Prioridad {priority}",
+    "noCategory": "Sin cambiar categoría",
+    "edit": "Editar",
+    "editLabel": "Editar alias {name}",
+    "delete": "Eliminar",
+    "deleteLabel": "Eliminar alias {name}",
+    "categorizeLink": "Clasificar movimientos",
+    "form": {
+      "createTitle": "Nuevo alias",
+      "editTitle": "Editar alias",
+      "description": "Se aplica a tus movimientos actuales y futuros. El texto original nunca se modifica.",
+      "matchType": "Cómo buscar",
+      "matchTypeHints": {
+        "contains": "El texto aparece en cualquier parte. Ej. «uber» encuentra «UBER *TRIP 8812».",
+        "starts_with": "El texto está al inicio. Ej. «clip mx» encuentra «CLIP MX*TACOS 2231».",
+        "exact": "Todo el texto es igual, sin importar mayúsculas ni acentos. Ej. «netflix.com».",
+        "regex": "Para usuarios avanzados. Ej. «^oxxo (gas|tienda)» o «spei.*nomina»."
+      },
+      "pattern": "Texto a buscar",
+      "patternHint": "No distingue mayúsculas ni acentos.",
+      "displayName": "Nombre a mostrar",
+      "displayNamePlaceholder": "Ej. Tacos Don Güero",
+      "category": "Categoría (opcional)",
+      "categoryPlaceholder": "Sin cambiar categoría",
+      "searchCategory": "Buscar categoría…",
+      "noCategories": "Sin resultados.",
+      "private": "Privado",
+      "privateHint": "En listas y búsquedas solo se verá el alias; el nombre original solo en el detalle.",
+      "advanced": "Opciones avanzadas",
+      "priority": "Prioridad",
+      "priorityHint": "Si varias reglas coinciden con un movimiento, gana la de mayor prioridad.",
+      "active": "Activo",
+      "save": "Guardar",
+      "create": "Crear alias",
+      "saving": "Guardando…"
+    },
+    "validation": {
+      "patternRequired": "Escribe el texto a buscar.",
+      "patternTooLong": "Máximo {max} caracteres.",
+      "invalidRegex": "La expresión regular no es válida.",
+      "displayNameRequired": "Escribe el nombre a mostrar.",
+      "displayNameTooLong": "Máximo {max} caracteres.",
+      "priority": "Usa un número entero entre {min} y {max}."
+    },
+    "preview": {
+      "title": "Vista previa",
+      "idle": "Escribe el texto a buscar para ver qué movimientos coinciden.",
+      "loading": "Buscando coincidencias…",
+      "count": "{count, plural, =0 {No coincide con ningún movimiento} one {Coincide con # movimiento} other {Coincide con # movimientos}}",
+      "more": "Se muestran {shown} de {count}.",
+      "failed": "No pudimos calcular la vista previa."
+    },
+    "deleteDialog": {
+      "title": "¿Eliminar el alias «{name}»?",
+      "description": "Los movimientos volverán a mostrar su nombre original.",
+      "confirm": "Eliminar"
+    },
+    "rules": {
+      "title": "Reglas de categoría aprendidas",
+      "description": "Se crean cuando clasificas un movimiento con «Recordar para este comercio».",
+      "empty": "Aún no hay reglas. Clasifica movimientos para crearlas.",
+      "hits": "{count, plural, one {# uso} other {# usos}}",
+      "deleteLabel": "Eliminar regla {pattern}",
+      "deleteTitle": "¿Eliminar la regla «{pattern}»?",
+      "deleteDescription": "Los movimientos ya clasificados no cambian; los nuevos de este comercio llegarán sin categoría.",
+      "confirm": "Eliminar"
+    },
+    "toasts": {
+      "created": "Alias «{name}» creado",
+      "updated": "Alias «{name}» guardado",
+      "deleted": "Alias eliminado",
+      "activated": "Alias activado",
+      "deactivated": "Alias desactivado",
+      "ruleDeleted": "Regla eliminada"
+    },
+    "errors": {
+      "duplicate": "Ya tienes un alias con ese texto.",
+      "notFound": "Ese alias ya no existe.",
+      "category": "Esa categoría ya no existe."
     }
   }
 }

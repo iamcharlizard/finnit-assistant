@@ -1,6 +1,6 @@
 'use client';
 
-import type { LucideIcon } from 'lucide-react';
+import { Lock, type LucideIcon } from 'lucide-react';
 
 import { cn } from '../../lib/utils';
 import {
@@ -22,6 +22,10 @@ interface TransactionItemWithStatusProps extends TransactionSelectionProps {
   icon: LucideIcon;
   onClick?: () => void;
   className?: string;
+  /** Shows a lock before the name (a private alias hides the original). */
+  isPrivate?: boolean;
+  /** Accessible name of the lock. Defaults to "Private". */
+  privateLabel?: string;
 }
 
 const ICON_BG: Record<ItemVariant, string> = {
@@ -60,6 +64,8 @@ function TransactionItemWithStatus({
   selected,
   onSelectedChange,
   selectLabel,
+  isPrivate,
+  privateLabel = 'Private',
 }: TransactionItemWithStatusProps) {
   const row = (
     <button
@@ -80,8 +86,15 @@ function TransactionItemWithStatus({
           <Icon aria-hidden className="size-[22px] text-on-surface-variant" />
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-sm font-medium text-on-background">
-            {merchant}
+          <span className="flex min-w-0 items-center gap-1 text-sm font-medium text-on-background">
+            {isPrivate ? (
+              <Lock
+                role="img"
+                aria-label={privateLabel}
+                className="size-3.5 shrink-0 text-on-surface-variant"
+              />
+            ) : null}
+            <span className="truncate">{merchant}</span>
           </span>
           <span className="mt-0.5 block truncate text-xs text-on-surface-variant">
             {category} · {time}

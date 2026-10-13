@@ -34,13 +34,27 @@ import {
   Transaction,
   TransactionConnection,
 } from '../../common/types/models/transaction.model';
-import { AccountMetadata } from '../../common/types/models/account-metadata.model';
+import { CategorySource } from '@finnit/database';
+import { MerchantAliasesService } from '../categorization/merchant-aliases.service';
+import {
+  MerchantRulesService,
+  ruleText,
+} from '../categorization/merchant-rules.service';
+import { TransactionAliasInput } from '../categorization/dto/merchant-alias.dto';
+import { MAX_ALIAS_NAME_LENGTH } from '../categorization/dto/merchant-alias.dto';
+import {
+  TRANSACTION_PRESENTATION_INCLUDE,
+  mapAttachment,
+  mapTransaction,
+} from './transaction.mapper';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: S3StorageService,
+    private readonly aliases: MerchantAliasesService,
+    private readonly rules: MerchantRulesService,
   ) {}
 
   async create(
@@ -56,15 +70,10 @@ export class TransactionsService {
       throw new NotFoundError('Account not found');
     }
 
-    // Auto-categorize if no category provided but merchant name exists
-    let categoryId = input.categoryId;
-    if (!categoryId && input.merchantName) {
-      const suggestedCategory = await this.suggestCategoryForMerchant(
-        userId,
-        input.merchantName,
-      );
-      categoryId = suggestedCategory?.id;
-    }
+    // The user's category, else a merchant rule, else the frequency guess.
+    const { categoryId, categorySource } = input.categoryId
+      ? { categoryId: input.categoryId, categorySource: CategorySource.manual }
+      : await this.autoCategory(userId, input);
 
     // Validate category belongs to user (if provided)
     if (categoryId) {
@@ -80,13 +89,14 @@ export class TransactionsService {
       }
     }
 
-    return await this.prisma.$transaction(async (tx) => {
+    const created = await this.prisma.$transaction(async (tx) => {
       // Create transaction
       const transaction = await tx.transaction.create({
         data: {
           userId,
           accountId: input.accountId,
           categoryId,
+          categorySource,
           type: input.type,
           amount: input.amount,
           currency: input.currency,
@@ -112,8 +122,11 @@ export class TransactionsService {
         });
       }
 
-      return this.mapTransaction(transaction);
+      return transaction;
     });
+
+    await this.aliases.applyTo(userId, [created.id]);
+    return this.reload(created);
   }
 
   async findMany(
@@ -145,6 +158,7 @@ export class TransactionsService {
         account: true,
         category: true,
         attachments: true,
+        ...TRANSACTION_PRESENTATION_INCLUDE,
       },
     });
 
@@ -155,9 +169,7 @@ export class TransactionsService {
     const totalCount = await this.prisma.transaction.count({ where });
 
     const connection = PaginationUtil.createConnection(
-      transactions.map((transaction) =>
-        this.mapTransactionWithRelations(transaction),
-      ),
+      transactions.map((transaction) => mapTransaction(transaction)),
       args,
       totalCount,
       (transaction) => PaginationUtil.encodeCursor(transaction.id),
@@ -172,6 +184,7 @@ export class TransactionsService {
       where: { id, userId },
       include: {
         attachments: true,
+        ...TRANSACTION_PRESENTATION_INCLUDE,
       },
     });
 
@@ -179,10 +192,44 @@ export class TransactionsService {
       throw new NotFoundError('Transaction not found');
     }
 
-    return {
-      ...this.mapTransaction(transaction),
-      attachments: transaction.attachments.map((a) => this.mapAttachment(a)),
-    };
+    // The detail reveals the original text of private movements ("ver original").
+    return mapTransaction(transaction, { reveal: true });
+  }
+
+  /**
+   * One-off display name and/or privacy for a single movement (feature 17),
+   * without creating an alias rule. The original text is never modified.
+   */
+  async setAlias(
+    id: string,
+    userId: string,
+    input: TransactionAliasInput,
+  ): Promise<Transaction> {
+    const existing = await this.prisma.transaction.findFirst({
+      where: { id, userId },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundError('Transaction not found');
+
+    const data: Prisma.TransactionUpdateInput = {};
+    if (input.displayName !== undefined) {
+      const name = input.displayName?.trim() ?? '';
+      if (name.length > MAX_ALIAS_NAME_LENGTH) {
+        throw new ValidationError(
+          `The display name must have at most ${MAX_ALIAS_NAME_LENGTH} characters`,
+        );
+      }
+      data.aliasName = name || null;
+    }
+    if (input.isPrivate !== undefined && input.isPrivate !== null) {
+      data.isPrivate = input.isPrivate;
+    }
+    const updated = await this.prisma.transaction.update({
+      where: { id },
+      data,
+      include: TRANSACTION_PRESENTATION_INCLUDE,
+    });
+    return mapTransaction(updated);
   }
 
   async update(
@@ -216,7 +263,7 @@ export class TransactionsService {
       }
     }
 
-    return await this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       // The balance only reflects confirmed transactions: undo the old effect
       // and apply the new one (amount and/or pending state may change).
       const sign = existingTransaction.type === 'income' ? 1 : -1;
@@ -240,16 +287,26 @@ export class TransactionsService {
         });
       }
 
-      const updatedTransaction = await tx.transaction.update({
+      return tx.transaction.update({
         where: { id },
         data: {
           ...input,
           ...(input.txnDate && { txnDate: toLocalDateOnly(input.txnDate) }),
+          // A category chosen by the user replaces any pending suggestion.
+          ...(input.categoryId && {
+            categorySource: CategorySource.manual,
+            suggestedCategoryId: null,
+            suggestedBy: null,
+          }),
         },
       });
-
-      return this.mapTransaction(updatedTransaction);
     });
+
+    // A new merchant/description may match a different alias.
+    if (input.merchantName !== undefined || input.description !== undefined) {
+      await this.aliases.applyTo(userId, [id]);
+    }
+    return this.reload(updated);
   }
 
   /**
@@ -278,8 +335,9 @@ export class TransactionsService {
       },
       orderBy: [{ txnDate: 'desc' }, { createdAt: 'desc' }],
       take: SIMILAR_MAX_RESULTS,
+      include: TRANSACTION_PRESENTATION_INCLUDE,
     });
-    return transactions.map((transaction) => this.mapTransaction(transaction));
+    return transactions.map((transaction) => mapTransaction(transaction));
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
@@ -399,7 +457,7 @@ export class TransactionsService {
           fileSize: file.size,
         },
       });
-      return this.mapAttachment(attachment);
+      return mapAttachment(attachment);
     } catch (error) {
       await this.storage.delete(fileKey);
       throw error;
@@ -456,25 +514,23 @@ export class TransactionsService {
       throw new NotFoundError('One or more accounts not found');
     }
 
-    return await this.prisma.$transaction(async (tx) => {
-      const results: Transaction[] = [];
+    const created = await this.prisma.$transaction(async (tx) => {
+      const results: Prisma.TransactionGetPayload<Record<string, never>>[] = [];
 
       for (const input of transactions) {
-        // Auto-categorize if no category provided but merchant name exists
-        let categoryId = input.categoryId;
-        if (!categoryId && input.merchantName) {
-          const suggestedCategory = await this.suggestCategoryForMerchant(
-            userId,
-            input.merchantName,
-          );
-          categoryId = suggestedCategory?.id;
-        }
+        const { categoryId, categorySource } = input.categoryId
+          ? {
+              categoryId: input.categoryId,
+              categorySource: CategorySource.manual,
+            }
+          : await this.autoCategory(userId, input);
 
         const transaction = await tx.transaction.create({
           data: {
             userId,
             accountId: input.accountId,
             categoryId,
+            categorySource,
             type: input.type,
             amount: input.amount,
             currency: input.currency,
@@ -500,11 +556,24 @@ export class TransactionsService {
           });
         }
 
-        results.push(this.mapTransaction(transaction));
+        results.push(transaction);
       }
 
       return results;
     });
+
+    await this.aliases.applyTo(
+      userId,
+      created.map((transaction) => transaction.id),
+    );
+    const rows = await this.prisma.transaction.findMany({
+      where: { id: { in: created.map((transaction) => transaction.id) } },
+      include: TRANSACTION_PRESENTATION_INCLUDE,
+    });
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    return created.map((transaction) =>
+      mapTransaction(byId.get(transaction.id) ?? transaction),
+    );
   }
 
   async recategorizeTransaction(
@@ -534,10 +603,16 @@ export class TransactionsService {
 
     const updatedTransaction = await this.prisma.transaction.update({
       where: { id },
-      data: { categoryId },
+      data: {
+        categoryId,
+        categorySource: CategorySource.manual,
+        suggestedCategoryId: null,
+        suggestedBy: null,
+      },
+      include: TRANSACTION_PRESENTATION_INCLUDE,
     });
 
-    return this.mapTransaction(updatedTransaction);
+    return mapTransaction(updatedTransaction);
   }
 
   async markAsPending(
@@ -578,9 +653,10 @@ export class TransactionsService {
       const updatedTransaction = await tx.transaction.update({
         where: { id },
         data: { isPending },
+        include: TRANSACTION_PRESENTATION_INCLUDE,
       });
 
-      return this.mapTransaction(updatedTransaction);
+      return mapTransaction(updatedTransaction);
     });
   }
 
@@ -652,6 +728,41 @@ export class TransactionsService {
       netCashFlow: totalIncome - totalExpenses,
       transactionCount: summary._count.id,
     };
+  }
+
+  /**
+   * Category for a new movement the user did not categorize: a merchant
+   * rule first, then the most frequent category of similar merchants.
+   */
+  private async autoCategory(
+    userId: string,
+    input: { merchantName?: string | null; description?: string | null },
+  ): Promise<{ categoryId?: string; categorySource?: CategorySource }> {
+    const ruleCategory = await this.rules.categoryFor(userId, ruleText(input));
+    if (ruleCategory) {
+      return { categoryId: ruleCategory, categorySource: CategorySource.rule };
+    }
+    if (input.merchantName) {
+      const guess = await this.suggestCategoryForMerchant(
+        userId,
+        input.merchantName,
+      );
+      if (guess) {
+        return { categoryId: guess.id, categorySource: CategorySource.rule };
+      }
+    }
+    return {};
+  }
+
+  /** Reads a movement again with its alias and suggestion (after aliases ran). */
+  private async reload(
+    row: Prisma.TransactionGetPayload<Record<string, never>>,
+  ): Promise<Transaction> {
+    const fresh = await this.prisma.transaction.findUnique({
+      where: { id: row.id },
+      include: TRANSACTION_PRESENTATION_INCLUDE,
+    });
+    return mapTransaction(fresh ?? row);
   }
 
   private async suggestCategoryForMerchant(
@@ -747,12 +858,36 @@ export class TransactionsService {
       }
     }
 
-    if (filters.search) {
-      where.OR = [
-        { description: { contains: filters.search, mode: 'insensitive' } },
-        { merchantName: { contains: filters.search, mode: 'insensitive' } },
-      ];
+    if (filters.uncategorized !== undefined && filters.uncategorized !== null) {
+      // Overrides categoryId: "uncategorized" means no category at all.
+      where.categoryId = filters.uncategorized ? null : { not: null };
     }
+
+    if (filters.hasSuggestion !== undefined && filters.hasSuggestion !== null) {
+      where.suggestedCategoryId = filters.hasSuggestion ? { not: null } : null;
+    }
+
+    if (filters.search?.trim()) {
+      where.OR = this.searchConditions(filters.search.trim());
+    }
+  }
+
+  /**
+   * Search matches what the user sees (the display name: one-off alias, else
+   * the alias rule) and the original text only when the movement is not
+   * private, so a private movement is never found by its original text.
+   */
+  private searchConditions(search: string): Prisma.TransactionWhereInput[] {
+    const contains = { contains: search, mode: 'insensitive' as const };
+    return [
+      { aliasName: contains },
+      { aliasName: null, alias: { is: { displayName: contains } } },
+      {
+        isPrivate: false,
+        OR: [{ aliasId: null }, { alias: { is: { isPrivate: false } } }],
+        AND: [{ OR: [{ description: contains }, { merchantName: contains }] }],
+      },
+    ];
   }
 
   /** The category and every subcategory below it visible to the user. */
@@ -774,98 +909,5 @@ export class TransactionsService {
       ids.push(...level);
     }
     return ids;
-  }
-
-  private mapTransaction(
-    transaction: Prisma.TransactionGetPayload<Record<string, never>>,
-  ): Transaction {
-    return {
-      id: transaction.id,
-      userId: transaction.userId,
-      accountId: transaction.accountId,
-      categoryId: transaction.categoryId || undefined,
-      type: transaction.type,
-      amount: Number(transaction.amount),
-      currency: transaction.currency,
-      txnDate: transaction.txnDate,
-      description: transaction.description || undefined,
-      merchantName: transaction.merchantName || undefined,
-      isPending: transaction.isPending,
-      isRecurringInstance: transaction.isRecurringInstance,
-      source: transaction.source,
-      externalId: transaction.externalId || undefined,
-      createdAt: transaction.createdAt,
-      updatedAt: transaction.updatedAt,
-    };
-  }
-
-  private mapTransactionWithRelations(
-    transaction: Prisma.TransactionGetPayload<{
-      include: { account: true; category: true; attachments: true };
-    }>,
-  ): Transaction {
-    return {
-      id: transaction.id,
-      userId: transaction.userId,
-      accountId: transaction.accountId,
-      categoryId: transaction.categoryId || undefined,
-      type: transaction.type,
-      amount: Number(transaction.amount),
-      currency: transaction.currency,
-      txnDate: transaction.txnDate,
-      description: transaction.description || undefined,
-      merchantName: transaction.merchantName || undefined,
-      isPending: transaction.isPending,
-      isRecurringInstance: transaction.isRecurringInstance,
-      source: transaction.source,
-      externalId: transaction.externalId || undefined,
-      createdAt: transaction.createdAt,
-      updatedAt: transaction.updatedAt,
-      account: transaction.account
-        ? {
-            id: transaction.account.id,
-            userId: transaction.account.userId,
-            type: transaction.account.type,
-            name: transaction.account.name,
-            currency: transaction.account.currency,
-            balanceCurrent: Number(transaction.account.balanceCurrent),
-            metadata: transaction.account.metadata as AccountMetadata,
-            archived: transaction.account.archived,
-            createdAt: transaction.account.createdAt,
-            updatedAt: transaction.account.updatedAt,
-          }
-        : undefined,
-      category: transaction.category
-        ? {
-            id: transaction.category.id,
-            userId: transaction.category.userId || undefined,
-            parentId: transaction.category.parentId || undefined,
-            name: transaction.category.name,
-            isDefault: transaction.category.isDefault,
-            sortOrder: transaction.category.sortOrder || undefined,
-            createdAt: transaction.category.createdAt,
-          }
-        : undefined,
-      attachments:
-        transaction.attachments?.map((attachment) =>
-          this.mapAttachment(attachment),
-        ) ?? [],
-    };
-  }
-
-  private mapAttachment(
-    attachment: Prisma.AttachmentGetPayload<Record<string, never>>,
-  ): Attachment {
-    return {
-      id: attachment.id,
-      transactionId: attachment.transactionId,
-      fileName: attachment.fileName ?? undefined,
-      fileType: attachment.fileType,
-      fileSize: attachment.fileSize ?? undefined,
-      downloadPath: attachment.fileKey
-        ? `/attachments/${attachment.id}/file`
-        : undefined,
-      uploadedAt: attachment.uploadedAt,
-    };
   }
 }

@@ -18,6 +18,8 @@ export function TransactionRow({
   return (
     <TransactionItem
       merchant={row.title}
+      isPrivate={row.isPrivate}
+      privateLabel={t('private')}
       category={row.category}
       time={
         row.status === 'pending'

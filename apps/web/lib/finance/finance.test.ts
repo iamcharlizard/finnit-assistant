@@ -50,6 +50,8 @@ const tx = (overrides: Partial<ApiTransaction> = {}): ApiTransaction => ({
   txnDate: '2026-10-14T20:32:00.000Z',
   description: null,
   merchantName: 'OXXO',
+  displayName: 'OXXO',
+  isPrivate: false,
   isPending: false,
   source: 'manual',
   accountId: 'a1',
@@ -227,6 +229,57 @@ describe('transactions', () => {
     );
     assert.equal(adjustment.amount, '$500.00');
     assert.equal(adjustment.variant, 'neutral');
+  });
+
+  it('shows the alias of a renamed movement, with a lock when private', () => {
+    const rule = toTransactionRow(
+      tx({
+        merchantName: 'CLIP MX*XYZ 2231',
+        displayName: 'Tacos Don Güero',
+        aliasId: 'al1',
+      }),
+      CATEGORIES,
+      es,
+    );
+    assert.equal(rule.title, 'Tacos Don Güero');
+    assert.equal(rule.isPrivate, false);
+
+    const own = toTransactionRow(
+      tx({ displayName: 'Cena con Ana', hasOwnAlias: true }),
+      CATEGORIES,
+      es,
+    );
+    assert.equal(own.title, 'Cena con Ana');
+
+    const secret = toTransactionRow(
+      tx({ merchantName: null, displayName: 'Regalo', isPrivate: true }),
+      CATEGORIES,
+      es,
+    );
+    assert.equal(secret.title, 'Regalo');
+    assert.equal(secret.isPrivate, true);
+
+    // Not aliased: the usual rules (Initial balance, transfers) still apply.
+    assert.equal(
+      toTransactionRow(
+        tx({
+          merchantName: null,
+          description: 'Initial balance',
+          displayName: 'Initial balance',
+        }),
+        CATEGORIES,
+        es,
+      ).title,
+      'Saldo inicial',
+    );
+    assert.equal(
+      toTransactionRow(
+        tx({ merchantName: null, description: null, displayName: 'Netflix' }),
+        CATEGORIES,
+        es,
+      ).title,
+      'Netflix',
+    );
   });
 
   it('reads transfer direction from the API description', () => {

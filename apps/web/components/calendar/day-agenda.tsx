@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { CalendarCheck } from 'lucide-react';
 
 import { SectionHeading } from '@finnit/ui/components/ui/section-heading';
@@ -23,6 +24,7 @@ export function DayAgenda({
   /** Shown when a day is selected, to go back to the month's list. */
   onShowMonth?: () => void;
 }) {
+  const t = useTranslations('calendar');
   return (
     <section>
       <SectionHeading
@@ -34,7 +36,7 @@ export function DayAgenda({
               onClick={onShowMonth}
               className="flex min-h-11 items-center text-sm font-medium text-income hover:underline"
             >
-              Ver todo el mes
+              {t('showMonth')}
             </button>
           ) : null
         }

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Eye, EyeOff, KeyRound, User } from 'lucide-react';
 import type { SiteField as SiteFieldDefinition } from '@finnit/bank-connect';
 
@@ -24,6 +25,7 @@ export function SiteField({
   onChange: (value: string) => void;
 }) {
   const [visible, setVisible] = React.useState(false);
+  const t = useTranslations('bankConnect.field');
   const id = `bank-field-${field.name}`;
 
   if (field.type === 'select') {
@@ -38,7 +40,7 @@ export function SiteField({
           aria-describedby={error ? `${id}-error` : undefined}
           className="min-h-12 rounded-input border border-outline bg-transparent px-4 text-sm text-on-background focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
         >
-          <option value="">Selecciona…</option>
+          <option value="">{t('select')}</option>
           {field.options?.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -63,7 +65,7 @@ export function SiteField({
       iconLeft={isPassword ? KeyRound : User}
       iconRight={isPassword ? (visible ? EyeOff : Eye) : undefined}
       iconRightAccessibilityLabel={
-        isPassword ? (visible ? 'Ocultar' : 'Mostrar') : undefined
+        isPassword ? (visible ? t('hide') : t('show')) : undefined
       }
       onIconRightClick={isPassword ? () => setVisible((v) => !v) : undefined}
       type={isPassword && !visible ? 'password' : 'text'}

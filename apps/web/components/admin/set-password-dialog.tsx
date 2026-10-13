@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import {
@@ -39,11 +40,16 @@ export function SetPasswordDialog({
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+  const t = useTranslations();
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (password.length < MIN_PASSWORD_LENGTH) {
-      setError(`Mínimo ${MIN_PASSWORD_LENGTH} caracteres.`);
+      setError(
+        t('admin.users.passwordField.minLengthError', {
+          min: String(MIN_PASSWORD_LENGTH),
+        }),
+      );
       return;
     }
     setError(undefined);
@@ -62,7 +68,7 @@ export function SetPasswordDialog({
       onSaved(data.setUserPassword);
       setSaved(true);
     } catch (e) {
-      setSubmitError(adminErrorMessage(e));
+      setSubmitError(adminErrorMessage(e, t));
     } finally {
       setSaving(false);
     }
@@ -70,35 +76,40 @@ export function SetPasswordDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent closeLabel={t('common.close')}>
         {saved ? (
           <>
             <DialogHeader>
-              <DialogTitle>Contraseña asignada</DialogTitle>
+              <DialogTitle>
+                {t('admin.users.setPassword.savedTitle')}
+              </DialogTitle>
               <DialogDescription>
-                {user.name} ya puede entrar con la nueva contraseña.
-                Compártesela por un canal seguro (en persona o un gestor de
-                contraseñas), no por correo ni chat.
+                {t('admin.users.setPassword.savedDescription', {
+                  name: user.name,
+                })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="secondary">Listo</Button>
+                <Button variant="secondary">{t('common.done')}</Button>
               </DialogClose>
             </DialogFooter>
           </>
         ) : (
           <form onSubmit={submit} noValidate className="flex flex-col gap-5">
             <DialogHeader>
-              <DialogTitle>Asignar contraseña</DialogTitle>
+              <DialogTitle>{t('admin.users.setPassword.title')}</DialogTitle>
               <DialogDescription>
                 {isSelf
-                  ? 'Tu contraseña cambiará y se cerrarán tus sesiones abiertas, incluida esta.'
-                  : `Reemplaza la contraseña de ${user.name} (${user.email}) y cierra sus sesiones abiertas.`}
+                  ? t('admin.users.setPassword.selfDescription')
+                  : t('admin.users.setPassword.description', {
+                      name: user.name,
+                      email: user.email,
+                    })}
               </DialogDescription>
             </DialogHeader>
             <PasswordField
-              label="Nueva contraseña"
+              label={t('admin.users.setPassword.newPassword')}
               value={password}
               onChange={setPassword}
               error={error}
@@ -111,11 +122,13 @@ export function SetPasswordDialog({
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="outline">
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
               </DialogClose>
               <Button type="submit" variant="secondary" disabled={saving}>
-                {saving ? 'Guardando…' : 'Asignar contraseña'}
+                {saving
+                  ? t('admin.users.setPassword.saving')
+                  : t('admin.users.setPassword.title')}
               </Button>
             </DialogFooter>
           </form>

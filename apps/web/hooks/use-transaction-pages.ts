@@ -8,7 +8,7 @@ import type {
   ApiTransaction,
   Connection,
 } from '@/lib/finance/types';
-import { gql } from '@/lib/graphql/client';
+import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import {
   HISTORY_PAGE_SIZE,
   toApiFilters,
@@ -19,6 +19,7 @@ import {
   toTransactionPage,
   type TransactionPage,
 } from '@/lib/history/view';
+import { useLocalizer } from '@/lib/i18n/client';
 
 /**
  * The history list: the first page comes from the server; "Cargar más"
@@ -34,6 +35,7 @@ export function useTransactionPages(
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const index = React.useMemo(() => indexCategories(categories), [categories]);
+  const l = useLocalizer();
 
   const loadMore = React.useCallback(async () => {
     if (!page.hasNextPage || loading) return;
@@ -47,7 +49,7 @@ export function useTransactionPages(
         after: page.endCursor,
         filters: toApiFilters(filters),
       });
-      const next = toTransactionPage(transactions, index);
+      const next = toTransactionPage(transactions, index, l);
       setPage((current) => {
         // Never show a row twice, even if the list changed meanwhile.
         const seen = new Set(current.rows.map((r) => r.id));
@@ -57,11 +59,11 @@ export function useTransactionPages(
         };
       });
     } catch (e) {
-      setError((e as Error).message);
+      setError(requestErrorMessage(e, l.t));
     } finally {
       setLoading(false);
     }
-  }, [page.hasNextPage, page.endCursor, loading, filters, index]);
+  }, [page.hasNextPage, page.endCursor, loading, filters, index, l]);
 
   return { ...page, loading, error, loadMore };
 }

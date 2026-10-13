@@ -2,7 +2,10 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
 import type { ApiAccount } from '@/lib/finance/types';
+import { testLocalizer } from '@/lib/i18n/testing';
 import { buildCardDetail, buildCards, pickCard } from './view';
+
+const es = testLocalizer('es');
 
 const account = (overrides: Partial<ApiAccount>): ApiAccount => ({
   id: 'a',
@@ -46,6 +49,7 @@ describe('buildCards', () => {
         ],
       },
     ],
+    es,
   );
 
   it('shows credit and debit accounts, credit first, with bank data', () => {
@@ -66,18 +70,22 @@ describe('buildCards', () => {
   });
 
   it('lists cut-off and payment dates and the recurring charges', () => {
-    const detail = buildCardDetail(cards[0]!, {
-      today: '2026-10-14',
-      monthLabel: 'Octubre 2026',
-      monthSpending: 3200,
-      recent: [],
-      summary: {
-        recurringExpected: 398,
-        recurringPaid: 199,
-        recurringPayments: [{ name: 'Netflix' }, { name: 'Spotify' }],
-        statement: null,
+    const detail = buildCardDetail(
+      cards[0]!,
+      {
+        today: '2026-10-14',
+        monthLabel: 'Octubre 2026',
+        monthSpending: 3200,
+        recent: [],
+        summary: {
+          recurringExpected: 398,
+          recurringPaid: 199,
+          recurringPayments: [{ name: 'Netflix' }, { name: 'Spotify' }],
+          statement: null,
+        },
       },
-    });
+      es,
+    );
     assert.deepEqual(detail.facts, [
       { label: 'Próximo corte', value: '20 oct · En 6 días' },
       { label: 'Próxima fecha de pago', value: '10 nov · En 27 días' },

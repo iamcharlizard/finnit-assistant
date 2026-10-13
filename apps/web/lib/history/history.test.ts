@@ -7,7 +7,8 @@ import {
   parseHistoryFilters,
   toApiFilters,
 } from './filters';
-import { categoryOptions } from './view';
+import { testLocalizer } from '@/lib/i18n/testing';
+import { accountOptions, categoryOptions } from './view';
 
 describe('history filters', () => {
   it('reads valid filters from the URL and drops the rest', () => {
@@ -59,12 +60,36 @@ describe('history filters', () => {
 
   it('lists categories under their parent', () => {
     assert.deepEqual(
-      categoryOptions([
-        { id: 'f', name: 'Food & Dining', parentId: null },
-        { id: 'r', name: 'Restaurants', parentId: 'f' },
-        { id: 'p', name: 'Mascotas', parentId: null },
-      ]).map((o) => o.label),
+      categoryOptions(
+        [
+          { id: 'f', name: 'Comida', parentId: null },
+          { id: 'r', name: 'Restaurantes', parentId: 'f' },
+          { id: 'p', name: 'Mascotas', parentId: null },
+        ],
+        testLocalizer('es').t,
+      ).map((o) => o.label),
       ['Comida', 'Comida › Restaurantes', 'Mascotas'],
+    );
+  });
+
+  it('labels accounts with their type', () => {
+    const account = {
+      id: 'a',
+      name: 'Oro',
+      type: 'credit' as const,
+      currency: 'MXN',
+      balanceCurrent: 0,
+      archived: false,
+      metadata: null,
+      creditCardTerms: null,
+    };
+    assert.equal(
+      accountOptions([account], testLocalizer('es').t)[0]?.label,
+      'Oro · Crédito',
+    );
+    assert.equal(
+      accountOptions([account], testLocalizer('en').t)[0]?.label,
+      'Oro · Credit',
     );
   });
 });

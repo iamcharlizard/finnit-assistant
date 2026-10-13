@@ -1,4 +1,4 @@
-import { ACCOUNT_TYPE_LABELS } from '@/lib/finance/accounts';
+import type { Localizer, Translate } from '@/lib/i18n/translator';
 import { spendingByCategory } from '@/lib/finance/breakdown';
 import {
   categoryLabel,
@@ -39,9 +39,10 @@ export interface TransactionPage {
 export function toTransactionPage(
   connection: Connection<ApiTransaction>,
   categories: CategoryIndex,
+  l: Localizer,
 ): TransactionPage {
   return {
-    rows: connection.edges.map((e) => toTransactionRow(e.node, categories)),
+    rows: connection.edges.map((e) => toTransactionRow(e.node, categories, l)),
     totalCount: connection.totalCount,
     endCursor: connection.pageInfo.endCursor,
     hasNextPage: connection.pageInfo.hasNextPage,
@@ -53,25 +54,29 @@ export interface Option {
   label: string;
 }
 
-export function accountOptions(accounts: ReadonlyArray<ApiAccount>): Option[] {
+export function accountOptions(
+  accounts: ReadonlyArray<ApiAccount>,
+  t: Translate,
+): Option[] {
   return accounts.map((a) => ({
     value: a.id,
-    label: `${a.name} · ${ACCOUNT_TYPE_LABELS[a.type]}`,
+    label: `${a.name} · ${t(`finance.accountTypes.${a.type}`)}`,
   }));
 }
 
 /** Top-level categories, each followed by its subcategories ("Comida › Café"). */
 export function categoryOptions(
   categories: ReadonlyArray<ApiCategory>,
+  t: Translate,
 ): Option[] {
   const roots = categories.filter((c) => !c.parentId);
   return roots.flatMap((root) => [
-    { value: root.id, label: categoryLabel(root.name) },
+    { value: root.id, label: categoryLabel(root.name, t) },
     ...categories
       .filter((c) => c.parentId === root.id)
       .map((c) => ({
         value: c.id,
-        label: `${categoryLabel(root.name)} › ${categoryLabel(c.name)}`,
+        label: `${categoryLabel(root.name, t)} › ${categoryLabel(c.name, t)}`,
       })),
   ]);
 }
@@ -80,8 +85,9 @@ export function categoryOptions(
 export function topCategoryRows(
   report: ApiMonthlyReport,
   categories: ReadonlyArray<ApiCategory>,
+  t: Translate,
 ): { id: string; label: string; percentage: string; dotColor: string }[] {
-  return spendingByCategory(report, indexCategories(categories))
+  return spendingByCategory(report, indexCategories(categories), t)
     .slice(0, 5)
     .map((c) => ({
       id: c.id,

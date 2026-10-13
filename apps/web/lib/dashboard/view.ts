@@ -1,3 +1,4 @@
+import type { Localizer } from '@/lib/i18n/translator';
 import { summarizeBalances } from '@/lib/finance/accounts';
 import { indexCategories } from '@/lib/finance/categories';
 import { monthLabel, type DayKey, type MonthRef } from '@/lib/finance/dates';
@@ -51,7 +52,9 @@ const MAX_UPCOMING = 5;
 export function buildDashboardView(
   data: DashboardData,
   { today, month }: { today: DayKey; month: MonthRef },
+  l: Localizer,
 ): DashboardView {
+  const { locale, t } = l;
   const accounts = data.accounts.filter((a) => !a.archived);
   const [main, ...others] = summarizeBalances(accounts);
   const categories = indexCategories(data.categories);
@@ -64,28 +67,31 @@ export function buildDashboardView(
     isEmpty: accounts.length === 0 && data.transactionCount === 0,
     balance: main
       ? {
-          available: formatMoney(main.available, main.currency),
+          available: formatMoney(main.available, main.currency, locale),
           creditDebt: hasCredit
-            ? formatMoney(main.creditDebt, main.currency)
+            ? formatMoney(main.creditDebt, main.currency, locale)
             : null,
-          net: formatMoney(main.net, main.currency),
+          net: formatMoney(main.net, main.currency, locale),
           accountCount: accounts.length,
-          otherCurrencies: others.map(
-            (o) => `${formatMoney(o.net, o.currency)} en ${o.currency}`,
+          otherCurrencies: others.map((o) =>
+            t('finance.inCurrency', {
+              amount: formatMoney(o.net, o.currency, locale),
+              currency: o.currency,
+            }),
           ),
         }
       : null,
     month: {
-      label: monthLabel(month),
-      income: formatMoney(data.monthlyReport.totalIncome, currency),
-      expenses: formatMoney(data.monthlyReport.totalExpenses, currency),
+      label: monthLabel(month, locale),
+      income: formatMoney(data.monthlyReport.totalIncome, currency, locale),
+      expenses: formatMoney(data.monthlyReport.totalExpenses, currency, locale),
     },
     upcoming: data.upcomingPayments
-      .map((p) => toPaymentRow(p, today))
+      .map((p) => toPaymentRow(p, today, l))
       .filter((p) => p.open)
       .slice(0, MAX_UPCOMING),
     recent: data.transactions.map((tx) =>
-      toTransactionRow(tx, categories, { withDate: true }),
+      toTransactionRow(tx, categories, l, { withDate: true }),
     ),
   };
 }

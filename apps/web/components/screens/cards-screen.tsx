@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { CreditCard, Inbox } from 'lucide-react';
 
 import { StatCard } from '@finnit/ui/components/finance/stat-card';
@@ -15,19 +16,23 @@ import type { CardsData } from '@/lib/cards/load';
 
 export function CardsScreen({ data }: { data: CardsData }) {
   const user = useSessionUser();
+  const t = useTranslations();
   const { cards, detail } = data;
 
   if (!detail) {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-[22px] font-bold text-on-background">
-          Mis Tarjetas
+          {t('cards.title')}
         </h1>
         <EmptyState
           icon={CreditCard}
-          title="Aún no tienes tarjetas"
-          description="Conecta tu banco para ver aquí tus tarjetas de crédito y débito, su saldo y sus fechas de corte."
-          action={{ href: '/settings/banks/connect', label: 'Conectar banco' }}
+          title={t('cards.emptyTitle')}
+          description={t('cards.emptyDescription')}
+          action={{
+            href: '/settings/banks/connect',
+            label: t('common.connectBank'),
+          }}
         />
       </div>
     );
@@ -38,10 +43,10 @@ export function CardsScreen({ data }: { data: CardsData }) {
       <section>
         <div className="mb-3.5 flex items-end justify-between px-1">
           <h1 className="text-[22px] font-bold text-on-background">
-            Mis Tarjetas
+            {t('cards.title')}
           </h1>
           <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-on-surface-variant">
-            {cards.length} {cards.length === 1 ? 'tarjeta' : 'tarjetas'}
+            {t('cards.count', { count: cards.length })}
           </span>
         </div>
         <CardCarousel
@@ -55,7 +60,7 @@ export function CardsScreen({ data }: { data: CardsData }) {
         <CardBalance card={detail.card} />
         <StatCard
           variant="expense"
-          label={`Gastos · ${detail.monthLabel}`}
+          label={t('cards.expensesOf', { month: detail.monthLabel })}
           amount={detail.monthSpending}
           className="min-h-44"
         />
@@ -63,7 +68,9 @@ export function CardsScreen({ data }: { data: CardsData }) {
       </div>
 
       <section>
-        <SectionHeading title={`Movimientos de ${detail.card.name}`} />
+        <SectionHeading
+          title={t('cards.movementsOf', { name: detail.card.name })}
+        />
         {detail.recent.length > 0 ? (
           <div className="flex flex-col gap-2.5">
             {detail.recent.map((row) => (
@@ -73,8 +80,8 @@ export function CardsScreen({ data }: { data: CardsData }) {
         ) : (
           <EmptyState
             icon={Inbox}
-            title="Sin movimientos"
-            description="Esta tarjeta aún no tiene movimientos."
+            title={t('cards.noMovementsTitle')}
+            description={t('cards.noMovementsDescription')}
           />
         )}
       </section>

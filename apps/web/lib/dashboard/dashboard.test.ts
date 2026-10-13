@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
 import type { ApiAccount } from '@/lib/finance/types';
+import { testLocalizer } from '@/lib/i18n/testing';
 import { buildDashboardView, type DashboardData } from './view';
 
 const empty: DashboardData = {
@@ -22,6 +23,7 @@ const empty: DashboardData = {
 };
 
 const options = { today: '2026-10-14', month: { year: 2026, month: 10 } };
+const es = testLocalizer('es');
 
 const account = (overrides: Partial<ApiAccount>): ApiAccount => ({
   id: 'a',
@@ -37,7 +39,7 @@ const account = (overrides: Partial<ApiAccount>): ApiAccount => ({
 
 describe('buildDashboardView', () => {
   it('is empty for a brand-new user, with zero (not invented) totals', () => {
-    const view = buildDashboardView(empty, options);
+    const view = buildDashboardView(empty, options, es);
     assert.ok(view.isEmpty);
     assert.equal(view.balance, null);
     assert.equal(view.month.income, '$0.00');
@@ -59,6 +61,7 @@ describe('buildDashboardView', () => {
         },
       },
       options,
+      es,
     );
     assert.ok(!view.isEmpty);
     assert.deepEqual(view.balance, {
@@ -70,5 +73,24 @@ describe('buildDashboardView', () => {
     });
     assert.equal(view.month.expenses, '$4,500.25');
     assert.equal(view.month.label, 'Octubre 2026');
+  });
+
+  it('names other currencies in the user’s language', () => {
+    const accounts = [
+      account({ id: 'd', balanceCurrent: 100 }),
+      account({ id: 'u', currency: 'USD', balanceCurrent: 50 }),
+    ];
+    assert.deepEqual(
+      buildDashboardView({ ...empty, accounts }, options, es).balance
+        ?.otherCurrencies,
+      ['US$50.00 en USD'],
+    );
+    const en = buildDashboardView(
+      { ...empty, accounts },
+      options,
+      testLocalizer('en'),
+    );
+    assert.deepEqual(en.balance?.otherCurrencies, ['US$50.00 in USD']);
+    assert.equal(en.month.label, 'October 2026');
   });
 });

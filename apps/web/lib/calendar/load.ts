@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
+import { getLocalizer } from '@/lib/i18n/server';
 import {
   endOfDayIso,
   firstDayOf,
@@ -27,17 +28,20 @@ const CALENDAR_QUERY = `query Calendar($from: DateTime!, $to: DateTime!) {
 
 /** A month's recurring payments and card dates, in one request. */
 export async function loadCalendar(month: MonthRef): Promise<CalendarView> {
-  const data = await serverGraphql<{
-    upcomingPayments: ApiUpcomingPayment[];
-    accounts: Connection<ApiAccount>;
-    recurringExpensesSummary: {
-      totals: { currency: string; monthlyCost: number }[];
-    };
-    recurringExpenses: { totalCount: number };
-  }>(CALENDAR_QUERY, {
-    from: startOfDayIso(firstDayOf(month)),
-    to: endOfDayIso(lastDayOf(month)),
-  });
+  const [data, l] = await Promise.all([
+    serverGraphql<{
+      upcomingPayments: ApiUpcomingPayment[];
+      accounts: Connection<ApiAccount>;
+      recurringExpensesSummary: {
+        totals: { currency: string; monthlyCost: number }[];
+      };
+      recurringExpenses: { totalCount: number };
+    }>(CALENDAR_QUERY, {
+      from: startOfDayIso(firstDayOf(month)),
+      to: endOfDayIso(lastDayOf(month)),
+    }),
+    getLocalizer(),
+  ]);
 
   return buildCalendarView(
     {
@@ -47,5 +51,6 @@ export async function loadCalendar(month: MonthRef): Promise<CalendarView> {
       recurringCount: data.recurringExpenses.totalCount,
     },
     { month, today: todayKey() },
+    l,
   );
 }

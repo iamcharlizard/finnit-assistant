@@ -7,7 +7,14 @@ import { ApiUnavailableError, apiSignIn } from '@/lib/api/finnit-api';
 import { clearSession, writeSession } from '@/lib/auth/cookies';
 import { safeNextPath } from '@/lib/auth/redirect';
 
-export type SignInState = { error?: string; email?: string };
+/** Why sign-in failed; the form shows `login.errors.<error>`. */
+export type SignInError =
+  | 'missingFields'
+  | 'unavailable'
+  | 'failed'
+  | 'invalidCredentials';
+
+export type SignInState = { error?: SignInError; email?: string };
 
 export async function signIn(
   _previous: SignInState,
@@ -18,7 +25,7 @@ export async function signIn(
   const remember = formData.get('remember') === 'on';
 
   if (!email || !password) {
-    return { error: 'Por favor completa todos los campos.', email };
+    return { error: 'missingFields', email };
   }
 
   let session: Awaited<ReturnType<typeof apiSignIn>>;
@@ -26,16 +33,13 @@ export async function signIn(
     session = await apiSignIn(email, password);
   } catch (error) {
     return {
-      error:
-        error instanceof ApiUnavailableError
-          ? 'No pudimos conectar con Finnit. Intenta de nuevo en un momento.'
-          : 'Ocurrió un error al iniciar sesión.',
+      error: error instanceof ApiUnavailableError ? 'unavailable' : 'failed',
       email,
     };
   }
   // Same message for unknown email and wrong password (no account probing).
   if (!session) {
-    return { error: 'Correo o contraseña incorrectos.', email };
+    return { error: 'invalidCredentials', email };
   }
 
   writeSession(await cookies(), session, remember);

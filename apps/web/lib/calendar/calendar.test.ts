@@ -2,7 +2,10 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
 import type { ApiAccount, ApiUpcomingPayment } from '@/lib/finance/types';
+import { testLocalizer } from '@/lib/i18n/testing';
 import { buildCalendarView } from './view';
+
+const es = testLocalizer('es');
 
 const october = { year: 2026, month: 10 };
 
@@ -42,6 +45,7 @@ describe('buildCalendarView', () => {
     const view = buildCalendarView(
       { payments: [], accounts: [], recurringTotals: [], recurringCount: 0 },
       { month: october, today: '2026-10-14' },
+      es,
     );
     // Oct 1, 2026 is a Thursday: Mon 28 – Wed 30 of September lead.
     assert.deepEqual(view.month.leadingDays, [28, 29, 30]);
@@ -64,6 +68,7 @@ describe('buildCalendarView', () => {
         recurringCount: 3,
       },
       { month: { year: 2026, month: 11 }, today: '2026-10-14' },
+      es,
     );
     // November view: October payments are outside it.
     assert.equal(view.monthPayments.length, 0);
@@ -83,7 +88,9 @@ describe('buildCalendarView', () => {
         recurringCount: 3,
       },
       { month: october, today: '2026-10-14' },
+      es,
     );
+    assert.equal(oct.month.name, 'octubre');
     assert.deepEqual(oct.events[5], { label: 'Gym', accent: 'primary' });
     assert.deepEqual(oct.events[20], { label: '2 pagos', accent: 'primary' });
     assert.deepEqual(

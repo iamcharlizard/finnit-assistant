@@ -2,7 +2,10 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
 import type { ApiMonthlyReport } from '@/lib/finance/types';
+import { testLocalizer } from '@/lib/i18n/testing';
 import { buildAnalyticsView, trendMonths } from './view';
+
+const es = testLocalizer('es');
 
 const october = { year: 2026, month: 10 };
 
@@ -41,6 +44,7 @@ describe('buildAnalyticsView', () => {
         accountCount: 2,
       },
       { selected: october, current: october },
+      es,
     );
     assert.ok(!view.isEmpty);
     assert.equal(view.spending.amount, '$8,000.00');
@@ -68,6 +72,7 @@ describe('buildAnalyticsView', () => {
         accountCount: 0,
       },
       { selected: october, current: october },
+      es,
     );
     assert.ok(view.isEmpty);
     assert.equal(view.spending.trendPercent, null);

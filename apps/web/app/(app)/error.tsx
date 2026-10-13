@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { CloudOff } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
@@ -11,6 +12,7 @@ export default function AppError({
   error: Error;
   reset: () => void;
 }) {
+  const t = useTranslations();
   return (
     <div
       role="alert"
@@ -18,13 +20,13 @@ export default function AppError({
     >
       <CloudOff aria-hidden className="size-10 text-on-surface-variant/60" />
       <p className="text-base font-medium text-on-background">
-        No pudimos cargar tus datos
+        {t('errors.loadFailedTitle')}
       </p>
       <p className="text-sm text-on-surface-variant">
-        Revisa tu conexión e intenta de nuevo en un momento.
+        {t('errors.loadFailedDescription')}
       </p>
       <Button variant="outline" onClick={reset}>
-        Reintentar
+        {t('common.retry')}
       </Button>
     </div>
   );

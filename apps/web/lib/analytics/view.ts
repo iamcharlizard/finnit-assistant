@@ -1,3 +1,4 @@
+import type { Localizer } from '@/lib/i18n/translator';
 import { spendingByCategory } from '@/lib/finance/breakdown';
 import { indexCategories, type IconKey } from '@/lib/finance/categories';
 import {
@@ -78,22 +79,25 @@ export function trendMonths(selected: MonthRef): MonthRef[] {
   );
 }
 
-function savingsRating(rate: number): string {
-  if (rate >= 20) return 'Excelente';
-  if (rate >= 10) return 'Buena';
-  if (rate >= 0) return 'Ajustada';
-  return 'Negativa';
+function savingsRating(
+  rate: number,
+): 'excellent' | 'good' | 'tight' | 'negative' {
+  if (rate >= 20) return 'excellent';
+  if (rate >= 10) return 'good';
+  if (rate >= 0) return 'tight';
+  return 'negative';
 }
 
 export function buildAnalyticsView(
   data: AnalyticsData,
   { selected, current }: { selected: MonthRef; current: MonthRef },
+  { locale, t }: Localizer,
 ): AnalyticsView {
   const reports = data.reports;
   const report = reports[reports.length - 1]!;
   const previous = reports[reports.length - 2];
   const currency = report.currency;
-  const money = (n: number) => formatMoney(n, currency);
+  const money = (n: number) => formatMoney(n, currency, locale);
   const href = (m: MonthRef) => `/analytics?month=${formatMonthParam(m)}`;
 
   const maxExpenses = Math.max(...reports.map((r) => r.totalExpenses));
@@ -117,7 +121,7 @@ export function buildAnalyticsView(
       data.accountCount === 0 &&
       reports.every((r) => r.totalIncome === 0 && r.totalExpenses === 0),
     month: {
-      label: monthLabel(selected),
+      label: monthLabel(selected, locale),
       prevHref: href(shiftMonth(selected, -1)),
       nextHref: sameMonth(selected, current)
         ? null
@@ -139,14 +143,20 @@ export function buildAnalyticsView(
         ? null
         : {
             percentage: Math.min(100, Math.max(0, rate)),
-            rating: savingsRating(rate),
+            rating: t(`analytics.ratings.${savingsRating(rate)}`),
             caption:
               rate >= 0
-                ? `Ahorraste ${money(income - report.totalExpenses)} de ${money(income)} de ingresos (${rate}%).`
-                : `Gastaste ${money(report.totalExpenses - income)} más de lo que ingresó.`,
+                ? t('analytics.savedCaption', {
+                    saved: money(income - report.totalExpenses),
+                    income: money(income),
+                    rate: String(rate),
+                  })
+                : t('analytics.overspentCaption', {
+                    amount: money(report.totalExpenses - income),
+                  }),
           },
     trend: reports.map((r) => ({
-      label: shortMonthLabel(r),
+      label: shortMonthLabel(r, locale),
       income: money(r.totalIncome),
       expenses: money(r.totalExpenses),
       incomePercent: percentOf(r.totalIncome, maxFlow),
@@ -155,9 +165,10 @@ export function buildAnalyticsView(
     categories: spendingByCategory(
       report,
       indexCategories(data.categories),
+      t,
     ).map((c) => ({ ...c, amount: money(c.amount) })),
     projection: data.projection.map((p) => ({
-      label: shortMonthLabel(monthOf(dayKeyOf(p.date))),
+      label: shortMonthLabel(monthOf(dayKeyOf(p.date)), locale),
       balance: money(p.projectedBalance),
       value: p.projectedBalance,
     })),

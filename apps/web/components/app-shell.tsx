@@ -1,21 +1,17 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
-import { BottomNavBar } from '@finnit/ui/components/navigation/bottom-nav-bar';
-import { SideNav } from '@finnit/ui/components/navigation/side-nav';
 import { TopAppBar } from '@finnit/ui/components/navigation/top-app-bar';
 
+import { AppBottomNav } from '@/components/navigation/app-bottom-nav';
+import { AppSideNav } from '@/components/navigation/app-side-nav';
+import { NewEntrySheet } from '@/components/navigation/new-entry-sheet';
 import { initials, useSessionUser } from '@/components/session-provider';
-import {
-  ADMIN_NAV_ITEM,
-  BOTTOM_NAV_ITEMS,
-  PAGE_TITLES,
-  SIDE_NAV_ITEMS,
-  activeNavHref,
-} from '@/lib/nav';
+import { activeNavHref, visibleSections } from '@/lib/nav/sections';
+import { pageTitleKey } from '@/lib/nav/titles';
 
 export function AppShell({
   children,
@@ -26,44 +22,53 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const user = useSessionUser();
-  const sideItems = React.useMemo(
-    () =>
-      user.role === 'admin'
-        ? [...SIDE_NAV_ITEMS, ADMIN_NAV_ITEM]
-        : SIDE_NAV_ITEMS,
+  const t = useTranslations('pageTitles');
+  const tu = useTranslations('ui');
+  const sections = React.useMemo(
+    () => visibleSections(user.role === 'admin'),
     [user.role],
   );
-  // TODO: open the add-transaction flow once the form exists.
-  const handleAdd = () => {};
+  const activeHref = activeNavHref(
+    sections.flatMap((s) => s.items.map((i) => i.href)),
+    pathname,
+  );
+  // Phase 2 replaces this placeholder with the create flow.
+  const [adding, setAdding] = React.useState(false);
+  const handleAdd = () => setAdding(true);
 
   return (
     <div className="flex min-h-dvh bg-background">
-      <SideNav
-        items={sideItems}
-        activeHref={activeNavHref(sideItems, pathname)}
-        linkComponent={Link}
+      <AppSideNav
+        sections={sections}
+        activeHref={activeHref}
         onAddClick={handleAdd}
         className="sticky top-0 hidden h-dvh shrink-0 lg:flex"
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <TopAppBar
-          title={PAGE_TITLES[pathname] ?? 'Finnit'}
+          title={t(pageTitleKey(pathname))}
           notificationCount={notificationCount}
           avatarFallback={initials(user.name)}
+          notificationsLabel={(count) =>
+            count > 0
+              ? tu('notificationsUnread', { count })
+              : tu('notifications')
+          }
+          profileLabel={tu('userProfile')}
         />
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-8 lg:pb-10">
           {children}
         </main>
       </div>
 
-      <BottomNavBar
-        items={BOTTOM_NAV_ITEMS}
-        activeHref={activeNavHref(BOTTOM_NAV_ITEMS, pathname)}
-        linkComponent={Link}
+      <AppBottomNav
+        sections={sections}
+        activeHref={activeHref}
         onAddClick={handleAdd}
         className="lg:hidden"
       />
+      <NewEntrySheet open={adding} onOpenChange={setAdding} />
     </div>
   );
 }

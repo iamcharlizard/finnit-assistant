@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { TriangleAlert } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
@@ -13,6 +14,7 @@ export function ErrorStep({
   canRetry: boolean;
   onRetry: () => void;
 }) {
+  const t = useTranslations();
   return (
     <div
       role="alert"
@@ -21,15 +23,15 @@ export function ErrorStep({
       <span className="flex size-14 items-center justify-center rounded-2xl bg-expense/10 text-expense">
         <TriangleAlert aria-hidden className="size-7" />
       </span>
-      <TitleLg as="h2">No pudimos conectar tu banco</TitleLg>
+      <TitleLg as="h2">{t('bankConnect.error.title')}</TitleLg>
       <BodyMd className="max-w-md text-on-surface-variant">{message}</BodyMd>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button variant="outline" asChild>
-          <Link href="/settings/banks">Cerrar</Link>
+          <Link href="/settings/banks">{t('common.close')}</Link>
         </Button>
         {canRetry ? (
           <Button variant="secondary" onClick={onRetry}>
-            Intentar de nuevo
+            {t('bankConnect.error.retry')}
           </Button>
         ) : null}
       </div>

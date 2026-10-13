@@ -19,10 +19,12 @@ import {
   parseMonthParam,
   relativeDayLabel,
   shiftMonth,
+  shortDate,
   timeOf,
   todayKey,
   weekdayIndex,
 } from './dates';
+import { testLocalizer } from '@/lib/i18n/testing';
 import { formatMoney, percentOf } from './money';
 import { toPaymentRow } from './payments';
 import { direction, groupByDay, toTransactionRow } from './transactions';
@@ -56,23 +58,33 @@ const tx = (overrides: Partial<ApiTransaction> = {}): ApiTransaction => ({
   ...overrides,
 });
 
+const es = testLocalizer('es');
+const en = testLocalizer('en');
+
 const CATEGORIES = indexCategories([
-  { id: 'food', name: 'Food & Dining', parentId: null },
-  { id: 'rest', name: 'Restaurants', parentId: 'food' },
+  { id: 'food', name: 'Comida', parentId: null },
+  { id: 'rest', name: 'Restaurantes', parentId: 'food' },
   { id: 'mine', name: 'Mascotas', parentId: null },
 ]);
 
 describe('formatMoney', () => {
   it('formats the same text everywhere', () => {
-    assert.equal(formatMoney(1234.5), '$1,234.50');
-    assert.equal(formatMoney(-80), '-$80.00');
-    assert.equal(formatMoney(1200, 'MXN', { sign: 'always' }), '+$1,200.00');
-    assert.equal(formatMoney(-5, 'MXN', { sign: 'never' }), '$5.00');
-    assert.equal(formatMoney(0, 'MXN', { sign: 'always' }), '$0.00');
-    assert.equal(formatMoney(-0.001), '$0.00');
-    assert.equal(formatMoney(1234567.891, 'USD'), 'US$1,234,567.89');
-    assert.equal(formatMoney(20000, 'MXN', { wholeUnits: true }), '$20,000');
-    assert.equal(formatMoney(10, 'COP'), 'COP 10.00');
+    assert.equal(formatMoney(1234.5, 'MXN', 'es'), '$1,234.50');
+    assert.equal(formatMoney(-80, 'MXN', 'es'), '-$80.00');
+    assert.equal(
+      formatMoney(1200, 'MXN', 'es', { sign: 'always' }),
+      '+$1,200.00',
+    );
+    assert.equal(formatMoney(-5, 'MXN', 'es', { sign: 'never' }), '$5.00');
+    assert.equal(formatMoney(0, 'MXN', 'es', { sign: 'always' }), '$0.00');
+    assert.equal(formatMoney(-0.001, 'MXN', 'es'), '$0.00');
+    assert.equal(formatMoney(1234567.891, 'USD', 'es'), 'US$1,234,567.89');
+    assert.equal(
+      formatMoney(20000, 'MXN', 'es', { wholeUnits: true }),
+      '$20,000',
+    );
+    assert.equal(formatMoney(10, 'COP', 'es'), 'COP 10.00');
+    assert.equal(formatMoney(-1234.5, 'MXN', 'en'), '-$1,234.50');
   });
 
   it('gives percentages of a positive total only', () => {
@@ -99,7 +111,8 @@ describe('dates', () => {
       year: 2025,
       month: 12,
     });
-    assert.equal(monthLabel({ year: 2026, month: 10 }), 'Octubre 2026');
+    assert.equal(monthLabel({ year: 2026, month: 10 }, 'es'), 'Octubre 2026');
+    assert.equal(monthLabel({ year: 2026, month: 10 }, 'en'), 'October 2026');
     assert.ok(isDayKey('2026-02-28'));
     assert.ok(!isDayKey('2026-02-30'));
   });
@@ -116,23 +129,55 @@ describe('dates', () => {
   });
 
   it('labels days relative to today', () => {
-    assert.equal(dayHeading('2026-10-14', '2026-10-14'), 'Hoy, 14 de octubre');
-    assert.equal(dayHeading('2026-10-13', '2026-10-14'), 'Ayer, 13 de octubre');
     assert.equal(
-      dayHeading('2025-12-01', '2026-10-14'),
+      dayHeading('2026-10-14', '2026-10-14', 'es'),
+      'Hoy, 14 de octubre',
+    );
+    assert.equal(
+      dayHeading('2026-10-13', '2026-10-14', 'es'),
+      'Ayer, 13 de octubre',
+    );
+    assert.equal(
+      dayHeading('2025-12-01', '2026-10-14', 'es'),
       'Lunes, 1 de diciembre de 2025',
     );
-    assert.equal(relativeDayLabel('2026-10-17', '2026-10-14'), 'En 3 días');
-    assert.equal(relativeDayLabel('2026-10-15', '2026-10-14'), 'Mañana');
-    assert.equal(relativeDayLabel('2026-10-12', '2026-10-14'), 'Hace 2 días');
+    assert.equal(
+      relativeDayLabel('2026-10-17', '2026-10-14', 'es'),
+      'En 3 días',
+    );
+    assert.equal(relativeDayLabel('2026-10-15', '2026-10-14', 'es'), 'Mañana');
+    assert.equal(
+      relativeDayLabel('2026-10-12', '2026-10-14', 'es'),
+      'Hace 2 días',
+    );
+  });
+
+  it('labels days in English', () => {
+    assert.equal(
+      dayHeading('2026-10-14', '2026-10-14', 'en'),
+      'Today, October 14',
+    );
+    assert.equal(
+      dayHeading('2025-12-01', '2026-10-14', 'en'),
+      'Monday, December 1, 2025',
+    );
+    assert.equal(shortDate('2026-10-15', 'en'), 'Oct 15');
+    assert.equal(
+      relativeDayLabel('2026-10-17', '2026-10-14', 'en'),
+      'In 3 days',
+    );
+    assert.equal(
+      relativeDayLabel('2026-10-12', '2026-10-14', 'en'),
+      '2 days ago',
+    );
   });
 });
 
 describe('categories', () => {
-  it('translates starter categories and keeps the user’s own', () => {
-    assert.equal(categoryLabel('Food & Dining'), 'Comida');
-    assert.equal(categoryLabel('Mascotas'), 'Mascotas');
-    assert.equal(categoryLabel(null), 'Sin categoría');
+  it('shows the API’s (already localized) name, or "no category"', () => {
+    assert.equal(categoryLabel('Comida', es.t), 'Comida');
+    assert.equal(categoryLabel(null, es.t), 'Sin categoría');
+    assert.equal(categoryLabel('', en.t), 'Uncategorized');
   });
 
   it('picks icons from the name, specific rules first', () => {
@@ -152,8 +197,9 @@ describe('categories', () => {
 describe('transactions', () => {
   it('signs and colors by direction', () => {
     const expense = toTransactionRow(
-      tx({ category: { id: 'rest', name: 'Restaurants', parentId: 'food' } }),
+      tx({ category: { id: 'rest', name: 'Restaurantes', parentId: 'food' } }),
       CATEGORIES,
+      es,
     );
     assert.equal(expense.amount, '-$80.00');
     assert.equal(expense.variant, 'expense');
@@ -169,6 +215,7 @@ describe('transactions', () => {
         description: 'Nómina',
       }),
       CATEGORIES,
+      es,
     );
     assert.equal(income.amount, '+$15,000.00');
     assert.equal(income.iconKey, 'income');
@@ -176,6 +223,7 @@ describe('transactions', () => {
     const adjustment = toTransactionRow(
       tx({ type: 'adjustment', amount: 500, merchantName: 'PAGO GRACIAS' }),
       CATEGORIES,
+      es,
     );
     assert.equal(adjustment.amount, '$500.00');
     assert.equal(adjustment.variant, 'neutral');
@@ -192,13 +240,19 @@ describe('transactions', () => {
       toTransactionRow(
         { ...out, description: 'Pago tarjeta (outgoing)' },
         CATEGORIES,
+        es,
       ).title,
       'Pago tarjeta',
     );
     assert.equal(
-      toTransactionRow(out, CATEGORIES).title,
+      toTransactionRow(out, CATEGORIES, es).title,
       'Transferencia a Ahorro',
     );
+    assert.equal(
+      toTransactionRow(out, CATEGORIES, en).title,
+      'Transfer to Ahorro',
+    );
+    assert.equal(toTransactionRow(out, CATEGORIES, en).category, 'Transfer');
     assert.equal(
       direction({ ...out, description: 'Transfer to Ahorro (incoming)' }),
       'in',
@@ -210,11 +264,13 @@ describe('transactions', () => {
       toTransactionRow(
         tx({ id: 'b', txnDate: '2026-10-13T00:00:00.000Z' }),
         CATEGORIES,
+        es,
       ),
-      toTransactionRow(tx({ id: 'a' }), CATEGORIES),
+      toTransactionRow(tx({ id: 'a' }), CATEGORIES, es),
       toTransactionRow(
         tx({ id: 'c', txnDate: '2026-10-14T00:00:00.000Z' }),
         CATEGORIES,
+        es,
       ),
     ];
     assert.equal(rows[0]!.time, 'Nómina');
@@ -222,13 +278,14 @@ describe('transactions', () => {
       toTransactionRow(
         tx({ txnDate: '2026-10-13T00:00:00.000Z' }),
         CATEGORIES,
+        es,
         {
           withDate: true,
         },
       ).time,
       'Nómina · 13 oct',
     );
-    const groups = groupByDay(rows, '2026-10-14');
+    const groups = groupByDay(rows, '2026-10-14', 'es');
     assert.deepEqual(
       groups.map((g) => [g.heading, g.rows.map((r) => r.id)]),
       [
@@ -287,7 +344,7 @@ describe('payments', () => {
   });
 
   it('highlights payments due soon and keeps paid ones closed', () => {
-    const soon = toPaymentRow(payment(), '2026-10-14');
+    const soon = toPaymentRow(payment(), '2026-10-14', es);
     assert.equal(soon.status, 'pending');
     assert.equal(soon.timeLabel, 'Mañana · 15 oct');
     assert.equal(soon.iconKey, 'subscriptions');
@@ -296,10 +353,11 @@ describe('payments', () => {
     const later = toPaymentRow(
       payment({ dueDate: '2026-10-30T00:00:00.000Z' }),
       '2026-10-14',
+      es,
     );
     assert.equal(later.status, 'scheduled');
 
-    const paid = toPaymentRow(payment({ status: 'paid' }), '2026-10-14');
+    const paid = toPaymentRow(payment({ status: 'paid' }), '2026-10-14', es);
     assert.equal(paid.status, 'paid');
     assert.ok(!paid.open);
 
@@ -313,9 +371,14 @@ describe('payments', () => {
         },
       }),
       '2026-10-14',
+      es,
     );
     assert.equal(reminder.amount, '≈ $199.00');
     assert.match(reminder.timeLabel, /^Recordatorio/);
+    assert.equal(
+      toPaymentRow(payment(), '2026-10-14', en).timeLabel,
+      'Tomorrow · Oct 15',
+    );
   });
 });
 
@@ -325,12 +388,13 @@ describe('spendingByCategory', () => {
       {
         totalExpenses: 1000,
         categoryBreakdown: [
-          { categoryId: 'rest', categoryName: 'Restaurants', amount: 300 },
-          { categoryId: 'food', categoryName: 'Food & Dining', amount: 200 },
+          { categoryId: 'rest', categoryName: 'Restaurantes', amount: 300 },
+          { categoryId: 'food', categoryName: 'Comida', amount: 200 },
           { categoryId: 'mine', categoryName: 'Mascotas', amount: 100 },
         ],
       },
       CATEGORIES,
+      es.t,
     );
     assert.deepEqual(
       rows.map((r) => [r.label, r.amount, r.percent]),

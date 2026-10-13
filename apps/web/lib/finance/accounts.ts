@@ -81,11 +81,3 @@ export function dayInMonth(
 ): number {
   return Math.min(Math.max(1, Math.round(dayOfMonth)), daysInMonth(m));
 }
-
-export const ACCOUNT_TYPE_LABELS: Record<ApiAccount['type'], string> = {
-  cash: 'Efectivo',
-  credit: 'Crédito',
-  debit: 'Débito',
-  ewallet: 'Monedero',
-  savings: 'Ahorro',
-};

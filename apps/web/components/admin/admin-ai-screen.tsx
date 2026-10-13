@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
@@ -15,6 +16,7 @@ import { BodyMd } from '@finnit/ui/components/ui/typography';
 import {
   AI_SETTINGS_QUERY,
   DELETE_AI_MODEL_MUTATION,
+  needsPdfModel,
   UPDATE_AI_FEATURE_MUTATION,
   UPDATE_AI_MODEL_MUTATION,
   type AiFeature,
@@ -29,6 +31,7 @@ import { CreateAiModelDialog } from './create-ai-model-dialog';
 
 /** /admin/ai: what each AI feature may do and the model catalog. */
 export function AdminAiScreen() {
+  const t = useTranslations();
   const [features, setFeatures] = React.useState<AiFeature[]>([]);
   const [models, setModels] = React.useState<AiModel[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -46,11 +49,11 @@ export function AdminAiScreen() {
       setModels(data.aiModels);
       setLoadError(null);
     } catch (e) {
-      setLoadError(adminErrorMessage(e));
+      setLoadError(adminErrorMessage(e, t));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   React.useEffect(() => {
     void load();
@@ -62,7 +65,7 @@ export function AdminAiScreen() {
     try {
       await gql(query, variables);
     } catch (e) {
-      setError(adminErrorMessage(e));
+      setError(adminErrorMessage(e, t));
     }
     await load();
   }
@@ -73,25 +76,27 @@ export function AdminAiScreen() {
     mutate(UPDATE_AI_MODEL_MUTATION, { id: model.id, input });
   const deleteModel = (model: AiModel) =>
     setConfirm({
-      title: `¿Eliminar ${model.label}?`,
-      description:
-        'Sale del catálogo. Las funcionalidades que lo usaban vuelven al modelo predeterminado.',
-      confirmLabel: 'Eliminar',
+      title: t('admin.ai.deleteTitle', { label: model.label }),
+      description: t('admin.ai.deleteDescription'),
+      confirmLabel: t('admin.ai.delete'),
       destructive: true,
       onConfirm: () => void mutate(DELETE_AI_MODEL_MUTATION, { id: model.id }),
     });
 
-  const pdfModels = models.filter((m) => m.isActive && m.supportsPdf);
+  const activeModels = models.filter((m) => m.isActive);
+  const pdfModels = activeModels.filter((m) => m.supportsPdf);
 
   if (loading) {
-    return <BodyMd className="text-on-surface-variant">Cargando…</BodyMd>;
+    return (
+      <BodyMd className="text-on-surface-variant">{t('common.loading')}</BodyMd>
+    );
   }
   if (loadError) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-card bg-track p-6 text-center">
         <BodyMd className="text-expense">{loadError}</BodyMd>
         <Button variant="outline" size="sm" onClick={() => void load()}>
-          Reintentar
+          {t('common.retry')}
         </Button>
       </div>
     );
@@ -108,9 +113,9 @@ export function AdminAiScreen() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Funcionalidades de IA</CardTitle>
+            <CardTitle>{t('admin.ai.featuresTitle')}</CardTitle>
             <CardDescription>
-              Qué hace Finnit con IA y con qué modelo.
+              {t('admin.ai.featuresDescription')}
             </CardDescription>
           </div>
         </CardHeader>
@@ -118,7 +123,7 @@ export function AdminAiScreen() {
           <AiFeatureRow
             key={feature.key}
             feature={feature}
-            pdfModels={pdfModels}
+            models={needsPdfModel(feature.key) ? pdfModels : activeModels}
             onChange={(change) => updateFeature(feature, change)}
           />
         ))}
@@ -127,18 +132,16 @@ export function AdminAiScreen() {
       <Card>
         <CardHeader className="flex-wrap">
           <div>
-            <CardTitle>Modelos</CardTitle>
-            <CardDescription>
-              Se prueba primero el predeterminado y luego el resto por orden.
-            </CardDescription>
+            <CardTitle>{t('admin.ai.modelsTitle')}</CardTitle>
+            <CardDescription>{t('admin.ai.modelsDescription')}</CardDescription>
           </div>
           <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
-            <Plus className="size-4" /> Agregar modelo
+            <Plus className="size-4" /> {t('admin.ai.addModel')}
           </Button>
         </CardHeader>
         {models.length === 0 ? (
           <BodyMd className="rounded-xl bg-track p-4 text-center text-on-surface-variant">
-            Aún no hay modelos en el catálogo.
+            {t('admin.ai.noModels')}
           </BodyMd>
         ) : (
           models.map((model) => (

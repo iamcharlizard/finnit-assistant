@@ -1,0 +1,658 @@
+{
+  "common": {
+    "appName": "Finnit",
+    "loading": "Loading…",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "close": "Close",
+    "done": "Done",
+    "loadMore": "Load more",
+    "connectBank": "Connect bank",
+    "comingSoon": "Coming soon"
+  },
+  "metadata": {
+    "description": "Your personal finance assistant."
+  },
+  "nav": {
+    "mainNavigation": "Main navigation",
+    "newTransaction": "New transaction",
+    "addTransaction": "Add transaction",
+    "more": "More",
+    "moreTitle": "More sections",
+    "moreDescription": "Everything that doesn't fit in the bottom bar.",
+    "sections": {
+      "home": "Home",
+      "transactions": "Transactions",
+      "recurring": "Recurring payments",
+      "accounts": "Accounts & cards",
+      "planning": "Planning",
+      "analytics": "Analytics",
+      "statements": "Statements",
+      "settings": "Settings",
+      "admin": "Administration"
+    },
+    "items": {
+      "dashboard": "Home",
+      "history": "Transactions",
+      "recurring": "Recurring payments",
+      "cards": "Accounts & cards",
+      "analytics": "Analytics",
+      "settings": "Settings",
+      "admin": "Administration"
+    },
+    "short": {
+      "dashboard": "Home",
+      "history": "Transactions",
+      "cards": "Accounts"
+    }
+  },
+  "pageTitles": {
+    "app": "Finnit",
+    "dashboard": "Home",
+    "history": "Transactions",
+    "transaction": "Transaction",
+    "categorize": "Categorize transactions",
+    "recurring": "Recurring payments",
+    "cards": "Accounts & cards",
+    "analytics": "Analytics",
+    "statements": "Statements",
+    "settings": "Settings",
+    "banks": "Connected banks",
+    "connectBank": "Connect bank",
+    "admin": "Administration",
+    "adminUsers": "Users · Administration",
+    "adminAi": "AI · Administration",
+    "login": "Sign in"
+  },
+  "newEntry": {
+    "title": "New transaction",
+    "description": "Soon you'll be able to record your transactions here.",
+    "expense": "Expense",
+    "income": "Income",
+    "transfer": "Transfer"
+  },
+  "errors": {
+    "network": "We couldn't reach Finnit. Check your connection.",
+    "sessionEnded": "Your session ended.",
+    "unexpected": "Something went wrong.",
+    "loadFailedTitle": "We couldn't load your data",
+    "loadFailedDescription": "Check your connection and try again in a moment."
+  },
+  "login": {
+    "welcome": "Welcome back",
+    "tagline": "Manage your money with Finnit precision.",
+    "email": "Email",
+    "emailPlaceholder": "name@example.com",
+    "password": "Password",
+    "forgotPassword": "Forgot your password?",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "remember": "Keep me signed in",
+    "submitting": "Checking…",
+    "submit": "Sign in",
+    "orContinueWith": "Or continue with",
+    "google": "Google",
+    "invitationOnly": "Finnit is invitation-only. Ask the administrator for access.",
+    "errors": {
+      "missingFields": "Please fill in every field.",
+      "unavailable": "We couldn't reach Finnit. Try again in a moment.",
+      "failed": "Something went wrong while signing in.",
+      "invalidCredentials": "Wrong email or password.",
+      "google_no_access": "Your Google account doesn't have access to Finnit. Ask the administrator for access.",
+      "google_failed": "We couldn't sign you in with Google. Try again.",
+      "google_unavailable": "Signing in with Google isn't available."
+    }
+  },
+  "finance": {
+    "uncategorized": "Uncategorized",
+    "transferTo": "Transfer to {name}",
+    "initialBalance": "Opening balance",
+    "fallbackTitle": {
+      "income": "Income",
+      "expense": "Expense",
+      "other": "Transaction"
+    },
+    "transfer": "Transfer",
+    "adjustment": "Adjustment or payment",
+    "pending": "Pending",
+    "completed": "Completed",
+    "withPending": "{time} · Pending",
+    "inCurrency": "{amount} in {currency}",
+    "accountTypes": {
+      "cash": "Cash",
+      "credit": "Credit",
+      "debit": "Debit",
+      "ewallet": "E-wallet",
+      "savings": "Savings"
+    },
+    "recurringKinds": {
+      "housing": "Housing",
+      "installment": "Installments",
+      "insurance": "Insurance",
+      "loan": "Loan",
+      "membership": "Membership",
+      "other": "Other",
+      "subscription": "Subscription",
+      "utility": "Utility"
+    },
+    "payment": {
+      "when": "{relative} · {date}",
+      "skipped": "Skipped · {date}",
+      "missed": "Overdue · {date}",
+      "reminder": "Reminder · {when}",
+      "approx": "≈ {amount}"
+    }
+  },
+  "monthSwitcher": {
+    "label": "Change month",
+    "previous": "Previous month",
+    "next": "Next month"
+  },
+  "dashboard": {
+    "noAccountsTitle": "You don't have any accounts yet",
+    "noAccountsDescription": "Connect your bank to see your balances here.",
+    "incomeOf": "Income · {month}",
+    "expensesOf": "Expenses · {month}",
+    "upcoming": "Upcoming payments",
+    "calendarLink": "Calendar",
+    "noUpcomingTitle": "No upcoming payments",
+    "noUpcomingDescription": "You have no recurring payments in the next {days} days.",
+    "recent": "Recent activity",
+    "seeAll": "See all",
+    "seeAllLabel": "See all transactions",
+    "noRecentTitle": "No transactions yet",
+    "noRecentDescription": "Transactions your bank imports will show up here.",
+    "balance": {
+      "available": "Available balance",
+      "creditDebt": "Card debt",
+      "net": "Net worth",
+      "accounts": "{count, plural, one {# account} other {# accounts}}",
+      "alsoIn": "Also: {list}"
+    },
+    "welcome": {
+      "title": "Hi, {name}. Welcome to Finnit",
+      "description": "You don't have accounts or transactions yet. Start by connecting your bank; here you'll see your balances, this month's spending and upcoming payments.",
+      "stepBank": "Connect your bank: we import your accounts, balances and transactions.",
+      "stepCategories": "See where your money goes each month, by category.",
+      "stepRecurring": "Keep your recurring payments and card dates in sight."
+    }
+  },
+  "history": {
+    "title": "History",
+    "subtitle": "Review and filter all your transactions.",
+    "topCategories": "Top categories · {month}",
+    "types": {
+      "all": "All",
+      "income": "Income",
+      "expense": "Expenses",
+      "transfer": "Transfers"
+    },
+    "searchPlaceholder": "Search by merchant or description",
+    "searchLabel": "Search transactions by merchant or description",
+    "filterByType": "Filter by type",
+    "account": "Account",
+    "allAccounts": "All accounts",
+    "category": "Category",
+    "allCategories": "All categories",
+    "from": "From",
+    "to": "To",
+    "clearFilters": "Clear filters",
+    "noResultsTitle": "No results",
+    "noResultsDescription": "No transactions match these filters.",
+    "emptyTitle": "You don't have any transactions yet",
+    "emptyDescription": "Connect your bank to import your transactions automatically.",
+    "count": "{shown} of {total, plural, one {# transaction} other {# transactions}}"
+  },
+  "cards": {
+    "title": "My cards",
+    "count": "{count, plural, one {# card} other {# cards}}",
+    "emptyTitle": "You don't have any cards yet",
+    "emptyDescription": "Connect your bank to see your credit and debit cards here, with their balance and statement dates.",
+    "expensesOf": "Expenses · {month}",
+    "movementsOf": "{name} transactions",
+    "noMovementsTitle": "No transactions",
+    "noMovementsDescription": "This card has no transactions yet.",
+    "tier": {
+      "credit": "CREDIT",
+      "debit": "DEBIT"
+    },
+    "carouselLabel": "Card carousel",
+    "selected": "{name} · Selected",
+    "availableCredit": "Available credit: {amount}",
+    "currentDebt": "Current debt",
+    "availableBalance": "Available balance",
+    "noLimit": "No credit limit recorded for this card.",
+    "factsTitle": "Statement and payment",
+    "noFacts": "We don't know this card's statement day or this month's statement yet.",
+    "recurringSummary": "{count, plural, one {# recurring charge} other {# recurring charges}} this period: {expected} expected, {paid} already charged.",
+    "facts": {
+      "due": "{date} · {relative}",
+      "nextStatement": "Next statement",
+      "paymentDue": "Payment due date",
+      "nextPayment": "Next payment date",
+      "statementBalanceOn": "Statement balance ({date})",
+      "statementBalance": "Statement balance",
+      "noInterest": "Payment to avoid interest",
+      "minimum": "Minimum payment"
+    }
+  },
+  "calendar": {
+    "title": "Payment calendar",
+    "subtitle": "Your recurring payments and your cards' dates.",
+    "emptyTitle": "You don't have recurring payments yet",
+    "emptyDescription": "Once you add your recurring expenses (subscriptions, utilities, monthly fees) you'll see here when each one is due.",
+    "dueIn": "Due in {month}",
+    "pendingCount": "{count, plural, one {# pending payment} other {# pending payments}}",
+    "fixedMonthly": "Fixed monthly expenses",
+    "fixedMonthlyHint": "Average of your recurring expenses",
+    "dayTitle": "{month} {day}",
+    "nothingDue": "Nothing due this day",
+    "monthPayments": "{month} payments",
+    "noMonthPayments": "No payments this month",
+    "showMonth": "Show whole month",
+    "statementOf": "{name} statement",
+    "paymentDueOf": "{name} payment due",
+    "events": {
+      "payments": "{count} payments",
+      "statement": "Statement",
+      "cardPayment": "Card payment",
+      "cards": "Cards"
+    }
+  },
+  "analytics": {
+    "emptyTitle": "No data to analyze yet",
+    "emptyDescription": "Connect your bank: with your transactions you'll see your spending by category, your income and expense trend and a projection of your balance.",
+    "monthSpending": "Spending this month",
+    "savingsRate": "Savings rate",
+    "noIncome": "No income recorded this month.",
+    "byCategory": "Spending by category",
+    "cashFlow": "Cash flow",
+    "ratings": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "tight": "Tight",
+      "negative": "Negative"
+    },
+    "savedCaption": "You saved {saved} of {income} in income ({rate}%).",
+    "overspentCaption": "You spent {amount} more than you earned.",
+    "noSpendingTitle": "No spending this month",
+    "noSpendingDescription": "Once you record expenses you'll see here which categories your money goes to.",
+    "categoryShare": "{label} · {percent}%",
+    "projection": {
+      "title": "Balance projection",
+      "description": "With your average monthly income and spending, by {month} you'd have <strong>{balance}</strong>."
+    },
+    "trend": {
+      "title": "Income vs expenses",
+      "income": "Income",
+      "expenses": "Expenses",
+      "monthLabel": "{month}: income {income}, expenses {expenses}",
+      "incomeOf": "Income {amount}",
+      "expensesOf": "Expenses {amount}"
+    }
+  },
+  "settings": {
+    "banks": "Banks",
+    "connectedBanks": "Connected banks",
+    "connectedBanksDescription": "Import your transactions automatically",
+    "admin": "Administration",
+    "adminDescription": "Users with access and AI models",
+    "security": "Security",
+    "biometrics": "Biometrics",
+    "changePin": "Change PIN",
+    "appearance": "Appearance",
+    "darkMode": "Dark mode",
+    "font": "Font",
+    "language": "Language",
+    "languageError": "We couldn't save the language to your account. Try again.",
+    "languages": {
+      "es": "Español",
+      "en": "English"
+    },
+    "notifications": "Notifications and alerts",
+    "transactions": "Transactions",
+    "transactionsDescription": "Instant alert",
+    "weeklySummary": "Weekly summary",
+    "weeklySummaryDescription": "Email",
+    "signOut": "Sign out",
+    "version": "Finnit v1.0.0 • Built for the future"
+  },
+  "banks": {
+    "title": "Connected banks",
+    "connect": "Connect bank",
+    "empty": "You haven't connected a bank yet. Connect one to import your transactions automatically.",
+    "fallbackName": "Bank",
+    "linkedSummary": "{linked} of {total, plural, one {# account importing} other {# accounts importing}}",
+    "lastSync": "Last sync: {date}",
+    "active": "Active",
+    "needsAttention": "Needs attention",
+    "imported": "{count, plural, one {We imported # new transaction.} other {We imported # new transactions.}}",
+    "upToDate": "All up to date. We asked your bank for new data; it will arrive with the next sync.",
+    "syncing": "Syncing…",
+    "syncNow": "Sync now"
+  },
+  "bankConnect": {
+    "consent": {
+      "title": "Before connecting your bank",
+      "credentials": "Your bank username and password go straight from your device to Syncfy, our bank connection provider. Finnit never sees or stores them.",
+      "data": "Finnit only stores the accounts, balances and transactions you choose to import.",
+      "disconnect": "You can disconnect your bank anytime from Settings.",
+      "agreement": "By continuing you allow Syncfy to access your online banking information to sync it with Finnit.",
+      "accept": "Accept and continue"
+    },
+    "picker": {
+      "title": "Choose your bank",
+      "search": "Search bank",
+      "searchPlaceholder": "e.g. BancaNet, BBVA, Banorte",
+      "noResults": "We found no banks matching “{query}”.",
+      "widgetHint": "Connects through the Syncfy assistant"
+    },
+    "credentials": {
+      "hint": "Use the details you sign in to your online banking with.",
+      "changeBank": "Change bank",
+      "connect": "Connect"
+    },
+    "connectingHint": "This can take up to a minute. Don't close this page.",
+    "done": {
+      "title": "Done, we connected {bank}",
+      "yourBank": "your bank",
+      "linked": "{count, plural, one {We imported # account.} other {We imported # accounts.}} We'll sync your transactions twice a day.",
+      "noneLinked": "We didn't import any account. You can link them later from Connected banks.",
+      "connectedBanks": "Connected banks",
+      "seeMovements": "See transactions"
+    },
+    "error": {
+      "title": "We couldn't connect your bank",
+      "retry": "Try again"
+    },
+    "link": {
+      "title": "Which accounts do you want to import?",
+      "found": "We found {count, plural, one {# account} other {# accounts}} at {bank}. We'll import their transactions from the last 90 days and keep them up to date.",
+      "accountFallback": "Account",
+      "alreadyLinked": "Already linked",
+      "import": "Import transactions",
+      "finish": "Finish",
+      "create": "Create a Finnit account",
+      "linkExisting": "Link to an existing account",
+      "skip": "Don't import"
+    },
+    "accountTypes": {
+      "creditCard": "Credit card",
+      "checking": "Checking account",
+      "savings": "Savings",
+      "investment": "Investment",
+      "loan": "Loan"
+    },
+    "field": {
+      "select": "Select…",
+      "show": "Show",
+      "hide": "Hide"
+    },
+    "twofa": {
+      "title": "{bank} verification",
+      "hint": "Your bank needs one more detail to continue.",
+      "alreadyDone": "I did it",
+      "continue": "Continue",
+      "option": "Option {value}",
+      "qr": "Your bank's QR code",
+      "captcha": "Verification image"
+    },
+    "widget": {
+      "hint": "This bank connects through the Syncfy assistant. Your details go straight to Syncfy; Finnit doesn't see them.",
+      "failed": "We couldn't open the Syncfy assistant. Try again later.",
+      "back": "Choose another bank"
+    }
+  },
+  "admin": {
+    "title": "Administration",
+    "tabsLabel": "Administration sections",
+    "tabs": {
+      "users": "Users",
+      "ai": "AI"
+    },
+    "users": {
+      "loading": "Loading users…",
+      "count": "{count, plural, one {# user} other {# users}}",
+      "add": "Add user",
+      "noMatch": "No one matches the search.",
+      "empty": "No users yet.",
+      "search": "Search by name or email",
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "activePlural": "Active",
+      "disabledPlural": "Disabled",
+      "role": "Role",
+      "allRoles": "All roles",
+      "adminsPlural": "Administrators",
+      "usersPlural": "Users",
+      "columns": {
+        "user": "User",
+        "role": "Role",
+        "status": "Status",
+        "access": "Access",
+        "lastSignIn": "Last sign-in",
+        "addedBy": "Added by",
+        "actions": "Actions"
+      },
+      "lastSignInLine": "Last sign-in: {when}",
+      "addedByLine": "Added by {name}",
+      "roles": {
+        "master": "Master",
+        "admin": "Administrator",
+        "user": "User"
+      },
+      "statuses": {
+        "active": "Active",
+        "disabled": "Disabled"
+      },
+      "access": {
+        "googleNotYet": "Google (hasn't signed in yet)",
+        "password": "Password",
+        "google": "Google"
+      },
+      "lastSignIn": {
+        "never": "Never",
+        "justNow": "Just now",
+        "minutes": "{count} min ago",
+        "hours": "{count} h ago",
+        "yesterday": "Yesterday",
+        "days": "{count} days ago"
+      },
+      "actions": {
+        "menuLabel": "Actions for {name}",
+        "setPassword": "Set password",
+        "removePassword": "Remove password",
+        "unlinkGoogle": "Unlink Google",
+        "makeAdmin": "Make administrator",
+        "removeAdmin": "Remove administrator",
+        "enable": "Reactivate",
+        "disable": "Deactivate"
+      },
+      "confirm": {
+        "removePassword": {
+          "title": "Remove {name}'s password?",
+          "description": "They'll only be able to sign in with Google, and their open sessions will end."
+        },
+        "unlinkGoogle": {
+          "title": "Unlink Google from {name}?",
+          "description": "Their open sessions will end. They can link a Google account for {email} again by signing in with it."
+        },
+        "disable": {
+          "title": "Deactivate {name}?",
+          "description": "They won't be able to sign in to Finnit and their open sessions will end. Their data is kept and you can reactivate them later."
+        },
+        "enable": {
+          "title": "Reactivate {name}?",
+          "description": "They'll be able to sign in to Finnit again."
+        },
+        "makeAdmin": {
+          "title": "Make {name} an administrator?",
+          "description": "They'll be able to add users, change their access and configure AI."
+        },
+        "removeAdmin": {
+          "title": "Remove {name} as administrator?",
+          "description": "They'll keep using Finnit, without access to Administration."
+        }
+      },
+      "create": {
+        "title": "Add user",
+        "description": "Finnit is invitation-only: only the people you add here can sign in.",
+        "name": "Name",
+        "namePlaceholder": "Ana López",
+        "email": "Email",
+        "emailPlaceholder": "name@example.com",
+        "password": "Password (optional)",
+        "withPassword": "They can sign in with this password or with the Google account for this email.",
+        "withoutPassword": "They'll only be able to sign in with Google using this email.",
+        "role": "Role",
+        "adding": "Adding…",
+        "createdTitle": "You added {name}",
+        "createdWithPassword": "They can now sign in with {email} and the password you set, or with the Google account for that email. Share the password through a safe channel (in person or a password manager), not by email or chat.",
+        "createdWithGoogle": "They can now sign in with the Google account for {email}.",
+        "nameRequired": "Enter their name.",
+        "emailInvalid": "Enter a valid email."
+      },
+      "setPassword": {
+        "title": "Set password",
+        "selfDescription": "Your password will change and your open sessions will end, including this one.",
+        "description": "Replaces the password of {name} ({email}) and ends their open sessions.",
+        "newPassword": "New password",
+        "saving": "Saving…",
+        "savedTitle": "Password set",
+        "savedDescription": "{name} can now sign in with the new password. Share it through a safe channel (in person or a password manager), not by email or chat."
+      },
+      "passwordField": {
+        "show": "Show password",
+        "hide": "Hide password",
+        "minLength": "At least {min} characters",
+        "minLengthError": "At least {min} characters.",
+        "generate": "Generate",
+        "copy": "Copy",
+        "copied": "Copied"
+      }
+    },
+    "ai": {
+      "featuresTitle": "AI features",
+      "featuresDescription": "What Finnit does with AI, and with which model.",
+      "modelsTitle": "Models",
+      "modelsDescription": "The default one is tried first, then the rest in order.",
+      "addModel": "Add model",
+      "noModels": "There are no models in the catalog yet.",
+      "deleteTitle": "Delete {label}?",
+      "deleteDescription": "It leaves the catalog. Features that used it go back to the default model.",
+      "delete": "Delete",
+      "features": {
+        "statement_parsing": {
+          "label": "Read PDF statements",
+          "description": "For banks without their own reader (all but Banamex today), the PDF is sent to the AI model."
+        },
+        "transaction_categorization": {
+          "label": "Categorize transactions",
+          "description": "Suggests a category for transactions that arrive without one."
+        },
+        "recurring_classification": {
+          "label": "Classify suggested recurring payments",
+          "description": "Reviews repeating charges and proposes which ones are recurring payments."
+        },
+        "receipt_parsing": {
+          "label": "Read receipts (OCR fallback)",
+          "description": "When OCR can't read a receipt photo, it is sent to the AI model."
+        },
+        "translation": {
+          "label": "Translate categories",
+          "description": "Translates category names into each user's language."
+        }
+      },
+      "feature": {
+        "model": "Model",
+        "defaultModel": "Catalog default",
+        "inactive": "{label} (inactive)",
+        "fallbacks": "Use other models if it fails",
+        "unusable": "No model available: activate one with its key configured.",
+        "updated": "Updated on {date}",
+        "updatedBy": "Updated on {date} by {name}"
+      },
+      "model": {
+        "default": "Default",
+        "pdf": "PDF",
+        "noKey": "No key",
+        "order": "Order",
+        "active": "Active",
+        "activateFirst": "Activate it first",
+        "makeDefault": "Make default",
+        "deleteLabel": "Delete {label}"
+      },
+      "create": {
+        "title": "Add model",
+        "description": "Use the model's exact name at the provider. Its key is configured on the API server.",
+        "provider": "Provider",
+        "model": "Model",
+        "label": "Display name",
+        "readsPdf": "Reads PDF files",
+        "active": "Active",
+        "adding": "Adding…"
+      }
+    },
+    "errors": {
+      "emailExists": "A user with this email already exists.",
+      "masterStaysAdmin": "The master administrator is always an administrator.",
+      "masterCannotBeDisabled": "The master administrator can't be deactivated.",
+      "cannotDisableSelf": "You can't deactivate your own account.",
+      "masterOwnAccount": "Only the master administrator can change their account.",
+      "onlyMaster": "Only the master administrator can do this.",
+      "noGoogleLinked": "They haven't signed in with Google yet: without a password they couldn't sign in.",
+      "modelExists": "That model is already in the catalog.",
+      "defaultMustBeActive": "The default model must be active.",
+      "pdfModelRequired": "Choose an active model that reads PDF.",
+      "modelFieldsRequired": "Enter the model and its name.",
+      "notFound": "It no longer exists. Reload the page.",
+      "forbidden": "You don't have permission to do this.",
+      "conflict": "It already exists.",
+      "invalid": "Check the details and try again.",
+      "generic": "Something went wrong. Try again."
+    }
+  },
+  "ui": {
+    "notifications": "Notifications",
+    "notificationsUnread": "Notifications, {count, plural, one {# new} other {# new}}",
+    "userProfile": "User profile",
+    "paymentCalendar": {
+      "label": "Payment calendar, {month}",
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "monthView": "MONTH",
+      "monthViewLabel": "Month view",
+      "weekView": "WEEK",
+      "weekViewLabel": "Week view",
+      "weekdays": {
+        "mon": "MON",
+        "tue": "TUE",
+        "wed": "WED",
+        "thu": "THU",
+        "fri": "FRI",
+        "sat": "SAT",
+        "sun": "SUN"
+      }
+    },
+    "creditLimit": {
+      "title": "Credit limit",
+      "of": "of {total}",
+      "used": "{percent}% of the limit used"
+    },
+    "trend": {
+      "down": "Down",
+      "up": "Up"
+    },
+    "bankCard": {
+      "holder": "Holder",
+      "expires": "Expires",
+      "virtualBalance": "Virtual balance"
+    },
+    "profile": {
+      "edit": "Edit profile",
+      "premium": "Premium",
+      "verified": "Verified account",
+      "avatar": "User avatar: {name}"
+    }
+  }
+}

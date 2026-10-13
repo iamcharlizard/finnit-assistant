@@ -1,11 +1,13 @@
 import type { CalendarEvent } from '@finnit/ui/components/finance/calendar-day-cell';
 
+import type { Localizer } from '@/lib/i18n/translator';
 import { dayInMonth, summarizeBalances } from '@/lib/finance/accounts';
 import {
   firstDayOf,
   formatMonthParam,
   daysInMonth as monthDays,
   monthLabel,
+  monthName,
   monthOf,
   parseDayKey,
   sameMonth,
@@ -41,6 +43,8 @@ export interface CalendarView {
   isEmpty: boolean;
   month: {
     label: string;
+    /** The month alone, for sentences: "octubre" / "October". */
+    name: string;
     prevHref: string;
     nextHref: string;
     leadingDays: number[];
@@ -65,7 +69,9 @@ const href = (m: MonthRef) => `/calendar?month=${formatMonthParam(m)}`;
 export function buildCalendarView(
   data: CalendarData,
   { month, today }: { month: MonthRef; today: DayKey },
+  l: Localizer,
 ): CalendarView {
+  const { locale, t } = l;
   const first = firstDayOf(month);
   const previous = shiftMonth(month, -1);
   const lead = weekdayIndex(first);
@@ -79,7 +85,7 @@ export function buildCalendarView(
   const dayOf = (n: number) => (days[n] ??= { payments: [], cardDates: [] });
 
   const monthPayments = data.payments
-    .map((p) => toPaymentRow(p, today))
+    .map((p) => toPaymentRow(p, today, l))
     .filter((p) => sameMonth(monthOf(p.day), month));
   for (const row of monthPayments)
     dayOf(parseDayKey(row.day).day).payments.push(row);
@@ -89,12 +95,12 @@ export function buildCalendarView(
     if (!terms || account.archived) continue;
     dayOf(dayInMonth(month, terms.statementDay)).cardDates.push({
       id: `${account.id}:statement`,
-      label: `Corte de ${account.name}`,
+      label: t('calendar.statementOf', { name: account.name }),
       kind: 'statement',
     });
     dayOf(dayInMonth(month, terms.paymentDueDay)).cardDates.push({
       id: `${account.id}:payment`,
-      label: `Límite de pago de ${account.name}`,
+      label: t('calendar.paymentDueOf', { name: account.name }),
       kind: 'payment',
     });
   }
@@ -107,22 +113,24 @@ export function buildCalendarView(
           label:
             day.payments.length === 1
               ? payment.title
-              : `${day.payments.length} pagos`,
+              : t('calendar.events.payments', {
+                  count: day.payments.length,
+                }),
           accent: 'primary',
         }
       : {
           label:
             day.cardDates.length === 1
               ? day.cardDates[0]!.kind === 'statement'
-                ? 'Corte'
-                : 'Pago TDC'
-              : 'Tarjetas',
+                ? t('calendar.events.statement')
+                : t('calendar.events.cardPayment')
+              : t('calendar.events.cards'),
           accent: 'neon',
         };
   }
 
   const openRows = data.payments.filter((p) => {
-    const row = toPaymentRow(p, today);
+    const row = toPaymentRow(p, today, l);
     return row.open && sameMonth(monthOf(row.day), month);
   });
   const openTotal = roundCents(
@@ -137,7 +145,8 @@ export function buildCalendarView(
   return {
     isEmpty: data.recurringCount === 0 && Object.keys(days).length === 0,
     month: {
-      label: monthLabel(month),
+      label: monthLabel(month, locale),
+      name: monthName(month, locale),
       prevHref: href(previous),
       nextHref: href(shiftMonth(month, 1)),
       leadingDays: Array.from(
@@ -151,8 +160,8 @@ export function buildCalendarView(
     days,
     monthPayments,
     totals: {
-      fixedMonthly: formatMoney(fixed, currency),
-      open: formatMoney(openTotal, currency),
+      fixedMonthly: formatMoney(fixed, currency, locale),
+      open: formatMoney(openTotal, currency, locale),
       openCount: openRows.length,
     },
   };

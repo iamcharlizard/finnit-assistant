@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 import { TitleLg } from '@finnit/ui/components/ui/typography';
 
@@ -14,11 +15,12 @@ export default async function AdminLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const user = await getCurrentUser();
   if (!isAdmin(user)) notFound();
+  const t = await getTranslations();
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <TitleLg as="h1">Administración</TitleLg>
+        <TitleLg as="h1">{t('admin.title')}</TitleLg>
         <AdminTabs />
       </div>
       {children}

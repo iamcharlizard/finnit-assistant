@@ -1,5 +1,6 @@
 'use client';
 
+import { useLocale, useTranslations } from 'next-intl';
 import { GlassCard } from '@finnit/ui/components/ui/glass-card';
 
 import {
@@ -22,6 +23,8 @@ export function UserCard({
   actions: UserAction[];
   onAction: (action: UserAction, user: AdminUser) => void;
 }) {
+  const t = useTranslations();
+  const locale = useLocale();
   return (
     <GlassCard className="flex flex-col gap-3 rounded-card p-4">
       <div className="flex items-start gap-2">
@@ -39,8 +42,16 @@ export function UserCard({
         <UserAccessMethods user={user} />
       </div>
       <p className="text-[13px] text-on-surface-variant">
-        Último ingreso: {formatLastSignIn(user.lastLoginAt)}
-        {user.invitedByName ? ` · Agregado por ${user.invitedByName}` : ''}
+        {[
+          t('admin.users.lastSignInLine', {
+            when: formatLastSignIn(user.lastLoginAt, { locale, t }),
+          }),
+          user.invitedByName
+            ? t('admin.users.addedByLine', { name: user.invitedByName })
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
       </p>
     </GlassCard>
   );

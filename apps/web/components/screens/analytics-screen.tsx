@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { ChartLine } from 'lucide-react';
 
 import { AnalyticsHeroCard } from '@finnit/ui/components/finance/analytics-hero-card';
@@ -14,13 +15,17 @@ import { MonthSwitcher } from '@/components/finance/month-switcher';
 import type { AnalyticsView } from '@/lib/analytics/view';
 
 export function AnalyticsScreen({ view }: { view: AnalyticsView }) {
+  const t = useTranslations();
   if (view.isEmpty) {
     return (
       <EmptyState
         icon={ChartLine}
-        title="Aún no hay datos para analizar"
-        description="Conecta tu banco: con tus movimientos verás tus gastos por categoría, la tendencia de tus ingresos y gastos y una proyección de tu saldo."
-        action={{ href: '/settings/banks/connect', label: 'Conectar banco' }}
+        title={t('analytics.emptyTitle')}
+        description={t('analytics.emptyDescription')}
+        action={{
+          href: '/settings/banks/connect',
+          label: t('common.connectBank'),
+        }}
       />
     );
   }
@@ -31,16 +36,18 @@ export function AnalyticsScreen({ view }: { view: AnalyticsView }) {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <AnalyticsHeroCard
-          label="Gasto del mes"
+          label={t('analytics.monthSpending')}
           amount={view.spending.amount}
           trendPercent={view.spending.trendPercent ?? undefined}
           trendDown={view.spending.trendDown}
           sparkBars={view.spending.bars}
+          trendDownLabel={t('ui.trend.down')}
+          trendUpLabel={t('ui.trend.up')}
           className="md:col-span-2 lg:col-span-1"
         />
         {view.savings ? (
           <FinancialHealthChart
-            label="Tasa de ahorro"
+            label={t('analytics.savingsRate')}
             percentage={view.savings.percentage}
             rating={view.savings.rating}
             caption={view.savings.caption}
@@ -48,10 +55,10 @@ export function AnalyticsScreen({ view }: { view: AnalyticsView }) {
         ) : (
           <section className="flex flex-col justify-center rounded-2xl border border-glass-border bg-glass p-5 text-center backdrop-blur-md">
             <h3 className="mb-2 text-[15px] font-medium text-on-surface-variant">
-              Tasa de ahorro
+              {t('analytics.savingsRate')}
             </h3>
             <p className="text-sm text-on-surface-variant">
-              Sin ingresos registrados este mes.
+              {t('analytics.noIncome')}
             </p>
           </section>
         )}
@@ -60,12 +67,12 @@ export function AnalyticsScreen({ view }: { view: AnalyticsView }) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="min-w-0">
-          <SectionHeading title="Gastos por categoría" />
+          <SectionHeading title={t('analytics.byCategory')} />
           <CategoryBreakdown categories={view.categories} />
         </section>
 
         <section className="min-w-0">
-          <SectionHeading title="Flujo de caja" />
+          <SectionHeading title={t('analytics.cashFlow')} />
           <CashFlowProjection points={view.projection} />
         </section>
       </div>

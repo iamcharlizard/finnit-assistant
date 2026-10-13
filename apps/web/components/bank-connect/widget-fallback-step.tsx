@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { ArrowLeft } from 'lucide-react';
 import type { Site } from '@finnit/bank-connect';
 
@@ -71,6 +72,8 @@ export function WidgetFallbackStep({
   onBack: () => void;
 }) {
   const [failed, setFailed] = React.useState(false);
+  const t = useTranslations('bankConnect.widget');
+  const locale = useLocale();
   const onConnectedRef = React.useRef(onConnected);
   onConnectedRef.current = onConnected;
 
@@ -87,7 +90,7 @@ export function WidgetFallbackStep({
           token,
           element: '#syncfy-widget',
           config: {
-            locale: 'es',
+            locale,
             entrypoint: idCredential
               ? { credential: idCredential }
               : { site: site.id_site },
@@ -110,25 +113,31 @@ export function WidgetFallbackStep({
       cancelled = true;
       widget?.close();
     };
-  }, [token, widgetScriptUrl, widgetStylesheetUrl, site.id_site, idCredential]);
+  }, [
+    token,
+    widgetScriptUrl,
+    widgetStylesheetUrl,
+    site.id_site,
+    idCredential,
+    locale,
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
       <div>
         <TitleLg as="h2">{site.name}</TitleLg>
         <BodyMd className="mt-1 text-[13px] text-on-surface-variant">
-          Este banco se conecta con el asistente de Syncfy. Tus datos van
-          directo a Syncfy; Finnit no los ve.
+          {t('hint')}
         </BodyMd>
       </div>
       {failed ? (
         <BodyMd role="alert" className="text-expense">
-          No pudimos abrir el asistente de Syncfy. Intenta de nuevo más tarde.
+          {t('failed')}
         </BodyMd>
       ) : null}
       <div id="syncfy-widget" className="min-h-[420px]" />
       <Button variant="ghost" className="self-start" onClick={onBack}>
-        <ArrowLeft className="size-4" /> Elegir otro banco
+        <ArrowLeft className="size-4" /> {t('back')}
       </Button>
     </div>
   );

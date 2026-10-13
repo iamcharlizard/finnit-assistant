@@ -1,62 +1,51 @@
+import type { Translate } from '@/lib/i18n/translator';
+
+type AdminErrorKey = Parameters<Translate>[0] & `admin.errors.${string}`;
+
 /**
  * The API answers admin mutations with English messages; the panel shows
- * these Spanish ones instead.
+ * these, in the user's language, instead.
  */
-const MESSAGES: [RegExp, string][] = [
-  [
-    /user with this email already exists/i,
-    'Ya existe un usuario con ese correo.',
-  ],
-  [
-    /master administrator stays an admin/i,
-    'El administrador maestro siempre es administrador.',
-  ],
+const MESSAGES: [RegExp, AdminErrorKey][] = [
+  [/user with this email already exists/i, 'admin.errors.emailExists'],
+  [/master administrator stays an admin/i, 'admin.errors.masterStaysAdmin'],
   [
     /master administrator cannot be disabled/i,
-    'No se puede desactivar al administrador maestro.',
+    'admin.errors.masterCannotBeDisabled',
   ],
-  [/cannot disable yourself/i, 'No puedes desactivar tu propia cuenta.'],
+  [/cannot disable yourself/i, 'admin.errors.cannotDisableSelf'],
   [
     /master administrator can change their own account/i,
-    'Solo el administrador maestro puede cambiar su cuenta.',
+    'admin.errors.masterOwnAccount',
   ],
-  [
-    /only the master administrator can/i,
-    'Solo el administrador maestro puede hacer esto.',
-  ],
-  [
-    /no Google account linked/i,
-    'Aún no entra con Google: sin contraseña no podría entrar.',
-  ],
-  [/already in the catalog/i, 'Ese modelo ya está en el catálogo.'],
-  [
-    /default model must be active/i,
-    'El modelo predeterminado debe estar activo.',
-  ],
-  [/active model that supports PDF/i, 'Elige un modelo activo que lea PDF.'],
-  [/model id and label are required/i, 'Escribe el modelo y su nombre.'],
-  [/not found/i, 'Ya no existe. Recarga la página.'],
+  [/only the master administrator can/i, 'admin.errors.onlyMaster'],
+  [/no Google account linked/i, 'admin.errors.noGoogleLinked'],
+  [/already in the catalog/i, 'admin.errors.modelExists'],
+  [/default model must be active/i, 'admin.errors.defaultMustBeActive'],
+  [/active model that supports PDF/i, 'admin.errors.pdfModelRequired'],
+  [/model id and label are required/i, 'admin.errors.modelFieldsRequired'],
+  [/not found/i, 'admin.errors.notFound'],
 ];
 
-const BY_CODE: Record<string, string> = {
-  FORBIDDEN: 'No tienes permiso para hacer esto.',
-  NOT_FOUND: 'Ya no existe. Recarga la página.',
-  CONFLICT: 'Ya existe.',
-  VALIDATION_ERROR: 'Revisa los datos e intenta de nuevo.',
-  BAD_REQUEST: 'Revisa los datos e intenta de nuevo.',
-  BAD_USER_INPUT: 'Revisa los datos e intenta de nuevo.',
-  GRAPHQL_VALIDATION_FAILED: 'Revisa los datos e intenta de nuevo.',
+const BY_CODE: Record<string, AdminErrorKey> = {
+  FORBIDDEN: 'admin.errors.forbidden',
+  NOT_FOUND: 'admin.errors.notFound',
+  CONFLICT: 'admin.errors.conflict',
+  VALIDATION_ERROR: 'admin.errors.invalid',
+  BAD_REQUEST: 'admin.errors.invalid',
+  BAD_USER_INPUT: 'admin.errors.invalid',
+  GRAPHQL_VALIDATION_FAILED: 'admin.errors.invalid',
+  NETWORK_ERROR: 'errors.network' as AdminErrorKey,
+  UNAUTHENTICATED: 'errors.sessionEnded' as AdminErrorKey,
 };
 
-export function adminErrorMessage(error: unknown): string {
+export function adminErrorMessage(error: unknown, t: Translate): string {
   const { message = '', code } = (error ?? {}) as {
     message?: string;
     code?: string;
   };
   const known = MESSAGES.find(([pattern]) => pattern.test(message));
-  if (known) return known[1];
-  if (code && BY_CODE[code]) return BY_CODE[code];
-  // Errors without a code come from lib/graphql/client.ts, already in Spanish.
-  if (!code && message) return message;
-  return 'Ocurrió un error. Intenta de nuevo.';
+  if (known) return t(known[1]);
+  if (code && Object.hasOwn(BY_CODE, code)) return t(BY_CODE[code]!);
+  return t('admin.errors.generic');
 }

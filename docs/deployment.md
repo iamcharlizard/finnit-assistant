@@ -74,7 +74,7 @@ Repite estos pasos para cada ambiente, usando los valores de la tabla de abajo.
 
    Para archivos (estados de cuenta y adjuntos), IA y banco (opcionales; sin ellas la API arranca, pero subir archivos responde 503):
    ```
-   AWS_REGION=us-east-1
+   AWS_REGION=<región del bucket, p. ej. us-east-2>
    S3_BUCKET=<bucket del ambiente, ver "Almacenamiento de archivos">
    AWS_ACCESS_KEY_ID=<access key del usuario IAM del ambiente>
    AWS_SECRET_ACCESS_KEY=<secret del usuario IAM del ambiente>
@@ -82,7 +82,7 @@ Repite estos pasos para cada ambiente, usando los valores de la tabla de abajo.
    OPENAI_API_KEY=<opcional>
    GEMINI_API_KEY=<opcional>
    ADMIN_EMAILS=<emails que pueden administrar el catálogo de modelos de IA, separados por comas>
-   SYNCFY_API_KEY=<opcional: conexión bancaria con Syncfy; llave de sandbox en testing, de producción en production>
+   SYNCFY_API_KEY=<opcional: conexión bancaria con Syncfy; ver "Conexión bancaria (Syncfy)">
    ```
 4. **Domains**: el dominio de la tabla, *Path* `/`, *Container Port* `3000`, HTTPS con Let's Encrypt, *Strip Path* desactivado. Crea antes el registro **A** en el DNS (`api` o `api-test` → IPv4 del servidor).
 5. **Advanced → Resources**: límites según la tabla.
@@ -92,7 +92,7 @@ Repite estos pasos para cada ambiente, usando los valores de la tabla de abajo.
 
 Todos los archivos (estados de cuenta y adjuntos de transacciones) van a un bucket **privado** por ambiente. Solo la API los lee y escribe, con las llaves de su usuario IAM; nunca hay URLs públicas ni pre-firmadas. Los usuarios descargan sus archivos por la API (`GET /statements/:id/file`, `GET /attachments/:id/file`) con su token, y la API comprueba en la base de datos que el archivo sea suyo antes de leerlo de S3. Las llaves de los objetos son `users/<userId>/<tipo>/<id>.<ext>`.
 
-**1. Bucket** (`finnit-files-prod` y `finnit-files-test`, en la región de `AWS_REGION`):
+**1. Bucket**, uno por ambiente (en los ejemplos, `finnit-files-prod` y `finnit-files-test`), en la región de `AWS_REGION`:
 
 | Ajuste | Valor |
 |---|---|
@@ -161,12 +161,15 @@ Los bancos sin parser local se leen con IA. Los modelos disponibles están en el
 
 El PDF se envía a la API del proveedor. Si no hay ningún modelo utilizable, esos estados de cuenta quedan en `failed` con un mensaje que lo indica.
 
-En desarrollo local, el servicio `s3` de `docker-compose.yml` (s3mock en el puerto 9090) sustituye a AWS; las variables están en `apps/api/.env.example`.
-
 ### Conexión bancaria (Syncfy)
 
-- `SYNCFY_API_KEY` habilita la conexión bancaria. Usa la llave de **sandbox** en testing y la de **producción** solo en production: cada llave ve sus propios usuarios y conexiones.
-- El usuario conecta su banco en el widget de Syncfy (`createBankConnectSession`); Finnit guarda solo los ids de Syncfy, nunca usuario ni contraseña del banco.
+- `SYNCFY_API_KEY` habilita la conexión bancaria. Cada llave (sandbox o producción) ve sus propios usuarios y conexiones.
+- **Testing usa por ahora la llave de producción**, para probar con bancos reales. Consecuencias:
+  - Las conexiones de testing cuentan para el límite del plan de Syncfy.
+  - Testing también sincroniza a las 7:00 y 15:00, y esas sincronizaciones entran a los bancos reales.
+  - Los datos no se mezclan con producción: el usuario de Syncfy se crea con el id del usuario de Finnit (`id_external`), y cada base tiene ids distintos.
+  - Para probar sin bancos reales, cambia a la llave de sandbox; las conexiones creadas con una llave no se ven con la otra.
+- La app (web o móvil) obtiene un token con `createBankConnectSession` y envía usuario, contraseña y códigos del banco directo a Syncfy con `@finnit/bank-connect`; si el banco necesita algo que el formulario nativo no soporta, la web abre el widget de Syncfy. Finnit guarda solo los ids de Syncfy, nunca usuario ni contraseña del banco.
 - La API sincroniza a las 7:00 y 15:00 (CDMX). Pide a Syncfy que entre al banco como máximo cada 20 h por conexión (o cada hora si el usuario lo pide) y respeta `ready_in`; las lecturas son incrementales (`dt_refresh_from`) y reintenta con espera ante 429/5xx.
 - Para adoptar una conexión creada fuera de la app (pruebas): `linkSyncfyUser(email, syncfyUser)` (solo `ADMIN_EMAILS`) y luego `registerBankConnection(idCredential)` como ese usuario.
 - Borrar una conexión en Finnit no la borra en Syncfy; hazlo desde Syncfy.
@@ -187,6 +190,15 @@ Opcional: en `production` activa *Required reviewers* para aprobar cada desplieg
 ### 4. Primer despliegue
 
 Haz push a la rama del ambiente o usa *Actions → Deploy API → Run workflow* eligiendo la rama. Comprueba `https://<dominio del ambiente>/health` → `{"status":"ok"}`.
+
+## Web app
+
+La web (`apps/web`) se desplegará en **Vercel**, después de validar la API en testing. Mientras tanto se prueba en local contra la API de testing:
+
+1. En `apps/web/.env.local`: `FINNIT_API_URL=https://api-test.<dominio>`
+2. `pnpm web:dev` y abre http://localhost:3001.
+
+Solo el servidor de Next habla con la API: el navegador llama a `/api/graphql` de la propia web, que agrega el token desde cookies httpOnly. Por eso la API no necesita CORS para la web; la única variable de la web es `FINNIT_API_URL`, y debe apuntar a la API de su mismo ambiente (testing → `api-test`, production → `api`).
 
 ## Rollback
 

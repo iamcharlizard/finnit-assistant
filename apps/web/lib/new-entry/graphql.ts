@@ -48,10 +48,12 @@ export interface SimilarTransaction {
   txnDate: string;
   description: string | null;
   merchantName: string | null;
+  /** Alias or merchant, as the lists show it. */
+  displayName?: string | null;
 }
 
 export const SIMILAR_TRANSACTIONS_QUERY = `query SimilarTransactions($accountId: ID!, $amount: Float!, $date: DateTime!, $type: TransactionType) {
-  similarTransactions(accountId: $accountId, amount: $amount, date: $date, type: $type) { id type amount currency txnDate description merchantName }
+  similarTransactions(accountId: $accountId, amount: $amount, date: $date, type: $type) { id type amount currency txnDate description merchantName displayName }
 }`;
 
 export const SUGGEST_CATEGORY_QUERY = `query SuggestCategory($input: SuggestCategoryInput!) {

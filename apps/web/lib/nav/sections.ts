@@ -6,6 +6,7 @@ import {
   Repeat,
   Settings,
   ShieldCheck,
+  Tags,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -31,6 +32,7 @@ export type NavSectionKey =
 export type NavItemKey =
   | 'dashboard'
   | 'history'
+  | 'categorize'
   | 'recurring'
   | 'cards'
   | 'analytics'
@@ -56,9 +58,11 @@ export const NAV_SECTIONS: ReadonlyArray<NavSection> = [
     items: [{ key: 'dashboard', href: '/dashboard', icon: House }],
   },
   {
-    // Later: /transactions/categorize.
     key: 'transactions',
-    items: [{ key: 'history', href: '/history', icon: History }],
+    items: [
+      { key: 'history', href: '/history', icon: History },
+      { key: 'categorize', href: '/transactions/categorize', icon: Tags },
+    ],
   },
   {
     key: 'recurring',

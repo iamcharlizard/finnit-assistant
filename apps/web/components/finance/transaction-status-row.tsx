@@ -13,6 +13,8 @@ export function TransactionStatusRow({ row }: { row: TransactionRow }) {
   return (
     <TransactionItemWithStatus
       merchant={row.title}
+      isPrivate={row.isPrivate}
+      privateLabel={t('private')}
       category={row.category}
       time={row.time}
       amount={row.amount}

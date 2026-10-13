@@ -17,19 +17,19 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | 2. Cuentas y balances | ✅ | 🟡 | 🟡 |
 | 3. Transacciones | 🟡 | 🟡 | 🟡 |
 | 4. Categorías | 🟡 | ⏳ | ⏳ |
-| 5. Presupuestos | ✅ | ⏳ | ⏳ |
-| 6. Deudas y tarjetas | ✅ | ⏳ | ⏳ |
-| 7. Metas y ahorro | 🟡 | ⏳ | ⏳ |
+| 5. Presupuestos | ✅ | ⏳ | ✅ |
+| 6. Deudas y tarjetas | ✅ | ⏳ | ✅ |
+| 7. Metas y ahorro | ✅ | ⏳ | ✅ |
 | 8. Reportes e insights | 🟡 | 🟡 | 🟡 |
 | 9. Integración bancaria (Syncfy) | ✅ | ⏳ | 🟡 |
-| 10. Flujo de caja y proyecciones | ✅ | 🟡 | 🟡 |
+| 10. Flujo de caja y proyecciones | ✅ | 🟡 | ✅ |
 | 11. Notificaciones | 🟡 | ⏳ | 🟡 |
 | 12. Gastos recurrentes *(nuevo)* | ✅ | ⏳ | 🟡 |
-| 13. Estados de cuenta y conciliación *(nuevo)* | 🟡 | ⏳ | 🟡 |
+| 13. Estados de cuenta y conciliación *(nuevo)* | 🟡 | ⏳ | ✅ |
 | 14. Panel administrativo *(nuevo)* | ✅ | — | ✅ |
 | 15. Pantalla de pagos recurrentes y sugerencias *(nuevo)* | ✅ | ⏳ | ✅ |
 | 16. Clasificación de movimientos *(nuevo)* | ✅ | ⏳ | ✅ |
-| 17. Alias de movimientos *(nuevo)* | ✅ | ⏳ | 🟡 |
+| 17. Alias de movimientos *(nuevo)* | ✅ | ⏳ | ✅ |
 | 18. Personalización de cuentas y tarjetas *(nuevo)* | ✅ | ⏳ | ✅ |
 | 19. Flujo para crear movimientos *(nuevo)* | 🟡 | ⏳ | 🟡 |
 | 20. Cuentas y tarjetas manuales *(nuevo)* | ✅ | ⏳ | ✅ |
@@ -71,7 +71,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Categorización sugerida por comercio | 🟡 | ⏳ | ⏳ | Busca por la primera palabra del comercio en transacciones previas; no aprende reglas. |
 | Transferencias entre cuentas | ✅ | ⏳ | ✅ | `createTransfer`; `Transaction.transferDirection` indica el lado (in/out). Web: incluye "Pago de tarjeta". |
 | Detección automática de transferencias internas | ⏳ | — | — | |
-| Adjuntos (tickets, comprobantes) | ✅ | ⏳ | ⏳ | `POST /transactions/:id/attachments` (PDF, JPEG, PNG, WEBP, HEIC; máx. 10 MB, 10 por transacción) al bucket privado; descarga solo del dueño en `GET /attachments/:id/file`. |
+| Adjuntos (tickets, comprobantes) | ✅ | ⏳ | ✅ | `POST /transactions/:id/attachments` (PDF, JPEG, PNG, WEBP, HEIC; máx. 10 MB, 10 por transacción) al bucket privado; descarga solo del dueño en `GET /attachments/:id/file`. |
 | Captura por foto de ticket / SMS | ⏳ | ⏳ | ⏳ | Plan de OCR para tickets (sin IA primero): [document-ocr.md](./document-ocr.md). |
 | CEP de Banxico | ⏳ | ⏳ | ⏳ | |
 | Etiquetas (tags) | ⏳ | ⏳ | ⏳ | Modelo `Tag` sin API. |
@@ -89,26 +89,26 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Presupuesto mensual y por categoría | ✅ | ⏳ | ⏳ | Incluye plantillas (`createBudgetFromTemplate`). |
-| Uso y resumen en tiempo real | ✅ | 🟡 | ⏳ | Web: se quitó la tarjeta de presupuesto mock; aún no hay pantalla. Móvil: datos mock. |
-| Alertas 80% / 100% | 🟡 | ⏳ | ⏳ | Se calculan al consultar (`budgetAlerts`); no se envían como notificación. |
+| Presupuesto mensual y por categoría | ✅ | ⏳ | ✅ | `/planning/budgets`: crear, editar, copiar del mes anterior (`createBudgetFromTemplate`) y topes sugeridos del promedio de 3 meses. Un tope incluye sus subcategorías. |
+| Uso y resumen en tiempo real | ✅ | 🟡 | ✅ | Web: uso por categoría y tarjeta en Inicio. Móvil: datos mock. |
+| Alertas 80% / 100% | 🟡 | ⏳ | ✅ | Web: alertas en la pantalla de presupuestos. Aún no se envían como notificación. |
 
 ### 6. Deudas y tarjetas
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Registro de deudas (préstamo, tarjeta) | ✅ | ⏳ | ⏳ | |
-| Pagos de deuda | ✅ | ⏳ | ⏳ | `createDebtPayment`. |
-| Estrategias avalanche / snowball | ✅ | ⏳ | ⏳ | `payoffStrategy`. |
-| Resumen de deudas | ✅ | ⏳ | ⏳ | `debtSummary`. |
+| Registro de deudas (préstamo, tarjeta) | ✅ | ⏳ | ✅ | `/planning/debts`: resumen (saldo, mínimos y tasa ponderada), alta, edición y baja. |
+| Pagos de deuda | ✅ | ⏳ | ✅ | `createDebtPayment`. Web: gasto, o transferencia a la tarjeta si la deuda está ligada a una. |
+| Estrategias avalanche / snowball | ✅ | ⏳ | ✅ | `payoffStrategy` simula mes a mes (intereses, mínimos y excedente en cascada). Web: comparación lado a lado con pago extra. |
+| Resumen de deudas | ✅ | ⏳ | ✅ | `debtSummary`. |
 
 ### 7. Metas y ahorro
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Crear meta y ver progreso | ✅ | ⏳ | ⏳ | `createGoal`, `goalProgress`. |
-| Editar / borrar meta, registrar aportaciones | ✅ | ⏳ | ⏳ | `updateGoal`, `deleteGoal`, `addGoalContribution`, `removeGoalContribution`, `goalContributions`. |
-| Proyección y sugerencias de ahorro | ✅ | ⏳ | ⏳ | `goalProjection`, `goalRecommendations`. |
+| Crear meta y ver progreso | ✅ | ⏳ | ✅ | `createGoal`, `goalProgress`. |
+| Editar / borrar meta, registrar aportaciones | ✅ | ⏳ | ✅ | `updateGoal`, `deleteGoal`, `addGoalContribution`, `removeGoalContribution`, `goalContributions`. |
+| Proyección y sugerencias de ahorro | ✅ | ⏳ | ✅ | `goalProjection`, `goalRecommendations`. Web: `/planning/goals` con estado (en camino, atrasada, alcanzada) y aportación mensual editable. |
 
 ### 8. Reportes e insights
 
@@ -137,13 +137,13 @@ Belvo dejó de ofrecer datos bancarios de México (solo Brasil), por eso se usa 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
 | Proyección 30/60 días | ✅ | 🟡 | ✅ | `cashFlowProjection`: saldo actual + promedio mensual de ingresos y gastos de los últimos 6 meses (o de los meses con datos). Web: Analytics → Flujo de caja, 6 meses. |
-| Simulador "What If" | ✅ | ⏳ | ⏳ | `whatIfScenario`. |
+| Simulador "What If" | ✅ | ⏳ | ✅ | `/planning/simulator`: base real (`cashFlowBaseline`) contra escenario (ingreso, gastos mensuales, gastos únicos, pago extra), gráfica y mes en que el saldo se vuelve negativo. El cálculo con gastos únicos se hace en la web. |
 
 ### 11. Notificaciones
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Listar / marcar como leídas | ✅ | ⏳ | 🟡 | Web: la campana muestra el número real de no leídas; aún no hay lista. |
+| Listar / marcar como leídas | ✅ | ⏳ | ✅ | Web: panel en la campana y `/notifications` (filtro no leídas, paginación). |
 | Recordatorios de gastos recurrentes | ✅ | — | — | Tarea diaria del módulo de gastos recurrentes. |
 | Generación automática (presupuesto, deudas, resúmenes) | ⏳ | — | — | |
 | Push / email | ⏳ | ⏳ | ⏳ | |
@@ -164,10 +164,10 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Subir PDF del estado de cuenta (almacenado en S3) | ✅ | ⏳ | ⏳ | `POST /statements` (multipart, máx. 10 MB, deduplica por hash). Bucket privado; descarga solo del dueño en `GET /statements/:id/file`. |
+| Subir PDF del estado de cuenta (almacenado en S3) | ✅ | ⏳ | ✅ | `POST /statements` (multipart, máx. 10 MB, deduplica por hash). Bucket privado; descarga solo del dueño en `GET /statements/:id/file`. |
 | Extracción: parser Banamex + IA para otros formatos | ✅ | — | — | Parser local `banamex_v1` (tarjeta titular y digital, mensualidades MSI, pagos y devoluciones), verificado con un estado real. Otros bancos: lectura con IA. Valida saldo anterior + cargos − abonos = saldo al corte. |
 | Catálogo de modelos de IA (Anthropic, OpenAI, Gemini) | ✅ | ⏳ | ⏳ | `aiModels`: activos/desactivados, predeterminado y orden de respaldo; solo administradores lo modifican, desde el panel (`/admin/ai`). Llaves por proveedor en variables de entorno. |
-| Revisión y confirmación de movimientos importados | ✅ | ⏳ | ⏳ | `statementImport`, `updateStatementLine` (ignorar, categoría, ligar a mano), `confirmStatementImport`, `reprocessStatementImport`. |
+| Revisión y confirmación de movimientos importados | ✅ | ⏳ | ✅ | `statementImport`, `updateStatementLine` (ignorar, categoría, ligar a mano), `confirmStatementImport`, `reprocessStatementImport`. Web: `/statements` y `/statements/[id]` con totales, diferencia y líneas. |
 | Conciliación con transacciones y gastos recurrentes | ✅ | ⏳ | ⏳ | No duplica compras ya registradas (mismo monto, ±3 días); marca pagados los recurrentes por patrón de comercio (±10 días, ±15% o ±50% si el monto es variable). |
 | Resumen del mes de la tarjeta vs total a pagar | ✅ | ⏳ | 🟡 | `cardMonthSummary`: total a pagar, recurrentes esperados vs cobrados, cargos nuevos. Web: Tarjetas muestra recurrentes esperados y cobrados, saldo al corte, pago mínimo y pago para no generar intereses. |
 | Sincronización con el banco (Syncfy) | ✅ | ⏳ | ⏳ | Ver sección 9. |
@@ -206,7 +206,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 |---|---|---|---|---|
 | Reglas de alias (contiene, empieza con, exacto o expresión regular) | ✅ | ⏳ | ✅ | `/settings/aliases`. Coincidencia materializada en `Transaction.aliasId`; sin acentos ni mayúsculas (`unaccent`); la expresión regular solo se evalúa en Postgres, con límite de 5 s. Vista previa en vivo. |
 | Alias para un solo movimiento | ✅ | ⏳ | ✅ | `setTransactionAlias`; "Renombrar" en Clasificar movimientos. |
-| Nombre original oculto, visible a demanda | ✅ | ⏳ | 🟡 | El original nunca se modifica; en listas los privados muestran solo el alias (candado) y no se encuentran buscando el original. `transaction(id)` devuelve el original; falta el botón "Ver original" (detalle, fase 5). |
+| Nombre original oculto, visible a demanda | ✅ | ⏳ | 🟡 | El original nunca se modifica; en listas los privados muestran solo el alias (candado) y no se encuentran buscando el original. Botón "Ver original" en el detalle (`/transactions/[id]`). |
 
 ### 18. Personalización de cuentas y tarjetas *(nuevo)*
 
@@ -249,6 +249,6 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 | Builds móviles (EAS) | ⏳ | |
 | CI de calidad en PRs (lint, tipos, tests) | ⏳ | |
 | Tests unitarios de la API | 🟡 | 515 pasan, 6 omitidos que documentan bugs (`TODO(bug)`); faltan categorías, transferencias, notificaciones y usuarios. `pnpm turbo run test --filter=@finnit/api`. |
-| Paginación por cursor consistente | ✅ | Transacciones, cuentas y deudas paginan por (campo de orden, id). |
+| Paginación por cursor consistente | ✅ | Transacciones, cuentas, deudas y notificaciones paginan por (campo de orden, id). |
 | Tests E2E | ⏳ | |
 | Logs y monitoreo | ⏳ | |

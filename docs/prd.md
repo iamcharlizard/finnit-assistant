@@ -270,6 +270,7 @@ Detailed, verified status per feature and platform: [features.md](./features.md)
 - **Web create & accounts**: "+" flow for expenses, income and transfers (card payments) with duplicate check, category suggestion and receipt upload; `/accounts` with manual accounts (debit, credit with terms, cash, savings), nickname and card design.
 - **Recurring payments screen**: `/recurring` with day/week/month calendar, payment actions, recurring expense CRUD and suggestions detected from movements (rules) and classified with AI; accept in one click or dismiss.
 - **Categorization & aliases**: bulk categorization with merchant rules learned from corrections, AI category suggestions on demand, alias rules (contains/starts with/exact/regex, private) materialized per transaction, one-off aliases.
+- **Web screens**: transaction detail (edit, attachments, alias, reveal original), notifications panel and page, statement upload and review, budgets, debts (month-by-month payoff simulation), goals and the what-if simulator.
 - **i18n**: categories stored in English with es/en translations (Google Cloud Translation, AI fallback); user language preference.
 - **Fixes**: transaction dates stored as the local (Mexico City) day; opening balances as adjustments; consistent cursor pagination; credit card terms mutation; goals fully exposed; duplicate check (`similarTransactions`).
 - **Accounts**: multi-account support (cash, debit, credit, savings, e-wallet), balance adjustments, credit card terms.

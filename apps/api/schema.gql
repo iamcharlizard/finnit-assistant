@@ -196,6 +196,32 @@ enum AiProvider {
   openai
 }
 
+"""
+How the pattern is compared with the original text (case- and accent-insensitive)
+"""
+enum AliasMatchType {
+  contains
+  exact
+  regex
+  starts_with
+}
+
+type AliasPreview {
+  """Movements the alias would match"""
+  count: Int!
+
+  """Up to 20, newest first"""
+  samples: [AliasPreviewSample!]!
+}
+
+type AliasPreviewSample {
+  amount: Float!
+  currency: String!
+  date: DateTime!
+  original: String!
+  transactionId: ID!
+}
+
 type Attachment {
   """
   API path to download the file (authenticated, owner only); null for legacy external links
@@ -405,6 +431,14 @@ type CategoryExpense {
   categoryId: String!
   categoryName: String!
   percentage: Float!
+}
+
+"""Who set the category (or proposed a pending suggestion)"""
+enum CategorySource {
+  ai
+  bank
+  manual
+  rule
 }
 
 type CategoryUsage {
@@ -701,6 +735,57 @@ type LinkedBankAccount {
   type: String
 }
 
+"""
+Display name (and optional category / privacy) for the movements whose original text matches the pattern
+"""
+type MerchantAlias {
+  active: Boolean!
+  category: Category
+  createdAt: DateTime!
+  displayName: String!
+  id: ID!
+  isPrivate: Boolean!
+
+  """Movements currently using this alias"""
+  matchCount: Int!
+  matchType: AliasMatchType!
+  pattern: String!
+
+  """Higher wins when several aliases match"""
+  priority: Int!
+}
+
+input MerchantAliasInput {
+  active: Boolean = true
+  categoryId: ID
+
+  """At most 80 characters"""
+  displayName: String!
+  isPrivate: Boolean = false
+  matchType: AliasMatchType!
+
+  """At most 200 characters"""
+  pattern: String!
+  priority: Int = 0
+}
+
+"""
+Learned merchant → category rule: new movements of the merchant get the category without AI
+"""
+type MerchantRule {
+  category: Category!
+
+  """Movements confirmed with this rule"""
+  hits: Int!
+  id: ID!
+
+  """
+  Normalized merchant, e.g. "OXXO GAS"
+  """
+  pattern: String!
+  updatedAt: DateTime!
+}
+
 type MonthlyReport {
   categoryBreakdown: [CategoryExpense!]!
   currency: String!
@@ -713,11 +798,21 @@ type MonthlyReport {
 
 type Mutation {
   """
+  Applies the pending suggestions and learns merchant rules; returns how many were applied
+  """
+  acceptCategorySuggestions(ids: [ID!]!): Int!
+
+  """
   Creates the recurring expense of a suggestion and links its past movements as paid occurrences
   """
   acceptRecurringSuggestion(fingerprint: ID!, input: AcceptRecurringSuggestionInput): RecurringExpense!
   addGoalContribution(input: CreateGoalContributionInput!): GoalContribution!
   adjustAccountBalance(input: AdjustBalanceInput!): Account!
+
+  """
+  Moves movements (max 500) to a category; with createRule, learns a merchant rule per merchant. Returns how many changed
+  """
+  categorizeTransactions(categoryId: ID!, createRule: Boolean = true, ids: [ID!]!): Int!
 
   """
   Creates the pending movements as transactions and marks matched recurring payments as paid
@@ -739,6 +834,9 @@ type Mutation {
   createDebtPayment(input: CreateDebtPaymentInput!): DebtPayment!
   createDefaultCategories: Boolean!
   createGoal(input: CreateGoalInput!): Goal!
+
+  """Creates an alias and applies it to existing movements"""
+  createMerchantAlias(input: MerchantAliasInput!): MerchantAlias!
   createRecurringExpense(input: CreateRecurringExpenseInput!): RecurringExpense!
   createTransaction(input: CreateTransactionInput!): Transaction!
   createTransfer(input: CreateTransferInput!): Transfer!
@@ -762,6 +860,8 @@ type Mutation {
 
   """Fails while the goal has contributions"""
   deleteGoal(id: ID!): Boolean!
+  deleteMerchantAlias(id: ID!): Boolean!
+  deleteMerchantRule(id: ID!): Boolean!
   deleteRecurringExpense(id: ID!): Boolean!
   deleteStatementImport(id: ID!): Boolean!
   deleteTransaction(id: String!): Boolean!
@@ -789,6 +889,9 @@ type Mutation {
   markRecurringPaymentPaid(occurrenceId: ID!, transactionId: ID): RecurringOccurrence!
   refreshToken(input: RefreshTokenInput!): AuthPayload!
   registerBankConnection(idCredential: String!): BankSyncResult!
+
+  """Discards the pending suggestions; returns how many"""
+  rejectCategorySuggestions(ids: [ID!]!): Int!
   removeCreditCardTerms(accountId: ID!): Account!
   removeGoalContribution(id: ID!): Boolean!
 
@@ -813,6 +916,11 @@ type Mutation {
   """Sets the billing terms of one of the user's credit accounts"""
   setCreditCardTerms(accountId: ID!, input: CreditCardTermsInput!): Account!
 
+  """
+  One-off display name and/or privacy for one movement (no alias rule). displayName null or "" clears it
+  """
+  setTransactionAlias(id: ID!, input: TransactionAliasInput!): Transaction!
+
   """Admin only. Ends their open sessions."""
   setUserPassword(id: ID!, input: SetUserPasswordInput!): AdminUser!
   signIn(input: SignInInput!): AuthPayload!
@@ -822,6 +930,11 @@ type Mutation {
   """
   signInWithGoogle(input: SignInWithGoogleInput!): AuthPayload!
   skipRecurringPayment(occurrenceId: ID!): RecurringOccurrence!
+
+  """
+  Suggests a category for uncategorized movements (max 100): merchant rules first, then one AI call. Returns them with suggestedCategory set; without AI only rule suggestions appear
+  """
+  suggestTransactionCategories(ids: [ID!]!): [Transaction!]!
 
   """
   Imports new movements. refreshFromBank asks Syncfy to log in to the bank again (at most once an hour); its data arrives on the next sync.
@@ -844,6 +957,7 @@ type Mutation {
   updateCategory(id: String!, input: UpdateCategoryInput!): Category!
   updateDebt(id: String!, input: UpdateDebtInput!): Debt!
   updateGoal(id: ID!, input: UpdateGoalInput!): Goal!
+  updateMerchantAlias(id: ID!, input: MerchantAliasInput!): MerchantAlias!
 
   """Saves the signed-in user's preferences (e.g. locale)."""
   updateMyPreferences(input: UpdateMyPreferencesInput!): User!
@@ -979,9 +1093,20 @@ type Query {
   goalRecommendations(goalId: ID): GoalRecommendations!
   goals: [Goal!]!
   me: User!
+
+  """The user's merchant aliases, highest priority first"""
+  merchantAliases: [MerchantAlias!]!
+
+  """Learned merchant → category rules, most recent first"""
+  merchantRules: [MerchantRule!]!
   monthlyReport(month: Int!, year: Int!): MonthlyReport!
   notifications(after: String, first: Int, status: NotificationStatus): NotificationConnection!
   payoffStrategy(input: PayoffStrategyInput!): [DebtPayoffProjection!]!
+
+  """
+  Movements a candidate alias would match (count and up to 20, newest first), without saving
+  """
+  previewMerchantAlias(input: MerchantAliasInput!): AliasPreview!
   recurringExpense(id: ID!): RecurringExpense!
   recurringExpenseOccurrences(from: DateTime, recurringExpenseId: ID!, to: DateTime): [RecurringOccurrence!]!
   recurringExpenses(
@@ -1018,6 +1143,10 @@ type Query {
   statementImport(id: ID!): StatementImport!
   statementImports(accountId: String, after: String, first: Int = 20): StatementImportConnection!
   suggestCategoryForMerchant(input: SuggestCategoryInput!): Category
+
+  """
+  One movement; unlike lists, it includes the original text of private movements
+  """
   transaction(id: String!): Transaction!
   transactions(after: String, before: String, filters: TransactionFilters, first: Int, last: Int): TransactionConnection!
   transfer(id: String!): Transfer!
@@ -1336,19 +1465,44 @@ type TokenValidationResult {
 type Transaction {
   account: Account
   accountId: String!
+
+  """Merchant alias rule matching this movement"""
+  aliasId: ID
   amount: Float!
   attachments: [Attachment!]
   category: Category
   categoryId: String
+  categorySource: CategorySource
   createdAt: DateTime!
   currency: String!
   description: String
+
+  """
+  Name to show: one-off alias, else the matching alias rule, else merchantName, else description
+  """
+  displayName: String!
   externalId: String
+
+  """A one-off display name is set on this movement"""
+  hasOwnAlias: Boolean!
   id: String!
   isPending: Boolean!
+
+  """
+  Private (one-off or alias rule): description, merchantName and originalDescription are null except in transaction(id)
+  """
+  isPrivate: Boolean!
   isRecurringInstance: Boolean!
   merchantName: String
+
+  """
+  merchantName ?? description, never modified. Null for private movements except in transaction(id)
+  """
+  originalDescription: String
   source: String!
+
+  """Pending AI/rule suggestion, not applied until accepted"""
+  suggestedCategory: Category
 
   """
   For transfers: "out" on the source account, "in" on the destination; null otherwise
@@ -1358,6 +1512,16 @@ type Transaction {
   type: String!
   updatedAt: DateTime!
   userId: String!
+}
+
+input TransactionAliasInput {
+  """
+  One-off display name; null or "" clears it, omitted leaves it unchanged
+  """
+  displayName: String
+
+  """Hide the original text; omitted leaves it unchanged"""
+  isPrivate: Boolean
 }
 
 type TransactionConnection {
@@ -1375,11 +1539,21 @@ input TransactionFilters {
   accountId: String
   categoryId: String
   endDate: DateTime
+
+  """true: only movements with a pending category suggestion"""
+  hasSuggestion: Boolean
   isPending: Boolean
+
+  """
+  Matches the display name, and the original text only for non-private movements
+  """
   search: String
   source: TransactionSource
   startDate: DateTime
   type: TransactionType
+
+  """true: only movements without a category; false: only with one"""
+  uncategorized: Boolean
 }
 
 """Transaction source"""

@@ -5,9 +5,10 @@ import { TransferDirectionLoader } from './transfer-direction.loader';
 import { AttachmentsController } from './attachments.controller';
 import { PrismaService } from '../../services/prisma.service';
 import { StorageModule } from '../storage/storage.module';
+import { CategorizationModule } from '../categorization/categorization.module';
 
 @Module({
-  imports: [StorageModule],
+  imports: [StorageModule, CategorizationModule],
   controllers: [AttachmentsController],
   providers: [
     TransactionsResolver,

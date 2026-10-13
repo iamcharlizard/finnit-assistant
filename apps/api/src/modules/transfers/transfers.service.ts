@@ -18,6 +18,10 @@ import {
   localToday,
   toLocalDateOnly,
 } from '../../common/utils/local-date.util';
+import {
+  TRANSACTION_PRESENTATION_INCLUDE,
+  presentationFields,
+} from '../transactions/transaction.mapper';
 
 @Injectable()
 export class TransfersService {
@@ -126,8 +130,10 @@ export class TransfersService {
       const completeTransfer = await tx.transfer.findUnique({
         where: { id: transfer.id },
         include: {
-          fromTxn: true,
-          toTxn: true,
+          fromTxn: {
+            include: { alias: TRANSACTION_PRESENTATION_INCLUDE.alias },
+          },
+          toTxn: { include: { alias: TRANSACTION_PRESENTATION_INCLUDE.alias } },
         },
       });
 
@@ -148,11 +154,13 @@ export class TransfersService {
         fromTxn: {
           include: {
             account: true,
+            alias: TRANSACTION_PRESENTATION_INCLUDE.alias,
           },
         },
         toTxn: {
           include: {
             account: true,
+            alias: TRANSACTION_PRESENTATION_INCLUDE.alias,
           },
         },
       },
@@ -174,11 +182,13 @@ export class TransfersService {
         fromTxn: {
           include: {
             account: true,
+            alias: TRANSACTION_PRESENTATION_INCLUDE.alias,
           },
         },
         toTxn: {
           include: {
             account: true,
+            alias: TRANSACTION_PRESENTATION_INCLUDE.alias,
           },
         },
       },
@@ -212,6 +222,10 @@ export class TransfersService {
         externalId: string | null;
         createdAt: Date;
         updatedAt: Date;
+        aliasId?: string | null;
+        aliasName?: string | null;
+        isPrivate?: boolean;
+        alias?: { displayName: string; isPrivate: boolean } | null;
         account: {
           id: string;
           userId: string;
@@ -242,6 +256,10 @@ export class TransfersService {
         externalId: string | null;
         createdAt: Date;
         updatedAt: Date;
+        aliasId?: string | null;
+        aliasName?: string | null;
+        isPrivate?: boolean;
+        alias?: { displayName: string; isPrivate: boolean } | null;
         account: {
           id: string;
           userId: string;
@@ -279,6 +297,7 @@ export class TransfersService {
         externalId: t.fromTxn.externalId ?? undefined,
         createdAt: t.fromTxn.createdAt,
         updatedAt: t.fromTxn.updatedAt,
+        ...presentationFields(t.fromTxn),
         account: t.fromTxn.account
           ? {
               id: t.fromTxn.account.id,
@@ -311,6 +330,7 @@ export class TransfersService {
         externalId: t.toTxn.externalId ?? undefined,
         createdAt: t.toTxn.createdAt,
         updatedAt: t.toTxn.updatedAt,
+        ...presentationFields(t.toTxn),
         account: t.toTxn.account
           ? {
               id: t.toTxn.account.id,

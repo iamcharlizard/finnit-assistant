@@ -7,6 +7,8 @@ import {
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import { TransactionsService } from './transactions.service';
+import { MerchantAliasesService } from '../categorization/merchant-aliases.service';
+import { MerchantRulesService } from '../categorization/merchant-rules.service';
 
 const userId = '11111111-1111-4111-8111-111111111111';
 const pdf = Buffer.from('%PDF-1.7 receipt');
@@ -20,7 +22,12 @@ describe('TransactionsService attachments', () => {
   beforeEach(() => {
     prisma = mockDeep<PrismaService>();
     storage = mockDeep<S3StorageService>();
-    service = new TransactionsService(prisma, storage);
+    service = new TransactionsService(
+      prisma,
+      storage,
+      mockDeep<MerchantAliasesService>(),
+      mockDeep<MerchantRulesService>(),
+    );
   });
 
   const ownTransaction = (attachments = 0) =>

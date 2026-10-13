@@ -191,7 +191,7 @@ export function normalizeMerchant(value: string): string {
 }
 
 /** Grouping key: banks drop spaces at random ("APPLE.COM/BILLCUPERTINOCA"). */
-function merchantKey(merchant: string): string {
+export function merchantKey(merchant: string): string {
   return merchant.replace(/\s+/g, '');
 }
 

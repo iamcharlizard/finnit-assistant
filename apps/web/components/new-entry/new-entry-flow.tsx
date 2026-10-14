@@ -12,6 +12,8 @@ import { toast } from '@finnit/ui/components/ui/toaster';
 
 import { useAttachmentUpload } from '@/hooks/use-attachment-upload';
 import { useNewEntryData } from '@/hooks/use-new-entry-data';
+import { usePendingReceipts } from '@/hooks/use-pending-receipts';
+import { useReceiptReader } from '@/hooks/use-receipt-reader';
 import { accountLabel } from '@/lib/finance/accounts';
 import { todayKey } from '@/lib/finance/dates';
 import { gql } from '@/lib/graphql/client';
@@ -41,6 +43,28 @@ import {
   type SimilarTransaction,
 } from '@/lib/new-entry/graphql';
 import { isCardPayment, transferSources } from '@/lib/new-entry/options';
+import {
+  CONFIRM_RECEIPT_MUTATION,
+  DISCARD_RECEIPT_MUTATION,
+  RECEIPT_STATUS_QUERY,
+  type ReceiptImport,
+  type ReceiptStatus,
+} from '@/lib/receipts/graphql';
+import { discardWhenSettled } from '@/lib/receipts/discard';
+import {
+  buildConfirmInput,
+  prefillFromReceipt,
+  receiptMatches,
+  type CheckField,
+} from '@/lib/receipts/prefill';
+import { leftoverReceiptId } from '@/lib/receipts/reader';
+import { PendingReceipts } from '@/components/receipts/pending-receipts';
+import { ReceiptCapture } from '@/components/receipts/receipt-capture';
+import { ReceiptMatchReview } from '@/components/receipts/receipt-match-review';
+import { ReceiptReadFailed } from '@/components/receipts/receipt-read-failed';
+import { ReceiptReading } from '@/components/receipts/receipt-reading';
+import { ReceiptSummary } from '@/components/receipts/receipt-summary';
+import { ScanReceiptButton } from '@/components/receipts/scan-receipt-button';
 import { AttachmentUploadStatus } from './attachment-upload-status';
 import { DuplicateReview } from './duplicate-review';
 import { EntryForm } from './entry-form';
@@ -52,6 +76,10 @@ type Step =
   | { name: 'entry' }
   | { name: 'transfer' }
   | { name: 'duplicates'; matches: SimilarTransaction[] }
+  /** Receipt capture: pick the photo, upload, read (or why it couldn't). */
+  | { name: 'receipt' }
+  /** A read receipt that may already be registered. */
+  | { name: 'receiptMatch'; matches: SimilarTransaction[] }
   | {
       name: 'upload';
       transactionId: string;
@@ -62,9 +90,30 @@ type Step =
 type Busy = null | 'checking' | 'saving';
 
 /**
+ * Fire and forget: an import nobody will review (failed, cancelled). Waits
+ * for the read to end if needed; on failure it only shows up again as
+ * pending.
+ */
+function discardQuietly(receiptId: string) {
+  void discardWhenSettled(receiptId, {
+    fetchStatus: async (id) =>
+      (
+        await gql<{ receiptImport: { status: ReceiptStatus } }>(
+          RECEIPT_STATUS_QUERY,
+          { id },
+        )
+      ).receiptImport.status,
+    discard: (id) => gql(DISCARD_RECEIPT_MUTATION, { id }),
+    wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  });
+}
+
+/**
  * "Nuevo movimiento", inside the sheet: pick the kind, fill the form, check
- * for duplicates, create, then upload the receipt. Mounted while the sheet
- * is open, so every opening starts fresh.
+ * for duplicates, create, then upload the receipt. Expenses can start from
+ * a receipt photo instead ("Escanear ticket"): the server reads it, the form
+ * comes pre-filled, and confirming registers it with the photo attached.
+ * Mounted while the sheet is open, so every opening starts fresh.
  */
 export function NewEntryFlow({
   onDone,
@@ -95,6 +144,14 @@ export function NewEntryFlow({
   const [pending, setPending] = React.useState<CreateTransactionPayload | null>(
     null,
   );
+  // Receipt capture: the read import behind the form, its fields to check,
+  // where the capture started and the photo picked.
+  const [receipt, setReceipt] = React.useState<ReceiptImport | null>(null);
+  const [check, setCheck] = React.useState<CheckField[]>([]);
+  const [captureFrom, setCaptureFrom] = React.useState<'kind' | 'entry'>(
+    'kind',
+  );
+  const [photo, setPhoto] = React.useState<File | null>(null);
 
   const today = todayKey();
   const entryErrors = entryTried ? validateEntry(entry, today) : {};
@@ -108,9 +165,43 @@ export function NewEntryFlow({
     [data],
   );
 
+  const onlyAccount = accounts.length === 1 ? accounts[0]!.id : undefined;
+  const freshExpense = (): EntryDraft => ({
+    ...emptyEntryDraft('expense', todayKey()),
+    accountId: onlyAccount,
+  });
+
+  function applyReceipt(read: ReceiptImport, from: 'kind' | 'entry') {
+    const base =
+      from === 'entry' && entry.type === 'expense' ? entry : freshExpense();
+    const prefill = prefillFromReceipt(
+      base,
+      read,
+      accounts,
+      categories,
+      todayKey(),
+    );
+    setEntry(prefill.draft);
+    setCheck(prefill.check);
+    setReceipt(read);
+    setFile(null);
+    setEntryTried(false);
+    setSubmitError(null);
+    setStep({ name: 'entry' });
+  }
+
+  const reader = useReceiptReader((read) => applyReceipt(read, captureFrom));
+  const pendingReceipts = usePendingReceipts(
+    step.name === 'kind' && data.status === 'ready',
+  );
+
   React.useEffect(() => {
-    onLockChange(busy !== null || attachment.state.status === 'uploading');
-  }, [busy, attachment.state.status, onLockChange]);
+    onLockChange(
+      busy !== null ||
+        attachment.state.status === 'uploading' ||
+        reader.state.phase === 'uploading',
+    );
+  }, [busy, attachment.state.status, reader.state.phase, onLockChange]);
 
   const finish = (title: string, description?: string) => {
     toast.success(title, description ? { description } : undefined);
@@ -119,7 +210,9 @@ export function NewEntryFlow({
 
   function pickKind(kind: EntryKind) {
     setSubmitError(null);
-    const only = accounts.length === 1 ? accounts[0]!.id : undefined;
+    setReceipt(null);
+    setCheck([]);
+    const only = onlyAccount;
     if (kind === 'transfer') {
       setTransfer(emptyTransferDraft(todayKey()));
       setTransferTried(false);
@@ -167,6 +260,93 @@ export function NewEntryFlow({
     }
   }
 
+  function startCapture(from: 'kind' | 'entry') {
+    setCaptureFrom(from);
+    setPhoto(null);
+    setSubmitError(null);
+    reader.reset();
+    setStep({ name: 'receipt' });
+  }
+
+  function pickPhoto(next: File) {
+    setPhoto(next);
+    void reader.read(next);
+  }
+
+  /** Leave the capture (cancel, back): the import, if any, is discarded. */
+  function cancelCapture() {
+    const leftover = leftoverReceiptId(reader.state);
+    if (leftover) discardQuietly(leftover);
+    reader.reset();
+    setStep(captureFrom === 'entry' ? { name: 'entry' } : { name: 'kind' });
+  }
+
+  function captureAnotherPhoto() {
+    const leftover = leftoverReceiptId(reader.state);
+    if (leftover) discardQuietly(leftover);
+    setPhoto(null);
+    reader.reset();
+  }
+
+  /**
+   * "Capturar a mano": the receipt couldn't be read, so the import is
+   * discarded and the photo (if it went up fine) becomes a normal
+   * attachment of the expense.
+   */
+  function captureByHand() {
+    const state = reader.state;
+    const leftover = leftoverReceiptId(state);
+    if (leftover) discardQuietly(leftover);
+    const photoUploaded = state.phase === 'failed' && state.receiptId !== null;
+    setFile(photoUploaded ? photo : null);
+    reader.reset();
+    if (captureFrom !== 'entry' || entry.type !== 'expense') {
+      setEntry(freshExpense());
+    }
+    setReceipt(null);
+    setCheck([]);
+    setEntryTried(false);
+    setSubmitError(null);
+    setStep({ name: 'entry' });
+  }
+
+  async function discardReceipt() {
+    if (!receipt) return;
+    setBusy('saving');
+    try {
+      await gql(DISCARD_RECEIPT_MUTATION, { id: receipt.id });
+      setReceipt(null);
+      setCheck([]);
+      toast.success(t('receipts.toasts.discarded'));
+    } catch {
+      toast.error(t('receipts.errors.discardFailed'));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function confirmReceipt(attachToTransactionId?: string) {
+    if (!receipt) return;
+    setBusy('saving');
+    setSubmitError(null);
+    try {
+      await gql(CONFIRM_RECEIPT_MUTATION, {
+        id: receipt.id,
+        input: buildConfirmInput(entry, attachToTransactionId),
+      });
+      router.refresh();
+      setBusy(null);
+      if (attachToTransactionId) {
+        finish(t('receipts.toasts.attached'));
+      } else {
+        finish(t('newEntry.toasts.expense'), t('receipts.toasts.created'));
+      }
+    } catch (error) {
+      setBusy(null);
+      setSubmitError(t(`newEntry.errors.${createErrorKey(error)}`));
+    }
+  }
+
   async function submitEntry() {
     const errors = validateEntry(entry, todayKey());
     setEntryTried(true);
@@ -186,10 +366,20 @@ export function NewEntryFlow({
       // The duplicate check is a convenience: if it fails, create anyway
       // (a real problem, e.g. no connection, shows up on create).
     }
-    const check = duplicateCheck(matches);
-    if (check.kind === 'ask') {
+    if (receipt) {
+      const candidates = receiptMatches(receipt, matches);
+      if (candidates.length > 0) {
+        setBusy(null);
+        setStep({ name: 'receiptMatch', matches: candidates });
+        return;
+      }
+      await confirmReceipt();
+      return;
+    }
+    const duplicates = duplicateCheck(matches);
+    if (duplicates.kind === 'ask') {
       setBusy(null);
-      setStep({ name: 'duplicates', matches: check.matches });
+      setStep({ name: 'duplicates', matches: duplicates.matches });
       return;
     }
     await createEntry(payload);
@@ -247,8 +437,16 @@ export function NewEntryFlow({
 
   function goBack() {
     setSubmitError(null);
-    if (step.name === 'duplicates') setStep({ name: 'entry' });
-    else setStep({ name: 'kind' });
+    if (step.name === 'duplicates' || step.name === 'receiptMatch') {
+      setStep({ name: 'entry' });
+    } else if (step.name === 'receipt') {
+      cancelCapture();
+    } else {
+      // A read receipt stays pending (listed on the first step).
+      setReceipt(null);
+      setCheck([]);
+      setStep({ name: 'kind' });
+    }
   }
 
   const title = (() => {
@@ -262,13 +460,26 @@ export function NewEntryFlow({
           ? t('newEntry.titles.cardPayment')
           : t('newEntry.titles.transfer');
       case 'duplicates':
+      case 'receiptMatch':
         return t('newEntry.titles.duplicates');
+      case 'receipt':
+        if (reader.state.phase === 'reading') {
+          return t('receipts.titles.reading');
+        }
+        return reader.state.phase === 'failed' &&
+          reader.state.receiptId &&
+          reader.state.reason !== 'alreadyConfirmed'
+          ? t('receipts.titles.failed')
+          : t('receipts.titles.capture');
       case 'upload':
         return t('newEntry.titles.upload');
     }
   })();
   const canGoBack =
-    step.name !== 'kind' && step.name !== 'upload' && busy === null;
+    step.name !== 'kind' &&
+    step.name !== 'upload' &&
+    busy === null &&
+    reader.state.phase !== 'uploading';
   const busyLabel =
     busy === 'checking' ? t('newEntry.checking') : t('newEntry.saving');
 
@@ -307,7 +518,22 @@ export function NewEntryFlow({
       </div>
     );
   } else if (step.name === 'kind') {
-    body = <EntryKindPicker onPick={pickKind} />;
+    body = (
+      <div className="flex flex-col gap-4">
+        <EntryKindPicker onPick={pickKind} />
+        <ScanReceiptButton
+          variant="shortcut"
+          onClick={() => startCapture('kind')}
+        />
+        <PendingReceipts
+          receipts={pendingReceipts}
+          onResume={(read) => {
+            setCaptureFrom('kind');
+            applyReceipt(read, 'kind');
+          }}
+        />
+      </div>
+    );
   } else if (step.name === 'entry') {
     body = (
       <EntryForm
@@ -322,6 +548,63 @@ export function NewEntryFlow({
         busyLabel={busyLabel}
         submitError={submitError}
         onSubmit={() => void submitEntry()}
+        receiptSlot={
+          entry.type !== 'expense' ? undefined : receipt ? (
+            <ReceiptSummary
+              receipt={receipt}
+              needsCheck={check.length > 0}
+              busy={busy !== null}
+              onDiscard={() => void discardReceipt()}
+            />
+          ) : (
+            <ScanReceiptButton
+              variant="inline"
+              onClick={() => startCapture('entry')}
+            />
+          )
+        }
+        check={receipt ? check : []}
+        showAttachment={!receipt}
+      />
+    );
+  } else if (step.name === 'receipt') {
+    const state = reader.state;
+    if (state.phase === 'reading' || state.phase === 'ready') {
+      body = <ReceiptReading onCancel={cancelCapture} />;
+    } else if (state.phase === 'failed' && state.receiptId !== null) {
+      body = (
+        <ReceiptReadFailed
+          reason={
+            state.reason as
+              | 'readFailed'
+              | 'timeout'
+              | 'discarded'
+              | 'alreadyConfirmed'
+          }
+          onManual={captureByHand}
+          onOtherPhoto={captureAnotherPhoto}
+          onKeepWaiting={reader.keepWaiting}
+          onClose={onDone}
+        />
+      );
+    } else {
+      body = (
+        <ReceiptCapture
+          state={state}
+          file={photo}
+          onPick={pickPhoto}
+          onManual={captureByHand}
+        />
+      );
+    }
+  } else if (step.name === 'receiptMatch') {
+    body = (
+      <ReceiptMatchReview
+        matches={step.matches}
+        busy={busy !== null}
+        error={submitError}
+        onAttach={(transactionId) => void confirmReceipt(transactionId)}
+        onCreateNew={() => void confirmReceipt()}
       />
     );
   } else if (step.name === 'transfer') {

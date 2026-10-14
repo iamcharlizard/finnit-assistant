@@ -13,12 +13,15 @@ export function AmountField({
   currency,
   error,
   autoFocus,
+  className,
 }: {
   value: string;
   onChange: (value: string) => void;
   currency: string;
   error?: string;
   autoFocus?: boolean;
+  /** Extra classes for the field's box (e.g. a "check this" outline). */
+  className?: string;
 }) {
   const t = useTranslations('newEntry.fields');
   const id = React.useId();
@@ -29,6 +32,7 @@ export function AmountField({
       <div
         className={cn(
           'flex min-h-14 items-center gap-2 rounded-input border border-input bg-surface px-4 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/40',
+          className,
           error && 'border-expense ring-expense/20',
         )}
       >

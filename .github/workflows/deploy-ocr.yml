@@ -1,0 +1,120 @@
+name: Deploy OCR
+
+# Internal OCR service (apps/ocr). Branch → environment:
+#   main    → production  (image tag `latest`,  Dokploy app finnit-ocr)
+#   testing → testing     (image tag `testing`, Dokploy app finnit-ocr-test)
+# No domain: the API reaches it on Dokploy's internal network.
+on:
+  push:
+    branches: [main, testing]
+    paths:
+      - apps/ocr/**
+      - .github/workflows/deploy-ocr.yml
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ocr-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/finnit-ocr
+
+jobs:
+  build:
+    name: Build, test and push (arm64)
+    # Native arm64 runner: the Hetzner CAX server is ARM, so no QEMU emulation.
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+      channel: ${{ steps.vars.outputs.channel }}
+      environment: ${{ steps.vars.outputs.environment }}
+    steps:
+      - name: Resolve target environment
+        id: vars
+        run: |
+          case "$GITHUB_REF_NAME" in
+            main)    environment=production;  channel=latest ;;
+            testing) environment=testing;     channel=testing ;;
+            *) echo "::error::Branch '$GITHUB_REF_NAME' has no environment; deploy from main or testing."; exit 1 ;;
+          esac
+          {
+            echo "tag=sha-${GITHUB_SHA::7}"
+            echo "channel=$channel"
+            echo "environment=$environment"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build test image
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/ocr
+          file: apps/ocr/Dockerfile
+          target: test
+          platforms: linux/arm64
+          load: true
+          tags: finnit-ocr:test
+          cache-from: type=gha,scope=finnit-ocr
+          cache-to: type=gha,mode=max,scope=finnit-ocr
+
+      - name: Unit tests (pytest, synthetic images)
+        run: docker run --rm finnit-ocr:test
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/ocr
+          file: apps/ocr/Dockerfile
+          platforms: linux/arm64
+          load: true
+          tags: finnit-ocr:ci
+          cache-from: type=gha,scope=finnit-ocr
+
+      - name: Smoke test (health + auth + OCR of a generated receipt)
+        run: apps/ocr/scripts/smoke-test.sh finnit-ocr:ci
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image
+        run: |
+          for tag in "${{ steps.vars.outputs.tag }}" "${{ steps.vars.outputs.channel }}"; do
+            docker tag finnit-ocr:ci "$IMAGE:$tag"
+            docker push "$IMAGE:$tag"
+          done
+
+  deploy:
+    name: Deploy to Dokploy (${{ needs.build.outputs.environment }})
+    needs: build
+    runs-on: ubuntu-latest
+    # Same GitHub environments as the API; the OCR app has its own ID secret.
+    environment: ${{ needs.build.outputs.environment }}
+    steps:
+      - name: Trigger Dokploy deployment
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_OCR_APPLICATION_ID: ${{ secrets.DOKPLOY_OCR_APPLICATION_ID }}
+        run: |
+          if [ -z "$DOKPLOY_OCR_APPLICATION_ID" ]; then
+            echo "::error::Secret DOKPLOY_OCR_APPLICATION_ID is not set for this environment (see docs/deployment.md, OCR)."
+            exit 1
+          fi
+          curl --fail-with-body -sS -X POST "$DOKPLOY_URL/api/application.deploy" \
+            -H 'accept: application/json' \
+            -H 'content-type: application/json' \
+            -H "x-api-key: $DOKPLOY_API_KEY" \
+            -d "{\"applicationId\": \"$DOKPLOY_OCR_APPLICATION_ID\"}"
+
+      - name: Summary
+        run: |
+          echo "Deployed \`$IMAGE:${{ needs.build.outputs.tag }}\` to **${{ needs.build.outputs.environment }}** (also tagged \`${{ needs.build.outputs.channel }}\`)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Rollback: set the Dokploy image of finnit-ocr to a previous \`sha-*\` tag and redeploy." >> "$GITHUB_STEP_SUMMARY"

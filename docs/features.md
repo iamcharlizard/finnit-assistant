@@ -189,7 +189,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 |---|---|---|---|---|
 | Calendario día / semana / mes con la lista de pagos del periodo | ✅ | ⏳ | ✅ | `/recurring` (sustituye a `/calendar`): resumen, calendario y lista del día o periodo. |
 | Alta, edición, pausa y baja; marcar pagado u omitido | ✅ | ⏳ | ✅ | |
-| Sugerencias detectadas en los movimientos sincronizados | ✅ | ⏳ | ✅ | `recurringSuggestions` (sin IA): mismo comercio, monto parecido (±15%, variable hasta ±50%) e intervalo regular; 3 apariciones (2 si es mensual a trimestral con monto fijo, o semestral/anual). `acceptRecurringSuggestion` crea el pago y marca pagados los cargos de la evidencia; `dismissRecurringSuggestion`. |
+| Sugerencias detectadas en los movimientos sincronizados | ✅ | ⏳ | ✅ | `recurringSuggestions` (sin IA): mismo comercio, monto parecido (±15%, variable hasta ±50%) e intervalo regular; 3 apariciones; bastan 2 si caen el mismo día del mes (± 1 día, fines de mes como el mismo día) aunque el monto varíe, o si el monto es fijo en pagos mensuales a trimestrales, o si es semestral/anual. `acceptRecurringSuggestion` crea el pago y marca pagados los cargos de la evidencia; `dismissRecurringSuggestion`. |
 | Clasificación de la sugerencia con IA (tipo, categoría, nombre) | ✅ | — | ✅ | Funcionalidad `recurring_classification`, en lote y guardada en `RecurringSuggestionState`; solo se envía comercio, monto y frecuencia. El usuario siempre confirma. |
 
 ### 16. Clasificación de movimientos *(nuevo)*

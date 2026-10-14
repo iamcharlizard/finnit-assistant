@@ -164,7 +164,7 @@ Local, open-source extraction first; AI only as a fallback. Research, OCR engine
 A dedicated screen to see and manage recurring payments (feature 12), fed by what the bank sync already imported.
 - [ ] Calendar of the period with **day / week / month** views, and next to it the list of payments of that period (due, paid, skipped, overdue).
 - [ ] Add, edit, pause and delete a recurring payment; mark an occurrence as paid or skipped.
-- [ ] **Suggested recurring payments** section, detected from synced movements: same merchant (or alias, feature 17), similar amount (±15%, wider for utilities) and a regular interval (weekly, biweekly, monthly, yearly…), seen at least 2–3 times.
+- [x] **Suggested recurring payments** section, detected from synced movements: same merchant (or alias, feature 17), similar amount (±15%, wider for utilities) and a regular interval (weekly, biweekly, monthly, yearly…), seen at least 3 times — or just 2 when both charges fall on the same day of the month (± 1 day).
 - [ ] Each suggestion shows the evidence (dates and amounts found) and can be **added with one click** (name, amount, frequency, next date, account and tracking mode pre-filled) or dismissed (it doesn't come back).
 - [ ] Detection runs without AI. **AI (optional, per-feature AI setting)** only classifies the suggestion: kind (subscription, utility, loan…), category and a friendly name. The user always confirms; nothing is created automatically.
 - [ ] Once added, the movements that originated the suggestion are linked to it (past occurrences marked as paid).

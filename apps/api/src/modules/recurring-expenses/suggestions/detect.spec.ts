@@ -8,6 +8,7 @@ import {
   detectRecurring,
   isInstallmentText,
   normalizeMerchant,
+  onSameMonthDay,
   suggestionFingerprint,
 } from './detect';
 
@@ -218,9 +219,38 @@ describe('detectRecurring', () => {
     );
     expect(twice.confidence).toBeLessThan(fourTimes.confidence);
 
+    // Twice, a different amount and 4 days apart in the month: not enough.
     expect(
-      detect(series(['2026-08-29', '2026-09-30'], [250, 389], 'TELMEX')),
+      detect(series(['2026-08-10', '2026-09-14'], [250, 389], 'TELMEX')),
     ).toEqual([]);
+  });
+
+  it('accepts two charges on the same day of the month (± 1), even if the amount varies', () => {
+    const [sameDay] = detect(
+      series(['2026-08-12', '2026-09-12'], [250, 360], 'CFE SUMINISTRADOR'),
+    );
+    expect(sameDay).toMatchObject({
+      frequency: RecurringFrequency.monthly,
+      isVariableAmount: true,
+    });
+
+    const [oneDayApart] = detect(
+      series(['2026-08-29', '2026-09-30'], [250, 389], 'TELMEX'),
+    );
+    expect(oneDayApart).toMatchObject({
+      frequency: RecurringFrequency.monthly,
+      isVariableAmount: true,
+    });
+
+    // Month ends count as the same day (Aug 31, Sep 28 → 28 days apart).
+    const [monthEnd] = detect(series(['2026-08-31', '2026-09-28'], 199, 'GYM'));
+    expect(monthEnd.frequency).toBe(RecurringFrequency.monthly);
+  });
+
+  it('onSameMonthDay compares days of the month with month ends as the 28th', () => {
+    expect(onSameMonthDay([d('2026-08-10'), d('2026-09-11')])).toBe(true);
+    expect(onSameMonthDay([d('2026-08-10'), d('2026-09-12')])).toBe(false);
+    expect(onSameMonthDay([d('2026-01-31'), d('2026-02-28')])).toBe(true);
   });
 
   it('skips stale subscriptions', () => {

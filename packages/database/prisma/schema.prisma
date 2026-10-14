@@ -199,6 +199,30 @@ enum ImportedLineStatus {
   ignored
 }
 
+/// Lifecycle of a receipt photo: uploaded → processing → needs_review →
+/// confirmed (transaction created or photo attached) | discarded; failed on errors.
+enum ReceiptStatus {
+  uploaded
+  processing
+  needs_review
+  confirmed
+  discarded
+  failed
+}
+
+/// How a receipt's fields were extracted.
+enum ReceiptRoute {
+  cfdi_qr // the SAT QR of a printed CFDI (exact total and tax ID)
+  ocr_rules // OCR text + local rules
+  ai // OCR text sent to the AI fallback (receipt_parsing feature)
+}
+
+enum ReceiptConfidence {
+  high // total and date, cross-checked (QR total or subtotal + tax)
+  medium // total and date
+  low // something is missing
+}
+
 // ---------------------- Models -----------------------
 
 model User {
@@ -238,6 +262,8 @@ model User {
   recurringSuggestionStates RecurringSuggestionState[]
   merchantAliases           MerchantAlias[]
   merchantRules             MerchantRule[]
+  receiptImports            ReceiptImport[]
+  merchantTaxIds            MerchantTaxId[]
 }
 
 model Account {
@@ -261,6 +287,7 @@ model Account {
   recurringExpenses   RecurringExpense[]
   statementImports    StatementImport[]
   importedLines       ImportedTransaction[] @relation("imported_account")
+  receiptSuggestions  ReceiptImport[]       @relation("receipt_suggested_account")
 
   @@unique([userId, name])
   @@index([userId])
@@ -301,6 +328,8 @@ model Category {
   suggestedForTransactions  Transaction[]              @relation("transaction_suggested_category")
   merchantAliases           MerchantAlias[]
   merchantRules             MerchantRule[]
+  receiptSuggestions        ReceiptImport[]            @relation("receipt_suggested_category")
+  merchantTaxIds            MerchantTaxId[]
 
   @@unique([userId, name], name: "category_user_name_unique")
   @@unique([userId, key], name: "category_user_key_unique")
@@ -367,6 +396,8 @@ model Transaction {
   transactionTags   TransactionTag[]
   importedMatches   ImportedTransaction[] @relation("imported_matched")
   recurringPayment  RecurringOccurrence?
+  receiptImport     ReceiptImport?        @relation("receipt_transaction")
+  receiptMatches    ReceiptImport[]       @relation("receipt_matched_transaction")
 
   @@index([userId, txnDate(sort: Desc)])
   @@index([userId, accountId, txnDate(sort: Desc)])
@@ -859,4 +890,70 @@ model AiFeature {
 
   aiModel   AiModel? @relation(fields: [aiModelId], references: [id], onDelete: SetNull)
   updatedBy User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+}
+
+/// A receipt photo (feature 14): extracted fields wait for the user to
+/// confirm them. One receipt = one transaction (no line items).
+model ReceiptImport {
+  id                   String             @id @default(uuid())
+  userId               String
+  status               ReceiptStatus      @default(uploaded)
+  fileKey              String             @unique // S3 object key (users/<userId>/receipts/<id>.<ext>)
+  fileName             String?
+  fileHash             String // sha256 of the uploaded file
+  mimeType             String
+  fileSize             Int
+  route                ReceiptRoute?
+  confidence           ReceiptConfidence?
+  total                Decimal?           @db.Decimal(18, 2)
+  subtotal             Decimal?           @db.Decimal(18, 2)
+  tax                  Decimal?           @db.Decimal(18, 2)
+  currency             String             @default("MXN") @db.VarChar(3)
+  date                 DateTime?          @db.Date
+  merchantName         String?
+  merchantTaxId        String?            @db.VarChar(13) // RFC of the issuer
+  cardLast4            String?            @db.VarChar(4)
+  suggestedAccountId   String?
+  suggestedCategoryId  String?
+  cfdiUuid             String?            @db.VarChar(36)
+  ocrText              String?            @db.Text
+  rawExtraction        Json?
+  errorMessage         String?
+  transactionId        String?            @unique // created or attached-to transaction, on confirm
+  matchedTransactionId String? // existing movement that looks like this receipt
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  suggestedAccount   Account?     @relation("receipt_suggested_account", fields: [suggestedAccountId], references: [id], onDelete: SetNull)
+  suggestedCategory  Category?    @relation("receipt_suggested_category", fields: [suggestedCategoryId], references: [id], onDelete: SetNull)
+  transaction        Transaction? @relation("receipt_transaction", fields: [transactionId], references: [id], onDelete: SetNull)
+  matchedTransaction Transaction? @relation("receipt_matched_transaction", fields: [matchedTransactionId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, fileHash])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([suggestedAccountId])
+  @@index([suggestedCategoryId])
+  @@index([matchedTransactionId])
+}
+
+/// Merchant tax ID (RFC) → name → category. userId null = global entry
+/// (unique per taxId through a partial index in SQL); user entries learn
+/// from confirmed receipts and win over the global ones.
+model MerchantTaxId {
+  id         String   @id @default(uuid())
+  userId     String?
+  taxId      String   @db.VarChar(13)
+  name       String   @db.VarChar(120)
+  categoryId String?
+  hits       Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, taxId])
+  @@index([taxId])
+  @@index([categoryId])
 }

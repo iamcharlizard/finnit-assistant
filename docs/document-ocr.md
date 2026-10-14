@@ -35,7 +35,7 @@ Contexto: podemos instalar lo que sea en Docker, pero producción es un Hetzner 
 
 **Por qué RapidOCR:** es la mejor precisión open source para fotos (los modelos de PaddleOCR, que soportan español desde PP-OCRv5 multilingüe) sin cargar con el framework PaddlePaddle. Corre en CPU con ONNX Runtime, que publica builds para arm64. La biblioteca incluye un clasificador de orientación (texto girado), y los modelos convertidos a ONNX tienen licencia Apache-2.0.
 
-**Pendiente de validar en la fase 0:** el consumo real de RAM y el tiempo por imagen en el CAX11 (arm64). Los números de rendimiento de arriba vienen de pruebas en x86 de terceros.
+**Medido en la fase 0** (ver [resultados](#resultados-de-la-fase-0-local)): en arm64 con 2 CPU, 2–4 s por ticket, ~160 MB en reposo y ~0.6 GB de pico. Falta repetir la medición en el CAX11 con `apps/ocr/scripts/benchmark.sh`.
 
 ### Por qué un contenedor aparte y no dentro de la API
 
@@ -79,7 +79,7 @@ PDF ─► texto (unpdf) ─► ¿hay texto? ── no ─► OCR (servicio ocr)
 ```
 
 - **Validación como disparador:** la IA solo entra si el resultado local no cuadra (dentro de `BALANCE_TOLERANCE`). Si la IA tampoco cuadra, nos quedamos con el resultado que tenga menor `|difference|` y se marca para revisión.
-- **PDF escaneado:** se detecta por poco texto por página. El servicio `ocr` rasteriza (`pypdfium2`, unos 300 dpi), aplica OCR y devuelve líneas reconstruidas por coordenadas. Pasan por los mismos parsers.
+- **PDF escaneado:** se detecta por poco texto por página. El servicio `ocr` rasteriza (`pypdfium2`, 200 dpi), aplica OCR y devuelve líneas reconstruidas por coordenadas. Pasan por los mismos parsers.
 - **Perfiles por banco (cuando llegue el segundo banco):** usar las coordenadas que ya entrega pdf.js (`getTextContent`) para armar filas y columnas, y describir cada banco con configuración (texto que lo identifica, rangos de x de las columnas, formato de fecha, regla del signo) en lugar de una clase con expresiones regulares.
 - **XML del CFDI del estado de cuenta:** Banamex emite sus estados de cuenta como CFDI 4.0, pero no encontramos una descarga del XML para personas físicas (BancaNet empresarial solo exporta TXT/CSV). Queda descartado por ahora.
 
@@ -111,22 +111,65 @@ De forma confiable: **total, fecha, comercio (por RFC o por nombre) e IVA**. Las
 
 ### Fase 0: prueba con datos reales (antes de construir)
 
-- [ ] Juntar un set de prueba local, fuera del repo: 30 fotos de tickets (OXXO, supermercados, gasolineras, restaurantes, facturas con QR), 3 estados de cuenta digitales y 2 escaneados.
-- [ ] Script que corra RapidOCR (PP-OCRv5) y Tesseract sobre el set y reporte, por ticket, si el total, la fecha y el RFC salieron correctos.
-- [ ] Medir en el CAX11 (arm64): RAM en reposo y en carga, y segundos por imagen y por página.
-- [ ] Decidir: confirmar RapidOCR o cambiar a PaddleOCR nativo. Anotar los resultados en este documento.
+- [ ] Juntar un set de prueba local, fuera del repo: 30 fotos de tickets (OXXO, supermercados, gasolineras, restaurantes, facturas con QR), 3 estados de cuenta digitales y 2 escaneados. *Por ahora: 5 fotos reales y 1 estado de cuenta Banamex en `apps/api/test/fixtures/private/` (ignorado por git).*
+- [ ] Script que corra RapidOCR (PP-OCRv5) y Tesseract sobre el set y reporte, por ticket, si el total, la fecha y el RFC salieron correctos. *Hecho para RapidOCR con las 5 fotos (resultados abajo); falta Tesseract y ampliar el set.*
+- [ ] Medir en el CAX11 (arm64): RAM en reposo y en carga, y segundos por imagen y por página. *Medido en local (arm64, abajo); en el servidor, con `apps/ocr/scripts/benchmark.sh` (ver `docs/deployment.md`).*
+- [x] Decidir: confirmar RapidOCR o cambiar a PaddleOCR nativo. **RapidOCR confirmado** con los datos locales; revisar si los tiempos en el CAX11 salen más de 3× peores.
+
+#### Resultados de la fase 0 (local)
+
+Entorno: Mac con Apple Silicon (arm64), Docker Desktop (10 vCPU, VM de 8 GB, kernel 6.12), imagen `finnit-ocr` construida desde `apps/ocr` (RapidOCR 3.9.2, ONNX Runtime 1.30.0, modelos PP-OCRv5 mobile: detección `ch`, reconocimiento `latin`, clasificador de orientación de líneas). Contenedor con `--memory 1g`. La columna "2 CPU" usa `--cpus 2` y `OCR_THREADS=2` para parecerse al CAX11 (2 vCPU Neoverse-N1, más lentos por núcleo que un M-series: hay que confirmarlo en el servidor).
+
+**Fotos de tickets** (fotos de celular de 12 MP; tiempo total del servidor, promedio de 3 corridas en caliente; la primera corrida no fue más lenta):
+
+| Ticket | Líneas | 2 CPU | 1 CPU | TOTAL con monto | Fecha | RFC | QR |
+|---|---|---|---|---|---|---|---|
+| 1 | 26 | 2.0 s | 3.5 s | sí | sí | sí | no (no tiene) |
+| 2 | 32 | 2.0 s | 3.5 s | sí | sí | no (no se encontró un RFC) | no (no tiene) |
+| 3 | 38 | 2.4 s | 4.6 s | sí | sí (`dd/MMM./aaaa`) | sí | sí (no es de CFDI) |
+| 4 | 66 | 3.9 s | 7.7 s | sí | sí | sí | no (no tiene) |
+| 5 | 38 | 3.0 s | 5.1 s | sí | sí | sí | no: el QR del CFDI quedó cortado en la foto; la URL de verificación impresa sí sale en el texto |
+
+- Reparto del tiempo (2 CPU): decodificación ~0.1 s, preprocesado < 0.05 s, QR ~0.1–0.15 s y OCR el resto; dentro del OCR, el reconocimiento es ~80 %. El tiempo crece con el número de líneas del ticket.
+- Sin límite de CPU (10 núcleos) no es más rápido: 1.3–4.9 s. **Con límite de CPU hay que fijar `OCR_THREADS` igual al límite**: ONNX Runtime dimensiona sus hilos por los núcleos visibles, no por la cuota, y con 10 hilos en 2 CPU la latencia sube 3–4×.
+- El recorte de perspectiva se aplicó en 1 de 5 fotos; en las demás (mano en la foto, ticket ocupando todo el cuadro) se usó la foto completa, como se esperaba.
+- Variantes probadas sobre las 5 fotos: color, gris, CLAHE 1.0 y CLAHE 2.0 (elegido: 5/5 totales y 5/5 fechas, y el más rápido); lado mayor 1600 px contra 1280 px (mismos aciertos, se queda 1600); lote de reconocimiento 6, 12 y 24 (6 es el más rápido).
+- Para las reglas de la fase 3: aparecen fechas `dd/mm/aaaa`, `dd-mm-aaaa` y `dd/MMM./aaaa` (mes abreviado **con punto**); el OCR a veces confunde letra y dígito dentro de un RFC (`O`/`0`, `I`/`1`), así que conviene normalizar por posición antes de validar.
+
+**Estado de cuenta Banamex** (PDF digital de 10 páginas; tiene capa de texto, se midió el OCR de todos modos):
+
+| Render | Tiempo (2 CPU) | Líneas | Pico de memoria |
+|---|---|---|---|
+| 200 dpi (por defecto) | 72.6 s (~7 s por página) | 489 | ~0.80 GB |
+| 150 dpi (`OCR_PDF_DPI=150`) | 64.0 s | 488 | ~0.57 GB |
+
+Contra la capa de texto del PDF (páginas 1–3): se encontraron los 102 montos de 102, a 150 y a 200 dpi.
+
+**Memoria del contenedor:**
+
+| Momento | Memoria |
+|---|---|
+| En reposo, con los modelos cargados | ~160 MB |
+| Pico al arrancar (carga de modelos) | ~430 MB (cgroup, incluye caché de archivos) |
+| Pico procesando fotos | 470–530 MB (`docker stats`), 535–585 MB (cgroup `memory.peak`) |
+| Pico procesando el PDF a 200 dpi | ~800 MB (`docker stats`), ~840 MB (cgroup) |
+| Después de una corrida | 130–340 MB (el asignador no devuelve todo al sistema) |
+
+La imagen pesa ~166 MB comprimida (lo que se descarga) y ~450 MB descomprimida; arranca y queda lista en 3–4 s.
+
+**Recomendación para Dokploy** (servidor compartido de 4 GB): `finnit-ocr` con límite de memoria **1 GB** y reserva **256 MB**, límite de CPU **1** con `OCR_THREADS=1` (deja la otra CPU a la API y las bases; subir a 2/2 si la latencia en el servidor no alcanza). `finnit-ocr-test` con **768 MB** / 128 MB, CPU 0.5, `OCR_THREADS=1` y `OCR_PDF_DPI=150`. Con `OCR_MAX_CONCURRENCY=1` la memoria queda acotada a un trabajo a la vez. Detalles en `docs/deployment.md`.
 
 ### Fase 1: servicio `ocr`
 
-- [ ] `services/ocr/`: Python 3.12 + FastAPI + `rapidocr` (ONNX Runtime) + `opencv-python-headless` + `pypdfium2` + `zxing-cpp`. Modelos PP-OCRv5 descargados dentro de la imagen, sin descargas al arrancar.
-- [ ] Endpoints:
+- [x] `apps/ocr/`: Python 3.12 + FastAPI + `rapidocr` (ONNX Runtime) + `opencv-python-headless` + `pypdfium2` + `zxing-cpp`. Modelos PP-OCRv5 descargados dentro de la imagen (URLs y sha256 fijos en `apps/ocr/models.json`), sin descargas al arrancar.
+- [x] Endpoints (contrato en `apps/ocr/README.md`):
   - `POST /v1/image`: líneas con texto, caja y confianza, más los QR detectados.
   - `POST /v1/pdf`: OCR por página.
   - `GET /health`.
-- [ ] Autenticación con un token compartido (`OCR_SERVICE_TOKEN`). Sin puerto público. Límite de tamaño de archivo y de páginas.
-- [ ] `Dockerfile` multi-arch (arm64 en producción y local en Mac). Agregar el servicio a `docker-compose.yml`.
-- [ ] CI: build y smoke test de la imagen, push a GHCR con los tags `latest` y `testing`, siguiendo `deploy-api.yml`.
-- [ ] Dokploy: una app `ocr` por ambiente, en la red interna del proyecto, con límites de memoria y CPU. Documentar en `docs/deployment.md` con su rollback.
+- [x] Autenticación con un token compartido (`OCR_SERVICE_TOKEN`; sin él no arranca). Sin puerto público. Límite de tamaño de archivo (15 MB) y de páginas (`maxPages`, 10 por defecto).
+- [x] `Dockerfile` (`python:3.12-slim` fijado por digest, usuario sin privilegios, healthcheck, un worker). Probado en arm64; la imagen base y las wheels también existen para amd64. Servicio `ocr` en `docker-compose.yml` (puerto 8090 solo en `127.0.0.1`).
+- [x] CI: `.github/workflows/deploy-ocr.yml` (pytest dentro de la imagen, smoke test, push a GHCR con `sha-xxxxxxx` y `latest`/`testing`, deploy en Dokploy con `DOKPLOY_OCR_APPLICATION_ID`).
+- [ ] Dokploy: una app `ocr` por ambiente, en la red interna del proyecto, con límites de memoria y CPU. *Documentado en `docs/deployment.md` (OCR); falta crearlas en el servidor.*
 - [ ] API: `OcrClient` en `src/modules/ocr/`, con `OCR_SERVICE_URL`, timeout, reintentos y un error tipado cuando el servicio no está disponible (en ese caso se pasa al respaldo de IA o el proceso falla con un mensaje claro).
 
 ### Fase 2: estados de cuenta

@@ -38,6 +38,8 @@ All 11 original GraphQL modules implemented, plus recurring expenses in `apps/ap
 | Statements (PDF import + reconciliation) | `src/modules/statements/` (+ `src/modules/storage/` for S3) |
 | AI model catalog + providers (Anthropic, OpenAI, Gemini) | `src/modules/ai/` |
 | Bank connections (Syncfy aggregation) | `src/modules/bank-connections/` |
+| Receipts (photo → draft expense: CFDI QR, OCR + rules, AI fallback) | `src/modules/receipts/` |
+| OCR client (internal `ocr` service, `OCR_SERVICE_URL` / `OCR_SERVICE_TOKEN`) | `src/modules/ocr/` |
 | Admin (user access; master/admin rules) | `src/modules/admin/` |
 | Categorization (merchant rules, aliases, AI suggestions) | `src/modules/categorization/` |
 
@@ -82,6 +84,8 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261012120000_recurring_expenses_and_statements` (rollback: `packages/database/scripts/rollbacks/`)
 - `20261012180000_ai_model_catalog`
 - `20261013090000_syncfy_bank_sync`
+- `20261013120000_private_attachments` … `20261017090000_merchant_rules_and_aliases` (rollbacks in `packages/database/scripts/rollbacks/`)
+- `20261018090000_receipts_and_merchant_tax_ids` (ReceiptImport, MerchantTaxId with a partial unique index for global rows; rollback in `packages/database/scripts/rollbacks/`)
 - `20261013120000_private_attachments`
 - `20261014090000_admin_access_and_ai_features`
 - `20261015090000_category_i18n_and_ai_features` + `20261015090100_ai_feature_defaults` (enum values added in one file can't be used in the same transaction, so the seed rows live in a second file)

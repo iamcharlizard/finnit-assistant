@@ -245,12 +245,98 @@ En el repo: *Settings → Environments → New environment*, con el nombre exact
 | `DOKPLOY_URL` | `https://panel.<dominio-del-panel>` (sin `/` al final). Igual en ambos |
 | `DOKPLOY_API_KEY` | Dokploy → *Profile → API/CLI → Generate token*. Puede ser el mismo en ambos |
 | `DOKPLOY_APPLICATION_ID` | El `applicationId` de la app **de ese ambiente** |
+| `DOKPLOY_OCR_APPLICATION_ID` | El `applicationId` de la app de OCR de ese ambiente (ver "OCR (servicio interno)") |
 
 Opcional: en `production` activa *Required reviewers* para aprobar cada despliegue manualmente.
 
 ### 4. Primer despliegue
 
 Haz push a la rama del ambiente o usa *Actions → Deploy API → Run workflow* eligiendo la rama. Comprueba `https://<dominio del ambiente>/health` → `{"status":"ok"}`.
+
+## OCR (servicio interno)
+
+El servicio `ocr` ([`apps/ocr`](../apps/ocr/README.md)) lee fotos de tickets y PDFs escaneados con RapidOCR (PP-OCRv5). Es una imagen aparte para que su consumo de CPU y memoria no afecte a la API. **No tiene dominio**: solo la API lo llama, por la red interna de Dokploy, con un token compartido. Diseño y mediciones: [`docs/document-ocr.md`](document-ocr.md).
+
+```
+push a main o testing con cambios en apps/ocr ──► GitHub Actions (runner arm64)
+   1. docker build --target test → pytest dentro de la imagen (imágenes sintéticas)
+   2. docker build → smoke test: sin token no arranca, /health, 401, OCR de un ticket generado con QR
+   3. push a ghcr.io/iamcharlizard/finnit-ocr:{sha-xxxxxxx, latest|testing}
+   4. POST /api/application.deploy en Dokploy (DOKPLOY_OCR_APPLICATION_ID del ambiente)
+```
+
+Workflow: [`.github/workflows/deploy-ocr.yml`](../.github/workflows/deploy-ocr.yml). También se puede lanzar a mano (*Actions → Deploy OCR → Run workflow*).
+
+| | production | testing |
+|---|---|---|
+| App (*App Name*) | `finnit-ocr` | `finnit-ocr-test` |
+| Imagen | `ghcr.io/iamcharlizard/finnit-ocr:latest` | `ghcr.io/iamcharlizard/finnit-ocr:testing` |
+| Dominio | Ninguno | Ninguno |
+| Memoria (límite / reserva) | 1 GB / 256 MB | 768 MB / 128 MB |
+| CPU (límite / reserva) | 1 / — | 0.5 / — |
+| Variables extra | `OCR_THREADS=1` | `OCR_THREADS=1`, `OCR_PDF_DPI=150` |
+
+Por qué esos valores (medidos en arm64, ver la fase 0 en `docs/document-ocr.md`): ~160 MB en reposo, ~0.6 GB de pico con fotos y ~0.8 GB con páginas de PDF a 200 dpi (~0.57 GB a 150 dpi). Con `OCR_MAX_CONCURRENCY=1` (por defecto) solo hay un trabajo a la vez. `OCR_THREADS` debe ser igual al límite de CPU redondeado hacia arriba: ONNX Runtime no ve la cuota de CPU y con más hilos se vuelve 3–4× más lento. Si las fotos tardan demasiado en el servidor y la máquina tiene CPU libre, sube producción a CPU 2 con `OCR_THREADS=2`. Si la memoria del servidor no alcanza, detén `finnit-ocr-test` cuando no lo uses: la API de testing responde con un error tipado mientras no esté.
+
+### Crear la app (por ambiente)
+
+1. En el proyecto **Finnit**: **Create Service → Application** con el *App Name* de la tabla.
+2. **Provider → Docker**: la imagen de la tabla. El paquete `finnit-ocr` de GHCR debe ser público (*GitHub → Packages → finnit-ocr → Package settings → Change visibility*), igual que `finnit-api`; si lo dejas privado, configura *Registry URL* `ghcr.io` con un token con `read:packages`.
+3. **Environment**:
+   ```
+   OCR_SERVICE_TOKEN=<openssl rand -hex 32, distinto por ambiente>
+   OCR_THREADS=1
+   ```
+   más las variables extra de la tabla. Opcionales (con sus valores por defecto): `OCR_MAX_CONCURRENCY=1`, `OCR_REQUEST_TIMEOUT_SECONDS=30`, `OCR_PDF_TIMEOUT_SECONDS=300`, `OCR_MAX_UPLOAD_MB=15`, `OCR_PDF_DPI=200`. Sin `OCR_SERVICE_TOKEN` el contenedor no arranca.
+4. **Domains**: ninguno. **Advanced → Ports**: ninguno publicado. El contenedor escucha en el puerto `8090` dentro de la red de Dokploy.
+5. **Advanced → Resources**: límites según la tabla.
+6. Deploy. En **Logs** debe aparecer `models loaded (PP-OCRv5)`; el healthcheck de la imagen consulta `/health`.
+7. Copia el `applicationId` y agrégalo como secreto `DOKPLOY_OCR_APPLICATION_ID` en el environment de GitHub del ambiente (ver "Secretos en GitHub").
+
+### Conectar la API
+
+En la app de la API del mismo ambiente:
+```
+OCR_SERVICE_URL=http://<App Name de la app de OCR>:8090
+OCR_SERVICE_TOKEN=<el mismo valor que en la app de OCR>
+```
+Usa el nombre exacto que muestra Dokploy para la app de OCR (si le agregó un sufijo aleatorio, inclúyelo), igual que con el host de la base. Para comprobar desde la terminal de la API: `node -e "fetch('http://<host>:8090/health').then(r=>r.text()).then(console.log)"` → `{"status":"ok","engine":"rapidocr","models":"PP-OCRv5"}`.
+
+Timeouts para el cliente de la API: una foto tarda unos segundos (máximo 30 s en el servicio, más hasta 30 s de espera si hay otro trabajo en curso); un PDF, ~7 s por página (máximo `OCR_PDF_TIMEOUT_SECONDS`). Respuestas `503 busy` y `504 timeout` se pueden reintentar más tarde.
+
+### Medir en el servidor
+
+[`apps/ocr/scripts/benchmark.sh`](../apps/ocr/scripts/benchmark.sh) arranca la imagen con límite de memoria, envía archivos (fotos a `/v1/image`, PDFs a `/v1/pdf`) y muestra latencia, tiempos del servidor y número de líneas y QR (nunca el texto leído), más la memoria en reposo, el pico (`memory.peak` del cgroup y `docker stats`) y si hubo OOM. Usa el puerto `127.0.0.1:18090` y borra el contenedor al terminar. Necesita `bash`, `curl` y `awk`.
+
+1. Copia el script y algunas fotos de prueba al servidor (son datos personales: bórralos al terminar):
+   ```
+   ssh <servidor> mkdir -p ocr-bench
+   scp apps/ocr/scripts/benchmark.sh tickets/*.jpg <servidor>:ocr-bench/
+   ```
+2. Imagen: después del primer despliegue el script descarga `ghcr.io/iamcharlizard/finnit-ocr:latest`. Antes, constrúyela en la Mac (es arm64, igual que el CAX11) y cópiala:
+   ```
+   docker build -t finnit-ocr:local apps/ocr
+   docker save finnit-ocr:local | gzip > /tmp/finnit-ocr.tar.gz
+   scp /tmp/finnit-ocr.tar.gz <servidor>:ocr-bench/
+   ```
+3. En el servidor (Docker requiere `sudo`):
+   ```
+   cd ocr-bench && chmod +x benchmark.sh
+   # Con la configuración recomendada para producción (1 GB, 1 CPU):
+   sudo ./benchmark.sh -m 1g -c 1 -n 3 *.jpg
+   # Con 2 CPU, para comparar:
+   sudo ./benchmark.sh -m 1g -c 2 -n 3 *.jpg
+   # Con la imagen copiada en vez de la de GHCR:
+   sudo ./benchmark.sh -l finnit-ocr.tar.gz -i finnit-ocr:local -m 1g -c 1 *.jpg
+   # Un PDF (máximo 3 páginas) con la configuración de testing:
+   sudo ./benchmark.sh -m 768m -c 0.5 -e OCR_PDF_DPI=150 -P 3 -n 1 estado.pdf
+   ```
+   Opciones: `-i` imagen, `-l` tar a cargar, `-m` memoria, `-c` CPU, `-t` hilos (por defecto, la CPU redondeada hacia arriba), `-n` corridas por archivo, `-P` páginas de PDF, `-e VAR=valor` variables extra, `-p` puerto.
+4. Anota en `docs/document-ocr.md` (fase 0) la latencia por foto, el pico de memoria y si hubo OOM, y ajusta los límites de la tabla si hace falta. Luego borra las fotos: `rm -rf ~/ocr-bench`.
+
+### Rollback del OCR
+
+Cada despliegue publica `sha-<commit>`. En Dokploy cambia la imagen de `finnit-ocr` (o `finnit-ocr-test`) a `ghcr.io/iamcharlizard/finnit-ocr:sha-<commit anterior>` y pulsa *Deploy*; para volver al flujo automático, regresa a `:latest` o `:testing`. El servicio no guarda estado ni tiene migraciones. Si hay que apagarlo, la API sigue funcionando: los tickets y PDFs escaneados quedan pendientes o pasan al respaldo de IA, según su configuración.
 
 ## Web app
 

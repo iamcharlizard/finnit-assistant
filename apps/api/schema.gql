@@ -469,6 +469,22 @@ type CategoryUsage {
   transactionCount: Int!
 }
 
+input ConfirmReceiptImportInput {
+  accountId: ID!
+
+  """
+  Attach the photo to this existing movement instead of creating a new one
+  """
+  attachToTransactionId: ID
+
+  """Without it, the merchant rules / learned tax IDs pick the category"""
+  categoryId: ID
+  date: DateTime!
+  description: String
+  merchantName: String
+  total: Float!
+}
+
 input CreateAccountInput {
   currency: String!
   initialBalance: Float!
@@ -840,6 +856,11 @@ type Mutation {
   categorizeTransactions(categoryId: ID!, createRule: Boolean = true, ids: [ID!]!): Int!
 
   """
+  Creates the expense with the photo attached, or attaches the photo to `attachToTransactionId`
+  """
+  confirmReceiptImport(id: ID!, input: ConfirmReceiptImportInput!): ReceiptImport!
+
+  """
   Creates the pending movements as transactions and marks matched recurring payments as paid
   """
   confirmStatementImport(id: ID!): StatementImport!
@@ -893,6 +914,9 @@ type Mutation {
 
   """Admin only. Blocks sign-in and ends their open sessions."""
   disableUser(id: ID!): AdminUser!
+
+  """Discards the draft and deletes the photo"""
+  discardReceiptImport(id: ID!): Boolean!
   dismissRecurringSuggestion(fingerprint: ID!): Boolean!
 
   """Admin only"""
@@ -986,6 +1010,7 @@ type Mutation {
 
   """Saves the signed-in user's preferences (e.g. locale)."""
   updateMyPreferences(input: UpdateMyPreferencesInput!): User!
+  updateReceiptImport(id: ID!, input: UpdateReceiptImportInput!): ReceiptImport!
   updateRecurringExpense(id: ID!, input: UpdateRecurringExpenseInput!): RecurringExpense!
   updateStatementLine(id: ID!, input: UpdateStatementLineInput!): StatementLine!
   updateTransaction(id: String!, input: UpdateTransactionInput!): Transaction!
@@ -1144,6 +1169,12 @@ type Query {
   Movements a candidate alias would match (count and up to 20, newest first), without saving
   """
   previewMerchantAlias(input: MerchantAliasInput!): AliasPreview!
+
+  """Poll it after uploading (POST /receipts) to follow the status"""
+  receiptImport(id: ID!): ReceiptImport!
+
+  """Newest first"""
+  receiptImports(after: String, first: Int): ReceiptImportConnection!
   recurringExpense(id: ID!): RecurringExpense!
   recurringExpenseOccurrences(from: DateTime, recurringExpenseId: ID!, to: DateTime): [RecurringOccurrence!]!
   recurringExpenses(
@@ -1192,6 +1223,82 @@ type Query {
   user(id: String!): User!
   validateToken(token: String!): TokenValidationResult!
   whatIfScenario(input: WhatIfInput!): WhatIfResult!
+}
+
+"""
+high: total and date, cross-checked (QR or subtotal + tax). medium: total and date. low: something is missing.
+"""
+enum ReceiptConfidence {
+  high
+  low
+  medium
+}
+
+"""
+A receipt photo and the fields extracted from it. The photo is at GET /receipts/:id/file (owner only).
+"""
+type ReceiptImport {
+  cardLast4: String
+  confidence: ReceiptConfidence
+  createdAt: DateTime!
+  currency: String!
+
+  """Purchase day (date-only)"""
+  date: DateTime
+  errorMessage: String
+  fileName: String
+  id: ID!
+
+  """
+  Existing movement with the same amount (±0.01) within 3 days (same account when one is suggested): offer to attach the photo to it instead of creating a duplicate
+  """
+  matchedTransaction: Transaction
+  merchantName: String
+
+  """Merchant's tax ID (RFC)"""
+  merchantTaxId: String
+  route: ReceiptRoute
+  status: ReceiptStatus!
+
+  """Account whose last 4 digits appear on the receipt"""
+  suggestedAccount: Account
+  suggestedCategory: Category
+  total: Float
+
+  """The movement created or attached to on confirm"""
+  transaction: Transaction
+}
+
+type ReceiptImportConnection {
+  edges: [ReceiptImportEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ReceiptImportEdge {
+  cursor: String!
+  node: ReceiptImport!
+}
+
+"""
+cfdi_qr: SAT QR of a printed CFDI (exact total and tax ID). ocr_rules: OCR text + local rules. ai: OCR text sent to the AI fallback.
+"""
+enum ReceiptRoute {
+  ai
+  cfdi_qr
+  ocr_rules
+}
+
+"""
+uploaded → processing → needs_review (draft waiting for the user) → confirmed | discarded; failed when the photo could not be read (it can still be filled in by hand and confirmed).
+"""
+enum ReceiptStatus {
+  confirmed
+  discarded
+  failed
+  needs_review
+  processing
+  uploaded
 }
 
 type RecurringAccountTotal {
@@ -1726,6 +1833,15 @@ input UpdateGoalInput {
 input UpdateMyPreferencesInput {
   """Preferred language: 'es' or 'en'"""
   locale: String
+}
+
+"""Corrections while reviewing; null clears a field"""
+input UpdateReceiptImportInput {
+  accountId: ID
+  categoryId: ID
+  date: DateTime
+  merchantName: String
+  total: Float
 }
 
 input UpdateRecurringExpenseInput {

@@ -61,9 +61,21 @@ export class TransactionsService {
     private readonly rules: MerchantRulesService,
   ) {}
 
+  /**
+   * `options.within` runs inside the same database transaction, after the
+   * movement is inserted (e.g. a confirmed receipt attaches its photo), so
+   * both are saved or neither is.
+   */
   async create(
     userId: string,
     input: CreateTransactionInput,
+    options: {
+      source?: TransactionSource;
+      within?: (
+        tx: Prisma.TransactionClient,
+        created: Prisma.TransactionGetPayload<Record<string, never>>,
+      ) => Promise<void>;
+    } = {},
   ): Promise<Transaction> {
     // Validate account belongs to user
     const account = await this.prisma.account.findFirst({
@@ -108,7 +120,7 @@ export class TransactionsService {
           description: input.description,
           merchantName: input.merchantName,
           isPending: input.isPending || false,
-          source: TransactionSource.manual,
+          source: options.source ?? TransactionSource.manual,
         },
       });
 
@@ -126,6 +138,7 @@ export class TransactionsService {
         });
       }
 
+      await options.within?.(tx, transaction);
       return transaction;
     });
 

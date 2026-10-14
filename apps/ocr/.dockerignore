@@ -1,0 +1,15 @@
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.venv
+venv
+scripts/benchmark.sh
+scripts/smoke-test.sh
+README.md
+# Never ship sample images or benchmark output.
+**/*.jpg
+**/*.jpeg
+**/*.png
+**/*.heic
+**/*.pdf
+bench-*

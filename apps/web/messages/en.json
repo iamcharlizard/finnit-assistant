@@ -2161,5 +2161,78 @@
       "nameTooLong": "60 characters max.",
       "monthInvalid": "Pick a month in the period."
     }
+  },
+  "receipts": {
+    "scan": "Scan receipt",
+    "scanHint": "Take a photo and we fill in the expense",
+    "capture": "Capture receipt",
+    "titles": {
+      "capture": "Capture receipt",
+      "reading": "Reading your receipt…",
+      "failed": "We couldn't read the receipt"
+    },
+    "picker": {
+      "title": "Take a photo of the receipt or choose an image",
+      "hint": "JPG, PNG, WEBP or HEIC, up to 10 MB",
+      "dragActive": "Drop the photo here",
+      "remove": "Remove {name}",
+      "tooLarge": "{name} is larger than {max}.",
+      "wrongType": "{name} is not an image.",
+      "tips": "Make sure it's complete, well lit and without shadows. For invoices, include the QR code."
+    },
+    "uploading": "Uploading the photo…",
+    "progress": "{percent}%",
+    "reading": "Reading your receipt…",
+    "readingHint": "This takes a few seconds.",
+    "cancel": "Cancel",
+    "source": {
+      "qr": "Read from the invoice QR code",
+      "ocr": "Read from the receipt",
+      "ai": "Read with AI"
+    },
+    "confidence": {
+      "high": "Reliable reading",
+      "medium": "Partial reading",
+      "low": "Uncertain reading"
+    },
+    "checkFields": "Check the highlighted fields before saving.",
+    "photo": "Receipt photo",
+    "zoom": "View the photo larger",
+    "noPreview": "This browser can't show the photo, but it's saved.",
+    "discard": "Discard receipt",
+    "failed": {
+      "readFailed": "We couldn't read this receipt. Enter the details by hand and we'll keep the photo as proof.",
+      "timeout": "This is taking longer than usual. You can keep waiting or enter it by hand.",
+      "discarded": "You discarded this receipt before. Enter the details by hand or use another photo.",
+      "alreadyConfirmed": "This receipt is already registered."
+    },
+    "errors": {
+      "uploadNetwork": "We couldn't upload the photo. Check your connection.",
+      "uploadTooLarge": "The photo is larger than 10 MB.",
+      "uploadInvalid": "Only JPG, PNG, WEBP or HEIC photos are accepted.",
+      "uploadFailed": "We couldn't upload the photo. Try again.",
+      "discardFailed": "We couldn't discard the receipt. Try again."
+    },
+    "actions": {
+      "manual": "Enter by hand",
+      "otherPhoto": "Use another photo",
+      "keepWaiting": "Keep waiting",
+      "close": "Close"
+    },
+    "match": {
+      "description": "We found {count, plural, one {a movement that looks} other {# movements that look}} like this purchase. If it's already registered, we'll add the receipt photo to it.",
+      "attach": "Attach to this movement",
+      "createNew": "Register new"
+    },
+    "pending": {
+      "title": "Pending receipts",
+      "noMerchant": "Receipt without merchant",
+      "resume": "Continue with the receipt from {name}"
+    },
+    "toasts": {
+      "created": "With the receipt photo.",
+      "attached": "Receipt added to the movement you already had.",
+      "discarded": "Receipt discarded."
+    }
   }
 }

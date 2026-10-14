@@ -7,6 +7,7 @@ import { RecurringExpensesModule } from '../recurring-expenses/recurring-expense
 import { StorageModule } from '../storage/storage.module';
 import { StatementParserRegistry } from './parsing/statement-parser.registry';
 import { ReconciliationService } from './reconciliation/reconciliation.service';
+import { OcrModule } from '../ocr/ocr.module';
 import { LineMaterializerService } from './reconciliation/line-materializer.service';
 import { StatementsController } from './statements.controller';
 import { StatementsResolver } from './statements.resolver';
@@ -17,6 +18,7 @@ import { StatementsService } from './statements.service';
     AiModule,
     CategoriesModule,
     CategorizationModule,
+    OcrModule,
     RecurringExpensesModule,
     StorageModule,
   ],

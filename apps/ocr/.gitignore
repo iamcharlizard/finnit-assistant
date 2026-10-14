@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+# Models are downloaded at image build time; never commit them.
+*.onnx
+# Benchmark inputs/outputs stay outside the repo.
+bench-*
+.models/

@@ -1,0 +1,14 @@
+# Not a Python package and not part of the pnpm workspace (no package.json):
+# this file only configures the tools. Dependencies live in requirements*.txt.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+filterwarnings = [
+    # starlette.testclient suggests httpx2; httpx 0.28 works fine for tests.
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+    "ignore::PIL.Image.DecompressionBombWarning",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"

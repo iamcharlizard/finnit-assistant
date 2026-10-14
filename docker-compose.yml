@@ -45,6 +45,27 @@ services:
     networks:
       - finnit-network
 
+  # OCR of receipt photos and scanned PDFs (apps/ocr, internal service).
+  # API env: OCR_SERVICE_URL=http://localhost:8090 OCR_SERVICE_TOKEN=dev-ocr-token
+  # The default token is for local development only; production sets its own.
+  ocr:
+    build:
+      context: ./apps/ocr
+    image: finnit-ocr:local
+    container_name: finnit-ocr
+    restart: unless-stopped
+    environment:
+      OCR_SERVICE_TOKEN: ${OCR_SERVICE_TOKEN:-dev-ocr-token}
+      OCR_MAX_CONCURRENCY: 1
+    ports:
+      # Bound to localhost only: the service has no public exposure.
+      - "127.0.0.1:${OCR_PORT:-8090}:8090"
+    # Measured peak ~0.6 GB for photos and ~0.8 GB for PDF pages at 200 dpi
+    # (docs/document-ocr.md, Phase 0).
+    mem_limit: 1g
+    networks:
+      - finnit-network
+
   # Opcional: pgAdmin para administración visual de la base de datos
   pgadmin:
     image: dpage/pgadmin4:latest

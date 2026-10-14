@@ -31,7 +31,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | 16. Clasificación de movimientos *(nuevo)* | ✅ | ⏳ | ✅ |
 | 17. Alias de movimientos *(nuevo)* | ✅ | ⏳ | ✅ |
 | 18. Personalización de cuentas y tarjetas *(nuevo)* | ✅ | ⏳ | ✅ |
-| 19. Flujo para crear movimientos *(nuevo)* | 🟡 | ⏳ | 🟡 |
+| 19. Flujo para crear movimientos *(nuevo)* | ✅ | ⏳ | ✅ |
 | 20. Cuentas y tarjetas manuales *(nuevo)* | ✅ | ⏳ | ✅ |
 
 ## Detalle
@@ -72,7 +72,8 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Transferencias entre cuentas | ✅ | ⏳ | ✅ | `createTransfer`; `Transaction.transferDirection` indica el lado (in/out). Web: incluye "Pago de tarjeta". |
 | Detección automática de transferencias internas | ⏳ | — | — | |
 | Adjuntos (tickets, comprobantes) | ✅ | ⏳ | ✅ | `POST /transactions/:id/attachments` (PDF, JPEG, PNG, WEBP, HEIC; máx. 10 MB, 10 por transacción) al bucket privado; descarga solo del dueño en `GET /attachments/:id/file`. |
-| Captura por foto de ticket / SMS | ⏳ | ⏳ | ⏳ | Plan de OCR para tickets (sin IA primero): [document-ocr.md](./document-ocr.md). |
+| Captura por foto de ticket | ✅ | ⏳ | ✅ | Servicio interno `apps/ocr` (RapidOCR PP-OCRv5); QR del CFDI, luego reglas (total, fecha, RFC); IA solo de respaldo con el texto (`receipt_parsing`, apagada por defecto). Web: "Escanear ticket" en el "+". [document-ocr.md](./document-ocr.md). |
+| Captura por SMS | ⏳ | ⏳ | — | |
 | CEP de Banxico | ⏳ | ⏳ | ⏳ | |
 | Etiquetas (tags) | ⏳ | ⏳ | ⏳ | Modelo `Tag` sin API. |
 
@@ -188,7 +189,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 |---|---|---|---|---|
 | Calendario día / semana / mes con la lista de pagos del periodo | ✅ | ⏳ | ✅ | `/recurring` (sustituye a `/calendar`): resumen, calendario y lista del día o periodo. |
 | Alta, edición, pausa y baja; marcar pagado u omitido | ✅ | ⏳ | ✅ | |
-| Sugerencias detectadas en los movimientos sincronizados | ✅ | ⏳ | ✅ | `recurringSuggestions` (sin IA): mismo comercio, monto parecido (±15%, variable hasta ±50%) e intervalo regular; 3 apariciones (2 si es mensual a trimestral con monto fijo, o semestral/anual). `acceptRecurringSuggestion` crea el pago y marca pagados los cargos de la evidencia; `dismissRecurringSuggestion`. |
+| Sugerencias detectadas en los movimientos sincronizados | ✅ | ⏳ | ✅ | `recurringSuggestions` (sin IA): mismo comercio, monto parecido (±15%, variable hasta ±50%) e intervalo regular; 3 apariciones; bastan 2 si caen el mismo día del mes (± 1 día, fines de mes como el mismo día) aunque el monto varíe, o si el monto es fijo en pagos mensuales a trimestrales, o si es semestral/anual. `acceptRecurringSuggestion` crea el pago y marca pagados los cargos de la evidencia; `dismissRecurringSuggestion`. |
 | Clasificación de la sugerencia con IA (tipo, categoría, nombre) | ✅ | — | ✅ | Funcionalidad `recurring_classification`, en lote y guardada en `RecurringSuggestionState`; solo se envía comercio, monto y frecuencia. El usuario siempre confirma. |
 
 ### 16. Clasificación de movimientos *(nuevo)*
@@ -220,7 +221,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
 | Elegir gasto, ingreso o transferencia | ✅ | ⏳ | ✅ | `createTransaction`, `createTransfer`. |
-| Capturar ticket para crear un gasto | ⏳ | ⏳ | ⏳ | Usa la extracción de tickets (sección 3, [document-ocr.md](./document-ocr.md)). |
+| Capturar ticket para crear un gasto | ✅ | ⏳ | ✅ | `POST /receipts` → `receiptImport` (borrador prellenado) → `confirmReceiptImport` (nuevo gasto o adjuntar a uno existente). Con los 5 tickets de prueba: total y fecha correctos en 5, RFC en 4. |
 | Aviso de duplicado contra movimientos sincronizados | ✅ | ⏳ | ✅ | `similarTransactions`. Ofrece adjuntar el ticket al movimiento existente. |
 | Fecha en hora local | ✅ | — | — | `toLocalDateOnly`: se guarda el día de CDMX. |
 

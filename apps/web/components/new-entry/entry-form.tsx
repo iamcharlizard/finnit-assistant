@@ -24,7 +24,12 @@ import {
 } from '@/lib/new-entry/form';
 import type { EntryAccount, EntryCategory } from '@/lib/new-entry/graphql';
 import { accountOptions, categoryOptions } from '@/lib/new-entry/options';
+import type { CheckField } from '@/lib/receipts/prefill';
 import { AmountField } from './amount-field';
+
+/** Fields to double-check after a receipt was read (amber outline). */
+const CHECK_CLASS =
+  'border-amber-500 ring-[3px] ring-amber-500/25 dark:border-amber-400';
 
 /** Gasto or ingreso: amount, account, date, merchant, category, receipt. */
 export function EntryForm({
@@ -39,6 +44,9 @@ export function EntryForm({
   busyLabel,
   submitError,
   onSubmit,
+  receiptSlot,
+  check = [],
+  showAttachment = true,
 }: {
   draft: EntryDraft;
   onChange: (draft: EntryDraft) => void;
@@ -51,6 +59,12 @@ export function EntryForm({
   busyLabel: string;
   submitError: string | null;
   onSubmit: () => void;
+  /** Receipt capture: the "Capturar ticket" button or the read receipt. */
+  receiptSlot?: React.ReactNode;
+  /** Fields to highlight for a second look (from a read receipt). */
+  check?: readonly CheckField[];
+  /** The attachment picker (hidden when the receipt photo is attached). */
+  showAttachment?: boolean;
 }) {
   const t = useTranslations('newEntry');
   const locale = useLocale();
@@ -79,6 +93,8 @@ export function EntryForm({
 
   const set = (patch: Partial<EntryDraft>) => onChange({ ...draft, ...patch });
   const isExpense = draft.type === 'expense';
+  const checkClass = (field: CheckField) =>
+    check.includes(field) ? CHECK_CLASS : undefined;
 
   return (
     <form
@@ -89,12 +105,14 @@ export function EntryForm({
       }}
       className="flex flex-col gap-4"
     >
+      {receiptSlot}
       <AmountField
         value={draft.amount}
         onChange={(amount) => set({ amount })}
         currency={currencyOf(accounts, draft.accountId)}
         error={errors.amount && t(`validation.${errors.amount}`)}
-        autoFocus
+        autoFocus={showAttachment}
+        className={checkClass('amount')}
       />
       <Combobox
         label={t('fields.account')}
@@ -105,6 +123,7 @@ export function EntryForm({
         searchPlaceholder={t('fields.accountSearch')}
         emptyText={t('fields.accountEmpty')}
         error={errors.accountId && t(`validation.${errors.accountId}`)}
+        className={checkClass('accountId')}
       />
       <DatePicker
         label={t('fields.date')}
@@ -115,6 +134,7 @@ export function EntryForm({
         placeholder={t('fields.datePlaceholder')}
         required
         error={errors.date && t(`validation.${errors.date}`)}
+        className={checkClass('date')}
       />
       <Input
         label={
@@ -129,6 +149,7 @@ export function EntryForm({
         onChange={(e) => set({ merchant: e.target.value })}
         maxLength={120}
         autoComplete="off"
+        className={checkClass('merchant')}
       />
       <div className="flex flex-col gap-1">
         <Combobox
@@ -154,26 +175,28 @@ export function EntryForm({
         value={draft.note}
         onChange={(e) => set({ note: e.target.value })}
         rows={2}
-        maxLength={500}
+        maxLength={255}
       />
-      <div className="flex flex-col gap-1">
-        <Label>{t('fields.attachment')}</Label>
-        <FileDropzone
-          accept={ATTACHMENT_ACCEPT}
-          maxSizeBytes={MAX_UPLOAD_BYTES}
-          value={file ? [file] : []}
-          onChange={(files) => onFileChange(files[0] ?? null)}
-          title={t('fields.attachmentTitle')}
-          description={t('fields.attachmentHint')}
-          dragActiveText={t('fields.attachmentDragActive')}
-          removeLabel={(name) => t('fields.attachmentRemove', { name })}
-          tooLargeText={(name, max) =>
-            t('fields.attachmentTooLarge', { name, max })
-          }
-          wrongTypeText={(name) => t('fields.attachmentWrongType', { name })}
-          className="[&>button]:min-h-24 [&>button]:py-4"
-        />
-      </div>
+      {showAttachment ? (
+        <div className="flex flex-col gap-1">
+          <Label>{t('fields.attachment')}</Label>
+          <FileDropzone
+            accept={ATTACHMENT_ACCEPT}
+            maxSizeBytes={MAX_UPLOAD_BYTES}
+            value={file ? [file] : []}
+            onChange={(files) => onFileChange(files[0] ?? null)}
+            title={t('fields.attachmentTitle')}
+            description={t('fields.attachmentHint')}
+            dragActiveText={t('fields.attachmentDragActive')}
+            removeLabel={(name) => t('fields.attachmentRemove', { name })}
+            tooLargeText={(name, max) =>
+              t('fields.attachmentTooLarge', { name, max })
+            }
+            wrongTypeText={(name) => t('fields.attachmentWrongType', { name })}
+            className="[&>button]:min-h-24 [&>button]:py-4"
+          />
+        </div>
+      ) : null}
       {submitError ? (
         <p role="alert" className="text-sm text-expense">
           {submitError}

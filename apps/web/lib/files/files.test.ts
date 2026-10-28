@@ -8,6 +8,7 @@ import {
   limitStream,
   matchFileRoute,
 } from './routes';
+import { fitWithin, jpegName, shouldCompress } from './compress-image';
 
 const ID = '3f2b8c1e-9a4d-4f6b-8e2a-1c5d7e9f0a1b';
 
@@ -97,5 +98,37 @@ describe('upload size', () => {
       read(limitStream(body([6, 6]), 10)),
       PayloadTooLargeError,
     );
+  });
+});
+
+describe('image compression before upload', () => {
+  it('only shrinks large, browser-decodable images', () => {
+    const mb = 1024 * 1024;
+    assert.equal(shouldCompress({ type: 'image/jpeg', size: 3 * mb }), true);
+    assert.equal(shouldCompress({ type: 'image/png', size: 5 * mb }), true);
+    assert.equal(shouldCompress({ type: 'image/jpeg', size: 1 * mb }), false);
+    assert.equal(shouldCompress({ type: 'image/heic', size: 4 * mb }), false);
+    assert.equal(
+      shouldCompress({ type: 'application/pdf', size: 4 * mb }),
+      false,
+    );
+  });
+
+  it('fits the longest side within the limit, keeping the ratio', () => {
+    assert.deepEqual(fitWithin(4032, 3024, 2000), {
+      width: 2000,
+      height: 1500,
+    });
+    assert.deepEqual(fitWithin(3024, 4032, 2000), {
+      width: 1500,
+      height: 2000,
+    });
+    assert.deepEqual(fitWithin(800, 600, 2000), { width: 800, height: 600 });
+  });
+
+  it('renames the file to .jpg', () => {
+    assert.equal(jpegName('IMG_1234.PNG'), 'IMG_1234.jpg');
+    assert.equal(jpegName('ticket'), 'ticket.jpg');
+    assert.equal(jpegName('.png'), 'photo.jpg');
   });
 });

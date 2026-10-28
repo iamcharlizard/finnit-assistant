@@ -229,6 +229,24 @@ function mostCommon<T>(values: T[]): T | null {
   return best;
 }
 
+/** Cadences that bill on a day of the month (monthly or longer). */
+const MONTH_DAY_CADENCES = new Set<RecurringFrequency>([
+  RecurringFrequency.monthly,
+  RecurringFrequency.bimonthly,
+  RecurringFrequency.quarterly,
+  RecurringFrequency.semiannual,
+  RecurringFrequency.yearly,
+]);
+
+/**
+ * Every charge falls on the same day of the month, give or take a day. Days
+ * past the 28th count as the 28th, so month ends (Jan 31, Feb 28) match.
+ */
+export function onSameMonthDay(dates: Date[]): boolean {
+  const days = dates.map((date) => Math.min(date.getUTCDate(), 28));
+  return Math.max(...days) - Math.min(...days) <= 1;
+}
+
 /** The 15th and the month's last day (± 3 days, or the 1st–2nd). */
 function looksSemimonthly(dates: Date[]): boolean {
   const near = dates.filter((date) => {
@@ -301,7 +319,16 @@ function analyze(
       Math.round((date.getTime() - dates[i].getTime()) / DAY_MS),
     );
   const cadence = cadenceFor(intervals, dates);
-  if (!cadence || dates.length < cadence.minFixedOccurrences) {
+  // Two charges on the same day of the month (± 1) are enough for a monthly
+  // or longer cadence, even if the amount varies.
+  const sameMonthDay =
+    !!cadence &&
+    MONTH_DAY_CADENCES.has(cadence.frequency) &&
+    onSameMonthDay(dates);
+  if (
+    !cadence ||
+    dates.length < (sameMonthDay ? 2 : cadence.minFixedOccurrences)
+  ) {
     return { ok: false, reason: 'cadence' };
   }
   const fitting = intervals.filter(
@@ -324,7 +351,11 @@ function analyze(
   if (maxDeviation > maxTolerance) return { ok: false, reason: 'amount' };
   // E.g. a monthly charge seen only twice counts only at a fixed price.
   const isVariableAmount = maxDeviation > FIXED_TOLERANCE;
-  if (isVariableAmount && dates.length < cadence.minOccurrences) {
+  if (
+    isVariableAmount &&
+    !sameMonthDay &&
+    dates.length < cadence.minOccurrences
+  ) {
     return { ok: false, reason: 'amount' };
   }
 

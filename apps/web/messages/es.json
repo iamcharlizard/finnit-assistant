@@ -2161,5 +2161,78 @@
       "nameTooLong": "Máximo 60 caracteres.",
       "monthInvalid": "Elige un mes del periodo."
     }
+  },
+  "receipts": {
+    "scan": "Escanear ticket",
+    "scanHint": "Toma una foto y llenamos el gasto por ti",
+    "capture": "Capturar ticket",
+    "titles": {
+      "capture": "Capturar ticket",
+      "reading": "Leyendo tu ticket…",
+      "failed": "No pudimos leer el ticket"
+    },
+    "picker": {
+      "title": "Toma una foto del ticket o elige una imagen",
+      "hint": "JPG, PNG, WEBP o HEIC, hasta 10 MB",
+      "dragActive": "Suelta la foto aquí",
+      "remove": "Quitar {name}",
+      "tooLarge": "{name} pesa más de {max}.",
+      "wrongType": "{name} no es una imagen.",
+      "tips": "Que se vea completo, con buena luz y sin sombras. Si es factura, incluye el código QR."
+    },
+    "uploading": "Subiendo la foto…",
+    "progress": "{percent}%",
+    "reading": "Leyendo tu ticket…",
+    "readingHint": "Esto toma unos segundos.",
+    "cancel": "Cancelar",
+    "source": {
+      "qr": "Leído del QR de la factura",
+      "ocr": "Leído del ticket",
+      "ai": "Leído con IA"
+    },
+    "confidence": {
+      "high": "Lectura confiable",
+      "medium": "Lectura parcial",
+      "low": "Lectura dudosa"
+    },
+    "checkFields": "Revisa los campos marcados antes de guardar.",
+    "photo": "Foto del ticket",
+    "zoom": "Ver la foto en grande",
+    "noPreview": "Este navegador no puede mostrar la foto, pero sí la guardamos.",
+    "discard": "Descartar ticket",
+    "failed": {
+      "readFailed": "No pudimos leer este ticket. Captura los datos a mano y guardaremos la foto como comprobante.",
+      "timeout": "Está tardando más de lo normal. Puedes seguir esperando o capturarlo a mano.",
+      "discarded": "Ya habías descartado este ticket. Captura los datos a mano o usa otra foto.",
+      "alreadyConfirmed": "Este ticket ya está registrado."
+    },
+    "errors": {
+      "uploadNetwork": "No pudimos subir la foto. Revisa tu conexión.",
+      "uploadTooLarge": "La foto pesa más de 10 MB.",
+      "uploadInvalid": "Solo se aceptan fotos JPG, PNG, WEBP o HEIC.",
+      "uploadFailed": "No pudimos subir la foto. Intenta de nuevo.",
+      "discardFailed": "No pudimos descartar el ticket. Intenta de nuevo."
+    },
+    "actions": {
+      "manual": "Capturar a mano",
+      "otherPhoto": "Usar otra foto",
+      "keepWaiting": "Seguir esperando",
+      "close": "Cerrar"
+    },
+    "match": {
+      "description": "Encontramos {count, plural, one {un movimiento que parece} other {# movimientos que parecen}} ser esta compra. Si ya está registrado, le agregamos la foto del ticket.",
+      "attach": "Adjuntar a este movimiento",
+      "createNew": "Registrar nuevo"
+    },
+    "pending": {
+      "title": "Tickets pendientes",
+      "noMerchant": "Ticket sin comercio",
+      "resume": "Continuar con el ticket de {name}"
+    },
+    "toasts": {
+      "created": "Con la foto del ticket.",
+      "attached": "Ticket agregado al movimiento que ya tenías.",
+      "discarded": "Ticket descartado."
+    }
   }
 }

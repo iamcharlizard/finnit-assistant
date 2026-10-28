@@ -16,5 +16,6 @@ import { CategorizationModule } from '../categorization/categorization.module';
     TransferDirectionLoader,
     PrismaService,
   ],
+  exports: [TransactionsService],
 })
 export class TransactionsModule {}

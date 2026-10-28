@@ -142,20 +142,20 @@ Checkboxes reflect the **API** state, verified against the code. Per-platform st
 - [x] Reconcile statement lines with existing transactions and automatic recurring expenses.
 - [x] Card month summary vs. amount due.
 - [x] Same flow fed by the bank sync (Syncfy).
-- [ ] Scanned statements: OCR on our server before any AI fallback (see feature 14).
-- [ ] Fall back to AI only when the local extraction does not balance (previous balance + charges − credits ≠ cut-off balance).
+- [x] Scanned statements: OCR on our server before any AI fallback (see feature 14).
+- [x] Fall back to AI only when the local extraction does not balance (previous balance + charges − credits ≠ cut-off balance).
 
 ---
 
-### 14. Receipt Capture & Document OCR ⏳ PENDING
+### 14. Receipt Capture & Document OCR ✅ IMPLEMENTED (web)
 Local, open-source extraction first; AI only as a fallback. Research, OCR engine comparison and task list: [document-ocr.md](./document-ocr.md).
-- [ ] Internal OCR service (`ocr` container: RapidOCR with PP-OCRv5 models, CPU/arm64), not publicly exposed.
-- [ ] Receipt photo upload (web and mobile) stored in the private S3 bucket.
-- [ ] Extraction without AI: CFDI QR code (issuer tax ID, total, UUID), then OCR + rules for total, date, merchant tax ID and VAT.
-- [ ] AI fallback only when total or date are missing, sending OCR text (not the image), behind a per-feature AI setting.
-- [ ] Draft for review: the user confirms; one receipt = one transaction (no line items).
-- [ ] Avoid duplicates: on confirm, attach the photo to a matching existing movement (same account, amount, date ±3 days) instead of creating a new one.
-- [ ] Merchant tax ID → name → category table that learns from confirmations.
+- [x] Internal OCR service (`ocr` container: RapidOCR with PP-OCRv5 models, CPU/arm64), not publicly exposed.
+- [x] Receipt photo upload (web and mobile) stored in the private S3 bucket.
+- [x] Extraction without AI: CFDI QR code (issuer tax ID, total, UUID), then OCR + rules for total, date, merchant tax ID and VAT.
+- [x] AI fallback only when total or date are missing, sending OCR text (not the image), behind a per-feature AI setting.
+- [x] Draft for review: the user confirms; one receipt = one transaction (no line items).
+- [x] Avoid duplicates: on confirm, attach the photo to a matching existing movement (same account, amount, date ±3 days) instead of creating a new one.
+- [x] Merchant tax ID → name → category table that learns from confirmations.
 - [ ] (Optional) On-device OCR preview on mobile (ML Kit / Apple Vision).
 
 ---
@@ -164,7 +164,7 @@ Local, open-source extraction first; AI only as a fallback. Research, OCR engine
 A dedicated screen to see and manage recurring payments (feature 12), fed by what the bank sync already imported.
 - [ ] Calendar of the period with **day / week / month** views, and next to it the list of payments of that period (due, paid, skipped, overdue).
 - [ ] Add, edit, pause and delete a recurring payment; mark an occurrence as paid or skipped.
-- [ ] **Suggested recurring payments** section, detected from synced movements: same merchant (or alias, feature 17), similar amount (±15%, wider for utilities) and a regular interval (weekly, biweekly, monthly, yearly…), seen at least 2–3 times.
+- [x] **Suggested recurring payments** section, detected from synced movements: same merchant (or alias, feature 17), similar amount (±15%, wider for utilities) and a regular interval (weekly, biweekly, monthly, yearly…), seen at least 3 times — or just 2 when both charges fall on the same day of the month (± 1 day).
 - [ ] Each suggestion shows the evidence (dates and amounts found) and can be **added with one click** (name, amount, frequency, next date, account and tracking mode pre-filled) or dismissed (it doesn't come back).
 - [ ] Detection runs without AI. **AI (optional, per-feature AI setting)** only classifies the suggestion: kind (subscription, utility, loan…), category and a friendly name. The user always confirms; nothing is created automatically.
 - [ ] Once added, the movements that originated the suggestion are linked to it (past occurrences marked as paid).
@@ -271,6 +271,7 @@ Detailed, verified status per feature and platform: [features.md](./features.md)
 - **Recurring payments screen**: `/recurring` with day/week/month calendar, payment actions, recurring expense CRUD and suggestions detected from movements (rules) and classified with AI; accept in one click or dismiss.
 - **Categorization & aliases**: bulk categorization with merchant rules learned from corrections, AI category suggestions on demand, alias rules (contains/starts with/exact/regex, private) materialized per transaction, one-off aliases.
 - **Web screens**: transaction detail (edit, attachments, alias, reveal original), notifications panel and page, statement upload and review, budgets, debts (month-by-month payoff simulation), goals and the what-if simulator.
+- **Receipts (OCR)**: internal OCR service (RapidOCR), receipt upload with CFDI QR / OCR rules / AI-text fallback, review and confirm or attach to an existing movement; scanned statements read with OCR.
 - **i18n**: categories stored in English with es/en translations (Google Cloud Translation, AI fallback); user language preference.
 - **Fixes**: transaction dates stored as the local (Mexico City) day; opening balances as adjustments; consistent cursor pagination; credit card terms mutation; goals fully exposed; duplicate check (`similarTransactions`).
 - **Accounts**: multi-account support (cash, debit, credit, savings, e-wallet), balance adjustments, credit card terms.

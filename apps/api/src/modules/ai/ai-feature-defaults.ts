@@ -23,6 +23,7 @@ export const AI_FEATURE_DEFAULTS: Record<AiFeatureKey, AiFeatureDefaults> = {
     useFallbacks: true,
     needsPdf: false,
   },
-  receipt_parsing: { enabled: false, useFallbacks: true, needsPdf: true },
+  // Sends the OCR text of the photo, not a file.
+  receipt_parsing: { enabled: false, useFallbacks: true, needsPdf: false },
   translation: { enabled: true, useFallbacks: true, needsPdf: false },
 };

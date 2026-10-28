@@ -16,7 +16,7 @@
     "@finnit/ui": "workspace:*",
     "@fontsource/ubuntu": "^5.3.0",
     "lucide-react": "^1.55.0",
-    "next": "^16.4.0",
+    "next": "^16.4.2",
     "next-intl": "^4.14.9",
     "next-themes": "^0.4.6",
     "react": "^19.2.6",

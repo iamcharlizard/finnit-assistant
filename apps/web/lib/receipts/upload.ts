@@ -1,3 +1,4 @@
+import { compressImageForUpload } from '@/lib/files/compress-image';
 import { isUuid } from '@/lib/files/routes';
 import type { ReceiptStatus } from './graphql';
 
@@ -63,10 +64,11 @@ export function parseUploadResponse(text: string): UploadedReceipt | null {
   return { id, status: status as ReceiptStatus };
 }
 
-export function uploadReceipt(
-  file: File,
+export async function uploadReceipt(
+  photo: File,
   onProgress?: (percent: number) => void,
 ): Promise<UploadedReceipt> {
+  const file = await compressImageForUpload(photo);
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/files/receipts');

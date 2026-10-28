@@ -1,3 +1,5 @@
+import { compressImageForUpload } from '@/lib/files/compress-image';
+
 /**
  * Uploads a transaction attachment through this site's file proxy
  * (POST /api/files/transactions/{id}/attachments, multipart `file`), with
@@ -17,11 +19,13 @@ export function attachmentUploadUrl(transactionId: string): string {
   return `/api/files/transactions/${encodeURIComponent(transactionId)}/attachments`;
 }
 
-export function uploadAttachment(
+export async function uploadAttachment(
   transactionId: string,
-  file: File,
+  original: File,
   onProgress?: (percent: number) => void,
 ): Promise<void> {
+  // Photos are shrunk first; PDFs and small files go as they are.
+  const file = await compressImageForUpload(original);
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', attachmentUploadUrl(transactionId));

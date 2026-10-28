@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from 'next';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getTranslations } from 'next-intl/server';
 
 import '@fontsource/ubuntu/400.css';
 import '@fontsource/ubuntu/500.css';
@@ -6,11 +8,15 @@ import '@fontsource/ubuntu/700.css';
 import './globals.css';
 
 import { ThemeProvider } from '@/components/theme-provider';
+import { intlLocale } from '@/lib/i18n/locales';
 
-export const metadata: Metadata = {
-  title: { default: 'Finnit', template: '%s · Finnit' },
-  description: 'Tu asistente de finanzas personales.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations();
+  return {
+    title: { default: t('common.appName'), template: '%s · Finnit' },
+    description: t('metadata.description'),
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [
@@ -19,20 +25,24 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getLocale();
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang={intlLocale(locale)} suppressHydrationWarning>
       <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        {/* Inherits locale, messages and time zone from i18n/request.ts. */}
+        <NextIntlClientProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -11,9 +11,9 @@ interface FinancialHealthChartProps {
 
 function FinancialHealthChart({
   percentage = 75,
-  label = 'Salud Financiera',
-  rating = 'Excelente',
-  caption = 'Tu ratio de ahorro ha subido un 5% respecto al mes pasado.',
+  label = 'Financial health',
+  rating = 'Excellent',
+  caption = 'Your savings rate is up 5% from last month.',
   className,
 }: FinancialHealthChartProps) {
   return (

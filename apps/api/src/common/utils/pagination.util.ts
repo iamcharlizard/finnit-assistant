@@ -1,11 +1,16 @@
-import { PageInfo, Connection, Edge, PaginationArgs } from '../types/pagination.types';
+import {
+  PageInfo,
+  Connection,
+  Edge,
+  PaginationArgs,
+} from '../types/pagination.types';
 
 export class PaginationUtil {
   static createConnection<T>(
     items: T[],
     args: PaginationArgs,
     totalCount: number,
-    cursorFn: (item: T) => string
+    cursorFn: (item: T) => string,
   ): Connection<T> {
     const edges: Edge<T>[] = items.map((item) => ({
       node: item,

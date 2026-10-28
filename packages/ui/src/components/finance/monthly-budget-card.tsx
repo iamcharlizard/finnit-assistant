@@ -10,14 +10,17 @@ interface MonthlyBudgetCardProps {
   /** Decimal part, e.g. ".50". */
   cents?: string;
   usedPercent: number;
+  /** Caption under the bar (also the bar's accessible name). */
+  usedLabel?: (percent: number) => string;
   className?: string;
 }
 
 function MonthlyBudgetCard({
-  title = 'Gasto Mensual',
+  title = 'Monthly spending',
   amount,
   cents,
   usedPercent,
+  usedLabel = (percent) => `You've used ${percent}% of your budget.`,
   className,
 }: MonthlyBudgetCardProps) {
   return (
@@ -45,10 +48,10 @@ function MonthlyBudgetCard({
         glow
         indicatorColor="var(--income)"
         className="mb-2.5"
-        aria-label={`${usedPercent}% del presupuesto consumido`}
+        aria-label={usedLabel(usedPercent)}
       />
       <p className="text-[13px] text-on-surface-variant">
-        Has consumido el {usedPercent}% de tu presupuesto.
+        {usedLabel(usedPercent)}
       </p>
     </section>
   );

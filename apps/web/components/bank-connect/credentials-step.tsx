@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { AlertCircle, ArrowLeft, Lock } from 'lucide-react';
 import type { FieldError, FieldValues, Site } from '@finnit/bank-connect';
 
@@ -25,6 +26,7 @@ export function CredentialsStep({
   // Bank credentials live only in this component's state and are dropped
   // when the step unmounts.
   const [values, setValues] = React.useState<Record<string, string>>({});
+  const t = useTranslations('bankConnect.credentials');
   const errorOf = (name: string) =>
     errors.find((e) => e.name === name)?.message;
 
@@ -42,7 +44,7 @@ export function CredentialsStep({
         <TitleLg as="h2">{site.name}</TitleLg>
         <BodyMd className="mt-1 flex items-center gap-1.5 text-[13px] text-on-surface-variant">
           <Lock aria-hidden className="size-3.5" />
-          Usa los datos con los que entras a tu banca en línea.
+          {t('hint')}
         </BodyMd>
       </div>
 
@@ -70,10 +72,10 @@ export function CredentialsStep({
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
         <Button type="button" variant="ghost" onClick={onBack}>
-          <ArrowLeft className="size-4" /> Cambiar de banco
+          <ArrowLeft className="size-4" /> {t('changeBank')}
         </Button>
         <Button type="submit" variant="secondary">
-          Conectar
+          {t('connect')}
         </Button>
       </div>
     </form>

@@ -24,9 +24,18 @@ function SheetContent({
   className,
   children,
   side = 'left',
+  closeLabel = 'Close',
+  showCloseButton = true,
+  showHandle = side === 'bottom',
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
+  /** 'bottom' is the mobile sheet: full width, rounded top, capped height. */
   side?: 'left' | 'right' | 'bottom';
+  /** Accessible name of the close button (pass the translated text). */
+  closeLabel?: string;
+  showCloseButton?: boolean;
+  /** Grab handle at the top (decorative); defaults to true for side="bottom". */
+  showHandle?: boolean;
 }) {
   return (
     <SheetPrimitive.Portal>
@@ -43,16 +52,25 @@ function SheetContent({
           side === 'right' &&
             'inset-y-0 right-0 h-full w-3/4 max-w-xs border-l border-outline data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right',
           side === 'bottom' &&
-            'inset-x-0 bottom-0 h-auto rounded-t-card border-t border-outline data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
+            'inset-x-0 bottom-0 h-auto max-h-[90dvh] overflow-y-auto rounded-t-card border-t border-outline pb-[max(1rem,env(safe-area-inset-bottom))] data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
           className,
         )}
         {...props}
       >
+        {showHandle ? (
+          <span
+            aria-hidden
+            data-slot="sheet-handle"
+            className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-on-surface-variant/40"
+          />
+        ) : null}
         {children}
-        <SheetPrimitive.Close className="absolute top-4 right-4 flex size-11 items-center justify-center rounded-full text-on-surface-variant outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50">
-          <XIcon className="size-5" />
-          <span className="sr-only">Cerrar</span>
-        </SheetPrimitive.Close>
+        {showCloseButton ? (
+          <SheetPrimitive.Close className="absolute top-4 right-4 flex size-11 items-center justify-center rounded-full text-on-surface-variant outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50">
+            <XIcon aria-hidden className="size-5" />
+            <span className="sr-only">{closeLabel}</span>
+          </SheetPrimitive.Close>
+        ) : null}
       </SheetPrimitive.Content>
     </SheetPrimitive.Portal>
   );

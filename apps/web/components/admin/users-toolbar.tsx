@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Search } from 'lucide-react';
 
 import { InputWithIcon } from '@finnit/ui/components/ui/input-with-icon';
@@ -31,14 +32,15 @@ export function UsersToolbar({
   role?: UserRole;
   onRoleChange: (value?: UserRole) => void;
 }) {
+  const t = useTranslations('admin.users');
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <div className="flex-1">
         <InputWithIcon
-          aria-label="Buscar por nombre o correo"
+          aria-label={t('search')}
           iconLeft={Search}
           type="search"
-          placeholder="Buscar por nombre o correo"
+          placeholder={t('search')}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
         />
@@ -50,13 +52,13 @@ export function UsersToolbar({
             onStatusChange(v === ALL ? undefined : (v as UserStatus))
           }
         >
-          <SelectTrigger aria-label="Estado" className="min-h-12 sm:w-40">
+          <SelectTrigger aria-label={t('status')} className="min-h-12 sm:w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Todos los estados</SelectItem>
-            <SelectItem value="active">Activos</SelectItem>
-            <SelectItem value="disabled">Desactivados</SelectItem>
+            <SelectItem value={ALL}>{t('allStatuses')}</SelectItem>
+            <SelectItem value="active">{t('activePlural')}</SelectItem>
+            <SelectItem value="disabled">{t('disabledPlural')}</SelectItem>
           </SelectContent>
         </Select>
         <Select
@@ -65,13 +67,13 @@ export function UsersToolbar({
             onRoleChange(v === ALL ? undefined : (v as UserRole))
           }
         >
-          <SelectTrigger aria-label="Rol" className="min-h-12 sm:w-44">
+          <SelectTrigger aria-label={t('role')} className="min-h-12 sm:w-44">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Todos los roles</SelectItem>
-            <SelectItem value="admin">Administradores</SelectItem>
-            <SelectItem value="user">Usuarios</SelectItem>
+            <SelectItem value={ALL}>{t('allRoles')}</SelectItem>
+            <SelectItem value="admin">{t('adminsPlural')}</SelectItem>
+            <SelectItem value="user">{t('usersPlural')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

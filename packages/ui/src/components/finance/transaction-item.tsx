@@ -1,12 +1,16 @@
 'use client';
 
-import type { LucideIcon } from 'lucide-react';
+import { Lock, type LucideIcon } from 'lucide-react';
 
 import { cn } from '../../lib/utils';
+import {
+  TransactionItemSelection,
+  type TransactionSelectionProps,
+} from './transaction-item-selection';
 
 type TransactionVariant = 'income' | 'expense' | 'pending';
 
-interface TransactionItemProps {
+interface TransactionItemProps extends TransactionSelectionProps {
   merchant: string;
   category: string;
   time: string;
@@ -15,6 +19,10 @@ interface TransactionItemProps {
   variant: TransactionVariant;
   onClick?: () => void;
   className?: string;
+  /** Shows a lock before the name (a private alias hides the original). */
+  isPrivate?: boolean;
+  /** Accessible name of the lock. Defaults to "Private". */
+  privateLabel?: string;
 }
 
 const VARIANT_STYLES: Record<
@@ -39,16 +47,22 @@ function TransactionItem({
   variant,
   onClick,
   className,
+  selectable,
+  selected,
+  onSelectedChange,
+  selectLabel,
+  isPrivate,
+  privateLabel = 'Private',
 }: TransactionItemProps) {
   const styles = VARIANT_STYLES[variant];
 
-  return (
+  const row = (
     <button
       type="button"
       onClick={onClick}
       className={cn(
         'flex min-h-11 w-full items-center justify-between gap-3 rounded-2xl bg-surface p-4 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50',
-        className,
+        !selectable && className,
       )}
     >
       <span className="flex min-w-0 flex-1 items-center gap-4">
@@ -61,8 +75,15 @@ function TransactionItem({
           <Icon aria-hidden className="size-[22px] text-on-surface-variant" />
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-sm font-medium text-on-background">
-            {merchant}
+          <span className="flex min-w-0 items-center gap-1 text-sm font-medium text-on-background">
+            {isPrivate ? (
+              <Lock
+                role="img"
+                aria-label={privateLabel}
+                className="size-3.5 shrink-0 text-on-surface-variant"
+              />
+            ) : null}
+            <span className="truncate">{merchant}</span>
           </span>
           <span className="mt-0.5 block truncate text-xs text-on-surface-variant">
             {category} · {time}
@@ -73,6 +94,19 @@ function TransactionItem({
         {amount}
       </span>
     </button>
+  );
+
+  return (
+    <TransactionItemSelection
+      selectable={selectable}
+      selected={selected}
+      onSelectedChange={onSelectedChange}
+      selectLabel={selectLabel}
+      merchant={merchant}
+      className={className}
+    >
+      {row}
+    </TransactionItemSelection>
   );
 }
 

@@ -6,57 +6,82 @@ import {
   AdjustBalanceInput,
   AccountConnection,
   AccountsArgs,
+  CreditCardTermsInput,
 } from './dto/account.dto';
 import {
+  ConflictError,
+  InvalidAccountTypeError,
   NotFoundError,
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
-import { PaginationUtil } from '../../common/utils/pagination.util';
-import { TransactionType, TransactionSource } from '@finnit/database';
+import { KeysetPage } from '../../common/utils/keyset-pagination.util';
+import { localToday } from '../../common/utils/local-date.util';
+import {
+  AccountType,
+  TransactionType,
+  TransactionSource,
+} from '@finnit/database';
 import { Prisma } from '@finnit/database';
 import { Account } from '../../common/types/models/account.model';
 import {
+  AccountDesignInput,
   AccountMetadata,
   AccountMetadataInput,
+  HEX_COLOR,
+  NICKNAME_MAX_LENGTH,
 } from '../../common/types/models/account-metadata.model';
+
+/** Description of the adjustment that records an account's opening balance. */
+export const OPENING_BALANCE_DESCRIPTION = 'Initial balance';
 
 @Injectable()
 export class AccountsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, input: CreateAccountInput): Promise<Account> {
-    const account = await this.prisma.account.create({
-      data: {
-        userId,
-        type: input.type,
-        name: input.name,
-        currency: input.currency,
-        balanceCurrent: input.initialBalance,
-        // @ts-expect-error - Prisma JSON type compatibility
-        metadata: this.convertMetadataToPrisma(input.metadata),
-      },
-    });
+    const metadata = this.mergeMetadata(undefined, input.metadata);
 
-    // Create initial transaction if balance is not zero
-    if (input.initialBalance !== 0) {
-      await this.prisma.transaction.create({
-        data: {
-          userId,
-          accountId: account.id,
-          type:
-            input.initialBalance > 0
-              ? TransactionType.income
-              : TransactionType.expense,
-          amount: Math.abs(input.initialBalance),
-          currency: input.currency,
-          txnDate: new Date(),
-          description: 'Initial balance',
-          source: TransactionSource.manual,
-        },
+    // The account and its opening balance are created together. The opening
+    // balance is an adjustment, so it never counts as income or spending.
+    return await this.prisma
+      .$transaction(async (tx) => {
+        const account = await tx.account.create({
+          data: {
+            userId,
+            type: input.type,
+            name: input.name,
+            currency: input.currency,
+            balanceCurrent: input.initialBalance,
+            ...(metadata && { metadata }),
+          },
+        });
+
+        if (input.initialBalance !== 0) {
+          await tx.transaction.create({
+            data: {
+              userId,
+              accountId: account.id,
+              type: TransactionType.adjustment,
+              amount: Math.abs(input.initialBalance),
+              currency: input.currency,
+              txnDate: localToday(),
+              description: OPENING_BALANCE_DESCRIPTION,
+              source: TransactionSource.manual,
+            },
+          });
+        }
+
+        return this.mapAccount(account);
+      })
+      .catch((error: unknown) => {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          throw new ConflictError('An account with this name already exists');
+        }
+        throw error;
       });
-    }
-
-    return this.mapAccount(account);
   }
 
   async findMany(
@@ -73,32 +98,19 @@ export class AccountsService {
       where.archived = args.archived;
     }
 
-    // Handle cursor pagination
-    const limit = args.first || args.last || 20;
-    let cursor: Prisma.AccountWhereInput | undefined = undefined;
-
-    if (args.after) {
-      const decodedCursor = PaginationUtil.decodeCursor(args.after);
-      cursor = { id: { gt: decodedCursor } };
-    } else if (args.before) {
-      const decodedCursor = PaginationUtil.decodeCursor(args.before);
-      cursor = { id: { lt: decodedCursor } };
-    }
-
+    // Newest first; the cursor resolves to (createdAt, id).
+    const page = new KeysetPage(args);
     const accounts = await this.prisma.account.findMany({
-      where: { ...where, ...cursor } as Prisma.AccountWhereInput,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
+      where,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      ...page.query,
       include: { creditCardTerms: true },
     });
 
     const totalCount = await this.prisma.account.count({ where });
 
-    return PaginationUtil.createConnection(
-      accounts.map((account) => this.mapAccountWithCreditCardTerms(account)),
-      args,
-      totalCount,
-      (account) => PaginationUtil.encodeCursor(account.id),
+    return page.toConnection(accounts, totalCount, (account) =>
+      this.mapAccountWithCreditCardTerms(account),
     );
   }
 
@@ -130,12 +142,17 @@ export class AccountsService {
       throw new NotFoundError('Account not found');
     }
 
+    // Merge, so fields set by the bank sync survive a personalization.
+    const metadata = input.metadata
+      ? this.mergeMetadata(existingAccount.metadata, input.metadata)
+      : undefined;
+
     const updatedAccount = await this.prisma.account.update({
       where: { id },
       data: {
-        ...input,
-        // @ts-expect-error - Prisma JSON type compatibility
-        metadata: this.convertMetadataToPrisma(input.metadata),
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.archived !== undefined && { archived: input.archived }),
+        ...(metadata && { metadata }),
       },
     });
 
@@ -167,7 +184,7 @@ export class AccountsService {
           type: TransactionType.adjustment,
           amount: Math.abs(input.amount),
           currency: account.currency,
-          txnDate: new Date(),
+          txnDate: localToday(),
           description: input.description,
           source: TransactionSource.manual,
         },
@@ -210,11 +227,88 @@ export class AccountsService {
     return true;
   }
 
-  private convertMetadataToPrisma(
-    metadata?: AccountMetadataInput,
-  ): Record<string, unknown> | undefined {
-    if (!metadata) return undefined;
-    return metadata as Record<string, unknown>;
+  async setCreditCardTerms(
+    accountId: string,
+    userId: string,
+    input: CreditCardTermsInput,
+  ): Promise<Account> {
+    await this.findCreditAccount(accountId, userId);
+    validateCreditCardTerms(input);
+
+    const terms = {
+      statementDay: input.statementDay,
+      paymentDueDay: input.paymentDueDay,
+      interestRateAnnual: input.interestRateAnnual ?? null,
+      minPaymentRule: input.minPaymentRule ?? null,
+      gracePeriodDays: input.gracePeriodDays ?? null,
+    };
+    await this.prisma.creditCardTerms.upsert({
+      where: { accountId },
+      create: { accountId, ...terms },
+      update: terms,
+    });
+
+    return this.findById(accountId, userId);
+  }
+
+  async removeCreditCardTerms(
+    accountId: string,
+    userId: string,
+  ): Promise<Account> {
+    await this.findCreditAccount(accountId, userId);
+    await this.prisma.creditCardTerms.deleteMany({ where: { accountId } });
+    return this.findById(accountId, userId);
+  }
+
+  private async findCreditAccount(accountId: string, userId: string) {
+    const account = await this.prisma.account.findFirst({
+      where: { id: accountId, userId },
+    });
+    if (!account) {
+      throw new NotFoundError('Account not found');
+    }
+    if (account.type !== AccountType.credit) {
+      throw new InvalidAccountTypeError(
+        'Credit card terms only apply to credit accounts',
+      );
+    }
+    return account;
+  }
+
+  /**
+   * The stored metadata with `input` applied on top: omitted fields are
+   * kept, `null` removes a field. Validates the personalization fields.
+   */
+  private mergeMetadata(
+    current: Prisma.JsonValue | undefined,
+    input?: AccountMetadataInput,
+  ): Prisma.InputJsonObject | undefined {
+    if (!input) return undefined;
+    validateMetadataInput(input);
+
+    const merged: Record<string, unknown> =
+      current && typeof current === 'object' && !Array.isArray(current)
+        ? { ...current }
+        : {};
+    for (const [key, value] of Object.entries(input)) {
+      if (value === undefined) continue;
+      if (value === null) {
+        delete merged[key];
+      } else if (key === 'nickname') {
+        merged[key] = (value as string).trim();
+      } else if (key === 'design') {
+        const design = value as AccountDesignInput;
+        merged[key] = {
+          primaryColor: design.primaryColor,
+          ...(design.secondaryColor && {
+            secondaryColor: design.secondaryColor,
+          }),
+        };
+      } else {
+        merged[key] = value;
+      }
+    }
+    return merged as Prisma.InputJsonObject;
   }
 
   private mapAccount(
@@ -259,15 +353,61 @@ export class AccountsService {
             accountId: account.creditCardTerms.accountId,
             statementDay: account.creditCardTerms.statementDay,
             paymentDueDay: account.creditCardTerms.paymentDueDay,
-            interestRateAnnual: account.creditCardTerms.interestRateAnnual
-              ? Number(account.creditCardTerms.interestRateAnnual)
-              : undefined,
+            interestRateAnnual:
+              account.creditCardTerms.interestRateAnnual != null
+                ? Number(account.creditCardTerms.interestRateAnnual)
+                : undefined,
             minPaymentRule: account.creditCardTerms.minPaymentRule || undefined,
             gracePeriodDays:
-              account.creditCardTerms.gracePeriodDays || undefined,
+              account.creditCardTerms.gracePeriodDays ?? undefined,
             updatedAt: account.creditCardTerms.updatedAt,
           }
         : undefined,
     };
+  }
+}
+
+function validateMetadataInput(input: AccountMetadataInput): void {
+  if (input.nickname != null) {
+    const nickname = input.nickname.trim();
+    if (nickname.length < 1 || nickname.length > NICKNAME_MAX_LENGTH) {
+      throw new ValidationError(
+        `The nickname must be 1 to ${NICKNAME_MAX_LENGTH} characters`,
+      );
+    }
+  }
+  if (input.design != null) {
+    const { primaryColor, secondaryColor } = input.design;
+    if (!HEX_COLOR.test(primaryColor ?? '')) {
+      throw new ValidationError('primaryColor must be a #RRGGBB hex color');
+    }
+    if (secondaryColor != null && !HEX_COLOR.test(secondaryColor)) {
+      throw new ValidationError('secondaryColor must be a #RRGGBB hex color');
+    }
+  }
+}
+
+function validateCreditCardTerms(input: CreditCardTermsInput): void {
+  const isDay = (day: number) => Number.isInteger(day) && day >= 1 && day <= 31;
+  if (!isDay(input.statementDay) || !isDay(input.paymentDueDay)) {
+    throw new ValidationError(
+      'statementDay and paymentDueDay must be days of the month (1 to 31)',
+    );
+  }
+  if (
+    input.interestRateAnnual != null &&
+    !(input.interestRateAnnual >= 0 && input.interestRateAnnual <= 200)
+  ) {
+    throw new ValidationError('interestRateAnnual must be between 0 and 200');
+  }
+  if (
+    input.gracePeriodDays != null &&
+    !(
+      Number.isInteger(input.gracePeriodDays) &&
+      input.gracePeriodDays >= 0 &&
+      input.gracePeriodDays <= 90
+    )
+  ) {
+    throw new ValidationError('gracePeriodDays must be between 0 and 90');
   }
 }

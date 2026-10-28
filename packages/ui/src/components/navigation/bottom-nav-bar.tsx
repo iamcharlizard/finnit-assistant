@@ -11,6 +11,10 @@ interface BottomNavBarProps {
   /** Center "add" action (mobile opens the add-transaction flow). */
   onAddClick?: () => void;
   linkComponent?: LinkComponent;
+  /** Accessible name of the <nav>. */
+  navLabel?: string;
+  /** Accessible name of the center add button. */
+  addLabel?: string;
   className?: string;
 }
 
@@ -19,6 +23,8 @@ function BottomNavBar({
   activeHref,
   onAddClick,
   linkComponent: Link = 'a',
+  navLabel = 'Main navigation',
+  addLabel = 'Add transaction',
   className,
 }: BottomNavBarProps) {
   const middle = Math.ceil(items.length / 2);
@@ -44,7 +50,7 @@ function BottomNavBar({
 
   return (
     <nav
-      aria-label="Navegación principal"
+      aria-label={navLabel}
       className={cn(
         'fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-outline bg-surface/92 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-2px_16px_rgba(0,0,0,0.06)] backdrop-blur-xl dark:bg-background/92 dark:shadow-[0_-2px_16px_rgba(0,0,0,0.3)]',
         className,
@@ -54,7 +60,7 @@ function BottomNavBar({
       <button
         type="button"
         onClick={onAddClick}
-        aria-label="Agregar transacción"
+        aria-label={addLabel}
         className="flex size-11 items-center justify-center rounded-full text-brand-ink outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
       >
         <CirclePlus aria-hidden className="size-7" />

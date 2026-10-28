@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Inbox, SearchX } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
@@ -29,21 +30,29 @@ export function HistoryList({
 }) {
   const { rows, totalCount, hasNextPage, loading, error, loadMore } =
     useTransactionPages(initial, filters, categories);
-  const groups = React.useMemo(() => groupByDay(rows, today), [rows, today]);
+  const t = useTranslations();
+  const locale = useLocale();
+  const groups = React.useMemo(
+    () => groupByDay(rows, today, locale),
+    [rows, today, locale],
+  );
 
   if (rows.length === 0) {
     return hasFilters(filters) ? (
       <EmptyState
         icon={SearchX}
-        title="Sin resultados"
-        description="Ningún movimiento coincide con estos filtros."
+        title={t('history.noResultsTitle')}
+        description={t('history.noResultsDescription')}
       />
     ) : (
       <EmptyState
         icon={Inbox}
-        title="Aún no tienes movimientos"
-        description="Conecta tu banco para importar tus movimientos automáticamente."
-        action={{ href: '/settings/banks/connect', label: 'Conectar banco' }}
+        title={t('history.emptyTitle')}
+        description={t('history.emptyDescription')}
+        action={{
+          href: '/settings/banks/connect',
+          label: t('common.connectBank'),
+        }}
       />
     );
   }
@@ -54,8 +63,10 @@ export function HistoryList({
         className="mb-4 px-1 text-xs text-on-surface-variant"
         aria-live="polite"
       >
-        {rows.length} de {totalCount}{' '}
-        {totalCount === 1 ? 'movimiento' : 'movimientos'}
+        {t('history.count', {
+          shown: String(rows.length),
+          total: totalCount,
+        })}
       </p>
       {groups.map((group) => (
         <section key={group.day} className="mb-8">
@@ -81,7 +92,7 @@ export function HistoryList({
           onClick={loadMore}
           disabled={loading}
         >
-          {loading ? 'Cargando…' : 'Cargar más'}
+          {loading ? t('common.loading') : t('common.loadMore')}
         </Button>
       ) : null}
     </div>

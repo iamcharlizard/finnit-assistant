@@ -45,6 +45,14 @@ export const MISSED_GRACE_DAYS = 3;
 export const REMINDER_DAYS_AHEAD = 3;
 const MAX_UPCOMING_RANGE_DAYS = 400;
 
+/** A past payment recorded when the expense is created. */
+export interface PaidHistoryItem {
+  transactionId: string;
+  dueDate: Date;
+  amount: number;
+  matchedBy: OccurrenceMatchSource;
+}
+
 @Injectable()
 export class RecurringExpensesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -53,6 +61,84 @@ export class RecurringExpensesService {
     userId: string,
     input: CreateRecurringExpenseInput,
   ): Promise<RecurringExpense> {
+    const data = await this.prepareCreate(userId, input);
+    try {
+      const expense = await this.prisma.recurringExpense.create({ data });
+      await this.syncOccurrences(expense);
+      return this.mapExpense(expense);
+    } catch (error) {
+      this.rethrowUniqueViolation(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Creates an expense together with its past payments (e.g. an accepted
+   * suggestion): the paid occurrences and `afterCreate` run in the same DB
+   * transaction. Scheduled occurrences are generated only from `syncFrom`
+   * on, so they don't duplicate the payments already recorded.
+   */
+  async createWithHistory(
+    userId: string,
+    input: CreateRecurringExpenseInput,
+    history: PaidHistoryItem[],
+    options: {
+      syncFrom?: Date;
+      afterCreate?: (
+        tx: Prisma.TransactionClient,
+        expense: RecurringExpenseRow,
+      ) => Promise<void>;
+    } = {},
+  ): Promise<RecurringExpense> {
+    const data = await this.prepareCreate(userId, input);
+    const paidAt = new Date();
+    try {
+      const expense = await this.prisma.$transaction(async (tx) => {
+        const created = await tx.recurringExpense.create({ data });
+        if (history.length > 0) {
+          await tx.recurringOccurrence.createMany({
+            data: history.map((item) => ({
+              recurringExpenseId: created.id,
+              dueDate: toDateOnly(item.dueDate),
+              expectedAmount: item.amount,
+              status: OccurrenceStatus.paid,
+              paidAt,
+              matchedBy: item.matchedBy,
+              transactionId: item.transactionId,
+            })),
+          });
+        }
+        await options.afterCreate?.(tx, created);
+        return created;
+      });
+      const from =
+        options.syncFrom ?? addDays(this.today(), -OCCURRENCE_LOOKBACK_DAYS);
+      await this.syncOccurrences(
+        expense,
+        from,
+        addDays(this.today(), OCCURRENCE_HORIZON_DAYS),
+      );
+      return this.mapExpense(expense);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002' &&
+        JSON.stringify(error.meta ?? {}).includes('transactionId')
+      ) {
+        throw new ConflictError(
+          'One of these movements already pays another recurring expense',
+        );
+      }
+      this.rethrowUniqueViolation(error);
+      throw error;
+    }
+  }
+
+  /** Validates a new expense and returns the row to insert. */
+  private async prepareCreate(
+    userId: string,
+    input: CreateRecurringExpenseInput,
+  ): Promise<Prisma.RecurringExpenseUncheckedCreateInput> {
     const startDate = toDateOnly(new Date(input.startDate));
     const endDate = input.endDate ? toDateOnly(new Date(input.endDate)) : null;
     const interval = input.interval ?? 1;
@@ -73,37 +159,27 @@ export class RecurringExpensesService {
       this.today(),
     );
 
-    try {
-      const expense = await this.prisma.recurringExpense.create({
-        data: {
-          userId,
-          name: input.name.trim(),
-          kind: input.kind,
-          trackingMode: input.trackingMode,
-          frequency: input.frequency,
-          interval,
-          startDate,
-          endDate,
-          amount: input.amount,
-          isVariableAmount: input.isVariableAmount ?? false,
-          currency: (input.currency ?? 'MXN').toUpperCase(),
-          accountId: input.accountId,
-          categoryId: input.categoryId,
-          debtId: input.debtId,
-          merchantPattern: this.normalizePattern(input.merchantPattern),
-          installmentsTotal: input.installmentsTotal,
-          installmentsPaid: input.installmentsPaid ?? 0,
-          notes: input.notes,
-          nextDueDate: next,
-        },
-      });
-
-      await this.syncOccurrences(expense);
-      return this.mapExpense(expense);
-    } catch (error) {
-      this.rethrowUniqueViolation(error);
-      throw error;
-    }
+    return {
+      userId,
+      name: input.name.trim(),
+      kind: input.kind,
+      trackingMode: input.trackingMode,
+      frequency: input.frequency,
+      interval,
+      startDate,
+      endDate,
+      amount: input.amount,
+      isVariableAmount: input.isVariableAmount ?? false,
+      currency: (input.currency ?? 'MXN').toUpperCase(),
+      accountId: input.accountId,
+      categoryId: input.categoryId,
+      debtId: input.debtId,
+      merchantPattern: this.normalizePattern(input.merchantPattern),
+      installmentsTotal: input.installmentsTotal,
+      installmentsPaid: input.installmentsPaid ?? 0,
+      notes: input.notes,
+      nextDueDate: next,
+    };
   }
 
   async findMany(

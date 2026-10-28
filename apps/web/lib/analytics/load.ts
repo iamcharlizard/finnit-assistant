@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
+import { getLocalizer } from '@/lib/i18n/server';
 import { monthOf, todayKey, type MonthRef } from '@/lib/finance/dates';
 import {
   CATEGORY_FIELDS,
@@ -34,6 +35,7 @@ export async function loadAnalytics(
         `m${i}: monthlyReport(year: ${m.year}, month: ${m.month}) { ${MONTHLY_REPORT_FIELDS} }`,
     )
     .join('\n  ');
+  const l = await getLocalizer();
   const data = await serverGraphql<
     Record<string, ApiMonthlyReport> & {
       categories: ApiCategory[];
@@ -58,5 +60,6 @@ export async function loadAnalytics(
       accountCount: data.accounts.totalCount,
     },
     { selected, current: currentMonth() },
+    l,
   );
 }

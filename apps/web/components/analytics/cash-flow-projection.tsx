@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
 import type { AnalyticsView } from '@/lib/analytics/view';
 
@@ -27,6 +28,7 @@ export function CashFlowProjection({
   points: AnalyticsView['projection'];
 }) {
   const id = React.useId().replace(/:/g, '');
+  const t = useTranslations('analytics.projection');
   if (points.length === 0) return null;
   const path = linePath(points.map((p) => p.value));
   const last = points[points.length - 1]!;
@@ -34,11 +36,16 @@ export function CashFlowProjection({
   return (
     <section className="overflow-hidden rounded-2xl border border-glass-border bg-glass p-5 backdrop-blur-md">
       <h3 className="mb-1 text-lg font-bold text-on-background">
-        Proyección de saldo
+        {t('title')}
       </h3>
       <p className="mb-4 text-[13px] text-on-surface-variant">
-        Con tu promedio mensual de ingresos y gastos, en {last.label} tendrías{' '}
-        <strong className="text-on-background">{last.balance}</strong>.
+        {t.rich('description', {
+          month: last.label,
+          balance: last.balance,
+          strong: (chunks) => (
+            <strong className="text-on-background">{chunks}</strong>
+          ),
+        })}
       </p>
 
       <svg

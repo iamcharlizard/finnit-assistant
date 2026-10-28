@@ -1,3 +1,6 @@
+import type { Locale } from '@/lib/i18n/locales';
+import type { Translate } from '@/lib/i18n/translator';
+
 /** Admin panel, users: GraphQL documents, types and pure helpers. */
 
 export type UserRole = 'admin' | 'user';
@@ -56,14 +59,11 @@ export const USER_ACTION_MUTATIONS = {
 
 export type UserAction = keyof typeof USER_ACTION_MUTATIONS | 'setPassword';
 
-export const ROLE_LABELS = {
-  master: 'Maestro',
-  admin: 'Administrador',
-  user: 'Usuario',
-} as const;
-
-export function roleLabel(user: Pick<AdminUser, 'role' | 'isMaster'>): string {
-  return user.isMaster ? ROLE_LABELS.master : ROLE_LABELS[user.role];
+export function roleLabel(
+  user: Pick<AdminUser, 'role' | 'isMaster'>,
+  t: Translate,
+): string {
+  return t(`admin.users.roles.${user.isMaster ? 'master' : user.role}`);
 }
 
 /** Which row actions the signed-in admin may use on `target` (the API enforces the same rules). */
@@ -118,22 +118,38 @@ export function generatePassword(length = 16): string {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** dd/mm/yyyy in local time, without Intl (same output on every runtime). */
-export function formatDate(iso: string): string {
+/**
+ * dd/mm/yyyy (Spanish) or mm/dd/yyyy (English) in local time, without Intl
+ * (same output on every runtime).
+ */
+export function formatDate(iso: string, locale: Locale): string {
   const date = new Date(iso);
-  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
+  const day = pad(date.getDate());
+  const month = pad(date.getMonth() + 1);
+  return locale === 'en'
+    ? `${month}/${day}/${date.getFullYear()}`
+    : `${day}/${month}/${date.getFullYear()}`;
 }
 
-/** "hace 5 min", "ayer", … and dd/mm/yyyy after a week. */
-export function formatLastSignIn(iso: string | null, now = Date.now()): string {
-  if (!iso) return 'Nunca';
+/** "Hace 5 min", "Ayer", … and the date after a week. */
+export function formatLastSignIn(
+  iso: string | null,
+  { locale, t }: { locale: Locale; t: Translate },
+  now = Date.now(),
+): string {
+  if (!iso) return t('admin.users.lastSignIn.never');
   const minutes = Math.floor((now - new Date(iso).getTime()) / 60_000);
-  if (minutes < 1) return 'Hace un momento';
-  if (minutes < 60) return `Hace ${minutes} min`;
+  if (minutes < 1) return t('admin.users.lastSignIn.justNow');
+  if (minutes < 60) {
+    return t('admin.users.lastSignIn.minutes', { count: String(minutes) });
+  }
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `Hace ${hours} h`;
+  if (hours < 24) {
+    return t('admin.users.lastSignIn.hours', { count: String(hours) });
+  }
   const days = Math.floor(hours / 24);
-  if (days === 1) return 'Ayer';
-  if (days < 7) return `Hace ${days} días`;
-  return formatDate(iso);
+  if (days === 1) return t('admin.users.lastSignIn.yesterday');
+  if (days < 7)
+    return t('admin.users.lastSignIn.days', { count: String(days) });
+  return formatDate(iso, locale);
 }

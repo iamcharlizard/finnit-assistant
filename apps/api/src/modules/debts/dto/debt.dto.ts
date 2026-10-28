@@ -125,6 +125,13 @@ export class DebtPayoffProjection {
 
   @Field(() => Float)
   totalInterest: number;
+
+  @Field(() => Int, {
+    nullable: true,
+    description:
+      'Months until the debt is paid off; null when the payments never pay it off (they do not cover the interest, or the debt gets no payment)',
+  })
+  monthsToPayoff?: number | null;
 }
 
 @ObjectType()
@@ -197,6 +204,24 @@ export class UpdateDebtInput {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @Field(() => DebtKind, { nullable: true })
+  @IsOptional()
+  kind?: DebtKind;
+
+  @Field(() => Float, {
+    nullable: true,
+    description: 'Cannot be less than what has been paid already',
+  })
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  principal?: number;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsDateString()
+  startDate?: Date;
 
   @Field(() => Float, { nullable: true })
   @IsOptional()
@@ -282,9 +307,9 @@ export class PayoffStrategyInput {
   @Field(() => [String])
   debtIds: string[];
 
-  @Field(() => Float)
+  @Field(() => Float, { description: 'Extra paid each month; 0 or more' })
   @IsNumber()
-  @IsPositive()
+  @Min(0)
   extraPayment: number;
 
   @Field()

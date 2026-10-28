@@ -14,6 +14,14 @@ import {
   TransactionSource,
   AccountType,
 } from '@finnit/database';
+import {
+  localToday,
+  toLocalDateOnly,
+} from '../../common/utils/local-date.util';
+import {
+  TRANSACTION_PRESENTATION_INCLUDE,
+  presentationFields,
+} from '../transactions/transaction.mapper';
 
 @Injectable()
 export class TransfersService {
@@ -54,7 +62,10 @@ export class TransfersService {
       throw new ValidationError('Currency conversion not supported yet');
     }
 
-    const txnDate = input.txnDate ? new Date(input.txnDate) : new Date();
+    // The calendar day in the user's time zone (date-only, midnight UTC).
+    const txnDate = input.txnDate
+      ? toLocalDateOnly(input.txnDate)
+      : localToday();
     const description = input.description || `Transfer to ${toAccount.name}`;
 
     return await this.prisma.$transaction(async (tx) => {
@@ -67,7 +78,7 @@ export class TransfersService {
           amount: input.amount,
           currency: fromAccount.currency,
           txnDate,
-          description: `${description} (outgoing)`,
+          description,
           source: TransactionSource.manual,
         },
       });
@@ -81,7 +92,7 @@ export class TransfersService {
           amount: input.amount,
           currency: toAccount.currency,
           txnDate,
-          description: `${description} (incoming)`,
+          description,
           source: TransactionSource.manual,
         },
       });
@@ -119,8 +130,10 @@ export class TransfersService {
       const completeTransfer = await tx.transfer.findUnique({
         where: { id: transfer.id },
         include: {
-          fromTxn: true,
-          toTxn: true,
+          fromTxn: {
+            include: { alias: TRANSACTION_PRESENTATION_INCLUDE.alias },
+          },
+          toTxn: { include: { alias: TRANSACTION_PRESENTATION_INCLUDE.alias } },
         },
       });
 
@@ -141,11 +154,13 @@ export class TransfersService {
         fromTxn: {
           include: {
             account: true,
+            alias: TRANSACTION_PRESENTATION_INCLUDE.alias,
           },
         },
         toTxn: {
           include: {
             account: true,
+            alias: TRANSACTION_PRESENTATION_INCLUDE.alias,
           },
         },
       },
@@ -167,11 +182,13 @@ export class TransfersService {
         fromTxn: {
           include: {
             account: true,
+            alias: TRANSACTION_PRESENTATION_INCLUDE.alias,
           },
         },
         toTxn: {
           include: {
             account: true,
+            alias: TRANSACTION_PRESENTATION_INCLUDE.alias,
           },
         },
       },
@@ -205,6 +222,10 @@ export class TransfersService {
         externalId: string | null;
         createdAt: Date;
         updatedAt: Date;
+        aliasId?: string | null;
+        aliasName?: string | null;
+        isPrivate?: boolean;
+        alias?: { displayName: string; isPrivate: boolean } | null;
         account: {
           id: string;
           userId: string;
@@ -235,6 +256,10 @@ export class TransfersService {
         externalId: string | null;
         createdAt: Date;
         updatedAt: Date;
+        aliasId?: string | null;
+        aliasName?: string | null;
+        isPrivate?: boolean;
+        alias?: { displayName: string; isPrivate: boolean } | null;
         account: {
           id: string;
           userId: string;
@@ -272,6 +297,7 @@ export class TransfersService {
         externalId: t.fromTxn.externalId ?? undefined,
         createdAt: t.fromTxn.createdAt,
         updatedAt: t.fromTxn.updatedAt,
+        ...presentationFields(t.fromTxn),
         account: t.fromTxn.account
           ? {
               id: t.fromTxn.account.id,
@@ -304,6 +330,7 @@ export class TransfersService {
         externalId: t.toTxn.externalId ?? undefined,
         createdAt: t.toTxn.createdAt,
         updatedAt: t.toTxn.updatedAt,
+        ...presentationFields(t.toTxn),
         account: t.toTxn.account
           ? {
               id: t.toTxn.account.id,

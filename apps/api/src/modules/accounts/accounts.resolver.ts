@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
 import {
@@ -7,6 +7,7 @@ import {
   UpdateAccountInput,
   AdjustBalanceInput,
   AccountsArgs,
+  CreditCardTermsInput,
 } from './dto/account.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -65,5 +66,24 @@ export class AccountsResolver {
     @Args('id') id: string,
   ): Promise<boolean> {
     return this.accountsService.delete(id, user.id);
+  }
+
+  @Mutation(() => Account, {
+    description: "Sets the billing terms of one of the user's credit accounts",
+  })
+  async setCreditCardTerms(
+    @CurrentUser() user: User,
+    @Args('accountId', { type: () => ID }) accountId: string,
+    @Args('input') input: CreditCardTermsInput,
+  ): Promise<Account> {
+    return this.accountsService.setCreditCardTerms(accountId, user.id, input);
+  }
+
+  @Mutation(() => Account)
+  async removeCreditCardTerms(
+    @CurrentUser() user: User,
+    @Args('accountId', { type: () => ID }) accountId: string,
+  ): Promise<Account> {
+    return this.accountsService.removeCreditCardTerms(accountId, user.id);
   }
 }

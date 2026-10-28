@@ -14,7 +14,7 @@ interface PopularCategoriesCardProps {
 }
 
 function PopularCategoriesCard({
-  title = 'Categorías Populares',
+  title = 'Popular categories',
   categories,
   className,
 }: PopularCategoriesCardProps) {

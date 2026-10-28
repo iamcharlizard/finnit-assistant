@@ -5,7 +5,14 @@ import {
   ArgsType,
   Int,
 } from '@nestjs/graphql';
-import { IsOptional, IsNumber, Min, Max, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsOptional,
+  IsNumber,
+  Min,
+  Max,
+  IsString,
+} from 'class-validator';
 import {
   Connection,
   Edge,
@@ -97,4 +104,13 @@ export class NotificationsArgs {
   @Field(() => NotificationStatus, { nullable: true })
   @IsOptional()
   status?: NotificationStatus;
+
+  @Field(() => Boolean, {
+    nullable: true,
+    description:
+      'true: only notifications not read yet (scheduled or sent); overrides `status`',
+  })
+  @IsOptional()
+  @IsBoolean()
+  unread?: boolean | null;
 }

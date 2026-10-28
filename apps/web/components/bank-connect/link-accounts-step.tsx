@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   AlertCircle,
   CheckCircle2,
@@ -21,21 +22,23 @@ import {
   fetchFinnitAccounts,
   type FinnitAccount,
 } from '@/lib/bank-connect/api';
+import { DEFAULT_CURRENCY, formatMoney } from '@/lib/finance/money';
 import { AccountChoiceSelect } from './account-choice-select';
 
-const money = new Intl.NumberFormat('es-MX', {
-  style: 'currency',
-  currency: 'MXN',
-  maximumFractionDigits: 2,
-});
+/** Syncfy's account types → `bankConnect.accountTypes.<key>`. */
+const ACCOUNT_TYPE_KEYS = {
+  'Credit Card': 'creditCard',
+  Checking: 'checking',
+  Savings: 'savings',
+  Investment: 'investment',
+  Loan: 'loan',
+} as const;
 
-const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-  'Credit Card': 'Tarjeta de crédito',
-  Checking: 'Cuenta de cheques',
-  Savings: 'Ahorro',
-  Investment: 'Inversión',
-  Loan: 'Préstamo',
-};
+function accountTypeKey(type: string | null | undefined) {
+  return type && Object.hasOwn(ACCOUNT_TYPE_KEYS, type)
+    ? ACCOUNT_TYPE_KEYS[type as keyof typeof ACCOUNT_TYPE_KEYS]
+    : null;
+}
 
 /** Cards and checking accounts are imported by default; empty savings are not. */
 function defaultChoice(account: ConnectedAccount): AccountChoice {
@@ -58,6 +61,8 @@ export function LinkAccountsStep({
   message?: string;
   onSubmit: (choices: Record<string, AccountChoice>) => void;
 }) {
+  const t = useTranslations('bankConnect');
+  const locale = useLocale();
   const [accounts, setAccounts] = React.useState<FinnitAccount[]>([]);
   const [choices, setChoices] = React.useState<Record<string, AccountChoice>>(
     () =>
@@ -75,11 +80,12 @@ export function LinkAccountsStep({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <TitleLg as="h2">¿Qué cuentas quieres importar?</TitleLg>
+        <TitleLg as="h2">{t('link.title')}</TitleLg>
         <BodyMd className="mt-1 text-[13px] text-on-surface-variant">
-          Encontramos {bank.accounts.length} cuenta(s) en{' '}
-          {bank.institution ?? 'tu banco'}. Importaremos sus movimientos de los
-          últimos 90 días y los mantendremos al día.
+          {t('link.found', {
+            count: bank.accounts.length,
+            bank: bank.institution ?? t('done.yourBank'),
+          })}
         </BodyMd>
       </div>
 
@@ -97,6 +103,7 @@ export function LinkAccountsStep({
         {bank.accounts.map((account) => {
           const Icon = iconFor(account.type);
           const selectId = `choice-${account.id}`;
+          const typeKey = accountTypeKey(account.type);
           return (
             <li
               key={account.id}
@@ -105,19 +112,20 @@ export function LinkAccountsStep({
               <Icon aria-hidden className="size-6 shrink-0 text-brand-ink" />
               <label htmlFor={selectId} className="flex-1">
                 <span className="block text-sm font-medium text-on-background">
-                  {account.name ?? 'Cuenta'}
+                  {account.name ?? t('link.accountFallback')}
                   {account.mask ? ` ·${account.mask}` : ''}
                 </span>
                 <span className="block text-xs text-on-surface-variant">
-                  {ACCOUNT_TYPE_LABELS[account.type ?? ''] ?? account.type}
+                  {typeKey ? t(`accountTypes.${typeKey}`) : account.type}
                   {typeof account.balance === 'number'
-                    ? ` · ${money.format(account.balance)}`
+                    ? ` · ${formatMoney(account.balance, DEFAULT_CURRENCY, locale)}`
                     : ''}
                 </span>
               </label>
               {account.accountId ? (
                 <span className="flex items-center gap-1.5 text-sm text-income">
-                  <CheckCircle2 aria-hidden className="size-4" /> Ya ligada
+                  <CheckCircle2 aria-hidden className="size-4" />{' '}
+                  {t('link.alreadyLinked')}
                 </span>
               ) : (
                 <AccountChoiceSelect
@@ -139,7 +147,7 @@ export function LinkAccountsStep({
         className="self-end"
         onClick={() => onSubmit(choices)}
       >
-        {toImport ? 'Importar movimientos' : 'Terminar'}
+        {toImport ? t('link.import') : t('link.finish')}
       </Button>
     </div>
   );

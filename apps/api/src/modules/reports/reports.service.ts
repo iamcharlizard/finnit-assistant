@@ -3,10 +3,13 @@ import { PrismaService } from '../../services/prisma.service';
 import {
   MonthlyReport,
   CategoryExpense,
+  CashFlowBaseline,
   CashFlowProjection,
   WhatIfInput,
   WhatIfResult,
 } from './dto/report.dto';
+import { loadCategoryI18n } from '../categories/category-names';
+import { AppLocale, DEFAULT_LOCALE } from '../translation/locale';
 
 @Injectable()
 export class ReportsService {
@@ -16,23 +19,29 @@ export class ReportsService {
     userId: string,
     year: number,
     month: number,
+    locale: AppLocale = DEFAULT_LOCALE,
   ): Promise<MonthlyReport> {
     // The whole month in UTC, like the dates imported from banks and
     // statements (midnight UTC of the day): up to, not including, the 1st of
     // the next month, so the last day counts entirely.
-    const txnDate = {
-      gte: new Date(Date.UTC(year, month - 1, 1)),
-      lt: new Date(Date.UTC(year, month, 1)),
+    // Pending transactions are left out until they are confirmed.
+    const monthWhere = {
+      userId,
+      isPending: false,
+      txnDate: {
+        gte: new Date(Date.UTC(year, month - 1, 1)),
+        lt: new Date(Date.UTC(year, month, 1)),
+      },
     };
 
     // Get income and expenses for the month
     const [incomeData, expenseData] = await Promise.all([
       this.prisma.transaction.aggregate({
-        where: { userId, type: 'income', txnDate },
+        where: { ...monthWhere, type: 'income' },
         _sum: { amount: true },
       }),
       this.prisma.transaction.aggregate({
-        where: { userId, type: 'expense', txnDate },
+        where: { ...monthWhere, type: 'expense' },
         _sum: { amount: true },
       }),
     ]);
@@ -40,36 +49,30 @@ export class ReportsService {
     const totalIncome = Number(incomeData._sum.amount || 0);
     const totalExpenses = Number(expenseData._sum.amount || 0);
 
-    // Get category breakdown
+    // Category breakdown, with the names in the request's locale (one query).
     const categoryExpenses = await this.prisma.transaction.groupBy({
       by: ['categoryId'],
-      where: {
-        userId,
-        type: 'expense',
-        txnDate,
-        categoryId: { not: null },
-      },
+      where: { ...monthWhere, type: 'expense', categoryId: { not: null } },
       _sum: { amount: true },
     });
+    const names = await loadCategoryI18n(
+      this.prisma,
+      categoryExpenses.flatMap((e) => (e.categoryId ? [e.categoryId] : [])),
+      locale,
+    );
 
     const categoryBreakdown: CategoryExpense[] = [];
     for (const expense of categoryExpenses) {
-      if (expense.categoryId) {
-        const category = await this.prisma.category.findUnique({
-          where: { id: expense.categoryId },
-        });
+      if (!expense.categoryId) continue;
+      const amount = Number(expense._sum.amount || 0);
+      const percentage = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
 
-        const amount = Number(expense._sum.amount || 0);
-        const percentage =
-          totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
-
-        categoryBreakdown.push({
-          categoryId: expense.categoryId,
-          categoryName: category?.name || 'Unknown',
-          amount,
-          percentage: Math.round(percentage * 100) / 100,
-        });
-      }
+      categoryBreakdown.push({
+        categoryId: expense.categoryId,
+        categoryName: names.get(expense.categoryId)?.name || 'Unknown',
+        amount,
+        percentage: Math.round(percentage * 100) / 100,
+      });
     }
 
     // Get user's currency (from first account)
@@ -88,11 +91,13 @@ export class ReportsService {
     };
   }
 
-  async getCashFlowProjection(
-    userId: string,
-    monthsAhead = 6,
-  ): Promise<CashFlowProjection[]> {
-    // Get current total balance
+  /**
+   * The current balance of the non-archived accounts and the average
+   * monthly income and expenses over the last 6 months, divided by the
+   * months the user actually has data for (a new user is not averaged
+   * against empty months).
+   */
+  async getCashFlowBaseline(userId: string): Promise<CashFlowBaseline> {
     const accounts = await this.prisma.account.findMany({
       where: { userId, archived: false },
     });
@@ -102,12 +107,13 @@ export class ReportsService {
       0,
     );
 
-    // Average monthly income and expenses over the last 6 months, divided by
-    // the months the user actually has data for (a new user is not averaged
-    // against empty months).
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    const window = { userId, txnDate: { gte: sixMonthsAgo } };
+    const window = {
+      userId,
+      isPending: false,
+      txnDate: { gte: sixMonthsAgo },
+    };
 
     const [income, expenses, first] = await Promise.all([
       this.prisma.transaction.aggregate({
@@ -125,8 +131,21 @@ export class ReportsService {
     ]);
 
     const months = monthsOfData(first._min.txnDate);
-    const monthlyIncome = Number(income._sum.amount || 0) / months;
-    const monthlyExpenses = Number(expenses._sum.amount || 0) / months;
+    return {
+      currentBalance,
+      monthlyIncome: Number(income._sum.amount || 0) / months,
+      monthlyExpenses: Number(expenses._sum.amount || 0) / months,
+      monthsOfData: months,
+      currency: accounts[0]?.currency || 'MXN',
+    };
+  }
+
+  async getCashFlowProjection(
+    userId: string,
+    monthsAhead = 6,
+  ): Promise<CashFlowProjection[]> {
+    const { currentBalance, monthlyIncome, monthlyExpenses } =
+      await this.getCashFlowBaseline(userId);
 
     const projections: CashFlowProjection[] = [];
     let projectedBalance = currentBalance;

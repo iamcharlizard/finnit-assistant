@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
-import { DebtsService } from './debts.service';
+import {
+  DebtsService,
+  PAYOFF_MAX_MONTHS,
+  simulatePayoff,
+} from './debts.service';
 import { PrismaService } from '../../services/prisma.service';
 import {
   NotFoundError,
@@ -137,10 +141,7 @@ describe('DebtsService', () => {
       expect(prismaService.debt.create).not.toHaveBeenCalled();
     });
 
-    // TODO(bug): CreateDebtInput declares @IsPositive() on principal, but no
-    // ValidationPipe is registered (main.ts / AppModule) and the service does
-    // not validate, so non-positive principals are persisted.
-    it.skip('should validate positive principal amount', async () => {
+    it('should validate positive principal amount', async () => {
       // Arrange
       const invalidInput = { ...createInput, principal: -1000.0 };
       prismaService.account.findFirst.mockResolvedValue({
@@ -153,9 +154,7 @@ describe('DebtsService', () => {
       );
     });
 
-    // TODO(bug): CreateDebtInput declares @Min(0) on interestRateAnnual, but
-    // no ValidationPipe is registered and the service does not validate.
-    it.skip('should validate non-negative interest rate', async () => {
+    it('should validate non-negative interest rate', async () => {
       // Arrange
       const invalidInput = { ...createInput, interestRateAnnual: -5.0 };
       prismaService.account.findFirst.mockResolvedValue({
@@ -168,9 +167,7 @@ describe('DebtsService', () => {
       );
     });
 
-    // TODO(bug): CreateDebtInput declares @Max(100) on interestRateAnnual, but
-    // no ValidationPipe is registered and the service does not validate.
-    it.skip('should validate reasonable interest rates', async () => {
+    it('should validate reasonable interest rates', async () => {
       // Arrange
       const extremeRateInput = {
         name: 'Loan Shark',
@@ -202,8 +199,8 @@ describe('DebtsService', () => {
       // Assert
       expect(prismaService.debt.findMany).toHaveBeenCalledWith({
         where: { userId: mockUserId },
-        take: 10,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: 11,
         include: { payments: { orderBy: { date: 'desc' } } },
       });
       expect(prismaService.debt.count).toHaveBeenCalledWith({
@@ -230,15 +227,18 @@ describe('DebtsService', () => {
       );
     });
 
-    it('should filter by kind and apply the after cursor', async () => {
-      // Arrange
-      prismaService.debt.findMany.mockResolvedValue([]);
-      prismaService.debt.count.mockResolvedValue(0);
+    it('should filter by kind and continue after the cursor row in (createdAt, id) order', async () => {
+      // Arrange: first: 1 fetches one extra row to know there is more.
+      prismaService.debt.findMany.mockResolvedValue([
+        { ...mockDebt, id: 'debt-older', payments: [] },
+        { ...mockDebt, id: 'debt-oldest', payments: [] },
+      ] as any);
+      prismaService.debt.count.mockResolvedValue(3);
       const after = PaginationUtil.encodeCursor('debt-0');
 
       // Act
-      await service.findMany(mockUserId, {
-        first: 5,
+      const result = await service.findMany(mockUserId, {
+        first: 1,
         after,
         kind: DebtKind.loan,
       });
@@ -246,13 +246,19 @@ describe('DebtsService', () => {
       // Assert
       expect(prismaService.debt.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { userId: mockUserId, kind: DebtKind.loan, id: { gt: 'debt-0' } },
-          take: 5,
+          where: { userId: mockUserId, kind: DebtKind.loan },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          cursor: { id: 'debt-0' },
+          skip: 1,
+          take: 2,
         }),
       );
       expect(prismaService.debt.count).toHaveBeenCalledWith({
         where: { userId: mockUserId, kind: DebtKind.loan },
       });
+      expect(result.edges.map((e) => e.node.id)).toEqual(['debt-older']);
+      expect(result.pageInfo.hasNextPage).toBe(true);
+      expect(result.pageInfo.hasPreviousPage).toBe(true);
     });
 
     it('should default to 20 items and return an empty connection when no debts exist', async () => {
@@ -265,7 +271,7 @@ describe('DebtsService', () => {
 
       // Assert
       expect(prismaService.debt.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ take: 20 }),
+        expect.objectContaining({ take: 21 }),
       );
       expect(result.edges).toEqual([]);
       expect(result.totalCount).toBe(0);
@@ -345,6 +351,64 @@ describe('DebtsService', () => {
       expect(prismaService.debt.update).not.toHaveBeenCalled();
     });
 
+    it('should change kind, principal and start date', async () => {
+      // Arrange
+      const input = {
+        kind: DebtKind.loan,
+        principal: 6000,
+        startDate: new Date('2024-02-01'),
+      };
+      prismaService.debt.findFirst.mockResolvedValue(mockDebt as any);
+      prismaService.debt.update.mockResolvedValue({
+        ...mockDebt,
+        ...input,
+      } as any);
+
+      // Act
+      const result = await service.update(mockDebtId, mockUserId, input);
+
+      // Assert
+      expect(prismaService.debt.update).toHaveBeenCalledWith({
+        where: { id: mockDebtId },
+        data: input,
+        include: { payments: true },
+      });
+      expect(result.kind).toBe(DebtKind.loan);
+      expect(result.remainingBalance).toBe(5800);
+    });
+
+    it('should refuse a principal below what has been paid', async () => {
+      // Arrange: 200 already paid
+      prismaService.debt.findFirst.mockResolvedValue(mockDebt as any);
+
+      // Act & Assert
+      await expect(
+        service.update(mockDebtId, mockUserId, { principal: 150 }),
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        service.update(mockDebtId, mockUserId, { principal: 0 }),
+      ).rejects.toThrow(ValidationError);
+      expect(prismaService.debt.update).not.toHaveBeenCalled();
+    });
+
+    it('should validate the name, rate and minimum payment', async () => {
+      // Arrange
+      prismaService.debt.findFirst.mockResolvedValue(mockDebt as any);
+
+      // Act & Assert
+      for (const input of [
+        { name: '  ' },
+        { interestRateAnnual: 120 },
+        { interestRateAnnual: -1 },
+        { minPaymentAmount: 0 },
+      ]) {
+        await expect(
+          service.update(mockDebtId, mockUserId, input),
+        ).rejects.toThrow(ValidationError);
+      }
+      expect(prismaService.debt.update).not.toHaveBeenCalled();
+    });
+
     it('should validate linked account belongs to user', async () => {
       // Arrange
       const updateWithAccount = {
@@ -405,9 +469,9 @@ describe('DebtsService', () => {
       prismaService.debt.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(
-        service.delete('non-existent', mockUserId),
-      ).rejects.toThrow(NotFoundError);
+      await expect(service.delete('non-existent', mockUserId)).rejects.toThrow(
+        NotFoundError,
+      );
       expect(prismaService.debt.delete).not.toHaveBeenCalled();
     });
   });
@@ -515,10 +579,7 @@ describe('DebtsService', () => {
       expect(prismaService.debtPayment.create).not.toHaveBeenCalled();
     });
 
-    // TODO(bug): CreateDebtPaymentInput declares @IsPositive() on amount, but
-    // no ValidationPipe is registered and the service only checks for
-    // overpayment, so negative payments are persisted (increasing the balance).
-    it.skip('should validate positive payment amount', async () => {
+    it('should validate positive payment amount', async () => {
       // Arrange
       const negativePayment = { ...paymentInput, amount: -100.0 };
       prismaService.debt.findFirst.mockResolvedValue(mockDebt as any);
@@ -738,6 +799,83 @@ describe('DebtsService', () => {
       expectedPayoff.setMonth(expectedPayoff.getMonth() + 7);
       expect(result[0].payoffDate).toEqual(expectedPayoff);
       expect(result[0].payoffDate.getMonth()).toBe(7); // August
+      expect(result[0].monthsToPayoff).toBe(7);
+    });
+
+    it('should roll the paid-off minimum into the next debt over time', async () => {
+      // Arrange
+      prismaService.debt.findMany.mockResolvedValue([
+        highInterestBigDebt,
+        lowInterestSmallDebt,
+      ] as any);
+
+      // Act
+      const [low, high] = await service.calculatePayoffStrategy(mockUserId, {
+        debtIds: ['debt-high', 'debt-low'],
+        extraPayment: 100,
+        strategy: 'snowball',
+      });
+
+      // Assert: the big debt (2% a month) gets 200/month for 6 months, 250
+      // in month 7 and 350/month after that (checked by hand).
+      expect(low.monthsToPayoff).toBe(7);
+      expect(high.monthsToPayoff).toBe(21);
+      expect(high.totalInterest).toBeCloseTo(1309.6, 2);
+    });
+
+    it('should save interest with avalanche compared with snowball', async () => {
+      // Arrange
+      prismaService.debt.findMany.mockResolvedValue([
+        highInterestBigDebt,
+        lowInterestSmallDebt,
+      ] as any);
+      const input = { debtIds: ['debt-high', 'debt-low'], extraPayment: 100 };
+
+      // Act
+      const avalanche = await service.calculatePayoffStrategy(mockUserId, {
+        ...input,
+        strategy: 'avalanche',
+      });
+      const snowball = await service.calculatePayoffStrategy(mockUserId, {
+        ...input,
+        strategy: 'snowball',
+      });
+
+      // Assert
+      const interest = (plan: typeof avalanche) =>
+        plan.reduce((sum, p) => sum + p.totalInterest, 0);
+      expect(interest(avalanche)).toBeLessThan(interest(snowball));
+    });
+
+    it('should report no payoff when payments never cover the interest', async () => {
+      // Arrange: 2% a month on 5000 is 100, the minimum is 50
+      prismaService.debt.findMany.mockResolvedValue([
+        { ...highInterestBigDebt, minPaymentAmount: 50 },
+      ] as any);
+
+      // Act
+      const [projection] = await service.calculatePayoffStrategy(mockUserId, {
+        debtIds: ['debt-high'],
+        extraPayment: 0,
+        strategy: 'avalanche',
+      });
+
+      // Assert
+      expect(projection.monthsToPayoff).toBeNull();
+      const limit = new Date();
+      limit.setMonth(limit.getMonth() + PAYOFF_MAX_MONTHS);
+      expect(projection.payoffDate).toEqual(limit);
+    });
+
+    it('should refuse a negative extra payment', async () => {
+      await expect(
+        service.calculatePayoffStrategy(mockUserId, {
+          debtIds: [],
+          extraPayment: -1,
+          strategy: 'avalanche',
+        }),
+      ).rejects.toThrow(ValidationError);
+      expect(prismaService.debt.findMany).not.toHaveBeenCalled();
     });
 
     it('should exclude debts that are already paid off', async () => {
@@ -798,11 +936,12 @@ describe('DebtsService', () => {
       );
 
       // Assert
+      // 1000 at 1% a month paid 100/month takes about 10.59 months.
       const expected =
-        Math.log(1 + (balance * monthlyRate) / payment) /
+        -Math.log(1 - (balance * monthlyRate) / payment) /
         Math.log(1 + monthlyRate);
       expect(result).toBeCloseTo(expected, 10);
-      expect(result).toBeGreaterThan(0);
+      expect(result).toBeCloseTo(10.59, 2);
     });
 
     it('should return the 999 sentinel when payment does not cover interest', () => {
@@ -892,5 +1031,47 @@ describe('DebtsService', () => {
       // Assert
       expect(result.principal).toBe(largeDebtInput.principal);
     });
+  });
+});
+
+describe('simulatePayoff', () => {
+  it('pays a debt without interest in balance / payment months', () => {
+    expect(
+      simulatePayoff(
+        [{ id: 'a', balance: 1000, minPayment: 100, monthlyRate: 0 }],
+        0,
+      ),
+    ).toEqual([{ id: 'a', months: 10, totalInterest: 0 }]);
+  });
+
+  it('charges interest each month before the payment', () => {
+    // 1000 at 1%: 1010 - 600 = 410, 414.10 - 414.10 = 0
+    const [result] = simulatePayoff(
+      [{ id: 'a', balance: 1000, minPayment: 600, monthlyRate: 0.01 }],
+      0,
+    );
+    expect(result).toEqual({ id: 'a', months: 2, totalInterest: 14.1 });
+  });
+
+  it('gives the extra and the freed minimums to the priority debt', () => {
+    const results = simulatePayoff(
+      [
+        { id: 'first', balance: 300, minPayment: 100, monthlyRate: 0 },
+        { id: 'second', balance: 1000, minPayment: 100, monthlyRate: 0 },
+      ],
+      100,
+    );
+    // first: 200/month → 2 months (second gets 100 + 0 leftover).
+    // second: 100, 100, then 300/month on 800 → paid in month 5.
+    expect(results.map((r) => r.months)).toEqual([2, 5]);
+  });
+
+  it('never pays off a debt that gets no payment', () => {
+    expect(
+      simulatePayoff(
+        [{ id: 'a', balance: 1000, minPayment: 0, monthlyRate: 0.01 }],
+        0,
+      ),
+    ).toEqual([{ id: 'a', months: null, totalInterest: 0 }]);
   });
 });

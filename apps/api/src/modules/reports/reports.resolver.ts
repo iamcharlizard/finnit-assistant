@@ -3,6 +3,7 @@ import { UseGuards } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import {
   MonthlyReport,
+  CashFlowBaseline,
   CashFlowProjection,
   WhatIfInput,
   WhatIfResult,
@@ -10,6 +11,7 @@ import {
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../../common/types/models/user.model';
+import { AppLocale, RequestLocale } from '../translation/locale';
 
 @Resolver()
 @UseGuards(JwtAuthGuard)
@@ -21,8 +23,9 @@ export class ReportsResolver {
     @CurrentUser() user: User,
     @Args('year', { type: () => Int }) year: number,
     @Args('month', { type: () => Int }) month: number,
+    @RequestLocale() locale: AppLocale,
   ): Promise<MonthlyReport> {
-    return this.reportsService.getMonthlyReport(user.id, year, month);
+    return this.reportsService.getMonthlyReport(user.id, year, month, locale);
   }
 
   @Query(() => [CashFlowProjection])
@@ -32,6 +35,11 @@ export class ReportsResolver {
     monthsAhead: number,
   ): Promise<CashFlowProjection[]> {
     return this.reportsService.getCashFlowProjection(user.id, monthsAhead);
+  }
+
+  @Query(() => CashFlowBaseline)
+  async cashFlowBaseline(@CurrentUser() user: User): Promise<CashFlowBaseline> {
+    return this.reportsService.getCashFlowBaseline(user.id);
   }
 
   @Query(() => WhatIfResult)

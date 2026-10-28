@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
   KeyRound,
   MoreHorizontal,
@@ -22,25 +23,15 @@ import {
 
 import type { AdminUser, UserAction } from '@/lib/admin/users';
 
-const ITEMS: Record<
-  UserAction,
-  { label: string; icon: LucideIcon; destructive?: boolean }
-> = {
-  setPassword: { label: 'Asignar contraseña', icon: KeyRound },
-  removePassword: {
-    label: 'Quitar contraseña',
-    icon: KeyRound,
-    destructive: true,
-  },
-  unlinkGoogle: { label: 'Desligar Google', icon: Unlink, destructive: true },
-  makeAdmin: { label: 'Hacer administrador', icon: ShieldPlus },
-  removeAdmin: {
-    label: 'Quitar administrador',
-    icon: ShieldMinus,
-    destructive: true,
-  },
-  enable: { label: 'Reactivar', icon: UserCheck },
-  disable: { label: 'Desactivar', icon: UserX, destructive: true },
+/** Labels are `admin.users.actions.<action>`. */
+const ITEMS: Record<UserAction, { icon: LucideIcon; destructive?: boolean }> = {
+  setPassword: { icon: KeyRound },
+  removePassword: { icon: KeyRound, destructive: true },
+  unlinkGoogle: { icon: Unlink, destructive: true },
+  makeAdmin: { icon: ShieldPlus },
+  removeAdmin: { icon: ShieldMinus, destructive: true },
+  enable: { icon: UserCheck },
+  disable: { icon: UserX, destructive: true },
 };
 
 /** The "…" menu of a user row; `actions` already filtered by permissions. */
@@ -53,12 +44,13 @@ export function UserActionsMenu({
   actions: UserAction[];
   onAction: (action: UserAction, user: AdminUser) => void;
 }) {
+  const t = useTranslations('admin.users.actions');
   if (!actions.length) return null;
   const safe = actions.filter((a) => !ITEMS[a].destructive);
   const destructive = actions.filter((a) => ITEMS[a].destructive);
 
   const item = (action: UserAction) => {
-    const { label, icon: Icon, destructive: isDestructive } = ITEMS[action];
+    const { icon: Icon, destructive: isDestructive } = ITEMS[action];
     return (
       <DropdownMenuItem
         key={action}
@@ -67,7 +59,7 @@ export function UserActionsMenu({
           isDestructive ? 'text-expense [&_svg]:text-expense' : undefined
         }
       >
-        <Icon /> {label}
+        <Icon /> {t(action)}
       </DropdownMenuItem>
     );
   };
@@ -78,7 +70,7 @@ export function UserActionsMenu({
         <Button
           variant="ghost"
           size="icon"
-          aria-label={`Acciones para ${user.name}`}
+          aria-label={t('menuLabel', { name: user.name })}
         >
           <MoreHorizontal className="size-5" />
         </Button>

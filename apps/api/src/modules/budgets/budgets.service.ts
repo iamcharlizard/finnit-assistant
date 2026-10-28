@@ -13,6 +13,45 @@ import {
   ConflictError,
 } from '../../common/exceptions/graphql-error.exception';
 import { Prisma } from '@finnit/database';
+import { loadCategoryI18n } from '../categories/category-names';
+import { AppLocale, DEFAULT_LOCALE } from '../translation/locale';
+
+/**
+ * The budget month in UTC, like the dates imported from banks and statements
+ * (midnight UTC of the day) and like the monthly report: from the 1st up to,
+ * not including, the 1st of the next month.
+ */
+export function budgetMonthRange(year: number, month: number) {
+  return {
+    gte: new Date(Date.UTC(year, month - 1, 1)),
+    lt: new Date(Date.UTC(year, month, 1)),
+  };
+}
+
+/**
+ * Expenses that count against a category's cap: the category itself and its
+ * subcategories (two levels below, as deep as the category tree goes), so a
+ * cap on "Comida" includes "Restaurantes". Pending movements are left out
+ * until confirmed, as in the monthly report.
+ */
+export function capSpendingWhere(
+  userId: string,
+  categoryId: string,
+  year: number,
+  month: number,
+): Prisma.TransactionWhereInput {
+  return {
+    userId,
+    type: 'expense',
+    isPending: false,
+    txnDate: budgetMonthRange(year, month),
+    OR: [
+      { categoryId },
+      { category: { parentId: categoryId } },
+      { category: { parent: { parentId: categoryId } } },
+    ],
+  };
+}
 
 @Injectable()
 export class BudgetsService {
@@ -81,23 +120,16 @@ export class BudgetsService {
       throw new NotFoundError('Budget not found');
     }
 
-    // Get spending data for the budget period
-    const startDate = new Date(budget.year, budget.month - 1, 1);
-    const endDate = new Date(budget.year, budget.month, 0);
-
     const usage: BudgetUsage[] = [];
 
     for (const category of budget.categories) {
       const spent = await this.prisma.transaction.aggregate({
-        where: {
+        where: capSpendingWhere(
           userId,
-          categoryId: category.categoryId,
-          type: 'expense',
-          txnDate: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
+          category.categoryId,
+          budget.year,
+          budget.month,
+        ),
         _sum: { amount: true },
       });
 
@@ -140,8 +172,8 @@ export class BudgetsService {
         },
       });
 
-      // Update category budgets if provided
-      if (input.categories && input.categories.length > 0) {
+      // Replace the caps when a list is given; an empty list removes them all.
+      if (input.categories) {
         // Delete existing category budgets
         await tx.bUDGET_CATEGORY.deleteMany({
           where: { budgetId: id },
@@ -213,24 +245,19 @@ export class BudgetsService {
       throw new NotFoundError('Budget not found');
     }
 
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
-
     // Calculate total budgeted amount
     const totalBudgeted = budget.categories.reduce(
       (sum, cat) => sum + Number(cat.capAmount),
       0,
     );
 
-    // Calculate total spent
+    // Every confirmed expense of the month, with or without a cap.
     const totalSpentResult = await this.prisma.transaction.aggregate({
       where: {
         userId,
         type: 'expense',
-        txnDate: {
-          gte: startDate,
-          lte: endDate,
-        },
+        isPending: false,
+        txnDate: budgetMonthRange(year, month),
       },
       _sum: { amount: true },
     });
@@ -268,7 +295,10 @@ export class BudgetsService {
     };
   }
 
-  async getBudgetAlerts(userId: string): Promise<BudgetAlert[]> {
+  async getBudgetAlerts(
+    userId: string,
+    locale: AppLocale = DEFAULT_LOCALE,
+  ): Promise<BudgetAlert[]> {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
@@ -288,22 +318,21 @@ export class BudgetsService {
       return [];
     }
 
-    const startDate = new Date(currentYear, currentMonth - 1, 1);
-    const endDate = new Date(currentYear, currentMonth, 0);
-
     const alerts: BudgetAlert[] = [];
+    const names = await loadCategoryI18n(
+      this.prisma,
+      budget.categories.map((c) => c.categoryId),
+      locale,
+    );
 
     for (const budgetCategory of budget.categories) {
       const spent = await this.prisma.transaction.aggregate({
-        where: {
+        where: capSpendingWhere(
           userId,
-          categoryId: budgetCategory.categoryId,
-          type: 'expense',
-          txnDate: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
+          budgetCategory.categoryId,
+          currentYear,
+          currentMonth,
+        ),
         _sum: { amount: true },
       });
 
@@ -314,7 +343,9 @@ export class BudgetsService {
       if (percentage >= 80) {
         alerts.push({
           categoryId: budgetCategory.categoryId,
-          categoryName: budgetCategory.category.name,
+          categoryName:
+            names.get(budgetCategory.categoryId)?.name ??
+            budgetCategory.category.name,
           budgeted,
           spent: spentAmount,
           percentage: Math.round(percentage * 100) / 100,

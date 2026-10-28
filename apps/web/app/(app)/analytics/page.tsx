@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 import { AnalyticsScreen } from '@/components/screens/analytics-screen';
 import { currentMonth, loadAnalytics } from '@/lib/analytics/load';
 import { formatMonthParam, parseMonthParam } from '@/lib/finance/dates';
 
-export const metadata: Metadata = { title: 'Analytics' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations();
+  return { title: t('pageTitles.analytics') };
+}
 
 export default async function AnalyticsPage({
   searchParams,

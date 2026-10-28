@@ -17,14 +17,106 @@ import {
   ValidationError,
   DebtOverpaymentError,
 } from '../../common/exceptions/graphql-error.exception';
-import { PaginationUtil } from '../../common/utils/pagination.util';
+import { KeysetPage } from '../../common/utils/keyset-pagination.util';
 import { Prisma } from '@finnit/database';
+
+/** A debt as the payoff simulation sees it. */
+export interface PayoffDebt {
+  id: string;
+  balance: number;
+  minPayment: number;
+  /** Monthly rate as a fraction (24% a year → 0.02). */
+  monthlyRate: number;
+}
+
+export interface PayoffResult {
+  id: string;
+  /** Months until paid off; null when it never is (within the limit). */
+  months: number | null;
+  totalInterest: number;
+}
+
+/** 50 years: beyond this a plan is "never" for practical purposes. */
+export const PAYOFF_MAX_MONTHS = 600;
+
+const cents = (amount: number) => Math.round(amount * 100) / 100;
+
+/**
+ * Month by month payoff of several debts paid together, in priority order.
+ * Each month every open debt accrues its interest and gets its minimum
+ * payment; what is left of the monthly budget (the extra payment plus the
+ * minimums of debts already paid off) goes to the first open debt in the
+ * order, and on to the next when that one is paid off. The budget stays the
+ * same every month (sum of minimums + extra), so paid-off minimums roll
+ * over: the snowball/avalanche effect.
+ */
+export function simulatePayoff(
+  debts: PayoffDebt[],
+  extraPayment: number,
+): PayoffResult[] {
+  const balances = debts.map((d) => cents(d.balance));
+  const interest = debts.map(() => 0);
+  const months: (number | null)[] = debts.map((_, i) =>
+    balances[i] > 0 ? null : 0,
+  );
+  const budget = cents(
+    debts.reduce((sum, d) => sum + Math.max(0, d.minPayment), 0) +
+      Math.max(0, extraPayment),
+  );
+  const open = () => balances.some((b) => b > 0);
+
+  for (let month = 1; month <= PAYOFF_MAX_MONTHS && open(); month++) {
+    if (budget <= 0) break; // nothing is ever paid
+    let available = budget;
+
+    debts.forEach((debt, i) => {
+      if (balances[i] <= 0) return;
+      const charge = cents(balances[i] * debt.monthlyRate);
+      balances[i] = cents(balances[i] + charge);
+      interest[i] = cents(interest[i] + charge);
+    });
+    debts.forEach((debt, i) => {
+      if (balances[i] <= 0) return;
+      const pay = Math.min(balances[i], Math.max(0, debt.minPayment));
+      balances[i] = cents(balances[i] - pay);
+      available = cents(available - pay);
+    });
+    for (let i = 0; i < debts.length && available > 0; i++) {
+      if (balances[i] <= 0) continue;
+      const pay = Math.min(balances[i], available);
+      balances[i] = cents(balances[i] - pay);
+      available = cents(available - pay);
+    }
+    balances.forEach((balance, i) => {
+      if (balance <= 0 && months[i] === null) months[i] = month;
+    });
+  }
+
+  return debts.map((debt, i) => ({
+    id: debt.id,
+    months: months[i],
+    totalInterest: interest[i],
+  }));
+}
 
 @Injectable()
 export class DebtsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, input: CreateDebtInput): Promise<Debt> {
+    // Enforced here: no ValidationPipe runs the DTO's decorators.
+    if (!(input.principal > 0)) {
+      throw new ValidationError('The principal must be greater than 0');
+    }
+    if (
+      input.interestRateAnnual != null &&
+      !(input.interestRateAnnual >= 0 && input.interestRateAnnual <= 100)
+    ) {
+      throw new ValidationError(
+        'The annual interest rate must be between 0 and 100',
+      );
+    }
+
     // Validate linked account if provided
     if (input.linkedAccountId) {
       const account = await this.prisma.account.findFirst({
@@ -60,22 +152,12 @@ export class DebtsService {
       where.kind = args.kind;
     }
 
-    // Handle cursor pagination
-    const limit = args.first || args.last || 20;
-    let cursor: Prisma.DebtWhereInput | undefined = undefined;
-
-    if (args.after) {
-      const decodedCursor = PaginationUtil.decodeCursor(args.after);
-      cursor = { id: { gt: decodedCursor } };
-    } else if (args.before) {
-      const decodedCursor = PaginationUtil.decodeCursor(args.before);
-      cursor = { id: { lt: decodedCursor } };
-    }
-
+    // Newest first; the cursor resolves to (createdAt, id).
+    const page = new KeysetPage(args);
     const debts = await this.prisma.debt.findMany({
-      where: { ...where, ...cursor },
-      take: limit,
-      orderBy: { createdAt: 'desc' },
+      where,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      ...page.query,
       include: {
         payments: {
           orderBy: { date: 'desc' },
@@ -85,22 +167,13 @@ export class DebtsService {
 
     const totalCount = await this.prisma.debt.count({ where });
 
-    const mappedDebts = await Promise.all(
-      debts.map((debt) => {
-        const totalPaid = debt.payments.reduce(
-          (sum, payment) => sum + Number(payment.amount),
-          0,
-        );
-        return this.mapDebt(debt, debt.payments, totalPaid);
-      }),
-    );
-
-    return PaginationUtil.createConnection(
-      mappedDebts,
-      args,
-      totalCount,
-      (debt) => PaginationUtil.encodeCursor(debt.id),
-    );
+    return page.toConnection(debts, totalCount, (debt) => {
+      const totalPaid = debt.payments.reduce(
+        (sum, payment) => sum + Number(payment.amount),
+        0,
+      );
+      return this.mapDebt(debt, debt.payments, totalPaid);
+    });
   }
 
   async findById(id: string, userId: string): Promise<Debt> {
@@ -136,6 +209,36 @@ export class DebtsService {
 
     if (!existingDebt) {
       throw new NotFoundError('Debt not found');
+    }
+
+    // Enforced here: no ValidationPipe runs the DTO's decorators.
+    if (input.name != null && !input.name.trim()) {
+      throw new ValidationError('The name cannot be empty');
+    }
+    if (input.principal != null) {
+      if (!(input.principal > 0)) {
+        throw new ValidationError('The principal must be greater than 0');
+      }
+      const paid = existingDebt.payments.reduce(
+        (sum, payment) => sum + Number(payment.amount),
+        0,
+      );
+      if (input.principal < paid) {
+        throw new ValidationError(
+          `The principal cannot be less than what has been paid (${paid})`,
+        );
+      }
+    }
+    if (
+      input.interestRateAnnual != null &&
+      !(input.interestRateAnnual >= 0 && input.interestRateAnnual <= 100)
+    ) {
+      throw new ValidationError(
+        'The annual interest rate must be between 0 and 100',
+      );
+    }
+    if (input.minPaymentAmount != null && !(input.minPaymentAmount > 0)) {
+      throw new ValidationError('The minimum payment must be greater than 0');
     }
 
     // Validate linked account if being changed
@@ -187,6 +290,10 @@ export class DebtsService {
     userId: string,
     input: CreateDebtPaymentInput,
   ): Promise<DebtPayment> {
+    if (!(input.amount > 0)) {
+      throw new ValidationError('The payment must be greater than 0');
+    }
+
     const debt = await this.prisma.debt.findFirst({
       where: { id: input.debtId, userId },
       include: { payments: true },
@@ -283,6 +390,10 @@ export class DebtsService {
     userId: string,
     input: PayoffStrategyInput,
   ): Promise<DebtPayoffProjection[]> {
+    if (!(input.extraPayment >= 0) || !Number.isFinite(input.extraPayment)) {
+      throw new ValidationError('The extra payment must be 0 or more');
+    }
+
     const debts = await this.prisma.debt.findMany({
       where: {
         userId,
@@ -319,49 +430,53 @@ export class DebtsService {
       })
       .filter((d) => d.remainingBalance > 0);
 
-    // Sort by strategy
+    // Avalanche: highest interest first (ties: smaller balance first).
+    // Snowball: smallest balance first (ties: higher interest first).
     if (input.strategy === 'avalanche') {
-      debtData.sort((a, b) => b.interestRate - a.interestRate); // Highest interest first
+      debtData.sort(
+        (a, b) =>
+          b.interestRate - a.interestRate ||
+          a.remainingBalance - b.remainingBalance,
+      );
     } else {
-      debtData.sort((a, b) => a.remainingBalance - b.remainingBalance); // Lowest balance first
+      debtData.sort(
+        (a, b) =>
+          a.remainingBalance - b.remainingBalance ||
+          b.interestRate - a.interestRate,
+      );
     }
 
-    // Calculate payoff with extra payment applied to priority debt
-    const projections: DebtPayoffProjection[] = [];
-    let remainingExtraPayment = input.extraPayment;
+    const results = simulatePayoff(
+      debtData.map((d) => ({
+        id: d.debt.id,
+        balance: d.remainingBalance,
+        minPayment: d.monthlyPayment,
+        monthlyRate: d.interestRate,
+      })),
+      input.extraPayment,
+    );
 
-    for (const {
-      debt,
-      remainingBalance,
-      monthlyPayment,
-      interestRate,
-    } of debtData) {
-      const totalPayment = monthlyPayment + remainingExtraPayment;
-
-      // Calculate payoff time and interest
-      const months = this.calculateMonthsToPayoff(
-        remainingBalance,
-        totalPayment,
-        interestRate,
-      );
-      const totalInterest = totalPayment * months - remainingBalance;
+    // monthlyPayment: what the debt gets once it is the priority, i.e. its
+    // minimum plus the extra plus the minimums of the debts paid before it.
+    let rolledOver = input.extraPayment;
+    return debtData.map(({ debt, remainingBalance, monthlyPayment }, i) => {
+      const { months, totalInterest } = results[i];
       const payoffDate = new Date();
-      payoffDate.setMonth(payoffDate.getMonth() + Math.ceil(months));
-
-      projections.push({
+      payoffDate.setMonth(
+        payoffDate.getMonth() + (months ?? PAYOFF_MAX_MONTHS),
+      );
+      const projection: DebtPayoffProjection = {
         debtId: debt.id,
         debtName: debt.name,
         currentBalance: remainingBalance,
-        monthlyPayment: totalPayment,
+        monthlyPayment: monthlyPayment + rolledOver,
         payoffDate,
-        totalInterest: Math.max(0, totalInterest),
-      });
-
-      // After first debt is paid off, its payment becomes extra payment for the next
-      remainingExtraPayment += monthlyPayment;
-    }
-
-    return projections;
+        totalInterest,
+        monthsToPayoff: months,
+      };
+      rolledOver += monthlyPayment;
+      return projection;
+    });
   }
 
   private calculateMonthsToPayoff(
@@ -377,8 +492,9 @@ export class DebtsService {
       return 999; // Payment is too low to cover interest
     }
 
+    // n = -ln(1 - rB/P) / ln(1 + r)
     return (
-      Math.log(1 + (balance * monthlyInterestRate) / payment) /
+      -Math.log(1 - (balance * monthlyInterestRate) / payment) /
       Math.log(1 + monthlyInterestRate)
     );
   }
@@ -412,6 +528,8 @@ export class DebtsService {
       monthlyPayment,
       payoffDate,
       totalInterest,
+      // 999 is the "never" sentinel of calculateMonthsToPayoff.
+      monthsToPayoff: months >= 999 ? null : Math.ceil(months),
     };
   }
 

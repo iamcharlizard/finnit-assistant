@@ -13,6 +13,7 @@ import {
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../../common/types/models/user.model';
+import { AppLocale, RequestLocale } from '../translation/locale';
 
 @Resolver(() => Budget)
 @UseGuards(JwtAuthGuard)
@@ -55,8 +56,11 @@ export class BudgetsResolver {
   }
 
   @Query(() => [BudgetAlert])
-  async budgetAlerts(@CurrentUser() user: User): Promise<BudgetAlert[]> {
-    return this.budgetsService.getBudgetAlerts(user.id);
+  async budgetAlerts(
+    @CurrentUser() user: User,
+    @RequestLocale() locale: AppLocale,
+  ): Promise<BudgetAlert[]> {
+    return this.budgetsService.getBudgetAlerts(user.id, locale);
   }
 
   @Mutation(() => Budget)

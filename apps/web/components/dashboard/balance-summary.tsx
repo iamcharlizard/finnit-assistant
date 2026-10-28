@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+
 import { BalanceCard } from '@finnit/ui/components/finance/balance-card';
 
 import type { DashboardView } from '@/lib/dashboard/view';
@@ -8,31 +10,30 @@ export function BalanceSummary({
 }: {
   balance: NonNullable<DashboardView['balance']>;
 }) {
+  const t = useTranslations('dashboard.balance');
   return (
     <BalanceCard.Root>
-      <BalanceCard.Header label="Saldo disponible" amount={balance.available} />
+      <BalanceCard.Header label={t('available')} amount={balance.available} />
       <dl className="grid grid-cols-2 gap-3 text-sm">
         {balance.creditDebt ? (
           <div>
             <dt className="text-xs text-on-surface-variant">
-              Deuda en tarjetas
+              {t('creditDebt')}
             </dt>
             <dd className="font-bold text-expense">{balance.creditDebt}</dd>
           </div>
         ) : null}
         <div>
-          <dt className="text-xs text-on-surface-variant">Patrimonio neto</dt>
+          <dt className="text-xs text-on-surface-variant">{t('net')}</dt>
           <dd className="font-bold text-on-background">{balance.net}</dd>
         </div>
       </dl>
       <BalanceCard.Footer className="flex-wrap gap-2 text-xs text-on-surface-variant">
-        <span>
-          {balance.accountCount === 1
-            ? '1 cuenta'
-            : `${balance.accountCount} cuentas`}
-        </span>
+        <span>{t('accounts', { count: balance.accountCount })}</span>
         {balance.otherCurrencies.length > 0 ? (
-          <span>También: {balance.otherCurrencies.join(' · ')}</span>
+          <span>
+            {t('alsoIn', { list: balance.otherCurrencies.join(' · ') })}
+          </span>
         ) : null}
       </BalanceCard.Footer>
     </BalanceCard.Root>

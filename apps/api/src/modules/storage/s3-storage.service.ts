@@ -6,6 +6,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   NoSuchKey,
@@ -65,14 +66,6 @@ export class S3StorageService {
 
   async put(key: string, body: Buffer, contentType: string): Promise<void> {
     this.assertKey(key);
-    const encryption: {
-      ServerSideEncryption?: ServerSideEncryption;
-      SSEKMSKeyId?: string;
-    } = this.isLocal
-      ? {}
-      : this.kmsKeyId
-        ? { ServerSideEncryption: 'aws:kms', SSEKMSKeyId: this.kmsKeyId }
-        : { ServerSideEncryption: 'AES256' };
     await this.require().send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -81,8 +74,33 @@ export class S3StorageService {
         ContentType: contentType,
         ContentLength: body.length,
         ChecksumAlgorithm: this.isLocal ? undefined : 'SHA256',
-        ...encryption,
+        ...this.encryption(),
         ...this.ownerCheck(),
+      }),
+    );
+  }
+
+  /**
+   * Server-side copy inside the bucket (e.g. a receipt photo becoming a
+   * transaction attachment). Both keys must be under the same user.
+   */
+  async copy(fromKey: string, toKey: string): Promise<void> {
+    this.assertKey(fromKey);
+    this.assertKey(toKey);
+    if (fromKey.split('/')[1] !== toKey.split('/')[1]) {
+      throw new Error('Refusing to copy a file between users');
+    }
+    await this.require().send(
+      new CopyObjectCommand({
+        Bucket: this.bucket,
+        Key: toKey,
+        CopySource: `${this.bucket}/${encodeURIComponent(fromKey).replace(/%2F/g, '/')}`,
+        MetadataDirective: 'COPY',
+        ...this.encryption(),
+        ...this.ownerCheck(),
+        ...(this.expectedOwner && {
+          ExpectedSourceBucketOwner: this.expectedOwner,
+        }),
       }),
     );
   }
@@ -142,6 +160,16 @@ export class S3StorageService {
       // wasted space, so log it instead of failing the user's request.
       this.logger.warn(`Could not delete ${key}: ${(error as Error).message}`);
     }
+  }
+
+  private encryption(): {
+    ServerSideEncryption?: ServerSideEncryption;
+    SSEKMSKeyId?: string;
+  } {
+    if (this.isLocal) return {};
+    return this.kmsKeyId
+      ? { ServerSideEncryption: 'aws:kms', SSEKMSKeyId: this.kmsKeyId }
+      : { ServerSideEncryption: 'AES256' };
   }
 
   private ownerCheck() {

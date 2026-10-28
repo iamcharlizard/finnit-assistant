@@ -1,9 +1,24 @@
+import type { Locale } from '@/lib/i18n/locales';
+
 /**
  * Money formatting that gives the same text on the server and in the
  * browser (Intl output can differ between Node's and browsers' ICU data and
  * break hydration): "$1,234.56", "-$80.00", "US$12.00".
+ *
+ * Fixed conventions per language. es-MX and en-US happen to write money the
+ * same way (comma groups, dot decimals); MXN keeps "$" in English too, since
+ * it is the app's home currency.
  */
-const SYMBOLS: Record<string, string> = { MXN: '$', USD: 'US$', EUR: '€' };
+interface MoneyConventions {
+  group: string;
+  decimal: string;
+  symbols: Record<string, string>;
+}
+
+const CONVENTIONS: Record<Locale, MoneyConventions> = {
+  es: { group: ',', decimal: '.', symbols: { MXN: '$', USD: 'US$', EUR: '€' } },
+  en: { group: ',', decimal: '.', symbols: { MXN: '$', USD: 'US$', EUR: '€' } },
+};
 
 export const DEFAULT_CURRENCY = 'MXN';
 
@@ -14,20 +29,19 @@ export interface MoneyOptions {
   wholeUnits?: boolean;
 }
 
-function group(integer: string): string {
-  return integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
 export function formatMoney(
   amount: number,
-  currency: string = DEFAULT_CURRENCY,
+  currency: string,
+  locale: Locale,
   { sign = 'negative', wholeUnits = false }: MoneyOptions = {},
 ): string {
+  const { group, decimal, symbols } = CONVENTIONS[locale];
   const decimals = wholeUnits ? 0 : 2;
   const rounded = Number(Math.abs(amount).toFixed(decimals));
   const [integer, cents] = rounded.toFixed(decimals).split('.');
-  const symbol = SYMBOLS[currency] ?? `${currency} `;
-  const body = `${symbol}${group(integer ?? '0')}${cents ? `.${cents}` : ''}`;
+  const symbol = symbols[currency] ?? `${currency} `;
+  const grouped = (integer ?? '0').replace(/\B(?=(\d{3})+(?!\d))/g, group);
+  const body = `${symbol}${grouped}${cents ? `${decimal}${cents}` : ''}`;
 
   const isZero = rounded === 0;
   if (sign === 'never' || isZero) return body;

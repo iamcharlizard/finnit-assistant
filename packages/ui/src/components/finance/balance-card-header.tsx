@@ -9,7 +9,7 @@ interface BalanceCardHeaderProps {
 }
 
 function BalanceCardHeader({
-  label = 'Balance total',
+  label = 'Total balance',
   amount,
   trend,
   trendPositive = true,

@@ -21,9 +21,12 @@ export type {
   TwofaField,
 } from './types';
 export { BankConnectFlow } from './flow';
+export { DEFAULT_LOCALE } from './messages';
+export type { Locale } from './messages';
 export type {
   AccountChoice,
   BankConnectApi,
+  BankConnectFlowOptions,
   ConnectedAccount,
   ConnectedBank,
   FlowStep,

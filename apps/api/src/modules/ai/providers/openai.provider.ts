@@ -2,7 +2,9 @@ import { AiProvider } from '@finnit/database';
 import {
   AiProviderClient,
   AiProviderError,
+  JsonSchema,
   PdfExtractionRequest,
+  TextExtractionRequest,
   describeHttpError,
   parseJson,
 } from './ai-provider';
@@ -19,7 +21,10 @@ interface ResponsesApiResult {
   }[];
 }
 
-/** OpenAI Responses API: PDF as an `input_file`, answer as JSON-schema output. */
+/**
+ * OpenAI Responses API: PDF as an `input_file` (or plain `input_text`),
+ * answer as JSON-schema output.
+ */
 export class OpenAiProvider implements AiProviderClient {
   readonly provider = AiProvider.openai;
   readonly apiKeyEnv = 'OPENAI_API_KEY';
@@ -34,6 +39,32 @@ export class OpenAiProvider implements AiProviderClient {
   }
 
   async extractFromPdf(request: PdfExtractionRequest): Promise<unknown> {
+    return this.call(request, [
+      {
+        type: 'input_file',
+        filename: 'statement.pdf',
+        file_data: `data:application/pdf;base64,${request.pdf.toString('base64')}`,
+      },
+      { type: 'input_text', text: request.prompt },
+    ]);
+  }
+
+  async extractFromText(request: TextExtractionRequest): Promise<unknown> {
+    return this.call(
+      request,
+      [
+        { type: 'input_text', text: request.prompt },
+        { type: 'input_text', text: request.text },
+      ],
+      request.timeoutMs,
+    );
+  }
+
+  private async call(
+    request: { modelId: string; schema: JsonSchema; schemaName: string },
+    content: Record<string, unknown>[],
+    timeoutMs = TIMEOUT_MS,
+  ): Promise<unknown> {
     if (!this.apiKey) {
       throw new AiProviderError(this.provider, `${this.apiKeyEnv} is not set`);
     }
@@ -46,22 +77,10 @@ export class OpenAiProvider implements AiProviderClient {
           'content-type': 'application/json',
           authorization: `Bearer ${this.apiKey}`,
         },
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs),
         body: JSON.stringify({
           model: request.modelId,
-          input: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'input_file',
-                  filename: 'statement.pdf',
-                  file_data: `data:application/pdf;base64,${request.pdf.toString('base64')}`,
-                },
-                { type: 'input_text', text: request.prompt },
-              ],
-            },
-          ],
+          input: [{ role: 'user', content }],
           text: {
             format: {
               type: 'json_schema',

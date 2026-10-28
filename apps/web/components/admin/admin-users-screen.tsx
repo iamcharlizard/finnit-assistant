@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { UserPlus } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
@@ -19,6 +20,7 @@ import {
   type UserStatus,
 } from '@/lib/admin/users';
 import { gql } from '@/lib/graphql/client';
+import type { Translate } from '@/lib/i18n/translator';
 import { ConfirmDialog, type ConfirmRequest } from './confirm-dialog';
 import { CreateUserDialog } from './create-user-dialog';
 import { SetPasswordDialog } from './set-password-dialog';
@@ -32,57 +34,21 @@ type ConfirmableAction = keyof typeof USER_ACTION_MUTATIONS;
 function confirmCopy(
   action: ConfirmableAction,
   user: AdminUser,
+  t: Translate,
 ): Omit<ConfirmRequest, 'onConfirm'> {
-  switch (action) {
-    case 'removePassword':
-      return {
-        title: `¿Quitar la contraseña de ${user.name}?`,
-        description:
-          'Solo podrá entrar con Google y se cerrarán sus sesiones abiertas.',
-        confirmLabel: 'Quitar contraseña',
-        destructive: true,
-      };
-    case 'unlinkGoogle':
-      return {
-        title: `¿Desligar Google de ${user.name}?`,
-        description: `Se cerrarán sus sesiones abiertas. Podrá volver a ligar una cuenta de Google de ${user.email} al entrar con ella.`,
-        confirmLabel: 'Desligar Google',
-        destructive: true,
-      };
-    case 'disable':
-      return {
-        title: `¿Desactivar a ${user.name}?`,
-        description:
-          'No podrá entrar a Finnit y se cerrarán sus sesiones abiertas. Sus datos se conservan y puedes reactivarlo después.',
-        confirmLabel: 'Desactivar',
-        destructive: true,
-      };
-    case 'enable':
-      return {
-        title: `¿Reactivar a ${user.name}?`,
-        description: 'Podrá volver a entrar a Finnit.',
-        confirmLabel: 'Reactivar',
-      };
-    case 'makeAdmin':
-      return {
-        title: `¿Hacer administrador a ${user.name}?`,
-        description:
-          'Podrá agregar usuarios, cambiar sus accesos y configurar la IA.',
-        confirmLabel: 'Hacer administrador',
-      };
-    case 'removeAdmin':
-      return {
-        title: `¿Quitar administrador a ${user.name}?`,
-        description: 'Seguirá usando Finnit, pero sin acceso a Administración.',
-        confirmLabel: 'Quitar administrador',
-        destructive: true,
-      };
-  }
+  const values = { name: user.name, email: user.email };
+  return {
+    title: t(`admin.users.confirm.${action}.title`, values),
+    description: t(`admin.users.confirm.${action}.description`, values),
+    confirmLabel: t(`admin.users.actions.${action}`),
+    destructive: action !== 'enable' && action !== 'makeAdmin',
+  };
 }
 
 /** /admin/users: who can use Finnit and how they sign in. */
 export function AdminUsersScreen() {
   const me = useSessionUser();
+  const t = useTranslations();
   const [search, setSearch] = React.useState('');
   const [status, setStatus] = React.useState<UserStatus>();
   const [role, setRole] = React.useState<UserRole>();
@@ -116,7 +82,7 @@ export function AdminUsersScreen() {
       }
       list.replace(data.result);
     } catch (error) {
-      setNotice({ text: adminErrorMessage(error), error: true });
+      setNotice({ text: adminErrorMessage(error, t), error: true });
     }
   }
 
@@ -126,7 +92,7 @@ export function AdminUsersScreen() {
       return;
     }
     setConfirm({
-      ...confirmCopy(action, user),
+      ...confirmCopy(action, user, t),
       onConfirm: () => void run(action, user),
     });
   }
@@ -138,11 +104,11 @@ export function AdminUsersScreen() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <BodyMd className="text-on-surface-variant">
           {list.loading
-            ? 'Cargando usuarios…'
-            : `${list.totalCount} ${list.totalCount === 1 ? 'usuario' : 'usuarios'}`}
+            ? t('admin.users.loading')
+            : t('admin.users.count', { count: list.totalCount })}
         </BodyMd>
         <Button variant="secondary" onClick={() => setCreating(true)}>
-          <UserPlus className="size-4" /> Agregar usuario
+          <UserPlus className="size-4" /> {t('admin.users.add')}
         </Button>
       </div>
 
@@ -176,14 +142,12 @@ export function AdminUsersScreen() {
             size="sm"
             onClick={() => void list.reload()}
           >
-            Reintentar
+            {t('common.retry')}
           </Button>
         </div>
       ) : !list.loading && list.users.length === 0 ? (
         <BodyMd className="rounded-card bg-track p-6 text-center text-on-surface-variant">
-          {filtered
-            ? 'Nadie coincide con la búsqueda.'
-            : 'Aún no hay usuarios.'}
+          {filtered ? t('admin.users.noMatch') : t('admin.users.empty')}
         </BodyMd>
       ) : (
         <>
@@ -213,7 +177,7 @@ export function AdminUsersScreen() {
           disabled={list.loadingMore}
           onClick={() => void list.loadMore()}
         >
-          {list.loadingMore ? 'Cargando…' : 'Cargar más'}
+          {list.loadingMore ? t('common.loading') : t('common.loadMore')}
         </Button>
       ) : null}
 

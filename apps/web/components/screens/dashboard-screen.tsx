@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { CalendarCheck, Inbox, Landmark } from 'lucide-react';
 
 import { StatCard } from '@finnit/ui/components/finance/stat-card';
@@ -8,19 +9,30 @@ import { Card } from '@finnit/ui/components/ui/card';
 import { SectionHeading } from '@finnit/ui/components/ui/section-heading';
 import { Separator } from '@finnit/ui/components/ui/separator';
 
+import { BudgetDashboardCard } from '@/components/budgets/budget-dashboard-card';
 import { BalanceSummary } from '@/components/dashboard/balance-summary';
 import { DashboardWelcome } from '@/components/dashboard/dashboard-welcome';
 import { EmptyState } from '@/components/finance/empty-state';
 import { PaymentRow } from '@/components/finance/payment-row';
 import { TransactionRow } from '@/components/finance/transaction-row';
 import { useSessionUser } from '@/components/session-provider';
+import type { BudgetCardView } from '@/lib/budgets/view';
 import { UPCOMING_DAYS, type DashboardView } from '@/lib/dashboard/view';
 
 const LINK_CLASS =
   'flex min-h-11 items-center text-sm font-medium text-income hover:underline';
 
-export function DashboardScreen({ view }: { view: DashboardView }) {
+export function DashboardScreen({
+  view,
+  budget = null,
+}: {
+  view: DashboardView;
+  /** The current month's budget, when there is one. */
+  budget?: BudgetCardView | null;
+}) {
   const user = useSessionUser();
+  const t = useTranslations('dashboard');
+  const tc = useTranslations('common');
   const firstName = user.name.split(' ')[0] ?? user.name;
 
   if (view.isEmpty) return <DashboardWelcome firstName={firstName} />;
@@ -33,11 +45,11 @@ export function DashboardScreen({ view }: { view: DashboardView }) {
         ) : (
           <EmptyState
             icon={Landmark}
-            title="Aún no tienes cuentas"
-            description="Conecta tu banco para ver tus saldos aquí."
+            title={t('noAccountsTitle')}
+            description={t('noAccountsDescription')}
             action={{
               href: '/settings/banks/connect',
-              label: 'Conectar banco',
+              label: tc('connectBank'),
             }}
           />
         )}
@@ -45,23 +57,25 @@ export function DashboardScreen({ view }: { view: DashboardView }) {
         <div className="grid gap-3 sm:grid-cols-2">
           <StatCard
             variant="income"
-            label={`Ingresos · ${view.month.label}`}
+            label={t('incomeOf', { month: view.month.label })}
             amount={view.month.income}
           />
           <StatCard
             variant="expense"
-            label={`Gastos · ${view.month.label}`}
+            label={t('expensesOf', { month: view.month.label })}
             amount={view.month.expenses}
           />
         </div>
+
+        {budget ? <BudgetDashboardCard card={budget} /> : null}
       </div>
 
       <section className="min-w-0 lg:row-span-2">
         <SectionHeading
-          title="Próximos pagos"
+          title={t('upcoming')}
           action={
-            <Link href="/calendar" className={LINK_CLASS}>
-              Calendario
+            <Link href="/recurring" className={LINK_CLASS}>
+              {t('calendarLink')}
             </Link>
           }
         />
@@ -74,23 +88,25 @@ export function DashboardScreen({ view }: { view: DashboardView }) {
         ) : (
           <EmptyState
             icon={CalendarCheck}
-            title="Sin pagos próximos"
-            description={`No tienes pagos recurrentes en los próximos ${UPCOMING_DAYS} días.`}
+            title={t('noUpcomingTitle')}
+            description={t('noUpcomingDescription', {
+              days: String(UPCOMING_DAYS),
+            })}
           />
         )}
       </section>
 
       <section className="min-w-0 lg:col-span-2">
         <SectionHeading
-          title="Actividad reciente"
+          title={t('recent')}
           action={
             view.recent.length > 0 ? (
               <Link
                 href="/history"
-                aria-label="Ver todas las transacciones"
+                aria-label={t('seeAllLabel')}
                 className={LINK_CLASS}
               >
-                Ver todo
+                {t('seeAll')}
               </Link>
             ) : null
           }
@@ -112,8 +128,8 @@ export function DashboardScreen({ view }: { view: DashboardView }) {
         ) : (
           <EmptyState
             icon={Inbox}
-            title="Sin movimientos todavía"
-            description="Cuando tu banco importe movimientos aparecerán aquí."
+            title={t('noRecentTitle')}
+            description={t('noRecentDescription')}
           />
         )}
       </section>

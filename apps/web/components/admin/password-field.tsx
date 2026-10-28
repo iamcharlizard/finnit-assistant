@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Check, Copy, Eye, EyeOff, KeyRound, Wand2 } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
@@ -24,6 +25,7 @@ export function PasswordField({
 }) {
   const [visible, setVisible] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
+  const t = useTranslations('admin.users.passwordField');
 
   React.useEffect(() => {
     if (!copied) return;
@@ -47,9 +49,7 @@ export function PasswordField({
         label={label}
         iconLeft={KeyRound}
         iconRight={visible ? EyeOff : Eye}
-        iconRightAccessibilityLabel={
-          visible ? 'Ocultar contraseña' : 'Mostrar contraseña'
-        }
+        iconRightAccessibilityLabel={visible ? t('hide') : t('show')}
         onIconRightClick={() => setVisible((v) => !v)}
         type={visible ? 'text' : 'password'}
         // A password for someone else: keep password managers from saving it.
@@ -59,7 +59,9 @@ export function PasswordField({
         spellCheck={false}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder ?? `Mínimo ${MIN_PASSWORD_LENGTH} caracteres`}
+        placeholder={
+          placeholder ?? t('minLength', { min: String(MIN_PASSWORD_LENGTH) })
+        }
         error={error}
       />
       <div className="flex flex-wrap gap-2">
@@ -72,7 +74,7 @@ export function PasswordField({
             setVisible(true);
           }}
         >
-          <Wand2 className="size-4" /> Generar
+          <Wand2 className="size-4" /> {t('generate')}
         </Button>
         <Button
           type="button"
@@ -82,7 +84,7 @@ export function PasswordField({
           onClick={() => void copy()}
         >
           {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-          {copied ? 'Copiada' : 'Copiar'}
+          {copied ? t('copied') : t('copy')}
         </Button>
       </div>
     </div>

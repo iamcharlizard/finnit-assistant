@@ -79,4 +79,26 @@ describe('S3StorageService', () => {
       storage.open(S3StorageService.key(userId, 'statements', id, 'pdf')),
     ).rejects.toThrow(NotFoundException);
   });
+
+  it('copies only between keys of the same user', async () => {
+    process.env.S3_BUCKET = 'bucket';
+    const storage = new S3StorageService();
+    const send = jest
+      .spyOn(storage['client']!, 'send')
+      .mockResolvedValue({} as never);
+    const other = '33333333-3333-4333-8333-333333333333';
+    const from = S3StorageService.key(userId, 'receipts', id, 'jpg');
+    await expect(
+      storage.copy(from, S3StorageService.key(other, 'attachments', id, 'jpg')),
+    ).rejects.toThrow('between users');
+    await storage.copy(
+      from,
+      S3StorageService.key(userId, 'attachments', other, 'jpg'),
+    );
+    const input = (
+      send.mock.calls[0][0] as unknown as { input: Record<string, unknown> }
+    ).input;
+    expect(input.CopySource).toBe(`bucket/${from}`);
+    expect(input.ServerSideEncryption).toBe('AES256');
+  });
 });

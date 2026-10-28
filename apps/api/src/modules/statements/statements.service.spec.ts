@@ -23,6 +23,8 @@ import {
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import { StatementParseError } from './parsing/parsed-statement';
+import { MerchantRulesService } from '../categorization/merchant-rules.service';
+import { MerchantAliasesService } from '../categorization/merchant-aliases.service';
 
 const d = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
@@ -33,6 +35,8 @@ describe('StatementsService', () => {
   let parsers: DeepMockProxy<StatementParserRegistry>;
   let reconciliation: DeepMockProxy<ReconciliationService>;
   let recurring: DeepMockProxy<RecurringExpensesService>;
+  let rules: DeepMockProxy<MerchantRulesService>;
+  let aliases: DeepMockProxy<MerchantAliasesService>;
 
   const userId = 'user-1';
   const pdf = Buffer.from('%PDF-1.7 statement');
@@ -105,6 +109,9 @@ describe('StatementsService', () => {
     parsers = mockDeep<StatementParserRegistry>();
     reconciliation = mockDeep<ReconciliationService>();
     recurring = mockDeep<RecurringExpensesService>();
+    rules = mockDeep<MerchantRulesService>();
+    rules.match.mockResolvedValue(new Map());
+    aliases = mockDeep<MerchantAliasesService>();
     prisma.$transaction.mockImplementation(
       (fn: unknown) => (fn as (tx: unknown) => unknown)(prisma) as never,
     );
@@ -117,6 +124,8 @@ describe('StatementsService', () => {
         { provide: StatementParserRegistry, useValue: parsers },
         { provide: ReconciliationService, useValue: reconciliation },
         { provide: RecurringExpensesService, useValue: recurring },
+        { provide: MerchantRulesService, useValue: rules },
+        { provide: MerchantAliasesService, useValue: aliases },
         LineMaterializerService,
       ],
     }).compile();
@@ -407,6 +416,70 @@ describe('StatementsService', () => {
       expect(storage.delete).toHaveBeenCalledWith(
         'users/user-1/statements/st-1.pdf',
       );
+    });
+  });
+
+  describe('lines with recurring payments', () => {
+    const dueDate = new Date('2026-10-05T00:00:00Z');
+    const occurrence = {
+      id: 'occ-1',
+      dueDate,
+      recurringExpense: { id: 'rec-1', name: 'Netflix' },
+    };
+
+    it('findById names the recurring payment each line pays', async () => {
+      prisma.statementImport.findFirst.mockResolvedValue({
+        ...statementRow({ status: StatementStatus.needs_review }),
+        lines: [
+          lineRow({
+            matchedOccurrenceId: 'occ-1',
+            matchedOccurrence: occurrence,
+          }),
+          lineRow({ id: 'line-2', matchedOccurrence: null }),
+        ],
+      } as never);
+
+      const result = await service.findById('st-1', userId);
+
+      expect(prisma.statementImport.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: {
+            lines: expect.objectContaining({
+              include: { matchedOccurrence: expect.any(Object) },
+            }),
+          },
+        }),
+      );
+      expect(result.lines?.[0]?.matchedRecurringPayment).toEqual({
+        occurrenceId: 'occ-1',
+        recurringExpenseId: 'rec-1',
+        name: 'Netflix',
+        dueDate,
+      });
+      expect(result.lines?.[1]?.matchedRecurringPayment).toBeUndefined();
+    });
+
+    it('updateLine returns the line with its recurring payment', async () => {
+      prisma.importedTransaction.findFirst.mockResolvedValue({
+        ...lineRow(),
+        statementImport: statementRow({ status: StatementStatus.needs_review }),
+      } as never);
+      prisma.importedTransaction.update.mockResolvedValue({
+        ...lineRow({ status: ImportedLineStatus.ignored }),
+        matchedOccurrence: occurrence,
+      } as never);
+
+      const line = await service.updateLine('line-1', userId, {
+        status: ImportedLineStatus.ignored,
+      });
+
+      expect(prisma.importedTransaction.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: { matchedOccurrence: expect.any(Object) },
+        }),
+      );
+      expect(line.status).toBe(ImportedLineStatus.ignored);
+      expect(line.matchedRecurringPayment?.name).toBe('Netflix');
     });
   });
 });

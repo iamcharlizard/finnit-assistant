@@ -7,6 +7,7 @@ import {
   validateFields,
   type FieldError,
 } from './forms';
+import { DEFAULT_LOCALE, messagesFor, type Locale } from './messages';
 import type { FieldValues, Site, TwofaField } from './types';
 
 /** A bank account returned by registerBankConnection / bankConnections. */
@@ -66,6 +67,13 @@ export type FlowStep =
 
 type Listener = (step: FlowStep) => void;
 
+export interface BankConnectFlowOptions {
+  /** fetch used to talk to Syncfy (tests pass a stub). */
+  fetchFn?: typeof fetch;
+  /** Language of progress, validation and error messages. Default 'es'. */
+  locale?: Locale;
+}
+
 /**
  * The whole "connect a bank" flow, independent of the UI framework:
  * consent → pick bank → login form → second factors → register in Finnit →
@@ -87,11 +95,27 @@ export class BankConnectFlow {
   private abort?: AbortController;
   /** Accounts linked in this flow, kept across a retry after a failure. */
   private linkedSoFar = 0;
+  private readonly fetchFn?: typeof fetch;
+  private locale: Locale;
 
+  /** The second argument is the options, or just a fetch (older callers). */
   constructor(
     private readonly api: BankConnectApi,
-    private readonly fetchFn?: typeof fetch,
-  ) {}
+    options: BankConnectFlowOptions | typeof fetch = {},
+  ) {
+    const opts = typeof options === 'function' ? { fetchFn: options } : options;
+    this.fetchFn = opts.fetchFn;
+    this.locale = opts.locale ?? DEFAULT_LOCALE;
+  }
+
+  /** Messages produced from now on use this language. */
+  setLocale(locale: Locale): void {
+    this.locale = locale;
+  }
+
+  private get texts() {
+    return messagesFor(this.locale);
+  }
 
   get step(): FlowStep {
     return this.current;
@@ -105,14 +129,18 @@ export class BankConnectFlow {
 
   /** The user accepted the privacy notice: start a session and load the banks. */
   async acceptConsent(): Promise<void> {
-    this.set({ name: 'loading', message: 'Cargando bancos…' });
+    this.set({ name: 'loading', message: this.texts.flow.loadingBanks });
     try {
       this.session = await this.api.createSession();
-      this.client = new SyncfyConnectClient(this.session.token, this.fetchFn);
+      this.client = new SyncfyConnectClient(
+        this.session.token,
+        this.fetchFn,
+        this.locale,
+      );
       this.banks = personalBanks(await this.client.listSites());
       this.set({ name: 'pickBank', banks: this.banks });
     } catch (error) {
-      this.fail(error, 'No pudimos cargar la lista de bancos.');
+      this.fail(error, this.texts.flow.banksFailed);
     }
   }
 
@@ -138,7 +166,7 @@ export class BankConnectFlow {
   async submitCredentials(values: FieldValues): Promise<void> {
     const step = this.current;
     if (step.name !== 'credentials' || !this.client) return;
-    const errors = validateFields(step.site.credentials, values);
+    const errors = validateFields(step.site.credentials, values, this.locale);
     if (errors.length) {
       this.set({ ...step, errors, message: undefined });
       return;
@@ -146,31 +174,41 @@ export class BankConnectFlow {
 
     const site = step.site;
     this.abort = new AbortController();
-    this.set({ name: 'connecting', site, status: describeCode(100) });
+    this.set({
+      name: 'connecting',
+      site,
+      status: describeCode(100, this.locale),
+    });
     try {
-      const result = await connectBank(this.client, site.id_site, values, {
-        signal: this.abort.signal,
-        onStatus: (_code, status) => {
-          if (this.current.name === 'connecting') {
-            this.set({ name: 'connecting', site, status });
-          }
+      const result = await connectBank(
+        this.client,
+        site.id_site,
+        values,
+        {
+          signal: this.abort.signal,
+          onStatus: (_code, status) => {
+            if (this.current.name === 'connecting') {
+              this.set({ name: 'connecting', site, status });
+            }
+          },
+          onTwofa: (fields) =>
+            new Promise<FieldValues>((resolve, reject) => {
+              // Cancelling while the bank waits for a code ends the wait too.
+              this.abort?.signal.addEventListener(
+                'abort',
+                () => {
+                  const error = new Error('The connection was cancelled');
+                  error.name = 'AbortError';
+                  reject(error);
+                },
+                { once: true },
+              );
+              this.pendingTwofa = { fields, resolve };
+              this.set({ name: 'twofa', site, fields, errors: [] });
+            }),
         },
-        onTwofa: (fields) =>
-          new Promise<FieldValues>((resolve, reject) => {
-            // Cancelling while the bank waits for a code ends the wait too.
-            this.abort?.signal.addEventListener(
-              'abort',
-              () => {
-                const error = new Error('The connection was cancelled');
-                error.name = 'AbortError';
-                reject(error);
-              },
-              { once: true },
-            );
-            this.pendingTwofa = { fields, resolve };
-            this.set({ name: 'twofa', site, fields, errors: [] });
-          }),
-      });
+        { locale: this.locale },
+      );
 
       if ('needsWidget' in result) {
         this.set({
@@ -200,7 +238,7 @@ export class BankConnectFlow {
       }
     } catch (error) {
       if ((error as Error).name === 'AbortError') return;
-      this.fail(error, 'No pudimos conectar tu banco.');
+      this.fail(error, this.texts.flow.connectFailed);
     } finally {
       this.abort = undefined;
       this.pendingTwofa = undefined;
@@ -211,7 +249,7 @@ export class BankConnectFlow {
   submitTwofa(values: FieldValues): void {
     const step = this.current;
     if (step.name !== 'twofa' || !this.pendingTwofa) return;
-    const errors = validateFields(step.fields, values);
+    const errors = validateFields(step.fields, values, this.locale);
     if (errors.length) {
       this.set({ ...step, errors });
       return;
@@ -221,7 +259,7 @@ export class BankConnectFlow {
     this.set({
       name: 'connecting',
       site: step.site,
-      status: describeCode(103),
+      status: describeCode(103, this.locale),
     });
     resolve(values);
   }
@@ -243,7 +281,7 @@ export class BankConnectFlow {
       ...step.bank,
       accounts: step.bank.accounts.map((a) => ({ ...a })),
     };
-    this.set({ name: 'loading', message: 'Importando tus movimientos…' });
+    this.set({ name: 'loading', message: this.texts.flow.importing });
     try {
       for (const account of bank.accounts) {
         const choice = choices[account.id] ?? 'skip';
@@ -263,10 +301,7 @@ export class BankConnectFlow {
       this.set({
         name: 'linkAccounts',
         bank,
-        message: this.messageOf(
-          error,
-          'No pudimos ligar una de las cuentas. Intenta de nuevo.',
-        ),
+        message: this.messageOf(error, this.texts.flow.linkFailed),
       });
     }
   }
@@ -290,15 +325,12 @@ export class BankConnectFlow {
   }
 
   private async register(idCredential: string): Promise<void> {
-    this.set({ name: 'loading', message: 'Guardando la conexión en Finnit…' });
+    this.set({ name: 'loading', message: this.texts.flow.saving });
     try {
       const bank = await this.api.registerConnection(idCredential);
       this.set({ name: 'linkAccounts', bank });
     } catch (error) {
-      this.fail(
-        error,
-        'Tu banco se conectó, pero no pudimos guardarlo en Finnit.',
-      );
+      this.fail(error, this.texts.flow.saveFailed);
     }
   }
 

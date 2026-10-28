@@ -31,6 +31,15 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {};
 
+/** A private alias: only the alias shows, with a lock. */
+export const Private: Story = {
+  args: {
+    merchant: 'Regalo',
+    isPrivate: true,
+    privateLabel: 'Privado',
+  },
+};
+
 export const Variants: Story = {
   render: () => (
     <div className="flex flex-col gap-2">

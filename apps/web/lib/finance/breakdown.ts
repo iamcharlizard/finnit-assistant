@@ -1,6 +1,7 @@
+import type { Translate } from '@/lib/i18n/translator';
+
 import {
   ICON_COLORS,
-  UNCATEGORIZED_LABEL,
   categoryLabel,
   iconKeyForName,
   rootCategory,
@@ -24,11 +25,12 @@ export interface CategorySpending {
 /**
  * The month's expenses by top-level category, largest first. Subcategories
  * add up into their parent; expenses without a category (which the report
- * leaves out of its breakdown) become "Sin categoría".
+ * leaves out of its breakdown) become "Sin categoría" ("uncategorized").
  */
 export function spendingByCategory(
   report: Pick<ApiMonthlyReport, 'totalExpenses' | 'categoryBreakdown'>,
   categories: CategoryIndex,
+  t: Translate,
 ): CategorySpending[] {
   const totals = new Map<string, { name: string; amount: number }>();
   for (const item of report.categoryBreakdown) {
@@ -42,24 +44,24 @@ export function spendingByCategory(
     totals.set(id, current);
   }
 
-  const categorized = [...totals.values()].reduce((s, t) => s + t.amount, 0);
+  const categorized = [...totals.values()].reduce(
+    (sum, total) => sum + total.amount,
+    0,
+  );
   const uncategorized = roundCents(report.totalExpenses - categorized);
   if (uncategorized > 0) {
-    totals.set('uncategorized', {
-      name: UNCATEGORIZED_LABEL,
-      amount: uncategorized,
-    });
+    totals.set('uncategorized', { name: '', amount: uncategorized });
   }
 
   return [...totals.entries()]
-    .filter(([, t]) => t.amount > 0)
-    .map(([id, t]) => {
-      const iconKey = iconKeyForName(t.name);
+    .filter(([, total]) => total.amount > 0)
+    .map(([id, total]) => {
+      const iconKey = iconKeyForName(total.name);
       return {
         id,
-        label: categoryLabel(t.name),
-        amount: t.amount,
-        percent: percentOf(t.amount, report.totalExpenses),
+        label: categoryLabel(total.name, t),
+        amount: total.amount,
+        percent: percentOf(total.amount, report.totalExpenses),
         iconKey,
         color: ICON_COLORS[iconKey],
       };

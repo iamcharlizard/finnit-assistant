@@ -14,6 +14,20 @@ export interface PdfExtractionRequest {
   schemaName: string;
 }
 
+export interface TextExtractionRequest {
+  modelId: string;
+  /** Instructions for the model. */
+  prompt: string;
+  /** The input to work on (sent as its own text block, after the prompt). */
+  text: string;
+  /** Shape of the answer; providers enforce it with tool calls or JSON mode. */
+  schema: JsonSchema;
+  /** Short identifier of the schema (tool / format name). */
+  schemaName: string;
+  /** Per-call timeout; providers keep their own default otherwise. */
+  timeoutMs?: number;
+}
+
 /** One AI provider. Keys come from env vars; without a key it is not configured. */
 export interface AiProviderClient {
   readonly provider: AiProvider;
@@ -22,6 +36,8 @@ export interface AiProviderClient {
   readonly isConfigured: boolean;
   /** Returns the parsed JSON answer. It is untrusted: validate it. */
   extractFromPdf(request: PdfExtractionRequest): Promise<unknown>;
+  /** Same as extractFromPdf, for plain text input. */
+  extractFromText(request: TextExtractionRequest): Promise<unknown>;
 }
 
 /** A provider call failed; the message never contains the API key. */

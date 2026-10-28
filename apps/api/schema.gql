@@ -2,6 +2,20 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+"""Overrides of the suggested values; omitted fields keep them"""
+input AcceptRecurringSuggestionInput {
+  accountId: ID
+  amount: Float
+  categoryId: ID
+  frequency: RecurringFrequency
+  interval: Int
+  isVariableAmount: Boolean
+  kind: RecurringExpenseKind
+  name: String
+  startDate: DateTime
+  trackingMode: RecurringTrackingMode
+}
+
 type Account {
   archived: Boolean!
   balanceCurrent: Float!
@@ -22,6 +36,23 @@ type AccountConnection {
   totalCount: Int!
 }
 
+"""The user's look for an account (card colors)"""
+type AccountDesign {
+  """Hex color, #RRGGBB"""
+  primaryColor: String!
+
+  """Hex color, #RRGGBB"""
+  secondaryColor: String
+}
+
+input AccountDesignInput {
+  """Hex color, #RRGGBB"""
+  primaryColor: String!
+
+  """Hex color, #RRGGBB"""
+  secondaryColor: String
+}
+
 type AccountEdge {
   """Cursor for pagination"""
   cursor: String!
@@ -35,9 +66,13 @@ type AccountMetadata {
   bank: String
   color: String
   creditLimit: Float
+  design: AccountDesign
   icon: String
   interestRate: Float
   last4: String
+
+  """The user's name for the account"""
+  nickname: String
   provider: String
 }
 
@@ -46,9 +81,13 @@ input AccountMetadataInput {
   bank: String
   color: String
   creditLimit: Float
+  design: AccountDesignInput
   icon: String
   interestRate: Float
   last4: String
+
+  """1 to 40 characters"""
+  nickname: String
   provider: String
 }
 
@@ -117,8 +156,13 @@ type AiFeature {
 }
 
 enum AiFeatureKey {
+  receipt_parsing
+  recurring_classification
+
   """Read card statements (PDF) without a local parser"""
   statement_parsing
+  transaction_categorization
+  translation
 }
 
 type AiModel {
@@ -150,6 +194,32 @@ enum AiProvider {
   anthropic
   google
   openai
+}
+
+"""
+How the pattern is compared with the original text (case- and accent-insensitive)
+"""
+enum AliasMatchType {
+  contains
+  exact
+  regex
+  starts_with
+}
+
+type AliasPreview {
+  """Movements the alias would match"""
+  count: Int!
+
+  """Up to 20, newest first"""
+  samples: [AliasPreviewSample!]!
+}
+
+type AliasPreviewSample {
+  amount: Float!
+  currency: String!
+  date: DateTime!
+  original: String!
+  transactionId: ID!
 }
 
 type Attachment {
@@ -330,6 +400,26 @@ type CardRecurringPayment {
   status: OccurrenceStatus!
 }
 
+"""
+Where cashFlowProjection starts from: the current balance and the monthly averages it extends
+"""
+type CashFlowBaseline {
+  """The user's first account currency, or MXN"""
+  currency: String!
+
+  """Sum of the balances of the non-archived accounts"""
+  currentBalance: Float!
+
+  """Average monthly expenses over the months with data (up to 6)"""
+  monthlyExpenses: Float!
+
+  """Average monthly income over the months with data (up to 6)"""
+  monthlyIncome: Float!
+
+  """Months averaged, from 1 to 6"""
+  monthsOfData: Int!
+}
+
 type CashFlowProjection {
   date: DateTime!
   description: String!
@@ -341,7 +431,15 @@ type Category {
   createdAt: DateTime!
   id: String!
   isDefault: Boolean!
+
+  """i18n key of a default category (e.g. categories.food.groceries)"""
+  key: String
+
+  """Name in the request's locale (x-locale header, else the user's locale)"""
   name: String!
+
+  """Original (English) name"""
+  originalName: String!
   parent: Category
   parentId: String
   sortOrder: Float
@@ -355,12 +453,36 @@ type CategoryExpense {
   percentage: Float!
 }
 
+"""Who set the category (or proposed a pending suggestion)"""
+enum CategorySource {
+  ai
+  bank
+  manual
+  rule
+}
+
 type CategoryUsage {
   averageAmount: Float!
   categoryId: ID!
   categoryName: String!
   totalAmount: Float!
   transactionCount: Int!
+}
+
+input ConfirmReceiptImportInput {
+  accountId: ID!
+
+  """
+  Attach the photo to this existing movement instead of creating a new one
+  """
+  attachToTransactionId: ID
+
+  """Without it, the merchant rules / learned tax IDs pick the category"""
+  categoryId: ID
+  date: DateTime!
+  description: String
+  merchantName: String
+  total: Float!
 }
 
 input CreateAccountInput {
@@ -411,6 +533,13 @@ input CreateDebtPaymentInput {
   date: DateTime!
   debtId: String!
   transactionId: String!
+}
+
+input CreateGoalContributionInput {
+  amount: Float!
+  date: DateTime!
+  goalId: String!
+  transactionId: String
 }
 
 input CreateGoalInput {
@@ -484,6 +613,21 @@ type CreditCardTerms {
   updatedAt: DateTime!
 }
 
+"""Billing terms of a credit card account (days of the month, 1 to 31)"""
+input CreditCardTermsInput {
+  gracePeriodDays: Int
+
+  """Annual interest rate, percent"""
+  interestRateAnnual: Float
+  minPaymentRule: String
+
+  """Day of the month the payment is due"""
+  paymentDueDay: Int!
+
+  """Day of the month the statement closes"""
+  statementDay: Int!
+}
+
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
@@ -536,6 +680,11 @@ type DebtPayoffProjection {
   debtId: String!
   debtName: String!
   monthlyPayment: Float!
+
+  """
+  Months until the debt is paid off; null when the payments never pay it off (they do not cover the interest, or the debt gets no payment)
+  """
+  monthsToPayoff: Int
   payoffDate: DateTime!
   totalInterest: Float!
 }
@@ -559,12 +708,50 @@ type Goal {
   userId: String!
 }
 
+type GoalContribution {
+  amount: Float!
+  date: DateTime!
+  goalId: String!
+  id: String!
+  transactionId: String
+}
+
 type GoalProgress {
-  daysRemaining: Float!
+  """Days until the due date; null when the goal has none"""
+  daysRemaining: Int
   goalId: String!
   isCompleted: Boolean!
   percentage: Float!
   remaining: Float!
+}
+
+type GoalProjection {
+  completionDate: DateTime
+  goalId: String!
+
+  """
+  Monthly amount used for the projection (the one given, or the average of the last 3 months of contributions)
+  """
+  monthlyContribution: Float!
+
+  """0 when the goal is reached; null when the monthly contribution is 0"""
+  monthsRemaining: Int
+}
+
+type GoalRecommendations {
+  """Average progress, percent"""
+  averageProgress: Float!
+
+  """Goals under 50% with 60 days or less left"""
+  goalsAtRisk: [Goal!]!
+
+  """Unfinished goals due within 30 days"""
+  goalsDueSoon: [Goal!]!
+
+  """Remaining amount spread over 12 months"""
+  recommendedMonthlyContribution: Float!
+  totalGoalsAmount: Float!
+  totalSavedAmount: Float!
 }
 
 input LinkBankAccountInput {
@@ -589,6 +776,57 @@ type LinkedBankAccount {
   type: String
 }
 
+"""
+Display name (and optional category / privacy) for the movements whose original text matches the pattern
+"""
+type MerchantAlias {
+  active: Boolean!
+  category: Category
+  createdAt: DateTime!
+  displayName: String!
+  id: ID!
+  isPrivate: Boolean!
+
+  """Movements currently using this alias"""
+  matchCount: Int!
+  matchType: AliasMatchType!
+  pattern: String!
+
+  """Higher wins when several aliases match"""
+  priority: Int!
+}
+
+input MerchantAliasInput {
+  active: Boolean = true
+  categoryId: ID
+
+  """At most 80 characters"""
+  displayName: String!
+  isPrivate: Boolean = false
+  matchType: AliasMatchType!
+
+  """At most 200 characters"""
+  pattern: String!
+  priority: Int = 0
+}
+
+"""
+Learned merchant → category rule: new movements of the merchant get the category without AI
+"""
+type MerchantRule {
+  category: Category!
+
+  """Movements confirmed with this rule"""
+  hits: Int!
+  id: ID!
+
+  """
+  Normalized merchant, e.g. "OXXO GAS"
+  """
+  pattern: String!
+  updatedAt: DateTime!
+}
+
 type MonthlyReport {
   categoryBreakdown: [CategoryExpense!]!
   currency: String!
@@ -600,7 +838,27 @@ type MonthlyReport {
 }
 
 type Mutation {
+  """
+  Applies the pending suggestions and learns merchant rules; returns how many were applied
+  """
+  acceptCategorySuggestions(ids: [ID!]!): Int!
+
+  """
+  Creates the recurring expense of a suggestion and links its past movements as paid occurrences
+  """
+  acceptRecurringSuggestion(fingerprint: ID!, input: AcceptRecurringSuggestionInput): RecurringExpense!
+  addGoalContribution(input: CreateGoalContributionInput!): GoalContribution!
   adjustAccountBalance(input: AdjustBalanceInput!): Account!
+
+  """
+  Moves movements (max 500) to a category; with createRule, learns a merchant rule per merchant. Returns how many changed
+  """
+  categorizeTransactions(categoryId: ID!, createRule: Boolean = true, ids: [ID!]!): Int!
+
+  """
+  Creates the expense with the photo attached, or attaches the photo to `attachToTransactionId`
+  """
+  confirmReceiptImport(id: ID!, input: ConfirmReceiptImportInput!): ReceiptImport!
 
   """
   Creates the pending movements as transactions and marks matched recurring payments as paid
@@ -622,6 +880,9 @@ type Mutation {
   createDebtPayment(input: CreateDebtPaymentInput!): DebtPayment!
   createDefaultCategories: Boolean!
   createGoal(input: CreateGoalInput!): Goal!
+
+  """Creates an alias and applies it to existing movements"""
+  createMerchantAlias(input: MerchantAliasInput!): MerchantAlias!
   createRecurringExpense(input: CreateRecurringExpenseInput!): RecurringExpense!
   createTransaction(input: CreateTransactionInput!): Transaction!
   createTransfer(input: CreateTransferInput!): Transfer!
@@ -642,12 +903,21 @@ type Mutation {
   deleteBudget(id: String!): Boolean!
   deleteCategory(id: String!): Boolean!
   deleteDebt(id: String!): Boolean!
+
+  """Fails while the goal has contributions"""
+  deleteGoal(id: ID!): Boolean!
+  deleteMerchantAlias(id: ID!): Boolean!
+  deleteMerchantRule(id: ID!): Boolean!
   deleteRecurringExpense(id: ID!): Boolean!
   deleteStatementImport(id: ID!): Boolean!
   deleteTransaction(id: String!): Boolean!
 
   """Admin only. Blocks sign-in and ends their open sessions."""
   disableUser(id: ID!): AdminUser!
+
+  """Discards the draft and deletes the photo"""
+  discardReceiptImport(id: ID!): Boolean!
+  dismissRecurringSuggestion(fingerprint: ID!): Boolean!
 
   """Admin only"""
   enableUser(id: ID!): AdminUser!
@@ -669,6 +939,11 @@ type Mutation {
   refreshToken(input: RefreshTokenInput!): AuthPayload!
   registerBankConnection(idCredential: String!): BankSyncResult!
 
+  """Discards the pending suggestions; returns how many"""
+  rejectCategorySuggestions(ids: [ID!]!): Int!
+  removeCreditCardTerms(accountId: ID!): Account!
+  removeGoalContribution(id: ID!): Boolean!
+
   """
   Deletes the attachment and its file. Upload with POST /transactions/:id/attachments
   """
@@ -687,6 +962,14 @@ type Mutation {
   requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
   resetPassword(input: ResetPasswordInput!): Boolean!
 
+  """Sets the billing terms of one of the user's credit accounts"""
+  setCreditCardTerms(accountId: ID!, input: CreditCardTermsInput!): Account!
+
+  """
+  One-off display name and/or privacy for one movement (no alias rule). displayName null or "" clears it
+  """
+  setTransactionAlias(id: ID!, input: TransactionAliasInput!): Transaction!
+
   """Admin only. Ends their open sessions."""
   setUserPassword(id: ID!, input: SetUserPasswordInput!): AdminUser!
   signIn(input: SignInInput!): AuthPayload!
@@ -696,6 +979,11 @@ type Mutation {
   """
   signInWithGoogle(input: SignInWithGoogleInput!): AuthPayload!
   skipRecurringPayment(occurrenceId: ID!): RecurringOccurrence!
+
+  """
+  Suggests a category for uncategorized movements (max 100): merchant rules first, then one AI call. Returns them with suggestedCategory set; without AI only rule suggestions appear
+  """
+  suggestTransactionCategories(ids: [ID!]!): [Transaction!]!
 
   """
   Imports new movements. refreshFromBank asks Syncfy to log in to the bank again (at most once an hour); its data arrives on the next sync.
@@ -717,6 +1005,12 @@ type Mutation {
   updateBudget(id: String!, input: UpdateBudgetInput!): Budget!
   updateCategory(id: String!, input: UpdateCategoryInput!): Category!
   updateDebt(id: String!, input: UpdateDebtInput!): Debt!
+  updateGoal(id: ID!, input: UpdateGoalInput!): Goal!
+  updateMerchantAlias(id: ID!, input: MerchantAliasInput!): MerchantAlias!
+
+  """Saves the signed-in user's preferences (e.g. locale)."""
+  updateMyPreferences(input: UpdateMyPreferencesInput!): User!
+  updateReceiptImport(id: ID!, input: UpdateReceiptImportInput!): ReceiptImport!
   updateRecurringExpense(id: ID!, input: UpdateRecurringExpenseInput!): RecurringExpense!
   updateStatementLine(id: ID!, input: UpdateStatementLineInput!): StatementLine!
   updateTransaction(id: String!, input: UpdateTransactionInput!): Transaction!
@@ -788,6 +1082,8 @@ type PageInfo {
 
 input PayoffStrategyInput {
   debtIds: [String!]!
+
+  """Extra paid each month; 0 or more"""
   extraPayment: Float!
   strategy: String!
 }
@@ -823,6 +1119,7 @@ type Query {
   budgetUsage(id: String!): [BudgetUsage!]!
   budgets: [Budget!]!
   cardMonthSummary(accountId: String!, month: Int!, year: Int!): CardMonthSummary!
+  cashFlowBaseline: CashFlowBaseline!
   cashFlowProjection(monthsAhead: Int! = 6): [CashFlowProjection!]!
   categories: [Category!]!
   category(id: String!): Category!
@@ -832,12 +1129,52 @@ type Query {
   debtSummary: DebtSummary!
   debts(after: String, before: String, first: Int, includePayoffProjections: Boolean, kind: DebtKind, last: Int): DebtConnection!
   goal(id: String!): Goal!
+
+  """Newest first"""
+  goalContributions(goalId: ID!): [GoalContribution!]!
   goalProgress(id: String!): GoalProgress!
+  goalProjection(
+    goalId: ID!
+
+    """
+    Amount saved per month; defaults to the average of the last 3 months of contributions
+    """
+    monthlyContribution: Float
+  ): GoalProjection!
+
+  """Over all the user's goals, or only goalId when given"""
+  goalRecommendations(goalId: ID): GoalRecommendations!
   goals: [Goal!]!
   me: User!
+
+  """The user's merchant aliases, highest priority first"""
+  merchantAliases: [MerchantAlias!]!
+
+  """Learned merchant → category rules, most recent first"""
+  merchantRules: [MerchantRule!]!
   monthlyReport(month: Int!, year: Int!): MonthlyReport!
-  notifications(after: String, first: Int, status: NotificationStatus): NotificationConnection!
+  notifications(
+    after: String
+    first: Int
+    status: NotificationStatus
+
+    """
+    true: only notifications not read yet (scheduled or sent); overrides `status`
+    """
+    unread: Boolean
+  ): NotificationConnection!
   payoffStrategy(input: PayoffStrategyInput!): [DebtPayoffProjection!]!
+
+  """
+  Movements a candidate alias would match (count and up to 20, newest first), without saving
+  """
+  previewMerchantAlias(input: MerchantAliasInput!): AliasPreview!
+
+  """Poll it after uploading (POST /receipts) to follow the status"""
+  receiptImport(id: ID!): ReceiptImport!
+
+  """Newest first"""
+  receiptImports(after: String, first: Int): ReceiptImportConnection!
   recurringExpense(id: ID!): RecurringExpense!
   recurringExpenseOccurrences(from: DateTime, recurringExpenseId: ID!, to: DateTime): [RecurringOccurrence!]!
   recurringExpenses(
@@ -851,12 +1188,33 @@ type Query {
     trackingMode: RecurringTrackingMode
   ): RecurringExpenseConnection!
   recurringExpensesSummary: RecurringExpensesSummary!
+
+  """
+  Recurring payments detected in the movements (not dismissed, not accepted yet), most confident first
+  """
+  recurringSuggestions(accountId: ID): [RecurringSuggestion!]!
   rootCategories: [Category!]!
+
+  """
+  Possible duplicates of a transaction about to be created: same account, amount within 0.01, within 3 days; newest first, at most 5
+  """
+  similarTransactions(
+    accountId: ID!
+    amount: Float!
+
+    """Date of the new transaction; matches within 3 days of its local day"""
+    date: DateTime!
+    type: TransactionType
+  ): [Transaction!]!
 
   """Includes the lines; poll it after uploading to follow the status"""
   statementImport(id: ID!): StatementImport!
   statementImports(accountId: String, after: String, first: Int = 20): StatementImportConnection!
   suggestCategoryForMerchant(input: SuggestCategoryInput!): Category
+
+  """
+  One movement; unlike lists, it includes the original text of private movements
+  """
   transaction(id: String!): Transaction!
   transactions(after: String, before: String, filters: TransactionFilters, first: Int, last: Int): TransactionConnection!
   transfer(id: String!): Transfer!
@@ -865,6 +1223,82 @@ type Query {
   user(id: String!): User!
   validateToken(token: String!): TokenValidationResult!
   whatIfScenario(input: WhatIfInput!): WhatIfResult!
+}
+
+"""
+high: total and date, cross-checked (QR or subtotal + tax). medium: total and date. low: something is missing.
+"""
+enum ReceiptConfidence {
+  high
+  low
+  medium
+}
+
+"""
+A receipt photo and the fields extracted from it. The photo is at GET /receipts/:id/file (owner only).
+"""
+type ReceiptImport {
+  cardLast4: String
+  confidence: ReceiptConfidence
+  createdAt: DateTime!
+  currency: String!
+
+  """Purchase day (date-only)"""
+  date: DateTime
+  errorMessage: String
+  fileName: String
+  id: ID!
+
+  """
+  Existing movement with the same amount (±0.01) within 3 days (same account when one is suggested): offer to attach the photo to it instead of creating a duplicate
+  """
+  matchedTransaction: Transaction
+  merchantName: String
+
+  """Merchant's tax ID (RFC)"""
+  merchantTaxId: String
+  route: ReceiptRoute
+  status: ReceiptStatus!
+
+  """Account whose last 4 digits appear on the receipt"""
+  suggestedAccount: Account
+  suggestedCategory: Category
+  total: Float
+
+  """The movement created or attached to on confirm"""
+  transaction: Transaction
+}
+
+type ReceiptImportConnection {
+  edges: [ReceiptImportEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ReceiptImportEdge {
+  cursor: String!
+  node: ReceiptImport!
+}
+
+"""
+cfdi_qr: SAT QR of a printed CFDI (exact total and tax ID). ocr_rules: OCR text + local rules. ai: OCR text sent to the AI fallback.
+"""
+enum ReceiptRoute {
+  ai
+  cfdi_qr
+  ocr_rules
+}
+
+"""
+uploaded → processing → needs_review (draft waiting for the user) → confirmed | discarded; failed when the photo could not be read (it can still be filled in by hand and confirmed).
+"""
+enum ReceiptStatus {
+  confirmed
+  discarded
+  failed
+  needs_review
+  processing
+  uploaded
 }
 
 type RecurringAccountTotal {
@@ -967,6 +1401,49 @@ type RecurringOccurrence {
   recurringExpenseId: String!
   status: OccurrenceStatus!
   transactionId: String
+}
+
+"""A recurring payment detected in the synced movements, not saved yet"""
+type RecurringSuggestion {
+  account: Account
+
+  """Median of the occurrences"""
+  amount: Float!
+  category: Category
+
+  """"ai" when the AI named and classified it"""
+  classifiedBy: String
+
+  """0..1"""
+  confidence: Float!
+  currency: String!
+
+  """Stable id of the detected group (merchant + currency)"""
+  fingerprint: ID!
+  frequency: RecurringFrequency!
+  interval: Int!
+  isVariableAmount: Boolean!
+  kind: RecurringExpenseKind!
+
+  """
+  Normalized merchant, e.g. "APPLE COM BILL"
+  """
+  merchant: String!
+
+  """Last occurrence + cadence (date only)"""
+  nextDueDate: DateTime!
+
+  """Newest first"""
+  occurrences: [RecurringSuggestionOccurrence!]!
+
+  """AI name if classified, else the merchant"""
+  suggestedName: String!
+}
+
+type RecurringSuggestionOccurrence {
+  amount: Float!
+  date: DateTime!
+  transactionId: ID!
 }
 
 """
@@ -1072,6 +1549,9 @@ type StatementLine {
   """Recurring payment this line pays"""
   matchedOccurrenceId: String
 
+  """The recurring payment of matchedOccurrenceId, with its name"""
+  matchedRecurringPayment: StatementLineRecurringPayment
+
   """Existing or created transaction"""
   matchedTransactionId: String
   merchant: String
@@ -1088,6 +1568,14 @@ enum StatementLineKind {
   interest
   payment
   refund
+}
+
+"""The recurring payment a statement line pays"""
+type StatementLineRecurringPayment {
+  dueDate: DateTime!
+  name: String!
+  occurrenceId: ID!
+  recurringExpenseId: ID!
 }
 
 """
@@ -1132,23 +1620,73 @@ type TokenValidationResult {
 type Transaction {
   account: Account
   accountId: String!
+
+  """Merchant alias rule matching this movement"""
+  aliasId: ID
   amount: Float!
   attachments: [Attachment!]
   category: Category
   categoryId: String
+  categorySource: CategorySource
   createdAt: DateTime!
   currency: String!
   description: String
+
+  """
+  Name to show: one-off alias, else the matching alias rule, else merchantName, else description
+  """
+  displayName: String!
   externalId: String
+
+  """A one-off display name is set on this movement"""
+  hasOwnAlias: Boolean!
   id: String!
   isPending: Boolean!
+
+  """
+  Private (one-off or alias rule): description, merchantName and originalDescription are null except in transaction(id)
+  """
+  isPrivate: Boolean!
   isRecurringInstance: Boolean!
   merchantName: String
+
+  """
+  merchantName ?? description, never modified. Null for private movements except in transaction(id)
+  """
+  originalDescription: String
+
+  """
+  The recurring payment this movement paid (one query per movement; for the detail, not lists)
+  """
+  recurringPayment: TransactionRecurringPayment
   source: String!
+
+  """Pending AI/rule suggestion, not applied until accepted"""
+  suggestedCategory: Category
+
+  """
+  For transfers: the other side (one query per movement; for the detail, not lists)
+  """
+  transferCounterpart: TransferCounterpart
+
+  """
+  For transfers: "out" on the source account, "in" on the destination; null otherwise
+  """
+  transferDirection: String
   txnDate: DateTime!
   type: String!
   updatedAt: DateTime!
   userId: String!
+}
+
+input TransactionAliasInput {
+  """
+  One-off display name; null or "" clears it, omitted leaves it unchanged
+  """
+  displayName: String
+
+  """Hide the original text; omitted leaves it unchanged"""
+  isPrivate: Boolean
 }
 
 type TransactionConnection {
@@ -1166,11 +1704,29 @@ input TransactionFilters {
   accountId: String
   categoryId: String
   endDate: DateTime
+
+  """true: only movements with a pending category suggestion"""
+  hasSuggestion: Boolean
   isPending: Boolean
+
+  """
+  Matches the display name, and the original text only for non-private movements
+  """
   search: String
   source: TransactionSource
   startDate: DateTime
   type: TransactionType
+
+  """true: only movements without a category; false: only with one"""
+  uncategorized: Boolean
+}
+
+"""The recurring payment a movement paid"""
+type TransactionRecurringPayment {
+  dueDate: DateTime!
+  name: String!
+  occurrenceId: ID!
+  recurringExpenseId: ID!
 }
 
 """Transaction source"""
@@ -1198,6 +1754,18 @@ type Transfer {
   id: String!
   toTxn: Transaction!
   toTxnId: String!
+}
+
+"""The other side of a transfer"""
+type TransferCounterpart {
+  accountId: ID!
+
+  """The account's nickname, else its name"""
+  accountName: String!
+
+  """"out" when this movement is the source side"""
+  direction: String!
+  transactionId: ID!
 }
 
 """
@@ -1246,9 +1814,34 @@ input UpdateCategoryInput {
 input UpdateDebtInput {
   dueDate: DateTime
   interestRateAnnual: Float
+  kind: DebtKind
   linkedAccountId: String
   minPaymentAmount: Float
   name: String
+
+  """Cannot be less than what has been paid already"""
+  principal: Float
+  startDate: DateTime
+}
+
+input UpdateGoalInput {
+  dueDate: DateTime
+  name: String
+  targetAmount: Float
+}
+
+input UpdateMyPreferencesInput {
+  """Preferred language: 'es' or 'en'"""
+  locale: String
+}
+
+"""Corrections while reviewing; null clears a field"""
+input UpdateReceiptImportInput {
+  accountId: ID
+  categoryId: ID
+  date: DateTime
+  merchantName: String
+  total: Float
 }
 
 input UpdateRecurringExpenseInput {
@@ -1313,6 +1906,9 @@ type User {
 
   """The master admin; cannot be demoted or disabled"""
   isMaster: Boolean!
+
+  """Preferred language: 'es' or 'en'"""
+  locale: String!
   name: String!
   role: UserRole!
   updatedAt: DateTime!

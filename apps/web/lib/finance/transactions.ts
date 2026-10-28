@@ -1,10 +1,13 @@
+import type { Locale } from '@/lib/i18n/locales';
+import type { Localizer, Translate } from '@/lib/i18n/translator';
+
 import {
-  UNCATEGORIZED_LABEL,
   categoryIconKey,
   categoryLabel,
   type CategoryIndex,
   type IconKey,
 } from './categories';
+import { accountLabel } from './accounts';
 import { dayHeading, dayKeyOf, shortDate, timeOf, type DayKey } from './dates';
 import { formatMoney } from './money';
 import type { ApiTransaction } from './types';
@@ -24,12 +27,14 @@ export interface TransactionRow {
   status: 'completed' | 'pending';
   iconKey: IconKey;
   day: DayKey;
+  /** Private alias: show a lock next to the title. */
+  isPrivate: boolean;
 }
 
-export interface TransactionGroup {
+export interface TransactionGroup<R extends TransactionRow = TransactionRow> {
   day: DayKey;
   heading: string;
-  rows: TransactionRow[];
+  rows: R[];
 }
 
 /**
@@ -41,6 +46,8 @@ export function direction(tx: ApiTransaction): 'in' | 'out' | 'unknown' {
   if (tx.type === 'income') return 'in';
   if (tx.type === 'expense') return 'out';
   if (tx.type === 'transfer') {
+    if (tx.transferDirection) return tx.transferDirection;
+    // Transfers created before the API exposed the side carry it as a suffix.
     if (/\(outgoing\)$/i.test(tx.description ?? '')) return 'out';
     if (/\(incoming\)$/i.test(tx.description ?? '')) return 'in';
   }
@@ -50,34 +57,42 @@ export function direction(tx: ApiTransaction): 'in' | 'out' | 'unknown' {
 // The API marks each side of a transfer in its description.
 const TRANSFER_SIDE = / \((?:outgoing|incoming)\)$/i;
 
-function title(tx: ApiTransaction): string {
-  const text = (tx.merchantName || tx.description || '')
+/** The user renamed it (alias rule or one-off): its name wins over every rule below. */
+export function isAliased(tx: ApiTransaction): boolean {
+  return Boolean(tx.aliasId || tx.hasOwnAlias || tx.isPrivate);
+}
+
+export function transactionTitle(tx: ApiTransaction, t: Translate): string {
+  const alias = isAliased(tx) ? tx.displayName?.trim() : '';
+  if (alias) return alias;
+  const text = (tx.merchantName || tx.description || tx.displayName || '')
     .replace(TRANSFER_SIDE, '')
     .trim();
   if (tx.type === 'transfer') {
     const to = /^Transfer to (.+?)(?: \((?:outgoing|incoming)\))?$/i.exec(
       tx.description ?? '',
     );
-    if (to) return `Transferencia a ${to[1]}`;
+    if (to) return t('finance.transferTo', { name: to[1]! });
   }
-  if (/^Initial balance$/i.test(text)) return 'Saldo inicial';
+  if (/^Initial balance$/i.test(text)) return t('finance.initialBalance');
   if (text) return text;
   return tx.type === 'income'
-    ? 'Ingreso'
+    ? t('finance.fallbackTitle.income')
     : tx.type === 'expense'
-      ? 'Gasto'
-      : 'Movimiento';
+      ? t('finance.fallbackTitle.expense')
+      : t('finance.fallbackTitle.other');
 }
 
-function categoryText(tx: ApiTransaction): string {
-  if (tx.type === 'transfer') return 'Transferencia';
-  if (tx.type === 'adjustment') return 'Ajuste o pago';
-  return tx.category ? categoryLabel(tx.category.name) : UNCATEGORIZED_LABEL;
+function categoryText(tx: ApiTransaction, t: Translate): string {
+  if (tx.type === 'transfer') return t('finance.transfer');
+  if (tx.type === 'adjustment') return t('finance.adjustment');
+  return categoryLabel(tx.category?.name, t);
 }
 
 export function toTransactionRow(
   tx: ApiTransaction,
   categories: CategoryIndex,
+  { locale, t }: Localizer,
   { withDate = false }: { withDate?: boolean } = {},
 ): TransactionRow {
   const day = dayKeyOf(tx.txnDate);
@@ -88,12 +103,16 @@ export function toTransactionRow(
 
   return {
     id: tx.id,
-    title: title(tx),
-    category: categoryText(tx),
-    time: [tx.account?.name, withDate ? shortDate(day) : null, time]
+    title: transactionTitle(tx, t),
+    category: categoryText(tx, t),
+    time: [
+      tx.account ? accountLabel(tx.account) : null,
+      withDate ? shortDate(day, locale) : null,
+      time,
+    ]
       .filter(Boolean)
       .join(' · '),
-    amount: formatMoney(signed, tx.currency, { sign }),
+    amount: formatMoney(signed, tx.currency, locale, { sign }),
     variant: dir === 'in' ? 'income' : dir === 'out' ? 'expense' : 'neutral',
     status: tx.isPending ? 'pending' : 'completed',
     iconKey:
@@ -105,15 +124,17 @@ export function toTransactionRow(
             ? 'income'
             : categoryIconKey(categories, tx.category?.id),
     day,
+    isPrivate: Boolean(tx.isPrivate),
   };
 }
 
 /** Rows grouped by day, newest first (the API's order is kept inside a day). */
-export function groupByDay(
-  rows: ReadonlyArray<TransactionRow>,
+export function groupByDay<R extends TransactionRow>(
+  rows: ReadonlyArray<R>,
   today: DayKey,
-): TransactionGroup[] {
-  const groups = new Map<DayKey, TransactionRow[]>();
+  locale: Locale,
+): TransactionGroup<R>[] {
+  const groups = new Map<DayKey, R[]>();
   for (const row of rows) {
     const group = groups.get(row.day);
     if (group) group.push(row);
@@ -123,7 +144,7 @@ export function groupByDay(
     .sort(([a], [b]) => (a < b ? 1 : a > b ? -1 : 0))
     .map(([day, dayRows]) => ({
       day,
-      heading: dayHeading(day, today),
+      heading: dayHeading(day, today, locale),
       rows: dayRows,
     }));
 }

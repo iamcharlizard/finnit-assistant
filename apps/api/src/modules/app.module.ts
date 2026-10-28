@@ -20,6 +20,8 @@ import { StatementsModule } from './statements/statements.module';
 import { AiModule } from './ai/ai.module';
 import { AdminModule } from './admin/admin.module';
 import { BankConnectionsModule } from './bank-connections/bank-connections.module';
+import { CategorizationModule } from './categorization/categorization.module';
+import { ReceiptsModule } from './receipts/receipts.module';
 import { PrismaService } from '../services/prisma.service';
 import { HealthController } from '../controllers/health.controller';
 
@@ -59,6 +61,8 @@ function envFlag(name: string, fallback: boolean): boolean {
     AiModule,
     AdminModule,
     BankConnectionsModule,
+    CategorizationModule,
+    ReceiptsModule,
   ],
   controllers: [HealthController],
   providers: [PrismaService],

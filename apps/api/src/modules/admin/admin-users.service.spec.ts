@@ -22,6 +22,7 @@ const userRow = (overrides: Partial<UserRow> = {}): UserRow => ({
   disabledAt: null,
   lastLoginAt: null,
   tokenVersion: 0,
+  locale: 'es',
   invitedById: 'admin-1',
   createdAt: new Date('2026-10-01'),
   updatedAt: new Date('2026-10-01'),

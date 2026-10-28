@@ -2,24 +2,26 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Sparkles, Users, type LucideIcon } from 'lucide-react';
 
 import { cn } from '@finnit/ui/lib/utils';
 
-const TABS: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: '/admin/users', label: 'Usuarios', icon: Users },
-  { href: '/admin/ai', label: 'IA', icon: Sparkles },
+const TABS: { href: string; tab: 'users' | 'ai'; icon: LucideIcon }[] = [
+  { href: '/admin/users', tab: 'users', icon: Users },
+  { href: '/admin/ai', tab: 'ai', icon: Sparkles },
 ];
 
 /** Sub-navigation of /admin (one route per tab). */
 export function AdminTabs() {
   const pathname = usePathname();
+  const t = useTranslations('admin');
   return (
     <nav
-      aria-label="Secciones de administración"
+      aria-label={t('tabsLabel')}
       className="flex w-fit gap-1 rounded-full bg-track p-1"
     >
-      {TABS.map(({ href, label, icon: Icon }) => {
+      {TABS.map(({ href, tab, icon: Icon }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`);
         return (
           <Link
@@ -34,7 +36,7 @@ export function AdminTabs() {
             )}
           >
             <Icon aria-hidden className="size-4" />
-            {label}
+            {t(`tabs.${tab}`)}
           </Link>
         );
       })}

@@ -14,6 +14,9 @@ interface AnalyticsHeroCardProps {
   trendPercent?: string;
   trendDown?: boolean;
   sparkBars?: SparkBar[];
+  /** Screen-reader words before the trend percentage. */
+  trendDownLabel?: string;
+  trendUpLabel?: string;
   className?: string;
 }
 
@@ -28,11 +31,13 @@ const DEFAULT_BARS: SparkBar[] = [
 ];
 
 function AnalyticsHeroCard({
-  label = 'Gasto Total',
+  label = 'Total spending',
   amount,
   trendPercent,
   trendDown = true,
   sparkBars = DEFAULT_BARS,
+  trendDownLabel = 'Down',
+  trendUpLabel = 'Up',
   className,
 }: AnalyticsHeroCardProps) {
   const TrendIcon = trendDown ? ArrowDownRight : ArrowUpRight;
@@ -59,7 +64,7 @@ function AnalyticsHeroCard({
         {trendPercent ? (
           <span className="flex items-center gap-1 rounded-lg bg-tertiary/12 px-2 py-1 text-[13px] font-bold text-tertiary">
             <TrendIcon aria-hidden className="size-3" />
-            <span className="sr-only">{trendDown ? 'Bajó' : 'Subió'}</span>
+            <span className="sr-only">{trendDown ? trendDownLabel : trendUpLabel}</span>
             {trendPercent}
           </span>
         ) : null}

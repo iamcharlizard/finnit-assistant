@@ -1,4 +1,4 @@
-import { ObjectType, Field, InputType, Int } from '@nestjs/graphql';
+import { ObjectType, Field, InputType, Int, Float } from '@nestjs/graphql';
 import { IsString, IsNumber, IsDateString } from 'class-validator';
 
 @ObjectType()
@@ -50,6 +50,33 @@ export class CashFlowProjection {
 
   @Field()
   description: string;
+}
+
+@ObjectType({
+  description:
+    'Where cashFlowProjection starts from: the current balance and the monthly averages it extends',
+})
+export class CashFlowBaseline {
+  @Field(() => Float, {
+    description: 'Sum of the balances of the non-archived accounts',
+  })
+  currentBalance: number;
+
+  @Field(() => Float, {
+    description: 'Average monthly income over the months with data (up to 6)',
+  })
+  monthlyIncome: number;
+
+  @Field(() => Float, {
+    description: 'Average monthly expenses over the months with data (up to 6)',
+  })
+  monthlyExpenses: number;
+
+  @Field(() => Int, { description: 'Months averaged, from 1 to 6' })
+  monthsOfData: number;
+
+  @Field({ description: "The user's first account currency, or MXN" })
+  currency: string;
 }
 
 @InputType()

@@ -1,8 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
-import { BudgetsService } from './budgets.service';
+import { BudgetsService, budgetMonthRange } from './budgets.service';
 import { PrismaService } from '../../services/prisma.service';
-import { NotFoundError, ConflictError } from '../../common/exceptions/graphql-error.exception';
+import {
+  NotFoundError,
+  ConflictError,
+} from '../../common/exceptions/graphql-error.exception';
+
+/** Makes `$transaction(callback)` run the callback against `tx`. */
+const runTransactionWith = (tx: unknown) =>
+  ((callback: (client: unknown) => unknown) =>
+    Promise.resolve(callback(tx))) as never;
 
 describe('BudgetsService', () => {
   let service: BudgetsService;
@@ -18,14 +26,14 @@ describe('BudgetsService', () => {
     year: 2024,
     month: 1,
     currency: 'USD',
-    amountTotal: 2000.00,
+    amountTotal: 2000.0,
     createdAt: new Date('2024-01-01'),
     categories: [
       {
         id: 'budget-category-1',
         budgetId: mockBudgetId,
         categoryId: mockCategoryId,
-        capAmount: 300.00,
+        capAmount: 300.0,
         category: {
           id: mockCategoryId,
           name: 'Food & Dining',
@@ -57,11 +65,11 @@ describe('BudgetsService', () => {
       year: 2024,
       month: 1,
       currency: 'USD',
-      amountTotal: 2000.00,
+      amountTotal: 2000.0,
       categories: [
         {
           categoryId: mockCategoryId,
-          capAmount: 300.00,
+          capAmount: 300.0,
         },
       ],
     };
@@ -69,14 +77,18 @@ describe('BudgetsService', () => {
     it('should successfully create a new budget', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(null);
-      prismaService.budget.create.mockResolvedValue(mockBudget);
+      prismaService.budget.create.mockResolvedValue(mockBudget as any);
 
       // Act
       const result = await service.create(mockUserId, createInput);
 
       // Assert
       expect(prismaService.budget.findFirst).toHaveBeenCalledWith({
-        where: { userId: mockUserId, year: createInput.year, month: createInput.month },
+        where: {
+          userId: mockUserId,
+          year: createInput.year,
+          month: createInput.month,
+        },
       });
       expect(prismaService.budget.create).toHaveBeenCalledWith({
         data: {
@@ -94,20 +106,24 @@ describe('BudgetsService', () => {
         },
         include: { categories: true },
       });
-      expect(result).toEqual(expect.objectContaining({
-        id: mockBudget.id,
-        year: mockBudget.year,
-        month: mockBudget.month,
-        amountTotal: Number(mockBudget.amountTotal),
-      }));
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: mockBudget.id,
+          year: mockBudget.year,
+          month: mockBudget.month,
+          amountTotal: Number(mockBudget.amountTotal),
+        }),
+      );
     });
 
     it('should throw ConflictError if budget already exists for the month', async () => {
       // Arrange
-      prismaService.budget.findFirst.mockResolvedValue(mockBudget);
+      prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
 
       // Act & Assert
-      await expect(service.create(mockUserId, createInput)).rejects.toThrow(ConflictError);
+      await expect(service.create(mockUserId, createInput)).rejects.toThrow(
+        ConflictError,
+      );
       expect(prismaService.budget.create).not.toHaveBeenCalled();
     });
 
@@ -116,9 +132,9 @@ describe('BudgetsService', () => {
       const multiCategoryInput = {
         ...createInput,
         categories: [
-          { categoryId: 'cat-1', capAmount: 300.00 },
-          { categoryId: 'cat-2', capAmount: 500.00 },
-          { categoryId: 'cat-3', capAmount: 200.00 },
+          { categoryId: 'cat-1', capAmount: 300.0 },
+          { categoryId: 'cat-2', capAmount: 500.0 },
+          { categoryId: 'cat-3', capAmount: 200.0 },
         ],
       };
 
@@ -177,7 +193,10 @@ describe('BudgetsService', () => {
   describe('findMany', () => {
     it('should return all budgets for user', async () => {
       // Arrange
-      const mockBudgets = [mockBudget, { ...mockBudget, id: 'budget-2', month: 2 }];
+      const mockBudgets = [
+        mockBudget,
+        { ...mockBudget, id: 'budget-2', month: 2 },
+      ];
       prismaService.budget.findMany.mockResolvedValue(mockBudgets as any);
 
       // Act
@@ -225,13 +244,16 @@ describe('BudgetsService', () => {
       prismaService.budget.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.findById('non-existent', mockUserId)).rejects.toThrow(NotFoundError);
+      await expect(
+        service.findById('non-existent', mockUserId),
+      ).rejects.toThrow(NotFoundError);
     });
   });
 
   describe('getCurrentBudget', () => {
     beforeEach(() => {
       jest.useFakeTimers().setSystemTime(new Date(2024, 0, 15));
+      prismaService.category.findMany.mockResolvedValue([]);
     });
 
     afterEach(() => {
@@ -268,17 +290,20 @@ describe('BudgetsService', () => {
 
   describe('update', () => {
     const updateInput = {
-      amountTotal: 2500.00,
+      amountTotal: 2500.0,
       categories: [
-        { categoryId: mockCategoryId, capAmount: 400.00 },
-        { categoryId: 'new-category', capAmount: 250.00 },
+        { categoryId: mockCategoryId, capAmount: 400.0 },
+        { categoryId: 'new-category', capAmount: 250.0 },
       ],
     };
 
     it('should successfully update budget', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
-      const updatedBudget = { ...mockBudget, amountTotal: updateInput.amountTotal };
+      const updatedBudget = {
+        ...mockBudget,
+        amountTotal: updateInput.amountTotal,
+      };
       const mockTx = {
         bUDGET_CATEGORY: {
           deleteMany: jest.fn(),
@@ -289,12 +314,14 @@ describe('BudgetsService', () => {
           findUnique: jest.fn().mockResolvedValue(updatedBudget),
         },
       };
-      prismaService.$transaction.mockImplementation(async (callback: any) =>
-        callback(mockTx),
-      );
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
 
       // Act
-      const result = await service.update(mockBudgetId, mockUserId, updateInput);
+      const result = await service.update(
+        mockBudgetId,
+        mockUserId,
+        updateInput,
+      );
 
       // Assert
       expect(mockTx.budget.update).toHaveBeenCalledWith({
@@ -321,9 +348,7 @@ describe('BudgetsService', () => {
           findUnique: jest.fn().mockResolvedValue(mockBudget),
         },
       };
-      prismaService.$transaction.mockImplementation(async (callback: any) =>
-        callback(mockTx),
-      );
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
 
       // Act
       await service.update(mockBudgetId, mockUserId, { amountTotal: 100 });
@@ -333,12 +358,47 @@ describe('BudgetsService', () => {
       expect(mockTx.bUDGET_CATEGORY.createMany).not.toHaveBeenCalled();
     });
 
+    it('should remove every category cap when an empty list is given', async () => {
+      // Arrange
+      prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
+      const mockTx = {
+        bUDGET_CATEGORY: {
+          deleteMany: jest.fn(),
+          createMany: jest.fn(),
+        },
+        budget: {
+          update: jest.fn().mockResolvedValue(mockBudget),
+          findUnique: jest
+            .fn()
+            .mockResolvedValue({ ...mockBudget, categories: [] }),
+        },
+      };
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
+
+      // Act
+      const result = await service.update(mockBudgetId, mockUserId, {
+        amountTotal: 1000,
+        categories: [],
+      });
+
+      // Assert
+      expect(mockTx.bUDGET_CATEGORY.deleteMany).toHaveBeenCalledWith({
+        where: { budgetId: mockBudgetId },
+      });
+      expect(mockTx.bUDGET_CATEGORY.createMany).toHaveBeenCalledWith({
+        data: [],
+      });
+      expect(result.categories).toEqual([]);
+    });
+
     it('should throw NotFoundError when budget not found', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.update('non-existent', mockUserId, updateInput)).rejects.toThrow(NotFoundError);
+      await expect(
+        service.update('non-existent', mockUserId, updateInput),
+      ).rejects.toThrow(NotFoundError);
     });
 
     it('should handle category updates correctly', async () => {
@@ -407,7 +467,9 @@ describe('BudgetsService', () => {
       prismaService.budget.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.delete('non-existent', mockUserId)).rejects.toThrow(NotFoundError);
+      await expect(service.delete('non-existent', mockUserId)).rejects.toThrow(
+        NotFoundError,
+      );
       expect(prismaService.budget.delete).not.toHaveBeenCalled();
     });
   });
@@ -428,15 +490,22 @@ describe('BudgetsService', () => {
         where: { id: mockBudgetId, userId: mockUserId },
         include: { categories: true },
       });
+      // The whole month in UTC, confirmed expenses only, and the category's
+      // subcategories count against its cap.
       expect(prismaService.transaction.aggregate).toHaveBeenCalledWith({
         where: {
           userId: mockUserId,
-          categoryId: mockCategoryId,
           type: 'expense',
+          isPending: false,
           txnDate: {
-            gte: new Date(2024, 0, 1),
-            lte: new Date(2024, 0, 31),
+            gte: new Date('2024-01-01T00:00:00.000Z'),
+            lt: new Date('2024-02-01T00:00:00.000Z'),
           },
+          OR: [
+            { categoryId: mockCategoryId },
+            { category: { parentId: mockCategoryId } },
+            { category: { parent: { parentId: mockCategoryId } } },
+          ],
         },
         _sum: { amount: true },
       });
@@ -505,6 +574,18 @@ describe('BudgetsService', () => {
       const result = await service.getBudgetSummary(mockUserId, 2024, 1);
 
       // Assert
+      expect(prismaService.transaction.aggregate).toHaveBeenNthCalledWith(1, {
+        where: {
+          userId: mockUserId,
+          type: 'expense',
+          isPending: false,
+          txnDate: {
+            gte: new Date('2024-01-01T00:00:00.000Z'),
+            lt: new Date('2024-02-01T00:00:00.000Z'),
+          },
+        },
+        _sum: { amount: true },
+      });
       expect(result).toEqual({
         budgetId: mockBudgetId,
         year: 2024,
@@ -586,6 +667,7 @@ describe('BudgetsService', () => {
 
     beforeEach(() => {
       jest.useFakeTimers().setSystemTime(new Date(2024, 0, 15));
+      prismaService.category.findMany.mockResolvedValue([]);
     });
 
     afterEach(() => {
@@ -594,7 +676,9 @@ describe('BudgetsService', () => {
 
     it('should return alerts for categories at or above 80%, sorted by percentage', async () => {
       // Arrange
-      prismaService.budget.findFirst.mockResolvedValue(budgetWithCategories as any);
+      prismaService.budget.findFirst.mockResolvedValue(
+        budgetWithCategories as any,
+      );
       (prismaService.transaction.aggregate as jest.Mock)
         .mockResolvedValueOnce({ _sum: { amount: 280.0 } }) // food: 93.33%
         .mockResolvedValueOnce({ _sum: { amount: 120.0 } }) // fun: 120%
@@ -629,6 +713,44 @@ describe('BudgetsService', () => {
       });
     });
 
+    it('names the categories in the requested locale, in one query', async () => {
+      // Arrange
+      prismaService.budget.findFirst.mockResolvedValue(
+        budgetWithCategories as any,
+      );
+      prismaService.category.findMany.mockResolvedValue([
+        {
+          id: 'cat-fun',
+          key: 'entertainment',
+          name: 'Entertainment',
+          translations: [{ name: 'Entretenimiento' }],
+        },
+      ] as any);
+      (prismaService.transaction.aggregate as jest.Mock)
+        .mockResolvedValueOnce({ _sum: { amount: 280.0 } })
+        .mockResolvedValueOnce({ _sum: { amount: 120.0 } })
+        .mockResolvedValueOnce({ _sum: { amount: 0 } });
+
+      // Act
+      const result = await service.getBudgetAlerts(mockUserId, 'es');
+
+      // Assert
+      expect(prismaService.category.findMany).toHaveBeenCalledTimes(1);
+      expect(prismaService.category.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ['cat-food', 'cat-fun', 'cat-rent'] } },
+        select: {
+          id: true,
+          key: true,
+          name: true,
+          translations: { where: { locale: 'es' }, select: { name: true } },
+        },
+      });
+      expect(result.map((a) => a.categoryName)).toEqual([
+        'Entretenimiento',
+        'Food & Dining', // no translation: the original name
+      ]);
+    });
+
     it('should use low severity between 80% and 90%', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue({
@@ -649,7 +771,9 @@ describe('BudgetsService', () => {
 
     it('should return empty array when no category reaches the threshold', async () => {
       // Arrange
-      prismaService.budget.findFirst.mockResolvedValue(budgetWithCategories as any);
+      prismaService.budget.findFirst.mockResolvedValue(
+        budgetWithCategories as any,
+      );
       (prismaService.transaction.aggregate as jest.Mock).mockResolvedValue({
         _sum: { amount: 10.0 },
       });
@@ -724,26 +848,34 @@ describe('BudgetsService', () => {
     it('should handle database errors during creation', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(null);
-      prismaService.budget.create.mockRejectedValue(new Error('Database error'));
+      prismaService.budget.create.mockRejectedValue(
+        new Error('Database error'),
+      );
 
       // Act & Assert
-      await expect(service.create(mockUserId, {
-        year: 2024,
-        month: 1,
-        currency: 'USD',
-        categories: [],
-      })).rejects.toThrow('Database error');
+      await expect(
+        service.create(mockUserId, {
+          year: 2024,
+          month: 1,
+          currency: 'USD',
+          categories: [],
+        }),
+      ).rejects.toThrow('Database error');
     });
 
     it('should handle transaction rollback on update failure', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(mockBudget as any);
-      prismaService.$transaction.mockRejectedValue(new Error('Transaction failed'));
+      prismaService.$transaction.mockRejectedValue(
+        new Error('Transaction failed'),
+      );
 
       // Act & Assert
-      await expect(service.update(mockBudgetId, mockUserId, {
-        categories: [],
-      })).rejects.toThrow('Transaction failed');
+      await expect(
+        service.update(mockBudgetId, mockUserId, {
+          categories: [],
+        }),
+      ).rejects.toThrow('Transaction failed');
     });
 
     it('should handle very large budget amounts', async () => {
@@ -770,15 +902,28 @@ describe('BudgetsService', () => {
     it('should handle concurrent budget creation for same month', async () => {
       // Arrange
       prismaService.budget.findFirst.mockResolvedValue(null);
-      prismaService.budget.create.mockRejectedValue(new Error('Unique constraint violation'));
+      prismaService.budget.create.mockRejectedValue(
+        new Error('Unique constraint violation'),
+      );
 
       // Act & Assert
-      await expect(service.create(mockUserId, {
-        year: 2024,
-        month: 1,
-        currency: 'USD',
-        categories: [],
-      })).rejects.toThrow('Unique constraint violation');
+      await expect(
+        service.create(mockUserId, {
+          year: 2024,
+          month: 1,
+          currency: 'USD',
+          categories: [],
+        }),
+      ).rejects.toThrow('Unique constraint violation');
+    });
+  });
+});
+
+describe('budgetMonthRange', () => {
+  it('covers the whole month in UTC, December into the next year', () => {
+    expect(budgetMonthRange(2026, 12)).toEqual({
+      gte: new Date('2026-12-01T00:00:00.000Z'),
+      lt: new Date('2027-01-01T00:00:00.000Z'),
     });
   });
 });

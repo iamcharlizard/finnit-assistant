@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { ShieldEllipsis } from 'lucide-react';
 import type {
   FieldError,
@@ -26,6 +27,7 @@ export function TwofaStep({
   onSubmit: (values: FieldValues) => void;
 }) {
   const [values, setValues] = React.useState<FieldValues>({});
+  const t = useTranslations('bankConnect.twofa');
   const onlyExternal = fields.every((f) => f.type === 'externalAction');
 
   return (
@@ -43,9 +45,9 @@ export function TwofaStep({
           <ShieldEllipsis aria-hidden className="size-6" />
         </span>
         <div>
-          <TitleLg as="h2">Verificación de {site.name}</TitleLg>
+          <TitleLg as="h2">{t('title', { bank: site.name })}</TitleLg>
           <BodyMd className="text-[13px] text-on-surface-variant">
-            Tu banco pide un dato adicional para continuar.
+            {t('hint')}
           </BodyMd>
         </div>
       </div>
@@ -63,7 +65,7 @@ export function TwofaStep({
       ))}
 
       <Button type="submit" variant="secondary" className="self-end">
-        {onlyExternal ? 'Ya lo hice' : 'Continuar'}
+        {onlyExternal ? t('alreadyDone') : t('continue')}
       </Button>
     </form>
   );

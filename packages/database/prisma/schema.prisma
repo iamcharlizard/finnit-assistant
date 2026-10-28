@@ -156,6 +156,18 @@ enum UserRole {
 
 enum AiFeatureKey {
   statement_parsing
+  transaction_categorization
+  recurring_classification
+  receipt_parsing
+  translation
+}
+
+/// Where a category name translation came from.
+enum TranslationSource {
+  seed // default categories (migration / sign-up)
+  google // Google Cloud Translation
+  ai // AI fallback when Google is unavailable
+  user // the text the user typed, in its own language
 }
 
 enum AiProvider {
@@ -164,11 +176,51 @@ enum AiProvider {
   google
 }
 
+/// Who set a transaction's category (or proposed a pending suggestion).
+enum CategorySource {
+  manual // the user picked it
+  rule // a merchant rule, an alias with a category, or the frequency heuristic
+  ai // AI suggestion the user accepted
+  bank // came with a bank import
+}
+
+/// How a merchant alias pattern is compared with the original text.
+enum AliasMatchType {
+  contains
+  starts_with
+  exact
+  regex // Postgres ~* (case-insensitive), evaluated only in the database
+}
+
 enum ImportedLineStatus {
   pending // will become a new transaction on confirm
   matched // linked to an existing transaction
   created // transaction created on confirm
   ignored
+}
+
+/// Lifecycle of a receipt photo: uploaded → processing → needs_review →
+/// confirmed (transaction created or photo attached) | discarded; failed on errors.
+enum ReceiptStatus {
+  uploaded
+  processing
+  needs_review
+  confirmed
+  discarded
+  failed
+}
+
+/// How a receipt's fields were extracted.
+enum ReceiptRoute {
+  cfdi_qr // the SAT QR of a printed CFDI (exact total and tax ID)
+  ocr_rules // OCR text + local rules
+  ai // OCR text sent to the AI fallback (receipt_parsing feature)
+}
+
+enum ReceiptConfidence {
+  high // total and date, cross-checked (QR total or subtotal + tax)
+  medium // total and date
+  low // something is missing
 }
 
 // ---------------------- Models -----------------------
@@ -184,6 +236,7 @@ model User {
   disabledAt    DateTime?
   lastLoginAt   DateTime?
   tokenVersion  Int       @default(0) // bumped to revoke every open session
+  locale        String    @default("es") @db.VarChar(5) // UI / data language: 'es' | 'en'
   invitedById   String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -205,6 +258,12 @@ model User {
   reconciliations   ReconciliationSession[]
   tags              Tag[]
   Debt              Debt[]
+
+  recurringSuggestionStates RecurringSuggestionState[]
+  merchantAliases           MerchantAlias[]
+  merchantRules             MerchantRule[]
+  receiptImports            ReceiptImport[]
+  merchantTaxIds            MerchantTaxId[]
 }
 
 model Account {
@@ -228,6 +287,7 @@ model Account {
   recurringExpenses   RecurringExpense[]
   statementImports    StatementImport[]
   importedLines       ImportedTransaction[] @relation("imported_account")
+  receiptSuggestions  ReceiptImport[]       @relation("receipt_suggested_account")
 
   @@unique([userId, name])
   @@index([userId])
@@ -250,21 +310,46 @@ model Category {
   id        String   @id @default(uuid())
   userId    String? // null => default global
   parentId  String?
-  name      String
+  name      String // English original; localized names live in CategoryTranslation
+  key       String? // i18n key of a default category, e.g. categories.food.groceries
   isDefault Boolean  @default(false)
   sortOrder Int?
   createdAt DateTime @default(now())
 
-  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
-  parent            Category?          @relation("category_to_self", fields: [parentId], references: [id], onDelete: SetNull)
-  children          Category[]         @relation("category_to_self")
-  transactions      Transaction[]
+  user              User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  parent            Category?             @relation("category_to_self", fields: [parentId], references: [id], onDelete: SetNull)
+  children          Category[]            @relation("category_to_self")
+  transactions      Transaction[]         @relation("transaction_category")
   budgetCaps        BUDGET_CATEGORY[]
   recurringExpenses RecurringExpense[]
+  translations      CategoryTranslation[]
+
+  recurringSuggestionStates RecurringSuggestionState[]
+  suggestedForTransactions  Transaction[]              @relation("transaction_suggested_category")
+  merchantAliases           MerchantAlias[]
+  merchantRules             MerchantRule[]
+  receiptSuggestions        ReceiptImport[]            @relation("receipt_suggested_category")
+  merchantTaxIds            MerchantTaxId[]
 
   @@unique([userId, name], name: "category_user_name_unique")
+  @@unique([userId, key], name: "category_user_key_unique")
   @@index([userId])
   @@index([parentId])
+}
+
+/// Category name per locale ('es' | 'en'). Child rows of Category (cascade).
+model CategoryTranslation {
+  id         String            @id @default(uuid())
+  categoryId String
+  locale     String            @db.VarChar(5)
+  name       String
+  source     TranslationSource
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, locale])
 }
 
 model Transaction {
@@ -282,12 +367,24 @@ model Transaction {
   isRecurringInstance Boolean           @default(false)
   source              TransactionSource
   externalId          String?           @unique
+  // Merchant aliases (feature 17). The original description/merchant is never
+  // modified. aliasId is the matching alias rule, materialized whenever the
+  // user's aliases change; aliasName/isPrivate are one-off overrides.
+  aliasId             String?
+  aliasName           String?
+  isPrivate           Boolean           @default(false)
+  // Categorization (feature 16). null categorySource: set before it existed.
+  categorySource      CategorySource?
+  suggestedCategoryId String? // pending suggestion, not applied yet
+  suggestedBy         CategorySource? // 'rule' | 'ai'
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account  Account   @relation(fields: [accountId], references: [id], onDelete: Restrict)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account           Account        @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category          Category?      @relation("transaction_category", fields: [categoryId], references: [id], onDelete: SetNull)
+  alias             MerchantAlias? @relation(fields: [aliasId], references: [id], onDelete: SetNull)
+  suggestedCategory Category?      @relation("transaction_suggested_category", fields: [suggestedCategoryId], references: [id], onDelete: SetNull)
 
   // Relaciones inversas para Transfer (1–1)
   transferFrom Transfer? @relation("transfer_from")
@@ -299,10 +396,58 @@ model Transaction {
   transactionTags   TransactionTag[]
   importedMatches   ImportedTransaction[] @relation("imported_matched")
   recurringPayment  RecurringOccurrence?
+  receiptImport     ReceiptImport?        @relation("receipt_transaction")
+  receiptMatches    ReceiptImport[]       @relation("receipt_matched_transaction")
 
   @@index([userId, txnDate(sort: Desc)])
   @@index([userId, accountId, txnDate(sort: Desc)])
   @@index([source])
+  @@index([aliasId])
+  @@index([suggestedCategoryId])
+}
+
+/// Display name (and optional category / privacy) for the movements whose
+/// original text matches `pattern` (feature 17). Matching runs in SQL
+/// (unaccent + lower, or ~* for regex) and is materialized in
+/// Transaction.aliasId.
+model MerchantAlias {
+  id          String         @id @default(uuid())
+  userId      String
+  matchType   AliasMatchType
+  pattern     String         @db.VarChar(200)
+  displayName String         @db.VarChar(80)
+  categoryId  String?
+  isPrivate   Boolean        @default(false)
+  priority    Int            @default(0)
+  active      Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  transactions Transaction[]
+
+  @@index([userId, active])
+  @@index([categoryId])
+}
+
+/// Learned merchant -> category (feature 16): created when the user
+/// categorizes or accepts a suggestion. `pattern` is the normalized merchant
+/// (normalizeMerchant); lookups compare it without spaces.
+model MerchantRule {
+  id         String   @id @default(uuid())
+  userId     String
+  pattern    String   @db.VarChar(200)
+  categoryId String
+  hits       Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pattern])
+  @@index([categoryId])
 }
 
 model Transfer {
@@ -390,6 +535,31 @@ model RecurringOccurrence {
 
   @@unique([recurringExpenseId, dueDate])
   @@index([status, dueDate])
+}
+
+/// What happened to a detected recurring-payment suggestion (feature 15):
+/// dismissed, accepted, or classified by AI (cached so the AI runs once per
+/// suggestion). `fingerprint` identifies the detected group (merchant +
+/// currency), it is not a foreign key.
+model RecurringSuggestionState {
+  id           String                @id @default(uuid())
+  userId       String
+  fingerprint  String                @db.VarChar(64)
+  dismissedAt  DateTime?
+  acceptedAt   DateTime?
+  aiName       String?
+  aiKind       RecurringExpenseKind?
+  aiCategoryId String?
+  aiModel      String? // provider model id that classified it
+  classifiedAt DateTime?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aiCategory Category? @relation(fields: [aiCategoryId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, fingerprint])
+  @@index([aiCategoryId])
 }
 
 model StatementImport {
@@ -720,4 +890,70 @@ model AiFeature {
 
   aiModel   AiModel? @relation(fields: [aiModelId], references: [id], onDelete: SetNull)
   updatedBy User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+}
+
+/// A receipt photo (feature 14): extracted fields wait for the user to
+/// confirm them. One receipt = one transaction (no line items).
+model ReceiptImport {
+  id                   String             @id @default(uuid())
+  userId               String
+  status               ReceiptStatus      @default(uploaded)
+  fileKey              String             @unique // S3 object key (users/<userId>/receipts/<id>.<ext>)
+  fileName             String?
+  fileHash             String // sha256 of the uploaded file
+  mimeType             String
+  fileSize             Int
+  route                ReceiptRoute?
+  confidence           ReceiptConfidence?
+  total                Decimal?           @db.Decimal(18, 2)
+  subtotal             Decimal?           @db.Decimal(18, 2)
+  tax                  Decimal?           @db.Decimal(18, 2)
+  currency             String             @default("MXN") @db.VarChar(3)
+  date                 DateTime?          @db.Date
+  merchantName         String?
+  merchantTaxId        String?            @db.VarChar(13) // RFC of the issuer
+  cardLast4            String?            @db.VarChar(4)
+  suggestedAccountId   String?
+  suggestedCategoryId  String?
+  cfdiUuid             String?            @db.VarChar(36)
+  ocrText              String?            @db.Text
+  rawExtraction        Json?
+  errorMessage         String?
+  transactionId        String?            @unique // created or attached-to transaction, on confirm
+  matchedTransactionId String? // existing movement that looks like this receipt
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  suggestedAccount   Account?     @relation("receipt_suggested_account", fields: [suggestedAccountId], references: [id], onDelete: SetNull)
+  suggestedCategory  Category?    @relation("receipt_suggested_category", fields: [suggestedCategoryId], references: [id], onDelete: SetNull)
+  transaction        Transaction? @relation("receipt_transaction", fields: [transactionId], references: [id], onDelete: SetNull)
+  matchedTransaction Transaction? @relation("receipt_matched_transaction", fields: [matchedTransactionId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, fileHash])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([suggestedAccountId])
+  @@index([suggestedCategoryId])
+  @@index([matchedTransactionId])
+}
+
+/// Merchant tax ID (RFC) → name → category. userId null = global entry
+/// (unique per taxId through a partial index in SQL); user entries learn
+/// from confirmed receipts and win over the global ones.
+model MerchantTaxId {
+  id         String   @id @default(uuid())
+  userId     String?
+  taxId      String   @db.VarChar(13)
+  name       String   @db.VarChar(120)
+  categoryId String?
+  hits       Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, taxId])
+  @@index([taxId])
+  @@index([categoryId])
 }

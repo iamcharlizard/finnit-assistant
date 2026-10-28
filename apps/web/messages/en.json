@@ -1,0 +1,2238 @@
+{
+  "common": {
+    "appName": "Finnit",
+    "loading": "Loading…",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "close": "Close",
+    "done": "Done",
+    "loadMore": "Load more",
+    "connectBank": "Connect bank",
+    "comingSoon": "Coming soon"
+  },
+  "metadata": {
+    "description": "Your personal finance assistant."
+  },
+  "nav": {
+    "mainNavigation": "Main navigation",
+    "newTransaction": "New transaction",
+    "addTransaction": "Add transaction",
+    "more": "More",
+    "moreTitle": "More sections",
+    "moreDescription": "Everything that doesn't fit in the bottom bar.",
+    "sections": {
+      "home": "Home",
+      "transactions": "Transactions",
+      "recurring": "Recurring payments",
+      "accounts": "Accounts & cards",
+      "planning": "Planning",
+      "analytics": "Analytics",
+      "statements": "Statements",
+      "settings": "Settings",
+      "admin": "Administration"
+    },
+    "items": {
+      "dashboard": "Home",
+      "history": "Transactions",
+      "recurring": "Recurring payments",
+      "cards": "Accounts & cards",
+      "analytics": "Analytics",
+      "settings": "Settings",
+      "admin": "Administration",
+      "categorize": "Categorize transactions",
+      "budgets": "Budgets",
+      "debts": "Debts",
+      "goals": "Goals",
+      "simulator": "Simulator",
+      "statements": "Statements"
+    },
+    "short": {
+      "dashboard": "Home",
+      "history": "Transactions",
+      "cards": "Accounts"
+    }
+  },
+  "pageTitles": {
+    "app": "Finnit",
+    "dashboard": "Home",
+    "history": "Transactions",
+    "transaction": "Transaction",
+    "categorize": "Categorize transactions",
+    "recurring": "Recurring payments",
+    "cards": "Accounts & cards",
+    "analytics": "Analytics",
+    "statements": "Statements",
+    "settings": "Settings",
+    "banks": "Connected banks",
+    "connectBank": "Connect bank",
+    "admin": "Administration",
+    "adminUsers": "Users · Administration",
+    "adminAi": "AI · Administration",
+    "login": "Sign in",
+    "aliases": "Transaction aliases",
+    "budgets": "Budgets",
+    "debts": "Debts",
+    "goals": "Savings goals",
+    "simulator": "What-if simulator",
+    "notifications": "Notifications"
+  },
+  "newEntry": {
+    "title": "New transaction",
+    "description": "What do you want to record?",
+    "expense": "Expense",
+    "income": "Income",
+    "transfer": "Transfer",
+    "kindHints": {
+      "expense": "A purchase or a payment",
+      "income": "Money you received",
+      "transfer": "Between your accounts or a card payment"
+    },
+    "back": "Back",
+    "titles": {
+      "expense": "New expense",
+      "income": "New income",
+      "transfer": "New transfer",
+      "cardPayment": "Card payment",
+      "duplicates": "Already recorded?",
+      "upload": "Receipt"
+    },
+    "fields": {
+      "amount": "Amount",
+      "amountPlaceholder": "0.00",
+      "account": "Account",
+      "accountPlaceholder": "Choose an account",
+      "accountSearch": "Search accounts",
+      "accountEmpty": "No accounts found.",
+      "date": "Date",
+      "datePlaceholder": "Pick a date",
+      "merchantExpense": "Merchant or concept",
+      "merchantExpensePlaceholder": "E.g. Starbucks, rent, groceries",
+      "merchantIncome": "Source or concept",
+      "merchantIncomePlaceholder": "E.g. Salary, sale, refund",
+      "note": "Note (optional)",
+      "notePlaceholder": "Anything you want to remember",
+      "category": "Category (optional)",
+      "categoryPlaceholder": "Choose a category",
+      "categorySearch": "Search categories",
+      "categoryEmpty": "No categories found.",
+      "categorySuggested": "Suggested from your past transactions.",
+      "attachment": "Receipt (optional)",
+      "attachmentTitle": "Drag a photo or a PDF here, or click to choose",
+      "attachmentHint": "Image or PDF, up to 10 MB",
+      "attachmentDragActive": "Drop the file here",
+      "attachmentRemove": "Remove {name}",
+      "attachmentTooLarge": "{name} is larger than {max}.",
+      "attachmentWrongType": "{name} is not an image or a PDF.",
+      "from": "From",
+      "fromPlaceholder": "Source account",
+      "to": "To",
+      "toPlaceholder": "Destination account or card",
+      "toEmpty": "You have no other account in the same currency.",
+      "transferDescription": "Description (optional)",
+      "transferDescriptionPlaceholder": "E.g. Monthly savings",
+      "available": "Available: {amount}",
+      "owed": "You owe: {amount}"
+    },
+    "cardPaymentHint": "This is a card payment: the money leaves the source account and lowers what you owe on the card.",
+    "transferHint": "To pay a credit card, choose it as the destination.",
+    "defaultTransferDescription": "Transfer to {account}",
+    "defaultCardPaymentDescription": "Card payment {account}",
+    "noAccounts": {
+      "title": "You need an account first",
+      "description": "Connect your bank or add an account to record transactions."
+    },
+    "noTransferAccounts": "To transfer you need at least two accounts in the same currency, one of them a debit, cash, savings or e-wallet account.",
+    "submit": {
+      "expense": "Record expense",
+      "income": "Record income",
+      "transfer": "Record transfer",
+      "cardPayment": "Record payment"
+    },
+    "checking": "Checking…",
+    "saving": "Saving…",
+    "validation": {
+      "amountRequired": "Enter the amount.",
+      "amountInvalid": "Enter an amount greater than zero, e.g. 150.50.",
+      "amountTooLarge": "The amount is too large.",
+      "accountRequired": "Choose an account.",
+      "dateRequired": "Choose the date.",
+      "dateInFuture": "The date can't be later than today.",
+      "fromRequired": "Choose the account the money leaves.",
+      "toRequired": "Choose the account the money goes to.",
+      "sameAccount": "Choose two different accounts.",
+      "currencyMismatch": "Both accounts must have the same currency."
+    },
+    "errors": {
+      "network": "We couldn't reach Finnit. Check your connection.",
+      "sessionEnded": "Your session ended. Please sign in again.",
+      "insufficientBalance": "The source account doesn't have enough balance.",
+      "sameAccount": "Choose two different accounts.",
+      "currencyMismatch": "Both accounts must have the same currency.",
+      "notFound": "We can no longer find the account or the category. Close and try again.",
+      "invalid": "Check the details and try again.",
+      "createFailed": "We couldn't record the transaction. Try again.",
+      "loadFailed": "We couldn't load your accounts.",
+      "uploadNetwork": "We couldn't upload the receipt. Check your connection.",
+      "uploadTooLarge": "The file is larger than 10 MB.",
+      "uploadInvalid": "Only images (JPG, PNG, WEBP or HEIC) or PDFs are accepted.",
+      "uploadFailed": "We couldn't upload the receipt."
+    },
+    "duplicates": {
+      "description": "We found {count, plural, one {a similar transaction} other {# similar transactions}} in this account, with the same amount and nearby dates.",
+      "attachHint": "If you pick one, we'll add the receipt to it.",
+      "isThis": "This is it",
+      "createAnyway": "Record anyway",
+      "noDescription": "No description"
+    },
+    "upload": {
+      "created": "The transaction is already recorded.",
+      "uploading": "Uploading the receipt…",
+      "progress": "{percent}%",
+      "retry": "Retry",
+      "skip": "Close without receipt"
+    },
+    "toasts": {
+      "expense": "Expense recorded",
+      "income": "Income recorded",
+      "transfer": "Transfer recorded",
+      "cardPayment": "Card payment recorded",
+      "withAttachment": "With its receipt.",
+      "withoutAttachment": "Without receipt: it couldn't be uploaded.",
+      "attached": "Receipt added to the transaction you already had.",
+      "alreadyRegistered": "Done, that transaction was already recorded."
+    }
+  },
+  "errors": {
+    "network": "We couldn't reach Finnit. Check your connection.",
+    "sessionEnded": "Your session ended.",
+    "unexpected": "Something went wrong.",
+    "loadFailedTitle": "We couldn't load your data",
+    "loadFailedDescription": "Check your connection and try again in a moment."
+  },
+  "login": {
+    "welcome": "Welcome back",
+    "tagline": "Manage your money with Finnit precision.",
+    "email": "Email",
+    "emailPlaceholder": "name@example.com",
+    "password": "Password",
+    "forgotPassword": "Forgot your password?",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "remember": "Keep me signed in",
+    "submitting": "Checking…",
+    "submit": "Sign in",
+    "orContinueWith": "Or continue with",
+    "google": "Google",
+    "invitationOnly": "Finnit is invitation-only. Ask the administrator for access.",
+    "errors": {
+      "missingFields": "Please fill in every field.",
+      "unavailable": "We couldn't reach Finnit. Try again in a moment.",
+      "failed": "Something went wrong while signing in.",
+      "invalidCredentials": "Wrong email or password.",
+      "google_no_access": "Your Google account doesn't have access to Finnit. Ask the administrator for access.",
+      "google_failed": "We couldn't sign you in with Google. Try again.",
+      "google_unavailable": "Signing in with Google isn't available."
+    }
+  },
+  "finance": {
+    "uncategorized": "Uncategorized",
+    "transferTo": "Transfer to {name}",
+    "initialBalance": "Opening balance",
+    "fallbackTitle": {
+      "income": "Income",
+      "expense": "Expense",
+      "other": "Transaction"
+    },
+    "transfer": "Transfer",
+    "adjustment": "Adjustment or payment",
+    "pending": "Pending",
+    "completed": "Completed",
+    "private": "Private",
+    "withPending": "{time} · Pending",
+    "inCurrency": "{amount} in {currency}",
+    "accountTypes": {
+      "cash": "Cash",
+      "credit": "Credit",
+      "debit": "Debit",
+      "ewallet": "E-wallet",
+      "savings": "Savings"
+    },
+    "recurringKinds": {
+      "housing": "Housing",
+      "installment": "Installments",
+      "insurance": "Insurance",
+      "loan": "Loan",
+      "membership": "Membership",
+      "other": "Other",
+      "subscription": "Subscription",
+      "utility": "Utility"
+    },
+    "payment": {
+      "when": "{relative} · {date}",
+      "skipped": "Skipped · {date}",
+      "missed": "Overdue · {date}",
+      "reminder": "Reminder · {when}",
+      "approx": "≈ {amount}"
+    }
+  },
+  "monthSwitcher": {
+    "label": "Change month",
+    "previous": "Previous month",
+    "next": "Next month"
+  },
+  "dashboard": {
+    "noAccountsTitle": "You don't have any accounts yet",
+    "noAccountsDescription": "Connect your bank to see your balances here.",
+    "incomeOf": "Income · {month}",
+    "expensesOf": "Expenses · {month}",
+    "upcoming": "Upcoming payments",
+    "calendarLink": "See all",
+    "noUpcomingTitle": "No upcoming payments",
+    "noUpcomingDescription": "You have no recurring payments in the next {days} days.",
+    "recent": "Recent activity",
+    "seeAll": "See all",
+    "seeAllLabel": "See all transactions",
+    "noRecentTitle": "No transactions yet",
+    "noRecentDescription": "Transactions your bank imports will show up here.",
+    "balance": {
+      "available": "Available balance",
+      "creditDebt": "Card debt",
+      "net": "Net worth",
+      "accounts": "{count, plural, one {# account} other {# accounts}}",
+      "alsoIn": "Also: {list}"
+    },
+    "welcome": {
+      "title": "Hi, {name}. Welcome to Finnit",
+      "description": "You don't have accounts or transactions yet. Start by connecting your bank; here you'll see your balances, this month's spending and upcoming payments.",
+      "stepBank": "Connect your bank: we import your accounts, balances and transactions.",
+      "stepCategories": "See where your money goes each month, by category.",
+      "stepRecurring": "Keep your recurring payments and card dates in sight."
+    }
+  },
+  "history": {
+    "title": "History",
+    "subtitle": "Review and filter all your transactions.",
+    "topCategories": "Top categories · {month}",
+    "types": {
+      "all": "All",
+      "income": "Income",
+      "expense": "Expenses",
+      "transfer": "Transfers"
+    },
+    "searchPlaceholder": "Search by merchant or description",
+    "searchLabel": "Search transactions by merchant or description",
+    "filterByType": "Filter by type",
+    "account": "Account",
+    "allAccounts": "All accounts",
+    "category": "Category",
+    "allCategories": "All categories",
+    "from": "From",
+    "to": "To",
+    "clearFilters": "Clear filters",
+    "noResultsTitle": "No results",
+    "noResultsDescription": "No transactions match these filters.",
+    "emptyTitle": "You don't have any transactions yet",
+    "emptyDescription": "Connect your bank to import your transactions automatically.",
+    "count": "{shown} of {total, plural, one {# transaction} other {# transactions}}"
+  },
+  "cards": {
+    "count": "{count, plural, one {# card} other {# cards}}",
+    "expensesOf": "Spending · {month}",
+    "movementsOf": "{name} transactions",
+    "noMovementsTitle": "No transactions",
+    "noMovementsDescription": "This account has no transactions yet.",
+    "carouselLabel": "{group} accounts",
+    "availableCredit": "Available credit: {amount}",
+    "currentDebt": "Current debt",
+    "availableBalance": "Available balance",
+    "noLimit": "No credit limit recorded for this card.",
+    "factsTitle": "Statement and payment",
+    "noFacts": "We don't have this card's statement day or this month's statement yet. Add it from Edit.",
+    "recurringSummary": "{count, plural, one {# recurring charge} other {# recurring charges}} this period: {expected} expected, {paid} already charged.",
+    "facts": {
+      "due": "{date} · {relative}",
+      "nextStatement": "Next statement",
+      "paymentDue": "Payment due date",
+      "nextPayment": "Next payment date",
+      "statementBalanceOn": "Statement balance ({date})",
+      "statementBalance": "Statement balance",
+      "noInterest": "Payment to avoid interest",
+      "minimum": "Minimum payment",
+      "interestRate": "Annual rate",
+      "percent": "{rate}%"
+    }
+  },
+  "accounts": {
+    "title": "Accounts & cards",
+    "count": "{count, plural, one {# account} other {# accounts}}",
+    "add": "Add account",
+    "edit": "Edit",
+    "editLabel": "Edit {name}",
+    "showArchived": "Show archived ({count})",
+    "emptyTitle": "No accounts yet",
+    "emptyDescription": "Connect your bank to import your accounts and transactions, or add an account by hand.",
+    "groups": {
+      "credit": "Credit cards",
+      "debit": "Debit & cash",
+      "savings": "Savings & other"
+    },
+    "tier": {
+      "cash": "CASH",
+      "credit": "CREDIT",
+      "debit": "DEBIT",
+      "ewallet": "E-WALLET",
+      "savings": "SAVINGS"
+    },
+    "status": {
+      "linked": "Connected",
+      "manual": "Manual",
+      "archived": "Archived"
+    },
+    "tile": {
+      "owed": "You owe {amount}",
+      "available": "Balance {amount}",
+      "select": "View {name}"
+    },
+    "cardBalance": "Balance",
+    "detailTitle": "Details",
+    "manualLink": {
+      "question": "Can't find your bank?",
+      "action": "Add it manually"
+    },
+    "wizard": {
+      "title": "Add account",
+      "description": "For banks we can't connect, or if you'd rather track your transactions by hand.",
+      "stepOf": "Step {current} of {total}: {step}",
+      "steps": {
+        "type": "Type",
+        "details": "Details",
+        "money": "Balance",
+        "design": "Design"
+      },
+      "typeQuestion": "What would you like to add?",
+      "types": {
+        "debit": {
+          "title": "Debit account",
+          "hint": "Payroll, checking or debit card"
+        },
+        "credit": {
+          "title": "Credit card",
+          "hint": "With statement and payment dates"
+        },
+        "cash": {
+          "title": "Cash",
+          "hint": "The money in your wallet"
+        },
+        "savings": {
+          "title": "Savings",
+          "hint": "Savings, investment or a stash"
+        }
+      },
+      "bank": "Bank",
+      "bankOptional": "Bank (optional)",
+      "bankPlaceholder": "Choose your bank",
+      "bankSearch": "Search your bank…",
+      "bankEmpty": "We couldn't find that bank. Choose “Other”.",
+      "bankOther": "Other",
+      "bankOtherLabel": "Bank name",
+      "bankOtherPlaceholder": "E.g. Caja Popular Mexicana",
+      "nickname": "Nickname (optional)",
+      "nicknamePlaceholder": "E.g. Grocery card",
+      "nicknameHint": "Only you see it. We use it across the app instead of the name.",
+      "last4": "Last 4 digits (optional)",
+      "last4Placeholder": "1234",
+      "currency": "Currency",
+      "currencies": {
+        "MXN": "Mexican pesos (MXN)",
+        "USD": "US dollars (USD)"
+      },
+      "balance": "Current balance",
+      "balanceHint": "We record it as the opening balance: it doesn't count as this month's income.",
+      "debt": "Current debt",
+      "debtHint": "What you owe on the card today. We record it as the opening balance, not as this month's spending.",
+      "creditLimit": "Credit limit",
+      "termsTitle": "Statement and payment",
+      "statementDay": "Statement day",
+      "paymentDueDay": "Payment due day",
+      "dayPlaceholder": "1 to 31",
+      "interestRate": "Annual interest rate (optional)",
+      "interestRatePlaceholder": "E.g. 45.5",
+      "designIntro": "Choose how your card looks. You can change it anytime.",
+      "nameNote": "We'll save it as “{name}”.",
+      "back": "Back",
+      "next": "Next",
+      "create": "Create account",
+      "creating": "Creating…",
+      "doneTitle": "{name} was added",
+      "termsFailed": "The account was created, but we couldn't save its statement and payment days ({error}). Add them from Edit.",
+      "viewAccount": "View account"
+    },
+    "design": {
+      "title": "Design",
+      "modeLabel": "Card style",
+      "preset": "Default",
+      "solid": "One color",
+      "gradient": "Gradient",
+      "primary": "Main color",
+      "secondary": "Second color",
+      "preview": "Preview",
+      "textNote": "The text color adjusts itself so it's always easy to read.",
+      "swatches": "Suggested colors",
+      "custom": "Custom color",
+      "hex": "Hex code",
+      "colors": {
+        "teal": "Teal",
+        "ocean": "Ocean",
+        "indigo": "Indigo",
+        "purple": "Purple",
+        "magenta": "Magenta",
+        "red": "Red",
+        "orange": "Orange",
+        "yellow": "Yellow",
+        "green": "Green",
+        "graphite": "Graphite"
+      }
+    },
+    "editDialog": {
+      "title": "Edit account",
+      "description": "Personalize how you see {name}.",
+      "originalName": "Name in Finnit: {name}",
+      "linkedNote": "This account is imported from your bank: the bank, digits and limit come from there and can't be changed.",
+      "accountData": "Account details",
+      "readOnlyBank": "Bank: {bank}",
+      "readOnlyLast4": "Ending in: {last4}",
+      "hasTerms": "Track statement and payment",
+      "hasTermsHint": "Turn it off to remove this card's statement and payment days.",
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "archive": {
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "confirmTitle": "Archive {name}?",
+      "confirmDescription": "It will no longer show in your accounts, balances and calendar. Its transactions are kept and you can unarchive it anytime.",
+      "confirm": "Archive",
+      "working": "Saving…",
+      "archivedNote": "This account is archived: it doesn't count in your balances."
+    },
+    "errors": {
+      "required": "Choose what you'd like to add.",
+      "bankRequired": "Choose or type the bank.",
+      "last4": "Type exactly 4 digits.",
+      "amount": "Type a valid amount.",
+      "notNegative": "It can't be negative.",
+      "positive": "It must be greater than 0.",
+      "day": "Type a day from 1 to 31.",
+      "rate": "Type a rate between 0 and 200.",
+      "nicknameLength": "The nickname can be up to 40 characters.",
+      "hex": "Use the #RRGGBB format.",
+      "duplicateName": "You already have an account with that name.",
+      "notFound": "We couldn't find this account."
+    }
+  },
+  "recurring": {
+    "title": "Recurring payments",
+    "subtitle": "Your subscriptions, utilities and monthly fees: when each one is due and what you've already paid.",
+    "new": "New recurring payment",
+    "summary": {
+      "toPay": "To pay",
+      "toPayDetail": "{count, plural, =0 {Nothing pending} one {# payment} other {# payments}} · {period}",
+      "paid": "Paid",
+      "paidDetail": "{count, plural, =0 {No payments yet} one {# payment} other {# payments}} · {period}",
+      "fixedMonthly": "Fixed monthly spending",
+      "fixedMonthlyDetail": "{count, plural, =0 {No active payments} one {Average of # active payment} other {Average of # active payments}}"
+    },
+    "calendar": {
+      "views": {
+        "day": "Day",
+        "week": "Week",
+        "month": "Month"
+      },
+      "viewSwitcher": "Calendar view",
+      "today": "Today",
+      "previous": {
+        "day": "Previous day",
+        "week": "Previous week",
+        "month": "Previous month"
+      },
+      "next": {
+        "day": "Next day",
+        "week": "Next week",
+        "month": "Next month"
+      },
+      "more": "+{count} more",
+      "eventCount": "{count, plural, one {# payment} other {# payments}}",
+      "noEvents": "No payments this day."
+    },
+    "panel": {
+      "dayTitle": "Payments on {date}",
+      "periodTitle": "Payments · {period}",
+      "showPeriod": "Show whole period",
+      "emptyDay": "Nothing due this day",
+      "emptyPeriod": "Nothing due in this period"
+    },
+    "status": {
+      "upcoming": "To pay",
+      "paid": "Paid",
+      "skipped": "Skipped",
+      "missed": "Not paid",
+      "overdue": "Overdue",
+      "reminder": "Reminder"
+    },
+    "actions": {
+      "pay": "Mark paid",
+      "payLabel": "Mark {name} as paid",
+      "skip": "Skip",
+      "skipLabel": "Skip {name} this period",
+      "reopen": "Reopen",
+      "reopenLabel": "Reopen the {name} payment",
+      "edit": "Edit",
+      "editLabel": "Edit {name}",
+      "more": "More actions for {name}",
+      "pause": "Pause",
+      "resume": "Resume",
+      "delete": "Delete"
+    },
+    "toasts": {
+      "pay": "{name} marked as paid",
+      "skip": "{name} skipped this period",
+      "reopen": "{name} is pending again",
+      "created": "{name} added to your recurring payments",
+      "updated": "{name} changes saved",
+      "noChanges": "Nothing changed",
+      "paused": "{name} is paused",
+      "resumed": "{name} is active again",
+      "deleted": "{name} deleted",
+      "accepted": "{name} added to your recurring payments",
+      "dismissed": "Suggestion {name} dismissed"
+    },
+    "cardDates": {
+      "statement": "{name} statement",
+      "paymentDue": "{name} payment due"
+    },
+    "list": {
+      "title": "My recurring payments",
+      "count": "{count, plural, one {# recurring payment} other {# recurring payments}}",
+      "filterKind": "Filter by kind",
+      "filterStatus": "Filter by status",
+      "allKinds": "All kinds",
+      "status": {
+        "active": "Active",
+        "paused": "Paused",
+        "all": "All"
+      },
+      "perMonth": "≈ {amount} a month",
+      "next": "Next: {when}",
+      "paused": "Paused",
+      "installments": "{paid} of {total} payments",
+      "emptyTitle": "You don't have recurring payments yet",
+      "emptyDescription": "Add your subscriptions, utilities and monthly fees to know when each one is due.",
+      "emptyFiltered": "No payments match the filters"
+    },
+    "frequencies": {
+      "weekly": "Weekly",
+      "biweekly": "Every 14 days",
+      "semimonthly": "Twice a month (15th and month end)",
+      "monthly": "Monthly",
+      "bimonthly": "Every 2 months",
+      "quarterly": "Quarterly",
+      "semiannual": "Every 6 months",
+      "yearly": "Yearly"
+    },
+    "frequencyShort": {
+      "weekly": "Weekly",
+      "biweekly": "Every 14 days",
+      "semimonthly": "Twice a month",
+      "monthly": "Monthly",
+      "bimonthly": "Every 2 months",
+      "quarterly": "Quarterly",
+      "semiannual": "Every 6 months",
+      "yearly": "Yearly"
+    },
+    "frequencyEvery": {
+      "weekly": "Every {interval} weeks",
+      "biweekly": "Every {interval} fortnights",
+      "semimonthly": "Every {interval} half-months",
+      "monthly": "Every {interval} months",
+      "bimonthly": "Every {interval} two-month periods",
+      "quarterly": "Every {interval} quarters",
+      "semiannual": "Every {interval} half-years",
+      "yearly": "Every {interval} years"
+    },
+    "trackingModes": {
+      "automatic": {
+        "label": "Automatic",
+        "help": "Charged by itself (direct debit or your card). We mark it paid when we find it in your bank or statement."
+      },
+      "manual": {
+        "label": "Manual",
+        "help": "You pay it and confirm it here. We remind you before it's due."
+      },
+      "reminder": {
+        "label": "Reminder only",
+        "help": "We only remind you when it's due; we don't track whether it was paid."
+      }
+    },
+    "form": {
+      "createTitle": "New recurring payment",
+      "createDescription": "Add a payment that repeats to see it on your calendar.",
+      "editTitle": "Edit recurring payment",
+      "editDescription": "Change the details of {name}.",
+      "suggestionTitle": "Add suggested payment",
+      "suggestionDescription": "Review what we found in your transactions and adjust anything you need.",
+      "suggestionNote": "Found in your {merchant} transactions. Once added, those transactions count as payments already made.",
+      "name": "Name",
+      "namePlaceholder": "E.g. Netflix",
+      "kind": "Kind",
+      "trackingMode": "How do we track it?",
+      "frequency": "Frequency",
+      "interval": "Every",
+      "intervalHint": "1 = every period; 2 = every other one.",
+      "startDate": "First payment",
+      "startDateHint": "Later ones keep this day of the month.",
+      "endDate": "Last payment (optional)",
+      "endDatePlaceholder": "No end date",
+      "clearEndDate": "Remove end date",
+      "datePlaceholder": "Pick a date",
+      "amount": "Amount",
+      "currency": "Currency",
+      "currencyFixed": "The currency can't be changed after creating it.",
+      "variable": "The amount varies",
+      "variableHint": "For utilities like power or water: we use the amount as an estimate.",
+      "installmentsTotal": "Number of payments",
+      "installmentsPaid": "Payments already made",
+      "account": "Account or card",
+      "accountPlaceholder": "No account",
+      "accountSearch": "Search accounts",
+      "category": "Category",
+      "categoryPlaceholder": "No category",
+      "categorySearch": "Search categories",
+      "noResults": "No results",
+      "merchantPattern": "Text on your bank",
+      "merchantPatternPlaceholder": "E.g. NETFLIX",
+      "merchantPatternHint": "Text that shows up on the bank or statement line, e.g. NETFLIX. We use it to recognize the payment.",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional",
+      "fixErrors": "Check the highlighted fields.",
+      "create": "Create payment",
+      "save": "Save",
+      "accept": "Add",
+      "saving": "Saving…"
+    },
+    "validation": {
+      "nameRequired": "Enter a name.",
+      "nameTooLong": "100 characters at most.",
+      "amountRequired": "Enter the amount.",
+      "amountInvalid": "Enter an amount greater than zero.",
+      "amountTooLarge": "The amount is too large.",
+      "intervalInvalid": "Enter a number from 1 to 12.",
+      "startDateRequired": "Pick the first payment's date.",
+      "endBeforeStart": "Must be on or after the first payment.",
+      "installmentsRequired": "Enter how many payments there are.",
+      "installmentsInvalid": "Enter a whole number from 1 to 999.",
+      "installmentsPaidInvalid": "Enter a whole number.",
+      "installmentsPaidTooMany": "Can't be more than the number of payments.",
+      "patternTooLong": "100 characters at most.",
+      "notesTooLong": "500 characters at most."
+    },
+    "delete": {
+      "title": "Delete {name}?",
+      "description": "The recurring payment and its payment history are deleted. Your transactions are kept.",
+      "confirm": "Delete"
+    },
+    "errors": {
+      "duplicateName": "You already have a recurring payment with that name.",
+      "amount": "The amount must be greater than zero.",
+      "interval": "The repetition must be a number from 1 to 12.",
+      "endDate": "The last payment must be on or after the first one.",
+      "installments": "Enter how many payments there are.",
+      "installmentsPaid": "Payments made can't be more than the total.",
+      "account": "We couldn't find that account.",
+      "category": "We couldn't find that category.",
+      "notFound": "This recurring payment no longer exists.",
+      "paymentNotFound": "This payment no longer exists.",
+      "alreadyPaid": "This payment was already marked as paid.",
+      "reopenFirst": "Reopen the payment before skipping it.",
+      "suggestionGone": "This suggestion is no longer available."
+    },
+    "suggestions": {
+      "title": "Suggested",
+      "subtitle": "Payments that repeat in your transactions and you haven't added yet.",
+      "loading": "Looking for repeating payments in your transactions…",
+      "empty": "We didn't find new recurring payments in your transactions.",
+      "loadError": "We couldn't load the suggestions.",
+      "retry": "Try again",
+      "add": "Add",
+      "addLabel": "Add {name}",
+      "dismiss": "Dismiss",
+      "dismissLabel": "Dismiss {name}",
+      "variable": "Variable amount",
+      "nextDue": "next {date}",
+      "ai": "Classified with AI",
+      "confidence": "Confidence {percent}%",
+      "evidence": "{count, plural, one {Seen # time} other {Seen # times}}"
+    }
+  },
+  "budgets": {
+    "title": "Budgets",
+    "subtitle": "Set a limit for your month and for each category, and see how much you have spent.",
+    "edit": "Edit",
+    "deletedCategory": "Deleted category",
+    "delete": {
+      "action": "Delete",
+      "title": "Delete the {month} budget?",
+      "description": "The month's limit and category caps are removed. Your transactions don't change.",
+      "confirm": "Delete budget"
+    },
+    "toasts": {
+      "created": "{month} budget created",
+      "updated": "{month} budget updated",
+      "copied": "Your budget was copied to {month}",
+      "deleted": "{month} budget deleted"
+    },
+    "overview": {
+      "title": "Spent this month",
+      "of": "of {amount}",
+      "barLabel": "You have used {percent}% of your budget",
+      "over": "You went over by {amount}",
+      "left": "{amount} left",
+      "used": "{percent}% used",
+      "explicitTotal": "Includes all your spending this month. Your category caps add up to {amount}.",
+      "capsTotal": "Includes all your spending this month. The limit is the sum of your category caps."
+    },
+    "caps": {
+      "title": "Category caps",
+      "empty": "This budget has no category caps. Edit it to add some.",
+      "spentOf": "{spent} of {cap}",
+      "barLabel": "{category}: {percent}% of the cap",
+      "over": "Over by {amount}",
+      "reached": "Cap reached",
+      "left": "{amount} left"
+    },
+    "alerts": {
+      "title": "Alerts",
+      "over": "You went over the {category} cap by {amount}.",
+      "reached": "You reached the {category} cap.",
+      "warning": "You have used {percent}% of the {category} cap; {amount} left."
+    },
+    "outside": {
+      "title": "Spending no cap counts",
+      "uncategorized": "{amount} without a category.",
+      "categorize": "Categorize",
+      "uncapped": "{amount} in categories without a cap."
+    },
+    "empty": {
+      "title": "You don't have a budget for {month} yet",
+      "description": "Set how much you want to spend this month and, if you like, a cap for each category. We let you know at 80% and 100%.",
+      "create": "Create budget",
+      "copy": "Copy from {month}"
+    },
+    "suggestions": {
+      "title": "Suggestion based on your spending",
+      "description": "Your average per category over {count, plural, one {the last month} other {the last # months}}, rounded up.",
+      "average": "Average: {amount}",
+      "total": "Suggested total: {amount}",
+      "use": "Use suggestion"
+    },
+    "form": {
+      "createTitle": "New budget for {month}",
+      "editTitle": "{month} budget",
+      "description": "A limit for the month, caps per category, or both.",
+      "total": "Monthly limit (optional)",
+      "totalPlaceholder": "e.g. 20000",
+      "totalHint": "Leave it empty to use the sum of the caps as your limit.",
+      "caps": "Category caps",
+      "noCaps": "No category caps.",
+      "addCap": "Add category",
+      "capsSum": "Caps total: {amount}",
+      "capsHint": "A category's cap includes its subcategories.",
+      "totalBelowCaps": "Your monthly limit is below the sum of your caps ({amount}). You can save it like this, but check it is what you want.",
+      "fixErrors": "Check the highlighted fields.",
+      "saving": "Saving…",
+      "save": "Save changes",
+      "create": "Create budget",
+      "category": "Category",
+      "categoryPlaceholder": "Choose a category",
+      "categorySearch": "Search categories…",
+      "noResults": "No results.",
+      "capAmount": "Cap for {category}",
+      "capPlaceholder": "Cap",
+      "remove": "Remove {category}",
+      "newCap": "new category"
+    },
+    "validation": {
+      "empty": "Add a monthly limit or at least one category cap.",
+      "totalInvalid": "Enter an amount greater than 0.",
+      "totalTooLarge": "The amount is too large.",
+      "categoryRequired": "Choose a category.",
+      "categoryRepeated": "This category already has a cap.",
+      "amountRequired": "Enter the cap.",
+      "amountInvalid": "Enter an amount greater than 0.",
+      "amountTooLarge": "The amount is too large."
+    },
+    "errors": {
+      "exists": "There is already a budget for that month. Reload the page.",
+      "templateGone": "The budget you wanted to copy no longer exists.",
+      "notFound": "This budget no longer exists. Reload the page.",
+      "repeatedCategory": "A category is repeated in the caps.",
+      "category": "One of the categories no longer exists."
+    },
+    "card": {
+      "title": "{month} budget",
+      "link": "See budget",
+      "of": "of {amount}",
+      "barLabel": "You have used {percent}% of your budget",
+      "over": "You went over by {amount}",
+      "left": "{percent}% used · {amount} left"
+    }
+  },
+  "debts": {
+    "title": "Debts",
+    "subtitle": "What you owe, your payments and the plan to pay it off.",
+    "new": "New debt",
+    "kinds": {
+      "loan": "Loan",
+      "card": "Card",
+      "other": "Other"
+    },
+    "empty": {
+      "title": "You have no debts registered",
+      "description": "Add your loans and cards to see how much you owe, record your payments and build a plan to get out of debt."
+    },
+    "summary": {
+      "owed": "Total owed",
+      "owedDetail": "{count, plural, =0 {No active debts} one {# active debt} other {# active debts}}{paidOff, plural, =0 {} one { · # paid off} other { · # paid off}}",
+      "minimums": "Monthly minimum payments",
+      "minimumsDetail": "Sum of the minimums of your active debts",
+      "rate": "Average rate",
+      "rateUnknown": "Add your debts' rates to calculate it",
+      "rateMissing": "Weighted by balance; {count, plural, one {# debt has no rate} other {# debts have no rate}}",
+      "rateDetail": "Annual, weighted by what you owe on each"
+    },
+    "list": {
+      "title": "Your debts"
+    },
+    "card": {
+      "rate": "{rate} a year",
+      "noRate": "No rate",
+      "minPayment": "Minimum {amount}",
+      "account": "Account: {account}",
+      "paidOff": "Paid off",
+      "overdue": "Overdue",
+      "more": "More actions for {name}",
+      "pay": "Record payment",
+      "edit": "Edit",
+      "delete": "Delete",
+      "remaining": "Left to pay",
+      "of": "of {amount}",
+      "paidLabel": "Paid: {percent}%",
+      "paid": "You have paid {amount} ({percent}%)",
+      "due": "Due {date}"
+    },
+    "delete": {
+      "title": "Delete {name}?",
+      "description": "The debt is removed. A debt with recorded payments can't be deleted.",
+      "confirm": "Delete debt"
+    },
+    "toasts": {
+      "created": "{name} added",
+      "updated": "{name} updated",
+      "deleted": "{name} deleted",
+      "paid": "Payment to {name} recorded",
+      "noChanges": "Nothing changed"
+    },
+    "form": {
+      "createTitle": "New debt",
+      "editTitle": "Edit debt",
+      "createDescription": "A loan, a card or any money you owe.",
+      "editDescription": "Change the details of {name}.",
+      "name": "Name",
+      "namePlaceholder": "e.g. Car loan",
+      "kind": "Type",
+      "principal": "Debt amount",
+      "principalHint": "What you borrowed, or what you owed when you added it. Your payments are subtracted from it.",
+      "rate": "Annual interest rate (%)",
+      "ratePlaceholder": "e.g. 36",
+      "minPayment": "Monthly minimum payment",
+      "startDate": "Start date",
+      "dueDate": "Due date",
+      "datePlaceholder": "Choose a date",
+      "clearDate": "Remove date",
+      "account": "Linked account (optional)",
+      "accountPlaceholder": "No account",
+      "accountSearch": "Search accounts…",
+      "noResults": "No results.",
+      "accountHint": "The account this debt is paid from or belongs to.",
+      "accountCardHint": "It is a credit card: your payments will be recorded as transfers to this card.",
+      "fixErrors": "Check the highlighted fields.",
+      "saving": "Saving…",
+      "save": "Save changes",
+      "create": "Add debt"
+    },
+    "validation": {
+      "nameRequired": "Enter a name.",
+      "nameTooLong": "The name is too long.",
+      "principalRequired": "Enter the amount.",
+      "principalInvalid": "Enter an amount greater than 0.",
+      "principalTooLarge": "The amount is too large.",
+      "principalBelowPaid": "It can't be less than what you have paid.",
+      "rateInvalid": "Enter a rate between 0 and 100.",
+      "minPaymentInvalid": "Enter an amount greater than 0.",
+      "dueBeforeStart": "It must be after the start date."
+    },
+    "payment": {
+      "title": "Record payment",
+      "description": "{name}: {amount} left to pay.",
+      "transferNote": "It will be recorded as a transfer from the account you choose to your {card} card.",
+      "expenseNote": "It will be recorded as an expense from the account you choose.",
+      "amount": "Amount",
+      "date": "Payment date",
+      "datePlaceholder": "Choose a date",
+      "account": "Which account did it come from?",
+      "accountPlaceholder": "Choose an account",
+      "accountSearch": "Search accounts…",
+      "noResults": "No results.",
+      "noSources": "You have no open peso accounts to record the payment from.",
+      "noSourcesTransfer": "You need a debit, cash or savings account in the card's currency to record the payment.",
+      "category": "Category (optional)",
+      "categoryPlaceholder": "No category",
+      "categorySearch": "Search categories…",
+      "saving": "Recording…",
+      "submit": "Record payment",
+      "movementDescription": "Payment to {name}"
+    },
+    "paymentValidation": {
+      "amountRequired": "Enter the amount.",
+      "amountInvalid": "Enter an amount greater than 0.",
+      "amountTooMuch": "It is more than what is left to pay.",
+      "dateRequired": "Choose the date.",
+      "dateInFuture": "The date can't be in the future.",
+      "accountRequired": "Choose the account."
+    },
+    "plan": {
+      "title": "Plan to get out of debt",
+      "subtitle": "Pay the minimum on all of them and put the extra money on one at a time. When one is paid off, its payment moves to the next.",
+      "extra": "Extra payment per month",
+      "extraHint": "What you can pay each month on top of the minimums.",
+      "extraInvalid": "Enter a valid amount.",
+      "error": "We couldn't calculate the plan. Try again.",
+      "assumptions": "Estimate with your current balances and rates, with no new charges. Debts without a rate are calculated without interest.",
+      "never": "Never",
+      "months": "{count, plural, =0 {Already paid off} one {# month} other {# months}}",
+      "recommended": "Best for you",
+      "debtFree": "Debt-free in",
+      "interest": "Total interest",
+      "order": "Payment order",
+      "stepDetail": "{months} · interest {interest}",
+      "strategies": {
+        "avalanche": {
+          "name": "Avalanche",
+          "description": "Highest rate first: you pay less interest."
+        },
+        "snowball": {
+          "name": "Snowball",
+          "description": "Smallest balance first: you pay off debts sooner."
+        }
+      },
+      "verdict": {
+        "never": "With these payments some debt is never paid off: its interest is more than what you pay. Raise your extra payment or check the minimums.",
+        "saves": "{strategy} saves you {amount} in interest.",
+        "faster": "{strategy} gets you debt-free {count, plural, one {# month} other {# months}} sooner.",
+        "same": "With your debts, both strategies give the same result."
+      }
+    },
+    "errors": {
+      "hasPayments": "A debt with recorded payments can't be deleted.",
+      "duplicateName": "You already have a debt with that name.",
+      "overpayment": "The payment is more than what is left to pay.",
+      "insufficientBalance": "The account doesn't have enough balance for this payment.",
+      "currency": "The account and the card are in different currencies.",
+      "account": "The linked account no longer exists.",
+      "principalBelowPaid": "The amount can't be less than what you have paid.",
+      "notFound": "This debt no longer exists. Reload the page.",
+      "paymentUndone": "We couldn't record the payment: {reason} No transaction was saved.",
+      "paymentNotLinked": "We saved the transaction, but couldn't link it to the debt: {reason}"
+    }
+  },
+  "analytics": {
+    "emptyTitle": "No data to analyze yet",
+    "emptyDescription": "Connect your bank: with your transactions you'll see your spending by category, your income and expense trend and a projection of your balance.",
+    "monthSpending": "Spending this month",
+    "savingsRate": "Savings rate",
+    "noIncome": "No income recorded this month.",
+    "byCategory": "Spending by category",
+    "cashFlow": "Cash flow",
+    "ratings": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "tight": "Tight",
+      "negative": "Negative"
+    },
+    "savedCaption": "You saved {saved} of {income} in income ({rate}%).",
+    "overspentCaption": "You spent {amount} more than you earned.",
+    "noSpendingTitle": "No spending this month",
+    "noSpendingDescription": "Once you record expenses you'll see here which categories your money goes to.",
+    "categoryShare": "{label} · {percent}%",
+    "projection": {
+      "title": "Balance projection",
+      "description": "With your average monthly income and spending, by {month} you'd have <strong>{balance}</strong>."
+    },
+    "trend": {
+      "title": "Income vs expenses",
+      "income": "Income",
+      "expenses": "Expenses",
+      "monthLabel": "{month}: income {income}, expenses {expenses}",
+      "incomeOf": "Income {amount}",
+      "expensesOf": "Expenses {amount}"
+    }
+  },
+  "settings": {
+    "banks": "Banks",
+    "connectedBanks": "Connected banks",
+    "connectedBanksDescription": "Import your transactions automatically",
+    "admin": "Administration",
+    "adminDescription": "Users with access and AI models",
+    "security": "Security",
+    "biometrics": "Biometrics",
+    "changePin": "Change PIN",
+    "appearance": "Appearance",
+    "darkMode": "Dark mode",
+    "font": "Font",
+    "language": "Language",
+    "languageError": "We couldn't save the language to your account. Try again.",
+    "languages": {
+      "es": "Español",
+      "en": "English"
+    },
+    "notifications": "Notifications and alerts",
+    "transactions": "Transactions",
+    "transactionsDescription": "Instant alert",
+    "weeklySummary": "Weekly summary",
+    "weeklySummaryDescription": "Email",
+    "signOut": "Sign out",
+    "version": "Finnit v1.0.0 • Built for the future",
+    "movements": "Transactions",
+    "aliases": "Transaction aliases",
+    "aliasesDescription": "Rename transactions or make them private",
+    "categorize": "Categorize transactions",
+    "categorizeDescription": "Give many a category at once"
+  },
+  "banks": {
+    "title": "Connected banks",
+    "connect": "Connect bank",
+    "empty": "You haven't connected a bank yet. Connect one to import your transactions automatically.",
+    "fallbackName": "Bank",
+    "linkedSummary": "{linked} of {total, plural, one {# account importing} other {# accounts importing}}",
+    "lastSync": "Last sync: {date}",
+    "active": "Active",
+    "needsAttention": "Needs attention",
+    "imported": "{count, plural, one {We imported # new transaction.} other {We imported # new transactions.}}",
+    "upToDate": "All up to date. We asked your bank for new data; it will arrive with the next sync.",
+    "syncing": "Syncing…",
+    "syncNow": "Sync now"
+  },
+  "bankConnect": {
+    "consent": {
+      "title": "Before connecting your bank",
+      "credentials": "Your bank username and password go straight from your device to Syncfy, our bank connection provider. Finnit never sees or stores them.",
+      "data": "Finnit only stores the accounts, balances and transactions you choose to import.",
+      "disconnect": "You can disconnect your bank anytime from Settings.",
+      "agreement": "By continuing you allow Syncfy to access your online banking information to sync it with Finnit.",
+      "accept": "Accept and continue"
+    },
+    "picker": {
+      "title": "Choose your bank",
+      "search": "Search bank",
+      "searchPlaceholder": "e.g. BancaNet, BBVA, Banorte",
+      "noResults": "We found no banks matching “{query}”.",
+      "widgetHint": "Connects through the Syncfy assistant"
+    },
+    "credentials": {
+      "hint": "Use the details you sign in to your online banking with.",
+      "changeBank": "Change bank",
+      "connect": "Connect"
+    },
+    "connectingHint": "This can take up to a minute. Don't close this page.",
+    "done": {
+      "title": "Done, we connected {bank}",
+      "yourBank": "your bank",
+      "linked": "{count, plural, one {We imported # account.} other {We imported # accounts.}} We'll sync your transactions twice a day.",
+      "noneLinked": "We didn't import any account. You can link them later from Connected banks.",
+      "connectedBanks": "Connected banks",
+      "seeMovements": "See transactions"
+    },
+    "error": {
+      "title": "We couldn't connect your bank",
+      "retry": "Try again"
+    },
+    "link": {
+      "title": "Which accounts do you want to import?",
+      "found": "We found {count, plural, one {# account} other {# accounts}} at {bank}. We'll import their transactions from the last 90 days and keep them up to date.",
+      "accountFallback": "Account",
+      "alreadyLinked": "Already linked",
+      "import": "Import transactions",
+      "finish": "Finish",
+      "create": "Create a Finnit account",
+      "linkExisting": "Link to an existing account",
+      "skip": "Don't import"
+    },
+    "accountTypes": {
+      "creditCard": "Credit card",
+      "checking": "Checking account",
+      "savings": "Savings",
+      "investment": "Investment",
+      "loan": "Loan"
+    },
+    "field": {
+      "select": "Select…",
+      "show": "Show",
+      "hide": "Hide"
+    },
+    "twofa": {
+      "title": "{bank} verification",
+      "hint": "Your bank needs one more detail to continue.",
+      "alreadyDone": "I did it",
+      "continue": "Continue",
+      "option": "Option {value}",
+      "qr": "Your bank's QR code",
+      "captcha": "Verification image"
+    },
+    "widget": {
+      "hint": "This bank connects through the Syncfy assistant. Your details go straight to Syncfy; Finnit doesn't see them.",
+      "failed": "We couldn't open the Syncfy assistant. Try again later.",
+      "back": "Choose another bank"
+    }
+  },
+  "admin": {
+    "title": "Administration",
+    "tabsLabel": "Administration sections",
+    "tabs": {
+      "users": "Users",
+      "ai": "AI"
+    },
+    "users": {
+      "loading": "Loading users…",
+      "count": "{count, plural, one {# user} other {# users}}",
+      "add": "Add user",
+      "noMatch": "No one matches the search.",
+      "empty": "No users yet.",
+      "search": "Search by name or email",
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "activePlural": "Active",
+      "disabledPlural": "Disabled",
+      "role": "Role",
+      "allRoles": "All roles",
+      "adminsPlural": "Administrators",
+      "usersPlural": "Users",
+      "columns": {
+        "user": "User",
+        "role": "Role",
+        "status": "Status",
+        "access": "Access",
+        "lastSignIn": "Last sign-in",
+        "addedBy": "Added by",
+        "actions": "Actions"
+      },
+      "lastSignInLine": "Last sign-in: {when}",
+      "addedByLine": "Added by {name}",
+      "roles": {
+        "master": "Master",
+        "admin": "Administrator",
+        "user": "User"
+      },
+      "statuses": {
+        "active": "Active",
+        "disabled": "Disabled"
+      },
+      "access": {
+        "googleNotYet": "Google (hasn't signed in yet)",
+        "password": "Password",
+        "google": "Google"
+      },
+      "lastSignIn": {
+        "never": "Never",
+        "justNow": "Just now",
+        "minutes": "{count} min ago",
+        "hours": "{count} h ago",
+        "yesterday": "Yesterday",
+        "days": "{count} days ago"
+      },
+      "actions": {
+        "menuLabel": "Actions for {name}",
+        "setPassword": "Set password",
+        "removePassword": "Remove password",
+        "unlinkGoogle": "Unlink Google",
+        "makeAdmin": "Make administrator",
+        "removeAdmin": "Remove administrator",
+        "enable": "Reactivate",
+        "disable": "Deactivate"
+      },
+      "confirm": {
+        "removePassword": {
+          "title": "Remove {name}'s password?",
+          "description": "They'll only be able to sign in with Google, and their open sessions will end."
+        },
+        "unlinkGoogle": {
+          "title": "Unlink Google from {name}?",
+          "description": "Their open sessions will end. They can link a Google account for {email} again by signing in with it."
+        },
+        "disable": {
+          "title": "Deactivate {name}?",
+          "description": "They won't be able to sign in to Finnit and their open sessions will end. Their data is kept and you can reactivate them later."
+        },
+        "enable": {
+          "title": "Reactivate {name}?",
+          "description": "They'll be able to sign in to Finnit again."
+        },
+        "makeAdmin": {
+          "title": "Make {name} an administrator?",
+          "description": "They'll be able to add users, change their access and configure AI."
+        },
+        "removeAdmin": {
+          "title": "Remove {name} as administrator?",
+          "description": "They'll keep using Finnit, without access to Administration."
+        }
+      },
+      "create": {
+        "title": "Add user",
+        "description": "Finnit is invitation-only: only the people you add here can sign in.",
+        "name": "Name",
+        "namePlaceholder": "Ana López",
+        "email": "Email",
+        "emailPlaceholder": "name@example.com",
+        "password": "Password (optional)",
+        "withPassword": "They can sign in with this password or with the Google account for this email.",
+        "withoutPassword": "They'll only be able to sign in with Google using this email.",
+        "role": "Role",
+        "adding": "Adding…",
+        "createdTitle": "You added {name}",
+        "createdWithPassword": "They can now sign in with {email} and the password you set, or with the Google account for that email. Share the password through a safe channel (in person or a password manager), not by email or chat.",
+        "createdWithGoogle": "They can now sign in with the Google account for {email}.",
+        "nameRequired": "Enter their name.",
+        "emailInvalid": "Enter a valid email."
+      },
+      "setPassword": {
+        "title": "Set password",
+        "selfDescription": "Your password will change and your open sessions will end, including this one.",
+        "description": "Replaces the password of {name} ({email}) and ends their open sessions.",
+        "newPassword": "New password",
+        "saving": "Saving…",
+        "savedTitle": "Password set",
+        "savedDescription": "{name} can now sign in with the new password. Share it through a safe channel (in person or a password manager), not by email or chat."
+      },
+      "passwordField": {
+        "show": "Show password",
+        "hide": "Hide password",
+        "minLength": "At least {min} characters",
+        "minLengthError": "At least {min} characters.",
+        "generate": "Generate",
+        "copy": "Copy",
+        "copied": "Copied"
+      }
+    },
+    "ai": {
+      "featuresTitle": "AI features",
+      "featuresDescription": "What Finnit does with AI, and with which model.",
+      "modelsTitle": "Models",
+      "modelsDescription": "The default one is tried first, then the rest in order.",
+      "addModel": "Add model",
+      "noModels": "There are no models in the catalog yet.",
+      "deleteTitle": "Delete {label}?",
+      "deleteDescription": "It leaves the catalog. Features that used it go back to the default model.",
+      "delete": "Delete",
+      "features": {
+        "statement_parsing": {
+          "label": "Read PDF statements",
+          "description": "For banks without their own reader (all but Banamex today), the PDF is sent to the AI model."
+        },
+        "transaction_categorization": {
+          "label": "Categorize transactions",
+          "description": "Suggests a category for transactions that arrive without one."
+        },
+        "recurring_classification": {
+          "label": "Classify suggested recurring payments",
+          "description": "Reviews repeating charges and proposes which ones are recurring payments."
+        },
+        "receipt_parsing": {
+          "label": "Read receipts (OCR fallback)",
+          "description": "When OCR can't read a receipt photo, it is sent to the AI model."
+        },
+        "translation": {
+          "label": "Translate categories",
+          "description": "Translates category names into each user's language."
+        }
+      },
+      "feature": {
+        "model": "Model",
+        "defaultModel": "Catalog default",
+        "inactive": "{label} (inactive)",
+        "fallbacks": "Use other models if it fails",
+        "unusable": "No model available: activate one with its key configured.",
+        "updated": "Updated on {date}",
+        "updatedBy": "Updated on {date} by {name}"
+      },
+      "model": {
+        "default": "Default",
+        "pdf": "PDF",
+        "noKey": "No key",
+        "order": "Order",
+        "active": "Active",
+        "activateFirst": "Activate it first",
+        "makeDefault": "Make default",
+        "deleteLabel": "Delete {label}"
+      },
+      "create": {
+        "title": "Add model",
+        "description": "Use the model's exact name at the provider. Its key is configured on the API server.",
+        "provider": "Provider",
+        "model": "Model",
+        "label": "Display name",
+        "readsPdf": "Reads PDF files",
+        "active": "Active",
+        "adding": "Adding…"
+      }
+    },
+    "errors": {
+      "emailExists": "A user with this email already exists.",
+      "masterStaysAdmin": "The master administrator is always an administrator.",
+      "masterCannotBeDisabled": "The master administrator can't be deactivated.",
+      "cannotDisableSelf": "You can't deactivate your own account.",
+      "masterOwnAccount": "Only the master administrator can change their account.",
+      "onlyMaster": "Only the master administrator can do this.",
+      "noGoogleLinked": "They haven't signed in with Google yet: without a password they couldn't sign in.",
+      "modelExists": "That model is already in the catalog.",
+      "defaultMustBeActive": "The default model must be active.",
+      "pdfModelRequired": "Choose an active model that reads PDF.",
+      "modelFieldsRequired": "Enter the model and its name.",
+      "notFound": "It no longer exists. Reload the page.",
+      "forbidden": "You don't have permission to do this.",
+      "conflict": "It already exists.",
+      "invalid": "Check the details and try again.",
+      "generic": "Something went wrong. Try again."
+    }
+  },
+  "ui": {
+    "notifications": "Notifications",
+    "notificationsUnread": "Notifications, {count, plural, one {# new} other {# new}}",
+    "userProfile": "User profile",
+    "creditLimit": {
+      "title": "Credit limit",
+      "of": "of {total}",
+      "used": "{percent}% of the limit used"
+    },
+    "trend": {
+      "down": "Down",
+      "up": "Up"
+    },
+    "bankCard": {
+      "holder": "Holder",
+      "expires": "Expires",
+      "virtualBalance": "Virtual balance"
+    },
+    "profile": {
+      "edit": "Edit profile",
+      "premium": "Premium",
+      "verified": "Verified account",
+      "avatar": "User avatar: {name}"
+    }
+  },
+  "categorize": {
+    "title": "Categorize transactions",
+    "subtitle": "Review your transactions and give them a category, one at a time or many at once.",
+    "aliasesLink": "Transaction aliases",
+    "filters": {
+      "account": "Account",
+      "allAccounts": "All accounts",
+      "show": "Show",
+      "shows": {
+        "uncategorized": "Uncategorized",
+        "suggested": "With suggestion",
+        "all": "All"
+      },
+      "allTime": "All time",
+      "byMonth": "By month",
+      "period": "Period"
+    },
+    "count": "{shown} of {total, plural, one {# transaction} other {# transactions}}",
+    "selectAll": "Select all",
+    "selectRow": "Select {name}",
+    "selected": "{count, plural, one {# selected} other {# selected}}",
+    "clearSelection": "Clear selection",
+    "actionsLabel": "Actions for the selected transactions",
+    "moveTo": "Move to…",
+    "searchCategory": "Search category…",
+    "noCategories": "No results.",
+    "apply": "Move",
+    "applying": "Moving…",
+    "remember": "Remember for this merchant",
+    "notCategorizable": "No category (transfer or adjustment)",
+    "suggest": "Suggest with AI",
+    "suggesting": "Asking for suggestions…",
+    "suggestHint": "Only merchant, description, amount and your categories are sent.",
+    "suggestion": "Suggestion: {category}",
+    "acceptSuggestion": "Accept suggestion {category}",
+    "rejectSuggestion": "Reject suggestion {category}",
+    "acceptAll": "Accept all ({count})",
+    "rejectAll": "Reject all ({count})",
+    "aiUnavailable": "AI isn't available right now; you can categorize manually.",
+    "dismiss": "Dismiss notice",
+    "tooMany": "Only the first {max} will be sent.",
+    "sources": {
+      "manual": "Manual",
+      "rule": "By rule",
+      "ai": "AI",
+      "bank": "Bank"
+    },
+    "rowMenu": "More actions for {name}",
+    "rename": "Rename",
+    "renameDialog": {
+      "title": "Rename transaction",
+      "description": "Only changes how this transaction shows. The bank's original text is kept.",
+      "original": "Original: {text}",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "E.g. Dinner with Ana",
+      "private": "Private",
+      "privateHint": "Lists and searches show only this name; the original only in the detail.",
+      "remove": "Remove name",
+      "save": "Save",
+      "saving": "Saving…",
+      "required": "Enter a name.",
+      "tooLong": "Up to {max} characters."
+    },
+    "toasts": {
+      "categorized": "{count, plural, one {# transaction categorized} other {# transactions categorized}}",
+      "accepted": "{count, plural, one {# suggestion accepted} other {# suggestions accepted}}",
+      "rejected": "{count, plural, one {# suggestion rejected} other {# suggestions rejected}}",
+      "suggested": "{count, plural, one {# new suggestion} other {# new suggestions}}",
+      "renamed": "Name saved",
+      "aliasRemoved": "Name removed"
+    },
+    "empty": {
+      "uncategorizedTitle": "Everything is categorized 🎉",
+      "uncategorizedDescription": "There are no uncategorized transactions in this period.",
+      "suggestedTitle": "No pending suggestions",
+      "suggestedDescription": "Select uncategorized transactions and use “Suggest with AI”.",
+      "allTitle": "No transactions",
+      "allDescription": "There are no transactions in this period.",
+      "seeAllTime": "See all time"
+    },
+    "errors": {
+      "tooMany": "Too many transactions at once.",
+      "category": "That category no longer exists.",
+      "notFound": "Some transactions no longer exist. Reload the page."
+    }
+  },
+  "aliases": {
+    "title": "Transaction aliases",
+    "subtitle": "Show a different name on matching transactions: rename cryptic bank descriptions or keep a payment private.",
+    "new": "New alias",
+    "count": "{count, plural, one {# alias} other {# aliases}}",
+    "emptyTitle": "No aliases yet",
+    "emptyDescription": "Create one to rename transactions like “CLIP MX*TACOS 2231”.",
+    "matchTypes": {
+      "contains": "Contains",
+      "starts_with": "Starts with",
+      "exact": "Exact",
+      "regex": "Regular expression (advanced)"
+    },
+    "matchShort": {
+      "contains": "Contains",
+      "starts_with": "Starts with",
+      "exact": "Exact",
+      "regex": "Regex"
+    },
+    "private": "Private",
+    "inactive": "Inactive",
+    "activeLabel": "Enable alias {name}",
+    "matches": "{count, plural, =0 {No matches} one {# match} other {# matches}}",
+    "priority": "Priority {priority}",
+    "noCategory": "Category unchanged",
+    "edit": "Edit",
+    "editLabel": "Edit alias {name}",
+    "delete": "Delete",
+    "deleteLabel": "Delete alias {name}",
+    "categorizeLink": "Categorize transactions",
+    "form": {
+      "createTitle": "New alias",
+      "editTitle": "Edit alias",
+      "description": "Applies to your current and future transactions. The original text is never changed.",
+      "matchType": "How to match",
+      "matchTypeHints": {
+        "contains": "The text appears anywhere. E.g. “uber” finds “UBER *TRIP 8812”.",
+        "starts_with": "The text is at the start. E.g. “clip mx” finds “CLIP MX*TACOS 2231”.",
+        "exact": "The whole text is the same, ignoring case and accents. E.g. “netflix.com”.",
+        "regex": "For advanced users. E.g. “^oxxo (gas|tienda)” or “spei.*nomina”."
+      },
+      "pattern": "Text to match",
+      "patternHint": "Case and accents don't matter.",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "E.g. Tacos Don Güero",
+      "category": "Category (optional)",
+      "categoryPlaceholder": "Keep the category",
+      "searchCategory": "Search category…",
+      "noCategories": "No results.",
+      "private": "Private",
+      "privateHint": "Lists and searches show only the alias; the original name only in the detail.",
+      "advanced": "Advanced options",
+      "priority": "Priority",
+      "priorityHint": "When several rules match a transaction, the highest priority wins.",
+      "active": "Active",
+      "save": "Save",
+      "create": "Create alias",
+      "saving": "Saving…"
+    },
+    "validation": {
+      "patternRequired": "Enter the text to match.",
+      "patternTooLong": "Up to {max} characters.",
+      "invalidRegex": "The regular expression isn't valid.",
+      "displayNameRequired": "Enter the display name.",
+      "displayNameTooLong": "Up to {max} characters.",
+      "priority": "Use a whole number between {min} and {max}."
+    },
+    "preview": {
+      "title": "Preview",
+      "idle": "Enter the text to match to see which transactions match.",
+      "loading": "Looking for matches…",
+      "count": "{count, plural, =0 {Matches no transactions} one {Matches # transaction} other {Matches # transactions}}",
+      "more": "Showing {shown} of {count}.",
+      "failed": "We couldn't compute the preview."
+    },
+    "deleteDialog": {
+      "title": "Delete the alias “{name}”?",
+      "description": "Transactions will show their original name again.",
+      "confirm": "Delete"
+    },
+    "rules": {
+      "title": "Learned category rules",
+      "description": "Created when you categorize a transaction with “Remember for this merchant”.",
+      "empty": "No rules yet. Categorize transactions to create them.",
+      "hits": "{count, plural, one {# use} other {# uses}}",
+      "deleteLabel": "Delete rule {pattern}",
+      "deleteTitle": "Delete the rule “{pattern}”?",
+      "deleteDescription": "Already categorized transactions don't change; new ones from this merchant will arrive uncategorized.",
+      "confirm": "Delete"
+    },
+    "toasts": {
+      "created": "Alias “{name}” created",
+      "updated": "Alias “{name}” saved",
+      "deleted": "Alias deleted",
+      "activated": "Alias enabled",
+      "deactivated": "Alias disabled",
+      "ruleDeleted": "Rule deleted"
+    },
+    "errors": {
+      "duplicate": "You already have an alias with that text.",
+      "notFound": "That alias no longer exists.",
+      "category": "That category no longer exists."
+    }
+  },
+  "transaction": {
+    "back": "Back",
+    "viewDetail": "View details",
+    "types": {
+      "income": "Income",
+      "expense": "Expense",
+      "transfer": "Transfer",
+      "adjustment": "Adjustment or payment"
+    },
+    "detailsTitle": "Details",
+    "fields": {
+      "date": "Date",
+      "account": "Account",
+      "category": "Category",
+      "source": "Source",
+      "status": "Status",
+      "merchant": "Merchant",
+      "description": "Description",
+      "original": "Original text",
+      "transfer": "Transfer",
+      "recurring": "Recurring payment"
+    },
+    "sources": {
+      "manual": "Added by hand",
+      "bank": "Bank",
+      "statement": "Card statement",
+      "receipt": "Receipt",
+      "sms": "SMS"
+    },
+    "private": "Private",
+    "privateHint": "This movement is private: lists and searches only show its name.",
+    "showOriginal": "Show original",
+    "hideOriginal": "Hide original",
+    "counterpartTo": "To {account}",
+    "counterpartFrom": "From {account}",
+    "recurringPaid": "{name} · due {date}",
+    "edit": "Edit",
+    "rename": "Rename",
+    "delete": "Delete",
+    "editTitle": "Edit movement",
+    "editDescription": "Change this movement's details. The account balance updates on its own.",
+    "editImported": "It comes from the bank or a card statement: only its category can change. To change how its name shows, use “Rename”.",
+    "editTransfer": "A transfer's amount and date don't change; if they're wrong, delete it from the other account and create it again.",
+    "form": {
+      "amount": "Amount",
+      "date": "Date",
+      "datePlaceholder": "Pick a date",
+      "category": "Category",
+      "categoryPlaceholder": "Uncategorized",
+      "categorySearch": "Search categories",
+      "noResults": "No results",
+      "merchant": "Merchant",
+      "merchantPlaceholder": "E.g. Oxxo",
+      "description": "Description",
+      "descriptionPlaceholder": "Notes about the movement",
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "validation": {
+      "amountRequired": "Enter the amount.",
+      "amountInvalid": "Enter an amount above zero.",
+      "amountTooLarge": "The amount is too large.",
+      "dateRequired": "Pick the date.",
+      "dateInFuture": "The date can't be in the future."
+    },
+    "toasts": {
+      "saved": "Movement updated",
+      "noChanges": "Nothing changed",
+      "renamed": "Name updated",
+      "nameRemoved": "Name removed",
+      "deleted": "Movement deleted",
+      "attachmentUploaded": "File attached",
+      "attachmentRemoved": "File deleted"
+    },
+    "deleteTitle": "Delete this movement?",
+    "deleteDescription": "It will be removed from your movements and the balance of {account} will be adjusted. This can't be undone.",
+    "deleteBlocked": {
+      "imported": "Movements from the bank or card statements can't be deleted.",
+      "transfer": "Transfers can't be deleted from here."
+    },
+    "attachments": {
+      "title": "Attachments",
+      "empty": "No attachments.",
+      "unnamed": "File",
+      "download": "Download {name}",
+      "remove": "Delete {name}",
+      "removeTitle": "Delete the file?",
+      "removeDescription": "{name} will be deleted. This can't be undone.",
+      "dropTitle": "Drag a file or tap to choose one",
+      "dropHint": "PDF or image (JPG, PNG, WEBP or HEIC), up to 10 MB.",
+      "dragActive": "Drop the file here",
+      "tooLarge": "{name} is larger than {max}.",
+      "wrongType": "{name} is not a PDF or an image.",
+      "removeFile": "Remove {name}",
+      "upload": "Attach",
+      "uploading": "Uploading… {percent}%"
+    },
+    "errors": {
+      "transfer": "Transfers can't be deleted or change their amount from here.",
+      "debtPayment": "This movement is a debt payment; remove it from Debts.",
+      "goal": "This movement has savings goal contributions; remove them first.",
+      "imported": "Bank movements only allow changing the category.",
+      "category": "That category no longer exists. Pick another one.",
+      "attachmentNotFound": "That file no longer exists.",
+      "notFound": "This movement no longer exists."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Reminders for your payments and alerts about your money.",
+    "recent": "Recent",
+    "markAllRead": "Mark all as read",
+    "seeAll": "See all",
+    "empty": "You have no notifications.",
+    "emptyUnread": "You have no unread notifications.",
+    "emptyDescription": "Reminders for your recurring payments show up here.",
+    "unread": "Unread",
+    "loadFailed": "We couldn't load your notifications.",
+    "filterLabel": "Filter notifications",
+    "filters": {
+      "all": "All",
+      "unread": "Unread"
+    },
+    "count": "{shown} of {total}",
+    "allRead": "All your notifications are read",
+    "types": {
+      "budget": "Budget",
+      "debt_due": "Debt",
+      "recurring": "Recurring payment",
+      "summary": "Summary"
+    }
+  },
+  "statements": {
+    "title": "Card statements",
+    "subtitle": "Upload your card's PDF to review and record its movements.",
+    "uploadFromAccount": "Upload statement",
+    "upload": {
+      "title": "Upload a statement",
+      "card": "Credit card",
+      "cardPlaceholder": "Choose the card",
+      "noCards": "Add a credit card to upload its statement.",
+      "addCard": "Go to Accounts",
+      "dropTitle": "Drag the PDF or tap to choose it",
+      "dropHint": "The statement PDF, up to 10 MB.",
+      "dragActive": "Drop the PDF here",
+      "tooLarge": "{name} is larger than {max}.",
+      "wrongType": "{name} is not a PDF.",
+      "removeFile": "Remove {name}",
+      "submit": "Upload",
+      "uploading": "Uploading…",
+      "cardRequired": "Choose a card.",
+      "fileRequired": "Choose the PDF."
+    },
+    "uploadErrors": {
+      "network": "We couldn't upload the file. Check your connection.",
+      "tooLarge": "The file is larger than 10 MB.",
+      "notPdf": "The file is not a PDF.",
+      "notCredit": "Statements can only be uploaded for credit cards.",
+      "accountNotFound": "We can't find that card anymore.",
+      "failed": "We couldn't upload the statement. Try again."
+    },
+    "listTitle": "Uploaded",
+    "emptyTitle": "No statements uploaded yet",
+    "emptyDescription": "Upload your card's PDF and Finnit compares it with your movements.",
+    "count": "{shown} of {total}",
+    "unknownAccount": "Deleted account",
+    "periodPending": "Period not read yet",
+    "uploadedOn": "Uploaded {date}",
+    "balance": "Statement balance: {amount}",
+    "differenceShort": "Difference: {amount}",
+    "status": {
+      "uploaded": "Uploaded",
+      "processing": "Processing",
+      "needs_review": "To review",
+      "confirmed": "Confirmed",
+      "failed": "Failed"
+    },
+    "parser": "Read with {parser}",
+    "parserAi": "AI: {model}",
+    "parserAiAny": "AI",
+    "facts": {
+      "previousBalance": "Previous balance",
+      "totalCharges": "Charges",
+      "totalCredits": "Credits",
+      "statementBalance": "Statement balance",
+      "minimumPayment": "Minimum payment",
+      "noInterestPayment": "Payment to avoid interest",
+      "statementDate": "Statement date",
+      "paymentDueDate": "Payment due date"
+    },
+    "check": {
+      "title": "Balance check",
+      "computed": "Previous balance + movements",
+      "statement": "Statement balance",
+      "difference": "Difference",
+      "ok": "The movements add up to the statement balance.",
+      "mismatch": "The movements don't add up to the statement balance: some are missing or misread. Review them before confirming."
+    },
+    "processing": "We're reading your statement…",
+    "processingHint": "It takes a few seconds. You can leave and come back later.",
+    "timeout": "Still processing. Reload the page in a moment.",
+    "reload": "Reload",
+    "failedTitle": "We couldn't read this statement",
+    "reprocess": "Reprocess",
+    "reprocessWith": "Read with",
+    "parsers": {
+      "auto": "Automatic",
+      "banamex_v1": "Banamex",
+      "ai": "AI"
+    },
+    "download": "Download PDF",
+    "back": "Card statements",
+    "kinds": {
+      "charge": "Charge",
+      "payment": "Payment",
+      "refund": "Refund",
+      "fee": "Fee",
+      "interest": "Interest",
+      "installment": "Installment",
+      "deposit": "Deposit"
+    },
+    "lineStatus": {
+      "pending": "New",
+      "matched": "Already recorded",
+      "created": "Created",
+      "ignored": "Ignored"
+    },
+    "lines": {
+      "title": "Movements ({count})",
+      "empty": "No movements were extracted.",
+      "summary": "{pending} new · {matched} already recorded · {ignored} ignored",
+      "summaryConfirmed": "{created} created · {matched} already recorded · {ignored} ignored",
+      "ignore": "Ignore",
+      "restore": "Restore",
+      "link": "Link to a movement",
+      "unlink": "Unlink",
+      "viewTransaction": "View movement",
+      "installments": "Installment {value}",
+      "recurring": "Recurring payment: {name}",
+      "category": "Category of {name}",
+      "categoryPlaceholder": "Uncategorized",
+      "categorySearch": "Search categories",
+      "noResults": "No results",
+      "menu": "Actions for {name}"
+    },
+    "linkDialog": {
+      "title": "Link to a movement",
+      "description": "Movements on this card for {amount}, up to 3 days before or after {date}.",
+      "empty": "We found no similar movements. If it isn't recorded, leave it as new.",
+      "searching": "Searching…",
+      "choose": "Link"
+    },
+    "confirm": "Confirm",
+    "confirmTitle": "Confirm the statement?",
+    "confirmDescription": "{count, plural, one {# new movement} other {# new movements}} will be created in {account} and linked recurring payments will be marked as paid.",
+    "confirmed": "Done: {created, plural, one {# movement created} other {# movements created}} and {matched} already recorded.",
+    "delete": "Delete",
+    "deleteTitle": "Delete this statement?",
+    "deleteDescription": "The PDF and its extracted movements will be deleted. Your recorded movements don't change.",
+    "deleted": "Statement deleted",
+    "errors": {
+      "alreadyLinked": "That movement is already linked to another line.",
+      "notOnCard": "That movement is not from this card.",
+      "notInReview": "This statement is no longer in review. Reload the page.",
+      "confirmedDelete": "A confirmed statement can't be deleted: its movements already exist.",
+      "confirmedReprocess": "A confirmed statement can't be reprocessed.",
+      "processing": "Wait until it finishes processing.",
+      "recurringPaid": "That recurring payment is already paid.",
+      "category": "That category no longer exists. Pick another one.",
+      "notFound": "This statement no longer exists."
+    },
+    "factsTitle": "Statement summary"
+  },
+  "goals": {
+    "title": "Savings goals",
+    "subtitle": "Save for what you want and see when you'll get there.",
+    "new": "New goal",
+    "empty": {
+      "title": "No goals yet",
+      "description": "Create a goal (a trip, an emergency fund, a car down payment) and log your contributions to see when you'll reach it.",
+      "cta": "Create my first goal"
+    },
+    "status": {
+      "reached": "Reached",
+      "onTrack": "On track",
+      "behind": "Behind",
+      "overdue": "Overdue",
+      "noDueDate": "No date"
+    },
+    "card": {
+      "open": "View details of {name}",
+      "progressLabel": "{percent}% saved",
+      "of": "of {target}",
+      "remaining": "{amount} to go",
+      "dueTerm": "Due date",
+      "projectionTerm": "Projection",
+      "due": "Due {date}",
+      "noDueDate": "No due date",
+      "dueToday": "Due today",
+      "daysLeft": "{count, plural, one {# day left} other {# days left}}",
+      "daysOverdue": "{count, plural, one {Overdue by # day} other {Overdue by # days}}",
+      "projection": "You'd get there in {month}",
+      "noProjection": "No recent contributions to project from",
+      "reached": "Goal reached!"
+    },
+    "summary": {
+      "saved": "Saved",
+      "savedDetail": "of {target} across {count, plural, one {# goal} other {# goals}}",
+      "average": "Average progress",
+      "averageDetail": "Average progress of your goals",
+      "recommended": "Suggested saving",
+      "recommendedDetail": "Per month, to finish everything in 12 months",
+      "percent": "{value}%"
+    },
+    "attention": {
+      "title": "Need attention",
+      "dueSoon": "{count, plural, one {Due within 30 days: {names}} other {Due within 30 days: {names}}}",
+      "atRisk": "{count, plural, one {At risk (under 50% with 60 days or less): {names}} other {At risk (under 50% with 60 days or less): {names}}}"
+    },
+    "detail": {
+      "saved": "Saved",
+      "target": "Target",
+      "remaining": "To go",
+      "edit": "Edit",
+      "delete": "Delete",
+      "contributions": "{count, plural, one {Contributions (#)} other {Contributions (#)}}",
+      "reachedNote": "You've reached this goal! To keep contributing, raise its target."
+    },
+    "projection": {
+      "title": "When will I get there?",
+      "monthly": "Monthly contribution",
+      "monthlyInvalid": "Enter a valid amount.",
+      "monthlyHint": "Your last 3 months' average: {amount}.",
+      "useAverage": "Use the average",
+      "useNeeded": "Use what's needed to make it on time",
+      "result": "You'd get there in {month} ({count, plural, one {# month} other {# months}})",
+      "none": "Without saving each month you wouldn't reach the goal.",
+      "reached": "You've already reached this goal.",
+      "onTrack": "Before your due date ({date}).",
+      "behind": "After your due date ({date}).",
+      "overdue": "The due date ({date}) has passed."
+    },
+    "recommendations": {
+      "title": "Recommendations",
+      "needed": "To make it on time, set aside {amount} a month.",
+      "twelveMonths": "To finish it in 12 months, set aside {amount} a month.",
+      "dueSoon": "It's due within 30 days.",
+      "atRisk": "It's at risk: under 50% with 60 days or less left.",
+      "reached": "You did it! Create a new goal to keep saving.",
+      "noDueDate": "Give it a due date to know whether you're on time."
+    },
+    "contributions": {
+      "add": "Add contribution",
+      "adding": "Adding…",
+      "amount": "Amount",
+      "date": "Date",
+      "empty": "No contributions yet.",
+      "linked": "Linked to a transaction",
+      "remove": "Remove the {amount} contribution from {date}",
+      "removeTitle": "Remove this contribution?",
+      "removeDescription": "{amount} (from {date}) will be taken off the goal's savings.",
+      "removeConfirm": "Remove contribution"
+    },
+    "form": {
+      "createTitle": "New goal",
+      "createDescription": "What are you saving for?",
+      "editTitle": "Edit goal",
+      "editDescription": "Change the details of {name}.",
+      "name": "Name",
+      "namePlaceholder": "E.g. Trip to Oaxaca",
+      "target": "Target amount",
+      "currency": "Currency",
+      "currencyFixed": "The currency can't be changed.",
+      "dueDate": "Due date (optional)",
+      "dueDatePlaceholder": "No due date",
+      "dueDateHint": "Without a date, we'll tell you when you'd get there.",
+      "clearDueDate": "Remove due date",
+      "initialAmount": "Already saved something? (optional)",
+      "initialAmountHint": "We'll log it as your first contribution, dated today.",
+      "create": "Create goal",
+      "save": "Save changes",
+      "saving": "Saving…"
+    },
+    "validation": {
+      "nameRequired": "Enter a name.",
+      "nameTooLong": "100 characters max.",
+      "amountRequired": "Enter the amount.",
+      "amountInvalid": "Enter an amount greater than zero.",
+      "amountTooLarge": "The amount is too large.",
+      "dueDateInPast": "Pick today or a future date.",
+      "initialInvalid": "Enter an amount greater than zero or leave it empty.",
+      "initialTooLarge": "The amount is too large.",
+      "dateRequired": "Pick the date.",
+      "dateInFuture": "The date can't be in the future."
+    },
+    "delete": {
+      "title": "Delete {name}?",
+      "description": "The goal will be deleted. This can't be undone.",
+      "withContributions": "This goal has {amount} in contributions. All of them will be removed and then the goal deleted. This can't be undone.",
+      "confirm": "Delete goal",
+      "confirmAll": "Delete goal and contributions"
+    },
+    "toasts": {
+      "created": "Your goal {name} was created",
+      "updated": "Saved the changes to {name}",
+      "noChanges": "Nothing changed",
+      "deleted": "You deleted {name}",
+      "initialFailed": "The goal was created, but we couldn't save what you'd already saved: {error}",
+      "contributionAdded": "Contribution added",
+      "contributionRemoved": "Removed the {amount} contribution"
+    },
+    "errors": {
+      "duplicateName": "You already have a goal with that name.",
+      "alreadyReached": "This goal is already reached; raise its target to keep contributing.",
+      "hasContributions": "The goal has contributions; remove them before deleting it.",
+      "target": "The target amount must be greater than zero.",
+      "amount": "The contribution must be greater than zero.",
+      "name": "Enter a name.",
+      "contributionNotFound": "That contribution no longer exists.",
+      "notFound": "We couldn't find that goal."
+    }
+  },
+  "simulator": {
+    "title": "What-if simulator",
+    "subtitle": "Try changes to your income and expenses and see where your balance would land. Nothing is saved.",
+    "reset": "Reset",
+    "disclaimer": "This is an estimate: it starts from your accounts' balance and your average transactions; it doesn't include interest, inflation or changes to your debts.",
+    "baseline": {
+      "title": "Today",
+      "source": "{count, plural, one {Average of your last month} other {Average of your last # months}}",
+      "balance": "Current balance",
+      "income": "Income per month",
+      "expenses": "Expenses per month",
+      "net": "Left each month",
+      "noData": "We don't have any of your transactions yet: the starting point is $0. Add transactions or connect your bank for a real estimate; meanwhile, you can try scenarios."
+    },
+    "months": {
+      "title": "Months to project",
+      "label": "Months to project",
+      "value": "{count, plural, one {# month} other {# months}}",
+      "presets": "Month shortcuts"
+    },
+    "income": {
+      "title": "Income",
+      "description": "What if you earned more or less each month?",
+      "mode": "How to change income",
+      "percentMode": "Change in %",
+      "amountMode": "New amount",
+      "percent": "Change in your income (%)",
+      "amount": "Monthly income",
+      "percentHint": "E.g. 10 for a raise, -20 if it drops.",
+      "result": "Monthly income in the scenario: {amount}."
+    },
+    "monthly": {
+      "title": "Monthly expenses",
+      "description": "Add a new expense or cut one you already have.",
+      "kind": "Kind of change",
+      "add": "New expense",
+      "cut": "Cut",
+      "name": "Description (optional)",
+      "namePlaceholderAdd": "E.g. New car",
+      "namePlaceholderCut": "E.g. Cancel the gym",
+      "amount": "Amount per month",
+      "submitAdd": "Add expense",
+      "submitCut": "Add cut",
+      "defaultAdd": "Monthly expense",
+      "defaultCut": "Monthly cut",
+      "perMonthAdd": "Every month, more spending",
+      "perMonthCut": "Every month, less spending",
+      "remove": "Remove {name}"
+    },
+    "oneTime": {
+      "title": "One-time expense",
+      "description": "Something you'd pay once: a trip, a repair, a down payment.",
+      "name": "Description (optional)",
+      "namePlaceholder": "E.g. Year-end trip",
+      "amount": "Amount",
+      "month": "Month",
+      "submit": "Add one-time expense",
+      "defaultName": "One-time expense",
+      "outOfRange": "Beyond the projected months",
+      "remove": "Remove {name}"
+    },
+    "extraDebt": {
+      "title": "Extra debt payment",
+      "description": "What if you paid more to your cards or loans each month?",
+      "amount": "Extra payment per month",
+      "note": "We count it as one more monthly expense: it shows the effect on your balance, not how much your debt or its interest goes down."
+    },
+    "results": {
+      "title": "Results",
+      "endScenario": "Balance with the scenario",
+      "endBaseline": "Balance without changes",
+      "endNote": "At the end of {month}",
+      "difference": "Difference",
+      "differenceNote": {
+        "up": "You'd end up with more money",
+        "down": "You'd end up with less money",
+        "flat": "No difference"
+      },
+      "negative": "Negative balance",
+      "negativeBaseline": "Without changes: {value}",
+      "neverNegative": "Never",
+      "negativeToday": "Already today",
+      "negativeIn": "From {month}"
+    },
+    "chart": {
+      "title": "Balance month by month",
+      "label": "Chart of the balance month by month. Use the arrow keys to move through the months.",
+      "roleDescription": "chart",
+      "today": "Today",
+      "baseline": "Without changes",
+      "scenario": "Scenario",
+      "net": "Per month: {baseline} without changes · {scenario} with the scenario"
+    },
+    "table": {
+      "show": "Show table",
+      "hide": "Hide table",
+      "caption": "Balance per month, without changes and with the scenario",
+      "month": "Month",
+      "baseline": "Without changes",
+      "scenario": "Scenario",
+      "difference": "Difference"
+    },
+    "validation": {
+      "amountRequired": "Enter the amount.",
+      "amountInvalid": "Enter a valid amount.",
+      "amountTooLarge": "The amount is too large.",
+      "amountZero": "Enter an amount greater than zero.",
+      "percentInvalid": "Enter a percentage, e.g. 10 or -15.",
+      "percentRange": "Between -100% and 1000%.",
+      "nameTooLong": "60 characters max.",
+      "monthInvalid": "Pick a month in the period."
+    }
+  },
+  "receipts": {
+    "scan": "Scan receipt",
+    "scanHint": "Take a photo and we fill in the expense",
+    "capture": "Capture receipt",
+    "titles": {
+      "capture": "Capture receipt",
+      "reading": "Reading your receipt…",
+      "failed": "We couldn't read the receipt"
+    },
+    "picker": {
+      "title": "Take a photo of the receipt or choose an image",
+      "hint": "JPG, PNG, WEBP or HEIC, up to 10 MB",
+      "dragActive": "Drop the photo here",
+      "remove": "Remove {name}",
+      "tooLarge": "{name} is larger than {max}.",
+      "wrongType": "{name} is not an image.",
+      "tips": "Make sure it's complete, well lit and without shadows. For invoices, include the QR code."
+    },
+    "uploading": "Uploading the photo…",
+    "progress": "{percent}%",
+    "reading": "Reading your receipt…",
+    "readingHint": "This takes a few seconds.",
+    "cancel": "Cancel",
+    "source": {
+      "qr": "Read from the invoice QR code",
+      "ocr": "Read from the receipt",
+      "ai": "Read with AI"
+    },
+    "confidence": {
+      "high": "Reliable reading",
+      "medium": "Partial reading",
+      "low": "Uncertain reading"
+    },
+    "checkFields": "Check the highlighted fields before saving.",
+    "photo": "Receipt photo",
+    "zoom": "View the photo larger",
+    "noPreview": "This browser can't show the photo, but it's saved.",
+    "discard": "Discard receipt",
+    "failed": {
+      "readFailed": "We couldn't read this receipt. Enter the details by hand and we'll keep the photo as proof.",
+      "timeout": "This is taking longer than usual. You can keep waiting or enter it by hand.",
+      "discarded": "You discarded this receipt before. Enter the details by hand or use another photo.",
+      "alreadyConfirmed": "This receipt is already registered."
+    },
+    "errors": {
+      "uploadNetwork": "We couldn't upload the photo. Check your connection.",
+      "uploadTooLarge": "The photo is larger than 10 MB.",
+      "uploadInvalid": "Only JPG, PNG, WEBP or HEIC photos are accepted.",
+      "uploadFailed": "We couldn't upload the photo. Try again.",
+      "discardFailed": "We couldn't discard the receipt. Try again."
+    },
+    "actions": {
+      "manual": "Enter by hand",
+      "otherPhoto": "Use another photo",
+      "keepWaiting": "Keep waiting",
+      "close": "Close"
+    },
+    "match": {
+      "description": "We found {count, plural, one {a movement that looks} other {# movements that look}} like this purchase. If it's already registered, we'll add the receipt photo to it.",
+      "attach": "Attach to this movement",
+      "createNew": "Register new"
+    },
+    "pending": {
+      "title": "Pending receipts",
+      "noMerchant": "Receipt without merchant",
+      "resume": "Continue with the receipt from {name}"
+    },
+    "toasts": {
+      "created": "With the receipt photo.",
+      "attached": "Receipt added to the movement you already had.",
+      "discarded": "Receipt discarded."
+    }
+  }
+}

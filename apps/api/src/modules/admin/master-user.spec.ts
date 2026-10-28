@@ -17,6 +17,7 @@ const userRow = (overrides: Partial<UserRow> = {}): UserRow => ({
   googleSubject: null,
   disabledAt: null,
   lastLoginAt: null,
+  locale: 'es',
   tokenVersion: 0,
   invitedById: null,
   createdAt: new Date('2026-10-01'),

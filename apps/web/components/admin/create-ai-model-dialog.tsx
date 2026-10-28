@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import {
@@ -46,11 +47,12 @@ export function CreateAiModelDialog({
   const [isActive, setIsActive] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
+  const t = useTranslations();
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!modelId.trim() || !label.trim()) {
-      setError('Escribe el modelo y su nombre.');
+      setError(t('admin.errors.modelFieldsRequired'));
       return;
     }
     setSaving(true);
@@ -68,7 +70,7 @@ export function CreateAiModelDialog({
       onCreated();
       onClose();
     } catch (e) {
-      setError(adminErrorMessage(e));
+      setError(adminErrorMessage(e, t));
     } finally {
       setSaving(false);
     }
@@ -76,18 +78,19 @@ export function CreateAiModelDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent closeLabel={t('common.close')}>
         <form onSubmit={submit} noValidate className="flex flex-col gap-5">
           <DialogHeader>
-            <DialogTitle>Agregar modelo</DialogTitle>
+            <DialogTitle>{t('admin.ai.create.title')}</DialogTitle>
             <DialogDescription>
-              Usa el nombre exacto del modelo en el proveedor. Su llave se
-              configura en el servidor de la API.
+              {t('admin.ai.create.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="model-provider">Proveedor</Label>
+            <Label htmlFor="model-provider">
+              {t('admin.ai.create.provider')}
+            </Label>
             <Select
               value={provider}
               onValueChange={(v) => setProvider(v as AiProvider)}
@@ -105,7 +108,7 @@ export function CreateAiModelDialog({
             </Select>
           </div>
           <Input
-            label="Modelo"
+            label={t('admin.ai.create.model')}
             value={modelId}
             onChange={(e) => setModelId(e.target.value)}
             placeholder="claude-haiku-5-5"
@@ -114,7 +117,7 @@ export function CreateAiModelDialog({
             className="font-mono"
           />
           <Input
-            label="Nombre visible"
+            label={t('admin.ai.create.label')}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder="Claude Haiku"
@@ -123,7 +126,7 @@ export function CreateAiModelDialog({
           <div className="flex flex-col gap-3">
             <div className="flex min-h-11 items-center justify-between gap-3">
               <label htmlFor="model-pdf" className="text-sm">
-                Lee archivos PDF
+                {t('admin.ai.create.readsPdf')}
               </label>
               <Switch
                 id="model-pdf"
@@ -133,7 +136,7 @@ export function CreateAiModelDialog({
             </div>
             <div className="flex min-h-11 items-center justify-between gap-3">
               <label htmlFor="model-active" className="text-sm">
-                Activo
+                {t('admin.ai.create.active')}
               </label>
               <Switch
                 id="model-active"
@@ -152,11 +155,11 @@ export function CreateAiModelDialog({
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline">
-                Cancelar
+                {t('common.cancel')}
               </Button>
             </DialogClose>
             <Button type="submit" variant="secondary" disabled={saving}>
-              {saving ? 'Agregando…' : 'Agregar modelo'}
+              {saving ? t('admin.ai.create.adding') : t('admin.ai.addModel')}
             </Button>
           </DialogFooter>
         </form>

@@ -1,7 +1,9 @@
+import type { Locale } from '@/lib/i18n/locales';
+
 /**
  * Calendar days for the finance screens, in Mexico City time. Days travel as
- * "YYYY-MM-DD" keys and every label is built from fixed Spanish names, so the
- * server and the browser render the same text.
+ * "YYYY-MM-DD" keys and every label is built from fixed names per language
+ * (Spanish or English), so the server and the browser render the same text.
  *
  * The API stores transaction and due dates as calendar dates (DATE columns),
  * returned as midnight UTC: their UTC date is the day. Any other instant
@@ -18,29 +20,98 @@ export interface MonthRef {
   month: number;
 }
 
-const MONTHS = [
-  'enero',
-  'febrero',
-  'marzo',
-  'abril',
-  'mayo',
-  'junio',
-  'julio',
-  'agosto',
-  'septiembre',
-  'octubre',
-  'noviembre',
-  'diciembre',
-];
-const WEEKDAYS = [
-  'domingo',
-  'lunes',
-  'martes',
-  'miércoles',
-  'jueves',
-  'viernes',
-  'sábado',
-];
+/** Fixed names per language: no Intl, so every runtime renders the same text. */
+const NAMES: Record<Locale, { months: string[]; weekdays: string[] }> = {
+  es: {
+    months: [
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+    ],
+    weekdays: [
+      'domingo',
+      'lunes',
+      'martes',
+      'miércoles',
+      'jueves',
+      'viernes',
+      'sábado',
+    ],
+  },
+  en: {
+    months: [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ],
+    weekdays: [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ],
+  },
+};
+
+const RELATIVE: Record<
+  Locale,
+  {
+    today: string;
+    yesterday: string;
+    tomorrow: string;
+    inDays: (n: number) => string;
+    daysAgo: (n: number) => string;
+  }
+> = {
+  es: {
+    today: 'Hoy',
+    yesterday: 'Ayer',
+    tomorrow: 'Mañana',
+    inDays: (n) => `En ${n} días`,
+    daysAgo: (n) => `Hace ${n} días`,
+  },
+  en: {
+    today: 'Today',
+    yesterday: 'Yesterday',
+    tomorrow: 'Tomorrow',
+    inDays: (n) => `In ${n} days`,
+    daysAgo: (n) => `${n} days ago`,
+  },
+};
+
+/** January … December, lowercase in Spanish (as used inside sentences). */
+export function monthNames(locale: Locale): string[] {
+  return [...NAMES[locale].months];
+}
+
+/** Sunday … Saturday (index = Date#getUTCDay()). */
+export function weekdayNames(locale: Locale): string[] {
+  return [...NAMES[locale].weekdays];
+}
+
+const monthNameOf = (month: number, locale: Locale) =>
+  NAMES[locale].months[month - 1]!;
 
 // Only numeric parts are read, which every ICU build formats the same way.
 const zoned = new Intl.DateTimeFormat('en-CA', {
@@ -191,48 +262,64 @@ export function parseMonthParam(
   return { year, month };
 }
 
-/** "Octubre 2026" */
-export function monthLabel({ year, month }: MonthRef): string {
-  return `${capitalize(MONTHS[month - 1]!)} ${year}`;
+/** "Octubre 2026" / "October 2026" */
+export function monthLabel({ year, month }: MonthRef, locale: Locale): string {
+  return `${capitalize(monthNameOf(month, locale))} ${year}`;
+}
+
+/** The month alone, as used inside a sentence: "octubre" / "October". */
+export function monthName({ month }: MonthRef, locale: Locale): string {
+  return monthNameOf(month, locale);
 }
 
 /** "Oct" */
-export function shortMonthLabel({ month }: MonthRef): string {
-  return capitalize(MONTHS[month - 1]!.slice(0, 3));
+export function shortMonthLabel({ month }: MonthRef, locale: Locale): string {
+  return capitalize(monthNameOf(month, locale).slice(0, 3));
 }
 
 // Day labels
 
-/** "14 de octubre", with the year when it isn't `today`'s. */
-export function longDate(key: DayKey, today: DayKey): string {
+/** "14 de octubre" / "October 14", with the year when it isn't `today`'s. */
+export function longDate(key: DayKey, today: DayKey, locale: Locale): string {
   const { year, month, day } = parseDayKey(key);
   const sameYear = year === parseDayKey(today).year;
-  return `${day} de ${MONTHS[month - 1]}${sameYear ? '' : ` de ${year}`}`;
+  const name = monthNameOf(month, locale);
+  if (locale === 'en') {
+    return `${name} ${day}${sameYear ? '' : `, ${year}`}`;
+  }
+  return `${day} de ${name}${sameYear ? '' : ` de ${year}`}`;
 }
 
-/** "14 oct" */
-export function shortDate(key: DayKey): string {
+/** "14 oct" / "Oct 14" */
+export function shortDate(key: DayKey, locale: Locale): string {
   const { month, day } = parseDayKey(key);
-  return `${day} ${MONTHS[month - 1]!.slice(0, 3)}`;
+  const short = monthNameOf(month, locale).slice(0, 3);
+  return locale === 'en' ? `${short} ${day}` : `${day} ${short}`;
 }
 
 /** Group heading: "Hoy, 14 de octubre", "Ayer, …", "Lunes, 12 de octubre". */
-export function dayHeading(key: DayKey, today: DayKey): string {
+export function dayHeading(key: DayKey, today: DayKey, locale: Locale): string {
   const offset = daysBetween(key, today);
+  const words = RELATIVE[locale];
   const prefix =
     offset === 0
-      ? 'Hoy'
+      ? words.today
       : offset === 1
-        ? 'Ayer'
-        : capitalize(WEEKDAYS[keyToUtc(key).getUTCDay()]!);
-  return `${prefix}, ${longDate(key, today)}`;
+        ? words.yesterday
+        : capitalize(NAMES[locale].weekdays[keyToUtc(key).getUTCDay()]!);
+  return `${prefix}, ${longDate(key, today, locale)}`;
 }
 
 /** Due date relative to today: "Hoy", "Mañana", "En 3 días", "Hace 2 días". */
-export function relativeDayLabel(key: DayKey, today: DayKey): string {
+export function relativeDayLabel(
+  key: DayKey,
+  today: DayKey,
+  locale: Locale,
+): string {
   const offset = daysBetween(today, key);
-  if (offset === 0) return 'Hoy';
-  if (offset === 1) return 'Mañana';
-  if (offset === -1) return 'Ayer';
-  return offset > 0 ? `En ${offset} días` : `Hace ${-offset} días`;
+  const words = RELATIVE[locale];
+  if (offset === 0) return words.today;
+  if (offset === 1) return words.tomorrow;
+  if (offset === -1) return words.yesterday;
+  return offset > 0 ? words.inDays(offset) : words.daysAgo(-offset);
 }

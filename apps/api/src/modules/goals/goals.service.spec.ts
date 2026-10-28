@@ -2,11 +2,24 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { GoalsService } from './goals.service';
 import { PrismaService } from '../../services/prisma.service';
+import { Prisma } from '@finnit/database';
 import {
+  ConflictError,
   NotFoundError,
   ValidationError,
   GoalAlreadyReachedError,
 } from '../../common/exceptions/graphql-error.exception';
+
+const uniqueViolation = () =>
+  new Prisma.PrismaClientKnownRequestError('Unique constraint', {
+    code: 'P2002',
+    clientVersion: 'test',
+  });
+
+/** Makes `$transaction(callback)` run the callback against `tx`. */
+const runTransactionWith = (tx: unknown) =>
+  ((callback: (client: unknown) => unknown) =>
+    Promise.resolve(callback(tx))) as never;
 
 describe('GoalsService', () => {
   let service: GoalsService;
@@ -117,6 +130,31 @@ describe('GoalsService', () => {
         }),
       });
       expect(result.dueDate).toBeUndefined();
+    });
+
+    it('refuses a target amount that is not positive', async () => {
+      await expect(
+        service.create(mockUserId, { ...createInput, targetAmount: 0 }),
+      ).rejects.toThrow(ValidationError);
+      expect(prismaService.goal.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses a blank name', async () => {
+      await expect(
+        service.create(mockUserId, { ...createInput, name: '   ' }),
+      ).rejects.toThrow(ValidationError);
+      expect(prismaService.goal.create).not.toHaveBeenCalled();
+    });
+
+    it('maps a repeated name to a ConflictError', async () => {
+      prismaService.goal.create.mockRejectedValue(uniqueViolation());
+
+      await expect(service.create(mockUserId, createInput)).rejects.toThrow(
+        'A goal with this name already exists',
+      );
+      await expect(service.create(mockUserId, createInput)).rejects.toThrow(
+        ConflictError,
+      );
     });
 
     it('should handle goal creation errors', async () => {
@@ -230,10 +268,34 @@ describe('GoalsService', () => {
       expect(prismaService.goal.update).not.toHaveBeenCalled();
     });
 
-    // TODO(bug): UpdateGoalInput declares @Min(0.01) on targetAmount, but no
-    // ValidationPipe is registered (main.ts / AppModule) and the service does
-    // not validate, so non-positive target amounts are persisted.
-    it.skip('should validate target amount is positive', async () => {
+    it('maps a repeated name to a ConflictError', async () => {
+      prismaService.goal.findFirst.mockResolvedValue(mockGoal as any);
+      prismaService.goal.update.mockRejectedValue(uniqueViolation());
+
+      await expect(
+        service.update(mockGoalId, mockUserId, updateInput),
+      ).rejects.toThrow(ConflictError);
+    });
+
+    it('clears the due date when given null', async () => {
+      prismaService.goal.findFirst.mockResolvedValue(mockGoal as any);
+      prismaService.goal.update.mockResolvedValue({
+        ...mockGoal,
+        dueDate: null,
+      } as any);
+
+      const result = await service.update(mockGoalId, mockUserId, {
+        dueDate: null,
+      } as any);
+
+      expect(prismaService.goal.update).toHaveBeenCalledWith({
+        where: { id: mockGoalId },
+        data: { dueDate: null },
+      });
+      expect(result.dueDate).toBeUndefined();
+    });
+
+    it('should validate target amount is positive', async () => {
       // Arrange
       const invalidInput = { ...updateInput, targetAmount: -1000.0 };
       prismaService.goal.findFirst.mockResolvedValue(mockGoal as any);
@@ -287,9 +349,9 @@ describe('GoalsService', () => {
       prismaService.goal.findFirst.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(
-        service.delete('non-existent', mockUserId),
-      ).rejects.toThrow(NotFoundError);
+      await expect(service.delete('non-existent', mockUserId)).rejects.toThrow(
+        NotFoundError,
+      );
       expect(prismaService.goal.delete).not.toHaveBeenCalled();
     });
   });
@@ -315,9 +377,7 @@ describe('GoalsService', () => {
         id: 'contribution-2',
         ...contributionInput,
       });
-      prismaService.$transaction.mockImplementation(async (callback: any) =>
-        callback(mockTx),
-      );
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
 
       // Act
       const result = await service.addContribution(
@@ -389,10 +449,7 @@ describe('GoalsService', () => {
       expect(prismaService.$transaction).not.toHaveBeenCalled();
     });
 
-    // TODO(bug): CreateGoalContributionInput declares @Min(0.01) on amount, but
-    // no ValidationPipe is registered and the service does not validate, so a
-    // negative contribution is accepted and decrements the goal balance.
-    it.skip('should throw ValidationError for negative contribution amount', async () => {
+    it('should throw ValidationError for negative contribution amount', async () => {
       // Arrange
       const negativeInput = { ...contributionInput, amount: -100.0 };
       prismaService.goal.findFirst.mockResolvedValue(mockGoal as any);
@@ -416,9 +473,7 @@ describe('GoalsService', () => {
         ...manualContribution,
         transactionId: null,
       });
-      prismaService.$transaction.mockImplementation(async (callback: any) =>
-        callback(mockTx),
-      );
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
 
       // Act
       const result = await service.addContribution(
@@ -443,9 +498,7 @@ describe('GoalsService', () => {
       } as any);
 
       const mockTx = mockTxWith();
-      prismaService.$transaction.mockImplementation(async (callback: any) =>
-        callback(mockTx),
-      );
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
 
       // Act
       const result = await service.removeContribution(
@@ -711,9 +764,7 @@ describe('GoalsService', () => {
         amount: 300.0,
         date: new Date('2024-02-01'),
       });
-      prismaService.$transaction.mockImplementation(async (callback: any) =>
-        callback(mockTx),
-      );
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
 
       // Act
       const result = await service.addContribution(mockUserId, {
@@ -728,6 +779,142 @@ describe('GoalsService', () => {
         data: { currentAmount: { increment: 300.0 } },
       });
       expect(result.amount).toBe(300);
+    });
+  });
+
+  describe('getGoalProjection', () => {
+    it('projects with the monthly amount given', async () => {
+      prismaService.goal.findFirst.mockResolvedValue(mockGoal as any);
+
+      const result = await service.getGoalProjection(
+        mockGoalId,
+        mockUserId,
+        1000,
+      );
+
+      expect(prismaService.goalContribution.aggregate).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        goalId: mockGoalId,
+        monthlyContribution: 1000,
+        monthsRemaining: 7,
+        completionDate: expect.any(Date),
+      });
+    });
+
+    it('defaults to the average of the last 3 months of contributions', async () => {
+      prismaService.goal.findFirst.mockResolvedValue(mockGoal as any);
+      prismaService.goalContribution.aggregate.mockResolvedValue({
+        _sum: { amount: 2100 },
+      } as any);
+
+      const result = await service.getGoalProjection(mockGoalId, mockUserId);
+
+      expect(prismaService.goalContribution.aggregate).toHaveBeenCalledWith({
+        where: { goalId: mockGoalId, date: { gte: expect.any(Date) } },
+        _sum: { amount: true },
+      });
+      expect(result.monthlyContribution).toBe(700);
+      expect(result.monthsRemaining).toBe(10);
+    });
+
+    it('has no completion date without contributions', async () => {
+      prismaService.goal.findFirst.mockResolvedValue(mockGoal as any);
+      prismaService.goalContribution.aggregate.mockResolvedValue({
+        _sum: { amount: null },
+      } as any);
+
+      const result = await service.getGoalProjection(mockGoalId, mockUserId);
+
+      expect(result).toEqual({ goalId: mockGoalId, monthlyContribution: 0 });
+    });
+
+    it('is 0 months away for a reached goal', async () => {
+      prismaService.goal.findFirst.mockResolvedValue({
+        ...mockGoal,
+        currentAmount: 10000,
+      } as any);
+
+      const result = await service.getGoalProjection(
+        mockGoalId,
+        mockUserId,
+        100,
+      );
+
+      expect(result.monthsRemaining).toBe(0);
+      expect(result.completionDate).toBeUndefined();
+    });
+
+    it("rejects another user's goal", async () => {
+      prismaService.goal.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.getGoalProjection(mockGoalId, 'other-user', 100),
+      ).rejects.toThrow(NotFoundError);
+      expect(prismaService.goal.findFirst).toHaveBeenCalledWith({
+        where: { id: mockGoalId, userId: 'other-user' },
+      });
+    });
+  });
+
+  describe('getGoalRecommendations', () => {
+    it('covers all the goals of the user', async () => {
+      prismaService.goal.findMany.mockResolvedValue([
+        mockGoal,
+        { ...mockGoal, id: 'goal-2', targetAmount: 2000, currentAmount: 2000 },
+      ] as any);
+
+      const result = await service.getGoalRecommendations(mockUserId);
+
+      expect(prismaService.goal.findMany).toHaveBeenCalledWith({
+        where: { userId: mockUserId },
+      });
+      expect(result.totalGoalsAmount).toBe(12000);
+      expect(result.totalSavedAmount).toBe(5000);
+      expect(result.averageProgress).toBe(65);
+      expect(result.recommendedMonthlyContribution).toBeCloseTo(7000 / 12);
+    });
+
+    it('can be limited to one goal of the user', async () => {
+      prismaService.goal.findMany.mockResolvedValue([mockGoal] as any);
+
+      const result = await service.getGoalRecommendations(
+        mockUserId,
+        mockGoalId,
+      );
+
+      expect(prismaService.goal.findMany).toHaveBeenCalledWith({
+        where: { userId: mockUserId, id: mockGoalId },
+      });
+      expect(result.totalGoalsAmount).toBe(10000);
+    });
+
+    it('fails for a goal the user does not own', async () => {
+      prismaService.goal.findMany.mockResolvedValue([]);
+
+      await expect(
+        service.getGoalRecommendations(mockUserId, 'someone-elses'),
+      ).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  describe('contribution dates', () => {
+    it('stores the local day of the contribution', async () => {
+      prismaService.goal.findFirst.mockResolvedValue(mockGoal as any);
+      const mockTx = mockTxWith();
+      mockTx.goalContribution.create.mockResolvedValue(mockContribution);
+      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
+
+      await service.addContribution(mockUserId, {
+        goalId: mockGoalId,
+        amount: 100,
+        date: new Date('2026-10-14T04:30:00Z'),
+      });
+
+      expect(mockTx.goalContribution.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          date: new Date('2026-10-13T00:00:00Z'),
+        }),
+      });
     });
   });
 });

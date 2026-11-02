@@ -7,6 +7,7 @@ import { Button } from '@finnit/ui/components/ui/button';
 import { DatePicker } from '@finnit/ui/components/ui/date-picker';
 import {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -14,7 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
+import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { Input } from '@finnit/ui/components/ui/input';
+import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
 import { SelectField } from '@/components/recurring/select-field';
 import { todayKey } from '@/lib/finance/dates';
@@ -62,6 +65,8 @@ export function GoalDialog({
   onClose: () => void;
   onSaved: (result: GoalSaved) => void;
 }) {
+  // Closes with the exit animation before telling the parent.
+  const exit = useDialogExit();
   const { t } = useLocalizer();
   const tf = useTranslations('goals.form');
   const locale = useLocale();
@@ -112,7 +117,7 @@ export function GoalDialog({
     setSubmitError(null);
     try {
       const result = await saveGoal(form, target, gql, today);
-      onSaved({
+      exit.after(onSaved)({
         changed: result.changed,
         name: form.name.trim(),
         goalId: result.goalId,
@@ -127,10 +132,14 @@ export function GoalDialog({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !saving && onClose()}>
+    <Dialog
+      open={exit.open}
+      onOpenChange={(open) => !open && !saving && exit.close(onClose)}
+    >
       <DialogContent
+        onExitComplete={exit.onExitComplete}
         closeLabel={t('common.close')}
-        className="max-h-[92dvh] overflow-y-auto sm:max-w-lg"
+        className="sm:max-w-lg"
       >
         <form onSubmit={submit} noValidate className="flex flex-col gap-5">
           <DialogHeader>
@@ -144,85 +153,81 @@ export function GoalDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <Input
-            label={tf('name')}
-            value={form.name}
-            maxLength={NAME_MAX}
-            autoComplete="off"
-            placeholder={tf('namePlaceholder')}
-            onChange={(e) => update({ name: e.target.value })}
-            error={errorText(errors.name)}
-          />
-
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <DialogBody>
             <Input
-              label={tf('target')}
-              inputMode="decimal"
+              label={tf('name')}
+              value={form.name}
+              maxLength={NAME_MAX}
               autoComplete="off"
-              placeholder="0.00"
-              value={form.targetAmount}
-              onChange={(e) => update({ targetAmount: e.target.value })}
-              error={errorText(errors.targetAmount)}
+              placeholder={tf('namePlaceholder')}
+              onChange={(e) => update({ name: e.target.value })}
+              error={errorText(errors.name)}
             />
-            <SelectField
-              label={tf('currency')}
-              value={form.currency}
-              options={[...new Set<string>([...CURRENCIES, form.currency])].map(
-                (currency) => ({ value: currency, label: currency }),
-              )}
-              onChange={(currency) => update({ currency })}
-              disabled={editing}
-              hint={editing ? tf('currencyFixed') : undefined}
-            />
-          </div>
 
-          <div className="flex flex-col gap-1">
-            <DatePicker
-              label={tf('dueDate')}
-              value={form.dueDate || undefined}
-              onChange={(day) => update({ dueDate: day ?? '' })}
-              min={today}
-              locale={locale}
-              placeholder={tf('dueDatePlaceholder')}
-              error={errorText(errors.dueDate)}
-            />
-            {form.dueDate ? (
-              <button
-                type="button"
-                onClick={() => update({ dueDate: '' })}
-                className="self-start px-1 text-xs font-medium text-income hover:underline"
-              >
-                {tf('clearDueDate')}
-              </button>
-            ) : (
-              <p className="px-1 text-xs text-on-surface-variant">
-                {tf('dueDateHint')}
-              </p>
-            )}
-          </div>
-
-          {!editing ? (
-            <div className="flex flex-col gap-1">
-              <Input
-                label={tf('initialAmount')}
-                inputMode="decimal"
-                autoComplete="off"
-                placeholder="0.00"
-                value={form.initialAmount}
-                onChange={(e) => update({ initialAmount: e.target.value })}
-                error={errorText(errors.initialAmount)}
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+              <MoneyInput
+                label={tf('target')}
+                value={form.targetAmount}
+                onValueChange={(value) => update({ targetAmount: value })}
+                error={errorText(errors.targetAmount)}
               />
-              <p className="px-1 text-xs text-on-surface-variant">
-                {tf('initialAmountHint')}
-              </p>
+              <SelectField
+                label={tf('currency')}
+                value={form.currency}
+                options={[
+                  ...new Set<string>([...CURRENCIES, form.currency]),
+                ].map((currency) => ({ value: currency, label: currency }))}
+                onChange={(currency) => update({ currency })}
+                disabled={editing}
+                hint={editing ? tf('currencyFixed') : undefined}
+              />
             </div>
-          ) : null}
 
-          {submitError ? (
-            <p role="alert" className="text-[13px] text-expense">
-              {submitError}
-            </p>
-          ) : null}
+            <div className="flex flex-col gap-1">
+              <DatePicker
+                label={tf('dueDate')}
+                value={form.dueDate || undefined}
+                onChange={(day) => update({ dueDate: day ?? '' })}
+                min={today}
+                locale={locale}
+                placeholder={tf('dueDatePlaceholder')}
+                error={errorText(errors.dueDate)}
+              />
+              {form.dueDate ? (
+                <button
+                  type="button"
+                  onClick={() => update({ dueDate: '' })}
+                  className="self-start px-1 text-xs font-medium text-income hover:underline"
+                >
+                  {tf('clearDueDate')}
+                </button>
+              ) : (
+                <p className="px-1 text-xs text-on-surface-variant">
+                  {tf('dueDateHint')}
+                </p>
+              )}
+            </div>
+
+            {!editing ? (
+              <div className="flex flex-col gap-1">
+                <MoneyInput
+                  label={tf('initialAmount')}
+                  value={form.initialAmount}
+                  onValueChange={(value) => update({ initialAmount: value })}
+                  error={errorText(errors.initialAmount)}
+                />
+                <p className="px-1 text-xs text-on-surface-variant">
+                  {tf('initialAmountHint')}
+                </p>
+              </div>
+            ) : null}
+
+            {submitError ? (
+              <p role="alert" className="text-[13px] text-expense">
+                {submitError}
+              </p>
+            ) : null}
+          </DialogBody>
 
           <DialogFooter>
             <DialogClose asChild>

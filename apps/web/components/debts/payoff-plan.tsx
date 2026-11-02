@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Lightbulb } from 'lucide-react';
 
-import { Input } from '@finnit/ui/components/ui/input';
+import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 import { cn } from '@finnit/ui/lib/utils';
 
 import { usePayoffComparison } from '@/hooks/use-payoff-comparison';
@@ -49,13 +49,10 @@ export function PayoffPlan({
       </div>
 
       <div className="flex max-w-sm flex-col gap-1">
-        <Input
+        <MoneyInput
           label={t('extra')}
-          inputMode="decimal"
-          autoComplete="off"
-          placeholder="0.00"
           value={extraText}
-          onChange={(e) => setExtraText(e.target.value)}
+          onValueChange={(value) => setExtraText(value)}
           error={state.status === 'invalid' ? t('extraInvalid') : undefined}
         />
         <p className="px-1 text-xs text-on-surface-variant">{t('extraHint')}</p>

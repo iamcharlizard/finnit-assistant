@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 
-import { Input } from '@finnit/ui/components/ui/input';
+import { NumberInput } from '@finnit/ui/components/ui/number-input';
 
 interface TermsValues {
   statementDay: string;
@@ -24,35 +24,30 @@ export function CreditTermsFields({
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3">
-        <Input
+        <NumberInput
           label={t('statementDay')}
-          inputMode="numeric"
-          maxLength={2}
+          maxDigits={2}
           placeholder={t('dayPlaceholder')}
           value={value.statementDay}
-          onChange={(e) =>
-            onChange({ statementDay: e.target.value.replace(/\D/g, '') })
-          }
+          onValueChange={(value) => onChange({ statementDay: value })}
           error={errors.statementDay}
         />
-        <Input
+        <NumberInput
           label={t('paymentDueDay')}
-          inputMode="numeric"
-          maxLength={2}
+          maxDigits={2}
           placeholder={t('dayPlaceholder')}
           value={value.paymentDueDay}
-          onChange={(e) =>
-            onChange({ paymentDueDay: e.target.value.replace(/\D/g, '') })
-          }
+          onValueChange={(value) => onChange({ paymentDueDay: value })}
           error={errors.paymentDueDay}
         />
       </div>
-      <Input
+      <NumberInput
+        decimals={4}
+        suffix="%"
         label={t('interestRate')}
-        inputMode="decimal"
         placeholder={t('interestRatePlaceholder')}
         value={value.interestRate}
-        onChange={(e) => onChange({ interestRate: e.target.value })}
+        onValueChange={(value) => onChange({ interestRate: value })}
         error={errors.interestRate}
       />
     </div>

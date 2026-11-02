@@ -9,6 +9,7 @@ import { Combobox } from '@finnit/ui/components/ui/combobox';
 import { DatePicker } from '@finnit/ui/components/ui/date-picker';
 import {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -16,7 +17,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
+import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { Input } from '@finnit/ui/components/ui/input';
+import { NumberInput } from '@finnit/ui/components/ui/number-input';
+import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 import { Label } from '@finnit/ui/components/ui/label';
 import { Switch } from '@finnit/ui/components/ui/switch';
 import { Textarea } from '@finnit/ui/components/ui/textarea';
@@ -100,6 +104,7 @@ export function ExpenseDialog({
   defaultCurrency,
   onClose,
   onSaved,
+  onSwitchToLoan,
 }: {
   subject: ExpenseDialogSubject;
   accounts: ApiAccount[];
@@ -108,7 +113,11 @@ export function ExpenseDialog({
   onClose: () => void;
   /** After saving; `changed` is false when an edit changed nothing. */
   onSaved: (changed: boolean, name: string) => void;
+  /** A suggestion marked as a loan is saved as one (its own dialog). */
+  onSwitchToLoan?: () => void;
 }) {
+  // Closes with the exit animation before telling the parent.
+  const exit = useDialogExit();
   const { t } = useLocalizer();
   const tf = useTranslations('recurring.form');
   const locale = useLocale();
@@ -153,7 +162,7 @@ export function ExpenseDialog({
     setSubmitError(null);
     try {
       const changed = await saveRecurring(form, target, gql);
-      onSaved(changed, form.name.trim());
+      exit.after(onSaved)(changed, form.name.trim());
     } catch (error) {
       setSubmitError(recurringErrorMessage(error, t));
       setSaving(false);
@@ -181,10 +190,14 @@ export function ExpenseDialog({
         : tf('create');
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !saving && onClose()}>
+    <Dialog
+      open={exit.open}
+      onOpenChange={(open) => !open && !saving && exit.close(onClose)}
+    >
       <DialogContent
+        onExitComplete={exit.onExitComplete}
         closeLabel={t('common.close')}
-        className="max-h-[92dvh] overflow-y-auto sm:max-w-2xl"
+        className="sm:max-w-2xl"
       >
         <form onSubmit={submit} noValidate className="flex flex-col gap-5">
           <DialogHeader>
@@ -192,237 +205,248 @@ export function ExpenseDialog({
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
 
-          {subject.mode === 'suggestion' ? (
-            <p className="flex items-center gap-2 rounded-input bg-accent-neon/10 p-3 text-xs text-on-background">
-              <Sparkles
-                aria-hidden
-                className="size-4 shrink-0 text-violet-ink"
-              />
-              {tf('suggestionNote', { merchant: subject.suggestion.merchant })}
-            </p>
-          ) : null}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input
-              label={tf('name')}
-              value={form.name}
-              maxLength={NAME_MAX}
-              autoComplete="off"
-              placeholder={tf('namePlaceholder')}
-              onChange={(e) => update({ name: e.target.value })}
-              error={errorText(errors.name)}
-            />
-            <SelectField
-              label={tf('kind')}
-              value={form.kind}
-              options={RECURRING_KINDS.map((kind) => ({
-                value: kind,
-                label: t(`finance.recurringKinds.${kind}`),
-              }))}
-              onChange={(kind) => update({ kind })}
-            />
-          </div>
-
-          <TrackingModeField
-            value={form.trackingMode}
-            onChange={(trackingMode) => update({ trackingMode })}
-          />
-
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <SelectField
-              label={tf('frequency')}
-              value={form.frequency}
-              options={RECURRING_FREQUENCIES.map((frequency) => ({
-                value: frequency,
-                label: t(`recurring.frequencies.${frequency}`),
-              }))}
-              onChange={(frequency) => update({ frequency })}
-            />
-            <div className="flex flex-col gap-1">
-              <Input
-                label={tf('interval')}
-                inputMode="numeric"
-                value={form.interval}
-                maxLength={2}
-                onChange={(e) =>
-                  update({ interval: e.target.value.replace(/\D/g, '') })
-                }
-                error={errorText(errors.interval)}
-              />
-              <p className="px-1 text-xs text-on-surface-variant">
-                {tf('intervalHint')}
+          <DialogBody>
+            {subject.mode === 'suggestion' ? (
+              <p className="flex items-center gap-2 rounded-input bg-accent-neon/10 p-3 text-xs text-on-background">
+                <Sparkles
+                  aria-hidden
+                  className="size-4 shrink-0 text-violet-ink"
+                />
+                {tf('suggestionNote', {
+                  merchant: subject.suggestion.merchant,
+                })}
               </p>
-            </div>
-          </div>
+            ) : null}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1">
-              <DatePicker
-                label={tf('startDate')}
-                value={form.startDate || undefined}
-                onChange={(day) => update({ startDate: day ?? '' })}
-                locale={locale}
-                placeholder={tf('datePlaceholder')}
-                required
-                error={errorText(errors.startDate)}
-              />
-              <p className="px-1 text-xs text-on-surface-variant">
-                {tf('startDateHint')}
-              </p>
-            </div>
-            <div className="flex flex-col gap-1">
-              <DatePicker
-                label={tf('endDate')}
-                value={form.endDate || undefined}
-                onChange={(day) => update({ endDate: day ?? '' })}
-                min={form.startDate || undefined}
-                locale={locale}
-                placeholder={tf('endDatePlaceholder')}
-                error={errorText(errors.endDate)}
-              />
-              {form.endDate ? (
-                <button
-                  type="button"
-                  onClick={() => update({ endDate: '' })}
-                  className="self-start px-1 text-xs font-medium text-income hover:underline"
-                >
-                  {tf('clearEndDate')}
-                </button>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <Input
-              label={tf('amount')}
-              inputMode="decimal"
-              autoComplete="off"
-              placeholder="0.00"
-              value={form.amount}
-              onChange={(e) => update({ amount: e.target.value })}
-              error={errorText(errors.amount)}
-            />
-            <SelectField
-              label={tf('currency')}
-              value={form.currency}
-              options={[...new Set<string>([...CURRENCIES, form.currency])].map(
-                (currency) => ({ value: currency, label: currency }),
-              )}
-              onChange={(currency) => update({ currency })}
-              disabled={subject.mode !== 'create'}
-              hint={subject.mode === 'edit' ? tf('currencyFixed') : undefined}
-            />
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex flex-col gap-0.5">
-              <Label
-                htmlFor="recurring-variable"
-                className="text-sm normal-case tracking-normal text-on-background"
-              >
-                {tf('variable')}
-              </Label>
-              <p className="text-xs text-on-surface-variant">
-                {tf('variableHint')}
-              </p>
-            </div>
-            <Switch
-              id="recurring-variable"
-              checked={form.isVariableAmount}
-              onCheckedChange={(isVariableAmount) =>
-                update({ isVariableAmount })
-              }
-            />
-          </div>
-
-          {isInstallment ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <Input
-                label={tf('installmentsTotal')}
-                inputMode="numeric"
-                maxLength={3}
-                value={form.installmentsTotal}
-                onChange={(e) =>
-                  update({
-                    installmentsTotal: e.target.value.replace(/\D/g, ''),
-                  })
-                }
-                error={errorText(errors.installmentsTotal)}
+                label={tf('name')}
+                value={form.name}
+                maxLength={NAME_MAX}
+                autoComplete="off"
+                placeholder={tf('namePlaceholder')}
+                onChange={(e) => update({ name: e.target.value })}
+                error={errorText(errors.name)}
               />
-              <Input
-                label={tf('installmentsPaid')}
-                inputMode="numeric"
-                maxLength={3}
-                value={form.installmentsPaid}
-                onChange={(e) =>
-                  update({
-                    installmentsPaid: e.target.value.replace(/\D/g, ''),
-                  })
-                }
-                error={errorText(errors.installmentsPaid)}
+              <SelectField
+                label={tf('kind')}
+                value={form.kind}
+                options={RECURRING_KINDS.map((kind) => ({
+                  value: kind,
+                  label: t(`finance.recurringKinds.${kind}`),
+                }))}
+                onChange={(kind) => update({ kind })}
               />
             </div>
-          ) : null}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Combobox
-              label={tf('account')}
-              options={accountItems}
-              value={form.accountId || undefined}
-              onChange={(accountId) => update({ accountId: accountId ?? '' })}
-              placeholder={tf('accountPlaceholder')}
-              searchPlaceholder={tf('accountSearch')}
-              emptyText={tf('noResults')}
-              clearable
+            {form.kind === 'loan' && onSwitchToLoan ? (
+              <div className="flex flex-wrap items-center gap-3 rounded-input bg-highlight/10 p-3 text-sm text-on-background">
+                <p className="flex-1">{tf('loanSwitchHint')}</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => exit.close(onSwitchToLoan)}
+                >
+                  {tf('loanSwitch')}
+                </Button>
+              </div>
+            ) : null}
+
+            <TrackingModeField
+              value={form.trackingMode}
+              onChange={(trackingMode) => update({ trackingMode })}
             />
-            <Combobox
-              label={tf('category')}
-              options={categoryItems}
-              value={form.categoryId || undefined}
-              onChange={(categoryId) =>
-                update({ categoryId: categoryId ?? '' })
-              }
-              placeholder={tf('categoryPlaceholder')}
-              searchPlaceholder={tf('categorySearch')}
-              emptyText={tf('noResults')}
-              clearable
+
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+              <SelectField
+                label={tf('frequency')}
+                value={form.frequency}
+                options={RECURRING_FREQUENCIES.map((frequency) => ({
+                  value: frequency,
+                  label: t(`recurring.frequencies.${frequency}`),
+                }))}
+                onChange={(frequency) => update({ frequency })}
+              />
+              <div className="flex flex-col gap-1">
+                <NumberInput
+                  label={tf('interval')}
+                  value={form.interval}
+                  maxDigits={2}
+                  onValueChange={(value) => update({ interval: value })}
+                  error={errorText(errors.interval)}
+                />
+                <p className="px-1 text-xs text-on-surface-variant">
+                  {tf('intervalHint')}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-1">
+                <DatePicker
+                  label={tf('startDate')}
+                  value={form.startDate || undefined}
+                  onChange={(day) => update({ startDate: day ?? '' })}
+                  locale={locale}
+                  placeholder={tf('datePlaceholder')}
+                  required
+                  error={errorText(errors.startDate)}
+                />
+                <p className="px-1 text-xs text-on-surface-variant">
+                  {tf('startDateHint')}
+                </p>
+              </div>
+              <div className="flex flex-col gap-1">
+                <DatePicker
+                  label={tf('endDate')}
+                  value={form.endDate || undefined}
+                  onChange={(day) => update({ endDate: day ?? '' })}
+                  min={form.startDate || undefined}
+                  locale={locale}
+                  placeholder={tf('endDatePlaceholder')}
+                  error={errorText(errors.endDate)}
+                />
+                {form.endDate ? (
+                  <button
+                    type="button"
+                    onClick={() => update({ endDate: '' })}
+                    className="self-start px-1 text-xs font-medium text-income hover:underline"
+                  >
+                    {tf('clearEndDate')}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+              <MoneyInput
+                label={tf('amount')}
+                currency={form.currency || undefined}
+                value={form.amount}
+                onValueChange={(value) => update({ amount: value })}
+                error={errorText(errors.amount)}
+              />
+              <SelectField
+                label={tf('currency')}
+                value={form.currency}
+                options={[
+                  ...new Set<string>([...CURRENCIES, form.currency]),
+                ].map((currency) => ({ value: currency, label: currency }))}
+                onChange={(currency) => update({ currency })}
+                disabled={subject.mode !== 'create'}
+                hint={subject.mode === 'edit' ? tf('currencyFixed') : undefined}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-0.5">
+                <Label
+                  htmlFor="recurring-variable"
+                  className="text-sm normal-case tracking-normal text-on-background"
+                >
+                  {tf('variable')}
+                </Label>
+                <p className="text-xs text-on-surface-variant">
+                  {tf('variableHint')}
+                </p>
+              </div>
+              <Switch
+                id="recurring-variable"
+                checked={form.isVariableAmount}
+                onCheckedChange={(isVariableAmount) =>
+                  update({ isVariableAmount })
+                }
+              />
+            </div>
+
+            {isInstallment ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <NumberInput
+                  label={tf('installmentsTotal')}
+                  maxDigits={3}
+                  value={form.installmentsTotal}
+                  onValueChange={(value) =>
+                    update({
+                      installmentsTotal: value,
+                    })
+                  }
+                  error={errorText(errors.installmentsTotal)}
+                />
+                <NumberInput
+                  label={tf('installmentsPaid')}
+                  maxDigits={3}
+                  value={form.installmentsPaid}
+                  onValueChange={(value) =>
+                    update({
+                      installmentsPaid: value,
+                    })
+                  }
+                  error={errorText(errors.installmentsPaid)}
+                />
+              </div>
+            ) : null}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Combobox
+                label={tf('account')}
+                options={accountItems}
+                value={form.accountId || undefined}
+                onChange={(accountId) => update({ accountId: accountId ?? '' })}
+                placeholder={tf('accountPlaceholder')}
+                searchPlaceholder={tf('accountSearch')}
+                emptyText={tf('noResults')}
+                clearable
+              />
+              <Combobox
+                label={tf('category')}
+                options={categoryItems}
+                value={form.categoryId || undefined}
+                onChange={(categoryId) =>
+                  update({ categoryId: categoryId ?? '' })
+                }
+                placeholder={tf('categoryPlaceholder')}
+                searchPlaceholder={tf('categorySearch')}
+                emptyText={tf('noResults')}
+                clearable
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <Input
+                label={tf('merchantPattern')}
+                value={form.merchantPattern}
+                maxLength={PATTERN_MAX}
+                autoComplete="off"
+                placeholder={tf('merchantPatternPlaceholder')}
+                onChange={(e) => update({ merchantPattern: e.target.value })}
+                error={errorText(errors.merchantPattern)}
+              />
+              <p className="px-1 text-xs text-on-surface-variant">
+                {tf('merchantPatternHint')}
+              </p>
+            </div>
+
+            <Textarea
+              label={tf('notes')}
+              placeholder={tf('notesPlaceholder')}
+              value={form.notes}
+              onChange={(e) => update({ notes: e.target.value })}
+              rows={2}
+              maxLength={NOTES_MAX}
+              error={errorText(errors.notes)}
             />
-          </div>
 
-          <div className="flex flex-col gap-1">
-            <Input
-              label={tf('merchantPattern')}
-              value={form.merchantPattern}
-              maxLength={PATTERN_MAX}
-              autoComplete="off"
-              placeholder={tf('merchantPatternPlaceholder')}
-              onChange={(e) => update({ merchantPattern: e.target.value })}
-              error={errorText(errors.merchantPattern)}
-            />
-            <p className="px-1 text-xs text-on-surface-variant">
-              {tf('merchantPatternHint')}
-            </p>
-          </div>
-
-          <Textarea
-            label={tf('notes')}
-            placeholder={tf('notesPlaceholder')}
-            value={form.notes}
-            onChange={(e) => update({ notes: e.target.value })}
-            rows={2}
-            maxLength={NOTES_MAX}
-            error={errorText(errors.notes)}
-          />
-
-          {hasErrors(errors) ? (
-            <p role="alert" className="text-[13px] text-expense">
-              {tf('fixErrors')}
-            </p>
-          ) : null}
-          {submitError ? (
-            <p role="alert" className="text-[13px] text-expense">
-              {submitError}
-            </p>
-          ) : null}
+            {hasErrors(errors) ? (
+              <p role="alert" className="text-[13px] text-expense">
+                {tf('fixErrors')}
+              </p>
+            ) : null}
+            {submitError ? (
+              <p role="alert" className="text-[13px] text-expense">
+                {submitError}
+              </p>
+            ) : null}
+          </DialogBody>
 
           <DialogFooter>
             <DialogClose asChild>

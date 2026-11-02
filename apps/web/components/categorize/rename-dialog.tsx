@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
+import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { Input } from '@finnit/ui/components/ui/input';
 
 import { SwitchField } from '@/components/finance/switch-field';
@@ -45,6 +46,8 @@ export function RenameDialog({
   onClose: () => void;
   onSaved: (updated: CategorizeTransaction, removed: boolean) => void;
 }) {
+  // Closes with the exit animation before telling the parent.
+  const exit = useDialogExit();
   const { t } = useLocalizer();
   const tr = useTranslations('categorize.renameDialog');
   const [form, setForm] = React.useState<RenameForm>(() => renameFormOf(row));
@@ -62,7 +65,7 @@ export function RenameDialog({
     setSubmitError(null);
     try {
       const updated = await renameTransaction(row.id, value, gql);
-      onSaved(updated, value === 'remove');
+      exit.after(onSaved)(updated, value === 'remove');
     } catch (e) {
       setSubmitError(categorizeErrorMessage(e, t));
       setSaving(false);
@@ -70,8 +73,15 @@ export function RenameDialog({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !saving && onClose()}>
-      <DialogContent closeLabel={t('common.close')} className="sm:max-w-md">
+    <Dialog
+      open={exit.open}
+      onOpenChange={(open) => !open && !saving && exit.close(onClose)}
+    >
+      <DialogContent
+        onExitComplete={exit.onExitComplete}
+        closeLabel={t('common.close')}
+        className="sm:max-w-md"
+      >
         <form
           noValidate
           className="flex flex-col gap-5"

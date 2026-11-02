@@ -44,7 +44,8 @@
       "debts": "Deudas",
       "goals": "Metas",
       "simulator": "Simulador",
-      "statements": "Estados de cuenta"
+      "statements": "Estados de cuenta",
+      "loans": "Préstamos"
     },
     "short": {
       "dashboard": "Inicio",
@@ -74,7 +75,8 @@
     "debts": "Deudas",
     "goals": "Metas de ahorro",
     "simulator": "Simulador ¿Y si…?",
-    "notifications": "Notificaciones"
+    "notifications": "Notificaciones",
+    "loans": "Préstamos"
   },
   "newEntry": {
     "title": "Nuevo movimiento",
@@ -337,23 +339,9 @@
   },
   "cards": {
     "count": "{count, plural, one {# tarjeta} other {# tarjetas}}",
-    "expensesOf": "Gastos · {month}",
-    "movementsOf": "Movimientos de {name}",
     "noMovementsTitle": "Sin movimientos",
     "noMovementsDescription": "Esta cuenta aún no tiene movimientos.",
-    "carouselLabel": "Cuentas de {group}",
-    "availableCredit": "Crédito disponible: {amount}",
-    "currentDebt": "Deuda actual",
-    "availableBalance": "Saldo disponible",
-    "noLimit": "Sin límite de crédito registrado para esta tarjeta.",
-    "factsTitle": "Corte y pago",
-    "noFacts": "Aún no tenemos el día de corte de esta tarjeta ni su estado de cuenta de este mes. Agrégalo desde Editar.",
-    "recurringSummary": "{count, plural, one {# cargo recurrente} other {# cargos recurrentes}} este periodo: {expected} esperado, {paid} ya cobrado.",
     "facts": {
-      "due": "{date} · {relative}",
-      "nextStatement": "Próximo corte",
-      "paymentDue": "Fecha límite de pago",
-      "nextPayment": "Próxima fecha de pago",
       "statementBalanceOn": "Saldo al corte ({date})",
       "statementBalance": "Saldo al corte",
       "noInterest": "Pago para no generar intereses",
@@ -371,11 +359,6 @@
     "showArchived": "Mostrar archivadas ({count})",
     "emptyTitle": "Aún no tienes cuentas",
     "emptyDescription": "Conecta tu banco para importar tus cuentas y movimientos, o agrega una cuenta a mano.",
-    "groups": {
-      "credit": "Tarjetas de crédito",
-      "debit": "Débito y efectivo",
-      "savings": "Ahorro y otras"
-    },
     "tier": {
       "cash": "EFECTIVO",
       "credit": "CRÉDITO",
@@ -388,13 +371,7 @@
       "manual": "Manual",
       "archived": "Archivada"
     },
-    "tile": {
-      "owed": "Debes {amount}",
-      "available": "Saldo {amount}",
-      "select": "Ver {name}"
-    },
     "cardBalance": "Saldo",
-    "detailTitle": "Detalle",
     "manualLink": {
       "question": "¿Tu banco no aparece?",
       "action": "Agrégala manualmente"
@@ -528,6 +505,26 @@
       "hex": "Usa el formato #RRGGBB.",
       "duplicateName": "Ya tienes una cuenta con ese nombre.",
       "notFound": "No encontramos esta cuenta."
+    },
+    "stackLabel": "Tus cuentas y tarjetas",
+    "detail": {
+      "limit": "Límite de crédito",
+      "noLimit": "Sin límite registrado",
+      "available": "Disponible: {amount}",
+      "used": "Crédito utilizado",
+      "usedHint": "{percent} % de tu límite",
+      "balance": "Saldo",
+      "projected": "Balance previsto a fin de mes",
+      "projectedNone": "Sin pagos recurrentes pendientes este mes.",
+      "projectedDebit": "Descuenta {count, plural, one {# pago recurrente pendiente} other {# pagos recurrentes pendientes}} ({amount}).",
+      "projectedCredit": "Suma {count, plural, one {# pago recurrente pendiente} other {# pagos recurrentes pendientes}} ({amount}).",
+      "statementDate": "Fecha de corte",
+      "paymentDate": "Fecha de pago",
+      "notSet": "Sin configurar",
+      "notSetHint": "Agrégala desde Editar.",
+      "statement": "Estado de cuenta",
+      "movements": "Movimientos",
+      "seeAll": "Ver todos"
     }
   },
   "recurring": {
@@ -604,15 +601,14 @@
       "resumed": "{name} está activo de nuevo",
       "deleted": "Eliminaste {name}",
       "accepted": "Agregamos {name} a tus pagos recurrentes",
-      "dismissed": "Descartamos la sugerencia {name}"
+      "dismissed": "Descartamos la sugerencia {name}",
+      "acceptedAsLoan": "Registramos {name} como préstamo"
     },
     "cardDates": {
       "statement": "Corte de {name}",
       "paymentDue": "Límite de pago de {name}"
     },
     "list": {
-      "title": "Mis pagos recurrentes",
-      "count": "{count, plural, one {# pago recurrente} other {# pagos recurrentes}}",
       "filterKind": "Filtrar por tipo",
       "filterStatus": "Filtrar por estado",
       "allKinds": "Todos los tipos",
@@ -717,7 +713,9 @@
       "create": "Crear pago",
       "save": "Guardar",
       "accept": "Agregar",
-      "saving": "Guardando…"
+      "saving": "Guardando…",
+      "loanSwitchHint": "Un préstamo tiene monto, plazo y pagos ya hechos. Regístralo como préstamo para darle seguimiento.",
+      "loanSwitch": "Registrar como préstamo"
     },
     "validation": {
       "nameRequired": "Escribe un nombre.",
@@ -756,7 +754,6 @@
       "suggestionGone": "Esta sugerencia ya no está disponible."
     },
     "suggestions": {
-      "title": "Sugeridos",
       "subtitle": "Pagos que se repiten en tus movimientos y aún no registras.",
       "loading": "Buscando pagos que se repiten en tus movimientos…",
       "empty": "No encontramos pagos recurrentes nuevos en tus movimientos.",
@@ -770,7 +767,16 @@
       "nextDue": "próximo {date}",
       "ai": "Clasificado con IA",
       "confidence": "Confianza {percent}%",
-      "evidence": "{count, plural, one {Visto # vez} other {Visto # veces}}"
+      "evidence": "{count, plural, one {Visto # vez} other {Visto # veces}}",
+      "looksLikeLoan": "Parece un préstamo",
+      "asLoan": "Es un préstamo",
+      "asLoanLabel": "Registrar {name} como préstamo"
+    },
+    "tabs": {
+      "label": "Secciones de pagos recurrentes",
+      "calendar": "Calendario",
+      "list": "Mis pagos",
+      "suggestions": "Sugeridos"
     }
   },
   "budgets": {
@@ -927,7 +933,9 @@
       "of": "de {amount}",
       "paidLabel": "Pagado: {percent}%",
       "paid": "Has pagado {amount} ({percent}%)",
-      "due": "Vence el {date}"
+      "due": "Vence el {date}",
+      "nextPayment": "Próximo pago: {date}",
+      "details": "Ver detalle"
     },
     "delete": {
       "title": "¿Eliminar {name}?",
@@ -951,7 +959,7 @@
       "kind": "Tipo",
       "principal": "Monto de la deuda",
       "principalHint": "Lo que pediste prestado o lo que debías al registrarla. Tus pagos se restan de aquí.",
-      "rate": "Tasa de interés anual (%)",
+      "rate": "Tasa de interés anual",
       "ratePlaceholder": "Ej. 36",
       "minPayment": "Pago mínimo mensual",
       "startDate": "Fecha de inicio",
@@ -967,7 +975,8 @@
       "fixErrors": "Revisa los campos marcados.",
       "saving": "Guardando…",
       "save": "Guardar cambios",
-      "create": "Registrar deuda"
+      "create": "Registrar deuda",
+      "lockedTerms": "Los términos de este préstamo (monto, tasa y pagos) no se pueden cambiar. Puedes cambiar el nombre, las fechas y la cuenta."
     },
     "validation": {
       "nameRequired": "Escribe un nombre.",
@@ -1050,8 +1059,455 @@
       "account": "La cuenta ligada ya no existe.",
       "principalBelowPaid": "El monto no puede ser menor a lo que ya pagaste.",
       "notFound": "Esta deuda ya no existe. Recarga la página.",
-      "paymentUndone": "No pudimos registrar el pago: {reason} No se guardó ningún movimiento.",
-      "paymentNotLinked": "Guardamos el movimiento, pero no pudimos ligarlo a la deuda: {reason}"
+      "paymentNotLinked": "Guardamos el movimiento, pero no pudimos ligarlo a la deuda: {reason}",
+      "paidTooMuch": "Los pagos ya hechos suman más de lo que debes pagar.",
+      "firstPaymentTooLate": "Llevas más pagos de los que detectamos: elige una fecha de primer pago anterior.",
+      "suggestionGone": "Esta sugerencia ya no está disponible. Recarga la página.",
+      "candidateTaken": "Ese movimiento o ese pago ya están registrados.",
+      "frequency": "Elige la periodicidad de los pagos.",
+      "totalBelowPrincipal": "El monto prestado no puede ser mayor que el total a pagar.",
+      "installmentsBelowPaid": "El número de pagos no puede ser menor que los pagos que ya hiciste."
+    },
+    "newLoan": "Préstamo",
+    "newOther": "Tarjeta u otra deuda",
+    "loanTypes": {
+      "institutional": "Banco o financiera",
+      "personal": "Personal",
+      "purchase_financing": "Compra a plazos"
+    },
+    "loanTypeHints": {
+      "institutional": "Un banco o financiera (p. ej. YoTePresto): pagos fijos durante un plazo.",
+      "personal": "Un familiar, amigo o conocido: los pagos pueden variar y la deuda puede crecer si te vuelve a prestar.",
+      "purchase_financing": "Kueski, Didi Paga Después y similares: cada compra suma sus pagos a las mismas fechas."
+    },
+    "loanFrequencies": {
+      "weekly": "semanal",
+      "biweekly": "catorcenal",
+      "semimonthly": "quincenal",
+      "monthly": "mensual"
+    },
+    "interestModes": {
+      "rate": "Con la tasa de interés",
+      "total_amount": "Con el total a pagar",
+      "installment_amount": "Con el monto de cada pago"
+    },
+    "interestModeHints": {
+      "rate": "Calculamos el pago fijo con el monto prestado y la tasa anual.",
+      "total_amount": "Escribe lo que pagarás en total (monto prestado + intereses).",
+      "installment_amount": "Escribe cuánto pagas cada vez; el total es ese pago por el número de pagos."
+    },
+    "destinations": {
+      "deposit": "Lo recibí en una cuenta",
+      "purchase": "Lo usé para comprar algo"
+    },
+    "destinationHints": {
+      "deposit": "El dinero entra a la cuenta. No cuenta como ingreso, a menos que lo marques.",
+      "purchase": "No se mueve ninguna cuenta: solo crece lo que debes."
+    },
+    "loan": {
+      "createTitle": "Nuevo préstamo",
+      "createDescription": "Registra lo que te prestaron, cómo lo pagas y lo que ya pagaste.",
+      "fromSuggestionTitle": "Registrar como préstamo",
+      "fromSuggestionDescription": "Revisa los datos que propusimos y completa lo que falta.",
+      "draftLoading": "Preparando los datos del préstamo…",
+      "draftDetected": "{count, plural, one {Detectamos # pago} other {Detectamos # pagos}} de {amount}. Quedarán registrados como pagos hechos.",
+      "type": "Tipo de préstamo",
+      "name": "Nombre",
+      "namePlaceholder": {
+        "institutional": "Ej. Préstamo YoTePresto",
+        "personal": "Ej. Préstamo de mi hermana",
+        "purchase_financing": "Ej. Kueski"
+      },
+      "lender": {
+        "institutional": "Banco o financiera",
+        "personal": "¿Quién te prestó?",
+        "purchase_financing": "Servicio"
+      },
+      "principal": {
+        "institutional": "Monto prestado",
+        "personal": "Monto prestado (opcional)",
+        "purchase_financing": "Monto de la compra"
+      },
+      "startDate": {
+        "institutional": "Fecha del préstamo (opcional)",
+        "personal": "Fecha del préstamo (opcional)",
+        "purchase_financing": "Fecha de la compra (opcional)"
+      },
+      "datePlaceholder": "Elige una fecha",
+      "termsTitle": "Cómo se paga",
+      "installments": "Número de pagos",
+      "installmentsPlaceholder": "Ej. 12",
+      "frequency": "Periodicidad",
+      "interestMode": "Cómo conoces el interés",
+      "rate": "Tasa de interés ordinaria anual",
+      "ratePlaceholder": "Ej. 45",
+      "vat": "Sumar IVA a los intereses (16%)",
+      "vatHint": "En México los intereses de los préstamos suelen llevar IVA.",
+      "totalToRepay": "Total a pagar",
+      "installmentAmount": "Monto de cada pago",
+      "personalTotal": "Total a devolver (opcional)",
+      "personalTotalPlaceholder": "Igual al monto prestado",
+      "personalTotalHint": "Si acordaron intereses, escribe lo que devolverás en total.",
+      "hasSchedule": "Hay un pago acordado",
+      "hasScheduleHint": "Te recordamos cada pago y los buscamos en tus movimientos.",
+      "agreedPayment": "Pago acordado",
+      "firstPaymentDate": "Fecha del primer pago",
+      "preview": "{count, plural, one {# pago} other {# pagos}} de {amount} · total {total} · intereses {interest}",
+      "paidTitle": "Pagos que ya hiciste",
+      "paidHint": "Bajan lo que debes, pero no cuentan en tus gastos porque no los registraste en su momento.",
+      "installmentsPaid": "Pagos ya hechos",
+      "historicalAmount": "Monto",
+      "historicalDate": "Fecha",
+      "historicalAccount": "Contar en mis gastos (opcional)",
+      "historicalAccountPlaceholder": "No contar",
+      "accountSearch": "Buscar cuenta…",
+      "noResults": "Sin resultados.",
+      "removeHistorical": "Quitar el pago {number}",
+      "addHistorical": "Agregar pago",
+      "destinationTitle": "¿Qué pasó con el dinero?",
+      "depositAccount": "Cuenta donde lo recibiste",
+      "accountPlaceholder": "Elige una cuenta",
+      "countsAsIncome": "Contarlo como ingreso",
+      "countsAsIncomeHint": "Normalmente un préstamo no es un ingreso: es dinero que vas a devolver.",
+      "paymentAccount": "Cuenta con la que pagas (opcional)",
+      "paymentAccountHint": "Con una tarjeta o cuenta conectada, buscamos los pagos en tus movimientos.",
+      "category": "Categoría de los pagos",
+      "categoryPlaceholder": "Sin categoría",
+      "categorySearch": "Buscar categoría…",
+      "fixErrors": "Revisa los campos marcados.",
+      "saving": "Guardando…",
+      "create": "Registrar préstamo",
+      "rateHint": "Viene en tu contrato como «tasa de interés ordinaria» (sin IVA). No uses el CAT: ya incluye comisiones.",
+      "openingFee": "Comisión por apertura (opcional)",
+      "openingFeeHint": "Lo que te descontaron al darte el préstamo, con IVA si lo cobraron. No es un gasto: solo recibes menos dinero y sigues debiendo el monto prestado.",
+      "depositAmount": "Monto depositado",
+      "editDeposit": "Editar monto depositado",
+      "depositAmountHint": "Se calcula como monto prestado menos la comisión por apertura.",
+      "purpose": "¿En qué se usó? (opcional)",
+      "purposePlaceholder": "Ej. Electrónica",
+      "purposeHint": "Solo informativo: lo que cuenta como gasto son los pagos, en Préstamos y deudas.",
+      "periodicFee": "Comisión fija por pago (opcional)",
+      "periodicFeeHint": "Administración, seguro o renta que te cobran en cada pago, aparte de los intereses. Ej. $257.76 + IVA.",
+      "periodicFeeAddVat": "Sumarle IVA (16%)",
+      "previewFees": "comisiones {fees}",
+      "clearDate": "Quitar fecha",
+      "principalPersonalHint": "Déjalo vacío o en 0 si vas a registrar cada préstamo por separado desde su página."
+    },
+    "loanValidation": {
+      "nameRequired": "Escribe un nombre.",
+      "nameTooLong": "El nombre es demasiado largo.",
+      "principalRequired": "Escribe el monto.",
+      "principalInvalid": "Escribe un monto mayor a 0.",
+      "installmentsRequired": "Escribe el número de pagos.",
+      "installmentsInvalid": "Escribe un número entero de pagos (1 a 1000).",
+      "rateRequired": "Escribe la tasa anual.",
+      "rateInvalid": "La tasa debe estar entre 0 y 1000%.",
+      "totalRequired": "Escribe el total a pagar.",
+      "totalInvalid": "Escribe un total mayor a 0.",
+      "totalBelowPrincipal": "El total no puede ser menor al monto prestado.",
+      "installmentAmountRequired": "Escribe el monto de cada pago.",
+      "installmentAmountInvalid": "Con ese pago no se cubre el monto prestado.",
+      "firstPaymentRequired": "Elige la fecha del primer pago.",
+      "purchaseAfterFirstPayment": "La compra debe ser antes del primer pago.",
+      "paidInvalid": "Escribe un número entero.",
+      "paidTooMany": "No puedes llevar más pagos de los que tiene el préstamo.",
+      "paidBelowDetected": "Ya detectamos más pagos que esos en tus movimientos.",
+      "depositAccountRequired": "Elige la cuenta donde recibiste el dinero.",
+      "historicalInvalid": "Revisa los pagos: cada uno necesita monto y una fecha que no sea futura.",
+      "historicalTooMuch": "Los pagos suman más de lo que debías.",
+      "openingFeeInvalid": "La comisión debe ser menor al monto prestado.",
+      "depositMismatch": "No cuadra: monto prestado − comisión = {expected}, pero el monto depositado es {typed}. Corrige la comisión o el depósito para poder guardar.",
+      "periodicFeeInvalid": "Escribe una comisión válida."
+    },
+    "charge": {
+      "title": "Agregar al préstamo",
+      "purchaseTitle": "Agregar compra",
+      "description": "Te volvieron a prestar: lo sumamos a lo que debes de {name}.",
+      "purchaseDescription": "Sus pagos se suman a las fechas que ya tienes en {name}.",
+      "descriptionLabel": "Descripción (opcional)",
+      "placeholder": "Ej. Para la colegiatura",
+      "purchasePlaceholder": "Ej. Audífonos",
+      "amount": "Monto prestado",
+      "purchaseAmount": "Monto de la compra",
+      "date": "Fecha",
+      "datePlaceholder": "Elige una fecha",
+      "installments": "Número de pagos",
+      "installmentsOptional": "Número de pagos (opcional)",
+      "installmentsPlaceholder": "Ej. 4",
+      "interest": "Interés",
+      "interestTotal": "Con el total a pagar",
+      "interestRate": "Con la tasa anual",
+      "rate": "Tasa de interés ordinaria anual",
+      "ratePlaceholder": "Ej. 90",
+      "vat": "Sumar IVA a los intereses (16%)",
+      "totalToRepay": "Total a pagar (opcional)",
+      "totalPlaceholder": "Igual al monto",
+      "totalHint": "Déjalo vacío si no tiene intereses.",
+      "preview": "{count, plural, one {# pago} other {# pagos}} de {amount} · total {total}",
+      "depositAccount": "Cuenta donde lo recibiste",
+      "accountPlaceholder": "Elige una cuenta",
+      "accountSearch": "Buscar cuenta…",
+      "noResults": "Sin resultados.",
+      "saving": "Guardando…",
+      "submit": "Agregar",
+      "purpose": "¿En qué se usó? (opcional)",
+      "purposePlaceholder": "Ej. Electrónica",
+      "purposeSearch": "Buscar categoría…",
+      "purposeHint": "Solo informativo: no cuenta como gasto."
+    },
+    "chargeValidation": {
+      "dateRequired": "Elige la fecha.",
+      "dateInFuture": "La fecha no puede ser futura.",
+      "principalRequired": "Escribe el monto.",
+      "principalInvalid": "Escribe un monto mayor a 0.",
+      "installmentsRequired": "Escribe el número de pagos de la compra.",
+      "installmentsInvalid": "Escribe un número entero de pagos (1 a 1000).",
+      "totalInvalid": "Escribe un total mayor a 0.",
+      "totalBelowPrincipal": "El total no puede ser menor al monto.",
+      "rateRequired": "Escribe la tasa anual.",
+      "rateInvalid": "La tasa debe estar entre 0 y 1000%.",
+      "depositAccountRequired": "Elige la cuenta donde recibiste el dinero."
+    },
+    "detail": {
+      "back": "Deudas",
+      "terms": "{count, plural, one {# pago} other {# pagos}} {frequency}es de {amount}",
+      "termsOpen": "Pago {frequency} de {amount}",
+      "remaining": "Te falta pagar",
+      "next": "Próximo pago: {date} · {amount}",
+      "nextOverdue": "Pago vencido: {date} · {amount}",
+      "noNext": "Sin pagos programados",
+      "totalOwed": "Deuda total",
+      "interest": "Incluye {amount} de intereses",
+      "noInterest": "Sin intereses",
+      "paid": "Pagado",
+      "historicalPaid": "{amount} antes de registrarlo (no cuenta en tus gastos)",
+      "paidDetail": "{count, plural, =0 {Aún sin pagos} one {# pago} other {# pagos}}",
+      "progress": "{percent}% pagado",
+      "rateWithVat": "{rate} anual + IVA",
+      "addCharge": "Agregar dinero",
+      "addPurchase": "Agregar compra",
+      "scheduleEmpty": "Este préstamo no tiene pagos programados. Registra cada pago cuando lo hagas.",
+      "status": {
+        "paid": "Pagado",
+        "historical": "Pagado antes",
+        "upcoming": "Por pagar",
+        "overdue": "Vencido",
+        "skipped": "Omitido",
+        "projected": "Programado"
+      },
+      "payThis": "Pagar",
+      "chargesTitle": "Dinero agregado",
+      "chargeUntitled": "Sin descripción",
+      "chargeInstallments": "{count, plural, one {# pago} other {# pagos}}",
+      "chargePrincipal": "Prestado: {amount}",
+      "deleteCharge": "Quitar",
+      "deleteChargeTitle": "¿Quitar este dinero del préstamo?",
+      "deleteChargeDescription": "Lo que debes baja. Si lo recibiste en una cuenta, también se quita ese movimiento.",
+      "chargeDeleted": "Quitamos el dinero del préstamo",
+      "chargeAdded": "Lo sumamos a tu préstamo",
+      "paymentsTitle": "Pagos registrados",
+      "paymentsEmpty": "Aún no hay pagos.",
+      "historical": "Antes de registrarlo",
+      "counted": "En tus gastos",
+      "deletePayment": "Quitar pago",
+      "deletePaymentTitle": "¿Quitar este pago?",
+      "deletePaymentDescription": "Lo que debes vuelve a subir. No se toca ninguna cuenta.",
+      "deleteConfirm": "Quitar",
+      "paymentDeleted": "Quitamos el pago",
+      "paymentsHint": "Los pagos «En tus gastos» se quitan desde el calendario (reabriendo el pago) o desde el movimiento.",
+      "candidatesTitle": "Pagos detectados en tus movimientos",
+      "candidatesLoading": "Buscando tus pagos…",
+      "candidatesError": "No pudimos buscar tus pagos.",
+      "retry": "Reintentar",
+      "candidatesHint": "Confirma los que sí son pagos de este préstamo. Así aprendemos a reconocerlos solos.",
+      "candidatePays": "Pago del {date} · {amount}",
+      "reasons": {
+        "history": "Como pagos anteriores",
+        "text": "Menciona al prestamista",
+        "amount": "Por monto y fecha",
+        "ai": "Elegido con IA"
+      },
+      "confirmCandidate": "Es este",
+      "candidateConfirmed": "Registramos el pago",
+      "backLoans": "Préstamos",
+      "openingFee": "Comisión por apertura {fee} (recibiste {received})",
+      "purpose": "¿En qué se usó?",
+      "purposePlaceholder": "Sin especificar",
+      "purposeSearch": "Buscar categoría…",
+      "noResults": "Sin resultados.",
+      "periodicFee": "Comisión por pago {fee}",
+      "tabs": {
+        "details": "Detalles",
+        "amortization": "Tabla de amortización",
+        "payments": "Pagos registrados",
+        "lentPersonal": "Préstamos recibidos",
+        "lentPurchase": "Compras"
+      },
+      "detailsTitle": "Detalles del préstamo",
+      "edit": "Editar",
+      "editTitle": "Editar préstamo",
+      "editHint": "Si cambias el monto, el número de pagos o la comisión por pago, recalculamos el pago y los pagos pendientes. Los pagos ya hechos no cambian.",
+      "cancel": "Cancelar",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "detailsSaved": "Actualizamos el préstamo",
+      "datePlaceholder": "Elige una fecha",
+      "facts": {
+        "name": "Nombre",
+        "lender": "Institución o prestamista",
+        "type": "Tipo",
+        "principal": "Monto prestado",
+        "installments": "Número de pagos",
+        "frequency": "Periodicidad",
+        "rate": "Tasa de interés ordinaria anual",
+        "payment": "Pago por periodo",
+        "total": "Total a pagar",
+        "startDate": "Fecha del préstamo",
+        "openingFee": "Comisión por apertura",
+        "periodicFee": "Comisión fija por pago",
+        "purpose": "¿En qué se usó?",
+        "purposeNone": "Sin especificar",
+        "lenderPerson": "¿Quién te prestó?",
+        "lendingMethod": "¿Cómo te prestó?"
+      },
+      "columns": {
+        "number": "#",
+        "date": "Fecha",
+        "payment": "Pago",
+        "principal": "Capital",
+        "interest": "Interés",
+        "vat": "IVA",
+        "fee": "Comisión",
+        "balance": "Saldo",
+        "status": "Estado",
+        "actions": "Acciones",
+        "kind": "Tipo",
+        "amount": "Monto",
+        "description": "Descripción",
+        "method": "Cómo",
+        "purpose": "Para qué"
+      },
+      "summary": {
+        "paidTitle": "Avance del préstamo",
+        "paidCenter": "pagado",
+        "paidAria": "{percent}% pagado: {paid} de {total}",
+        "paid": "Pagado",
+        "pending": "Pendiente",
+        "total": "Total del préstamo",
+        "historical": "{amount} antes de registrarlo (no cuenta en tus gastos)",
+        "outstandingTitle": "Lo que falta",
+        "payoff": "Para liquidarlo hoy",
+        "payoffHint": "Capital pendiente, sin intereses, IVA ni comisiones futuras.",
+        "payoffEstimated": "Capital pendiente aproximado, sin intereses futuros.",
+        "withInterest": "Pendiente con intereses",
+        "withInterestHint": "Lo que pagarías si sigues el calendario: capital, intereses, IVA y comisiones.",
+        "saving": "Si lo liquidas hoy te ahorras unos {amount}. Confirma el monto exacto con {lender}: puede sumar el interés del periodo en curso.",
+        "lenderFallback": "el prestamista",
+        "share": "{percent}% de lo pendiente",
+        "parts": {
+          "principal": "Capital",
+          "interest": "Intereses",
+          "vat": "IVA",
+          "fees": "Comisiones"
+        },
+        "paidInfo": "Más sobre lo pagado",
+        "payoffInfo": "Más sobre liquidarlo hoy",
+        "withInterestInfo": "Más sobre el pendiente con intereses"
+      },
+      "clearDate": "Quitar fecha",
+      "startDateOptional": "Fecha del préstamo (opcional)",
+      "lent": {
+        "initial": "Préstamo inicial",
+        "noDate": "Sin fecha",
+        "toRepay": "A pagar: {amount}",
+        "titlePersonal": "Lo que te ha prestado",
+        "titlePurchase": "Compras",
+        "hintPersonal": "Cada vez que te prestó: el préstamo inicial y lo que se fue sumando (otro préstamo, una compra con su tarjeta…).",
+        "addPersonal": "Agregar préstamo",
+        "addPurchase": "Agregar compra"
+      }
+    },
+    "categories": {
+      "institutional": "Bancos y financieras",
+      "personal": "Personales",
+      "purchase_financing": "Compras a plazos",
+      "card": "Tarjetas",
+      "other": "Otras deudas",
+      "msi": "MSI de tarjetas"
+    },
+    "insights": {
+      "title": "Tu deuda en números",
+      "includeMsi": "Incluir MSI de tarjetas",
+      "includeMsiHint": "Compras a meses en tus tarjetas: usan tu línea de crédito.",
+      "current": "Deuda actual",
+      "total": "Deuda total",
+      "paidSoFar": "Pagado",
+      "currentVsTotal": "Has pagado {percent}% de todo lo que has debido",
+      "byTypeTitle": "Deuda actual por tipo",
+      "nothingOwed": "No debes nada en este momento.",
+      "count": "{count, plural, one {· # deuda} other {· # deudas}}",
+      "paidTitle": "Pagado por mes",
+      "paidSeries": {
+        "counted": "En tus gastos",
+        "historical": "Antes de registrar",
+        "msi": "MSI"
+      },
+      "monthLabel": "{month}: {amount} pagado",
+      "monthTotal": "Total",
+      "seeTable": "Ver como tabla",
+      "month": "Mes",
+      "noPayments": "Aún no hay pagos en estos meses.",
+      "projectionTitle": "Cómo bajará tu deuda",
+      "projectionPaidOff": "A este ritmo terminas de pagar en {month}.",
+      "projectionNotPaidOff": "A este ritmo aún deberás algo en {count, plural, one {# mes} other {# meses}}.",
+      "projectionLabel": "Deuda proyectada: de {from} a {to} en {month}",
+      "owedThen": "Deberás",
+      "upcomingTitle": "Por pagar próximamente",
+      "upcoming": {
+        "days30": "30 días",
+        "days60": "60 días",
+        "days90": "90 días"
+      },
+      "loadTitle": "Carga de deuda",
+      "loadLevels": {
+        "low": "Saludable",
+        "moderate": "Moderada",
+        "high": "Alta"
+      },
+      "loadDetail": "Pagas {monthly} al mes de {income} de ingreso mensual promedio (últimos 3 meses).",
+      "loadNoIncome": "Pagas {monthly} al mes. Registra tus ingresos para ver qué parte de ellos se va en deudas."
+    },
+    "msi": {
+      "title": "Meses sin intereses en tus tarjetas",
+      "manage": "Ver en pagos recurrentes",
+      "hint": "No son préstamos: ocupan parte de tu línea de crédito. Se registran desde tus pagos recurrentes o estados de cuenta.",
+      "progress": "{paid} de {total} pagos",
+      "installment": "{amount} por pago",
+      "next": "Próximo: {date}"
+    },
+    "loansLink": "{count, plural, one {Tienes # préstamo} other {Tienes # préstamos}} ({active, plural, =0 {todos liquidados} one {# activo} other {# activos}}). Están incluidos en los totales y en el plan; míralos en Préstamos.",
+    "loanEditValidation": {
+      "nameRequired": "Escribe un nombre.",
+      "nameTooLong": "El nombre es demasiado largo.",
+      "principalRequired": "Escribe el monto prestado.",
+      "principalInvalid": "Escribe un monto válido.",
+      "installmentsRequired": "Escribe el número de pagos.",
+      "installmentsInvalid": "Escribe un número de pagos válido.",
+      "installmentsBelowPaid": "No puede ser menor que los pagos que ya hiciste.",
+      "dateInFuture": "La fecha no puede ser futura.",
+      "openingFeeInvalid": "La comisión debe ser menor que el monto prestado.",
+      "periodicFeeInvalid": "Escribe una comisión válida."
+    },
+    "lending": {
+      "label": "¿Cómo te prestó? (opcional)",
+      "none": "Sin especificar",
+      "methods": {
+        "cash": "Efectivo",
+        "transfer": "Transferencia",
+        "credit_card": "Su tarjeta de crédito",
+        "debit_card": "Su tarjeta de débito",
+        "other": "Otro"
+      }
     }
   },
   "analytics": {
@@ -1435,6 +1891,18 @@
       "premium": "Premium",
       "verified": "Cuenta verificada",
       "avatar": "Avatar del usuario: {name}"
+    },
+    "darkMode": "Cambiar a modo oscuro",
+    "lightMode": "Cambiar a modo claro",
+    "table": {
+      "rowsPerPage": "Filas por página",
+      "page": "Página {page} de {pageCount}",
+      "firstPage": "Primera página",
+      "previousPage": "Página anterior",
+      "nextPage": "Página siguiente",
+      "lastPage": "Última página",
+      "sortBy": "Ordenar por {column}",
+      "empty": "Sin registros."
     }
   },
   "categorize": {
@@ -2075,7 +2543,7 @@
       "mode": "Cómo cambiar los ingresos",
       "percentMode": "Cambio en %",
       "amountMode": "Nuevo monto",
-      "percent": "Cambio en tus ingresos (%)",
+      "percent": "Cambio en tus ingresos",
       "amount": "Ingreso mensual",
       "percentHint": "Ej. 10 para un aumento, -20 si bajan.",
       "result": "Ingreso mensual en el escenario: {amount}."
@@ -2234,5 +2702,33 @@
       "attached": "Ticket agregado al movimiento que ya tenías.",
       "discarded": "Ticket descartado."
     }
+  },
+  "loans": {
+    "title": "Préstamos",
+    "subtitle": "Lo que te prestaron, cómo lo vas pagando y cuánto falta.",
+    "new": "Nuevo préstamo",
+    "empty": {
+      "title": "No tienes préstamos registrados",
+      "description": "Registra los préstamos de bancos, financieras, familiares o compras a plazos para seguir sus pagos y ver cuánto te falta."
+    },
+    "summary": {
+      "owed": "Te falta pagar",
+      "monthly": "Pagos al mes",
+      "monthlyDetail": "Lo que tus préstamos piden en un mes",
+      "next": "Próximo pago",
+      "noNext": "Sin pagos programados"
+    },
+    "insightsTitle": "Tus préstamos en números",
+    "tabs": {
+      "analysis": "Análisis",
+      "list": "Préstamos ({count})"
+    }
+  },
+  "contacts": {
+    "placeholder": "Elige o escribe un nombre",
+    "search": "Buscar o agregar…",
+    "loading": "Cargando…",
+    "empty": "Aún no tienes contactos. Escribe un nombre para agregarlo.",
+    "add": "Agregar «{name}»"
   }
 }

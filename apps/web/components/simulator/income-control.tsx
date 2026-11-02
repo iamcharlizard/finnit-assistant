@@ -3,7 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { TrendingUp } from 'lucide-react';
 
-import { Input } from '@finnit/ui/components/ui/input';
+import { NumberInput } from '@finnit/ui/components/ui/number-input';
+import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -58,23 +59,21 @@ export function IncomeControl({
         </ToggleGroupItem>
       </ToggleGroup>
       {mode === 'percent' ? (
-        <Input
+        <NumberInput
+          decimals={2}
+          allowNegative
+          suffix="%"
           label={t('percent')}
-          inputMode="decimal"
-          autoComplete="off"
           placeholder="0"
           value={percentText}
-          onChange={(e) => onPercentChange(e.target.value)}
+          onValueChange={(value) => onPercentChange(value)}
           error={error}
         />
       ) : (
-        <Input
+        <MoneyInput
           label={t('amount')}
-          inputMode="decimal"
-          autoComplete="off"
-          placeholder="0.00"
           value={amountText}
-          onChange={(e) => onAmountChange(e.target.value)}
+          onValueChange={(value) => onAmountChange(value)}
           error={error}
         />
       )}

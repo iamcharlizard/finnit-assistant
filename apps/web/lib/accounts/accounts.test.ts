@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
 import { accountDesign, accountLabel } from '@/lib/finance/accounts';
+import { formatMoney } from '@/lib/finance/money';
 import { toTransactionRow } from '@/lib/finance/transactions';
 import type { ApiAccount, ApiTransaction } from '@/lib/finance/types';
 import { testLocalizer } from '@/lib/i18n/testing';
@@ -35,12 +36,7 @@ import {
   type AccountEditValues,
   type ManualAccountForm,
 } from './form';
-import {
-  buildAccountDetail,
-  buildAccounts,
-  groupAccounts,
-  pickAccount,
-} from './view';
+import { buildAccountDetail, buildAccounts, pickAccount } from './view';
 
 const es = testLocalizer('es');
 const en = testLocalizer('en');
@@ -203,6 +199,9 @@ describe('buildAccounts', () => {
   it('uses the nickname and the custom design', () => {
     const deb = accounts.find((a) => a.id === 'deb')!;
     assert.equal(deb.label, 'Nómina');
+    assert.equal(deb.nickname, 'Nómina');
+    // No nickname: the card's title falls back to the bank.
+    assert.equal(accounts.find((a) => a.id === 'tdc')!.nickname, null);
     assert.equal(deb.primaryColor, '#5B61C2');
     assert.equal(deb.secondaryColor, '#00696E');
     assert.deepEqual(deb.edit.design, {
@@ -227,49 +226,69 @@ describe('buildAccounts', () => {
     );
   });
 
-  it('names the sections in each language', () => {
-    assert.deepEqual(
-      groupAccounts(accounts, es.t).map((g) => [g.title, g.accounts.length]),
-      [
-        ['Tarjetas de crédito', 1],
-        ['Débito y efectivo', 2],
-        ['Ahorro y otras', 1],
-      ],
-    );
-    assert.deepEqual(
-      groupAccounts(accounts, en.t).map((g) => g.title),
-      ['Credit cards', 'Debit & cash', 'Savings & other'],
-    );
-  });
+  const charge = (
+    dueDate: string,
+    expectedAmount: number,
+    status: 'upcoming' | 'paid' | null = 'upcoming',
+    currency = 'MXN',
+  ) => ({ dueDate, expectedAmount, status, recurringExpense: { currency } });
 
-  it('lists cut-off and payment dates, the rate and the recurring charges', () => {
+  it('shows the limit, cut-off and payment dates and the rate', () => {
     const detail = buildAccountDetail(
       accounts[0]!,
+      { today: '2026-10-14', recent: [], summary: null, pending: [] },
+      es,
+    );
+    assert.equal(detail.limit, '$20,000.00');
+    assert.equal(detail.usedPercent, 62);
+    assert.deepEqual(detail.statementDate, {
+      date: '20 oct',
+      relative: 'En 6 días',
+    });
+    assert.deepEqual(detail.paymentDate, {
+      date: '10 nov',
+      relative: 'En 27 días',
+    });
+    assert.deepEqual(detail.facts, [{ label: 'Tasa anual', value: '45.5 %' }]);
+    assert.equal(detail.historyHref, '/history?account=tdc');
+  });
+
+  it('projects the month end with the recurring payments still due', () => {
+    const pending = [
+      charge('2026-10-20T00:00:00.000Z', 199),
+      charge('2026-10-25T00:00:00.000Z', 100, null), // reminder: counts
+      charge('2026-10-22T00:00:00.000Z', 500, 'paid'),
+      charge('2026-10-10T00:00:00.000Z', 50), // before today
+      charge('2026-10-28T00:00:00.000Z', 10, 'upcoming', 'USD'),
+    ];
+    const credit = buildAccountDetail(
+      accounts[0]!,
+      { today: '2026-10-14', recent: [], summary: null, pending },
+      es,
+    );
+    // A card's debt grows.
+    assert.deepEqual(credit.projection, {
+      amount: '$12,749.00',
+      short: false,
+      pendingCount: 2,
+      pendingTotal: '$299.00',
+    });
+
+    // Cash ($300) goes below zero: the balance shrinks.
+    const cash = buildAccountDetail(
+      pickAccount(accounts, 'cash')!,
       {
         today: '2026-10-14',
-        monthLabel: 'Octubre 2026',
-        monthSpending: 3200,
         recent: [],
-        summary: {
-          recurringExpected: 398,
-          recurringPaid: 199,
-          recurringPayments: [{ name: 'Netflix' }, { name: 'Spotify' }],
-          statement: null,
-        },
+        summary: null,
+        pending: [...pending, charge('2026-10-30T00:00:00.000Z', 101)],
       },
       es,
     );
-    assert.deepEqual(detail.facts, [
-      { label: 'Próximo corte', value: '20 oct · En 6 días' },
-      { label: 'Próxima fecha de pago', value: '10 nov · En 27 días' },
-      { label: 'Tasa anual', value: '45.5 %' },
-    ]);
-    assert.equal(detail.monthSpending, '$3,200.00');
-    assert.deepEqual(detail.recurring, {
-      expected: '$398.00',
-      paid: '$199.00',
-      count: 2,
-    });
+    assert.equal(cash.projection.short, true);
+    assert.equal(cash.projection.amount, formatMoney(-100, 'MXN', 'es'));
+    assert.equal(cash.usedPercent, null);
+    assert.equal(cash.statementDate, null);
   });
 });
 

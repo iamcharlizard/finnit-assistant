@@ -12,6 +12,7 @@ import {
   saveRecurring,
 } from './api';
 import { filterExpenses, kindFilterOptions } from './filters';
+import { parseTabParam, withTabParam } from './tabs';
 import {
   buildAcceptInput,
   buildCreateInput,
@@ -614,5 +615,27 @@ describe('suggestion cards', () => {
     );
     assert.equal(confidencePercent(73), 73);
     assert.equal(confidencePercent(Number.NaN), 0);
+  });
+});
+
+describe('recurring tabs', () => {
+  it('parses known tabs and falls back to the calendar', () => {
+    assert.equal(parseTabParam('list'), 'list');
+    assert.equal(parseTabParam('suggestions'), 'suggestions');
+    assert.equal(parseTabParam('nope'), 'calendar');
+    assert.equal(parseTabParam(['list']), 'calendar');
+    assert.equal(parseTabParam(undefined), 'calendar');
+  });
+
+  it('keeps the other params and drops the default tab', () => {
+    assert.equal(
+      withTabParam('?view=week&date=2026-10-30', 'list'),
+      '?view=week&date=2026-10-30&tab=list',
+    );
+    assert.equal(
+      withTabParam('?tab=list&date=2026-10-30', 'calendar'),
+      '?date=2026-10-30',
+    );
+    assert.equal(withTabParam('', 'calendar'), '');
   });
 });

@@ -21,14 +21,16 @@ import {
   Min,
 } from 'class-validator';
 import {
+  LoanType,
   RecurringExpenseKind,
   RecurringFrequency,
   RecurringTrackingMode,
 } from '@finnit/database';
 import { Account } from '../../../common/types/models/account.model';
 import { Category } from '../../../common/types/models/category.model';
-// Registers the recurring enums with GraphQL.
+// Registers the recurring and loan enums with GraphQL.
 import '../dto/recurring-expense.dto';
+import '../../debts/dto/debt.dto';
 
 @ObjectType()
 export class RecurringSuggestionOccurrence {
@@ -165,4 +167,60 @@ export class AcceptRecurringSuggestionInput {
   @IsOptional()
   @IsDate()
   startDate?: Date;
+}
+
+@ObjectType({
+  description:
+    'A loan prefilled from a recurring suggestion (schedule from the detected charges, lender and type from AI)',
+})
+export class LoanSuggestionDraft {
+  @Field(() => ID)
+  fingerprint: string;
+
+  @Field()
+  name: string;
+
+  @Field()
+  lenderName: string;
+
+  @Field(() => LoanType)
+  loanType: LoanType;
+
+  @Field(() => RecurringFrequency)
+  paymentFrequency: RecurringFrequency;
+
+  @Field(() => Int, { description: 'Detected every N periods' })
+  interval: number;
+
+  @Field(() => Float)
+  installmentAmount: number;
+
+  @Field()
+  currency: string;
+
+  @Field({ description: 'Oldest detected charge' })
+  firstPaymentDate: Date;
+
+  @Field({ description: 'Newest detected charge' })
+  lastPaymentDate: Date;
+
+  @Field(() => Int, {
+    description: 'Charges detected; they become paid installments',
+  })
+  paymentsDetected: number;
+
+  @Field(() => ID, { nullable: true })
+  paymentAccountId?: string;
+
+  @Field(() => ID, { nullable: true })
+  categoryId?: string;
+
+  @Field()
+  merchantPattern: string;
+
+  @Field(() => String, {
+    nullable: true,
+    description: '"ai" when the AI described the loan',
+  })
+  classifiedBy?: string | null;
 }

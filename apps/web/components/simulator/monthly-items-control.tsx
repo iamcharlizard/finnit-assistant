@@ -6,6 +6,7 @@ import { Plus, Repeat } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import { Input } from '@finnit/ui/components/ui/input';
+import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -97,13 +98,10 @@ export function MonthlyItemsControl({
             onChange={(e) => update({ name: e.target.value })}
             error={errors.name ? tv(errors.name) : undefined}
           />
-          <Input
+          <MoneyInput
             label={t('amount')}
-            inputMode="decimal"
-            autoComplete="off"
-            placeholder="0.00"
             value={draft.amount}
-            onChange={(e) => update({ amount: e.target.value })}
+            onValueChange={(value) => update({ amount: value })}
             error={errors.amount ? tv(errors.amount) : undefined}
           />
         </div>

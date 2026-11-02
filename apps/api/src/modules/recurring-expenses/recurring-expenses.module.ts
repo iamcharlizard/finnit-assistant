@@ -17,6 +17,6 @@ import { AiModule } from '../ai/ai.module';
     RecurringSuggestionsResolver,
     PrismaService,
   ],
-  exports: [RecurringExpensesService],
+  exports: [RecurringExpensesService, RecurringSuggestionsService],
 })
 export class RecurringExpensesModule {}

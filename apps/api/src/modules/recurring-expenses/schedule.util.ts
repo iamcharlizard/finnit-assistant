@@ -129,6 +129,30 @@ export function nextDueDate(rule: ScheduleRule, from: Date): Date | null {
   return null;
 }
 
+/** First `count` due dates strictly after `after` (date-only, ascending). */
+export function dueDatesAfter(
+  rule: ScheduleRule,
+  after: Date,
+  count: number,
+): Date[] {
+  const start = toDateOnly(after);
+  const ruleEnd = rule.endDate ? toDateOnly(rule.endDate) : undefined;
+  const dates: Date[] = [];
+
+  let iterations = 0;
+  for (const date of allDueDates(rule)) {
+    if (dates.length >= count || (ruleEnd && date > ruleEnd)) break;
+    if (++iterations > MAX_ITERATIONS) break;
+    if (date > start) dates.push(date);
+  }
+  return dates;
+}
+
+/** Payments per year of the frequency (interval = 1). */
+export function periodsPerYear(frequency: RecurringFrequency): number {
+  return PER_YEAR[frequency];
+}
+
 /** Average monthly cost of one occurrence amount under the rule. */
 export function monthlyEquivalent(
   amount: number,

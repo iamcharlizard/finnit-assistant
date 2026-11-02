@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { DateLib } from 'react-day-picker';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, XIcon } from 'lucide-react';
 
 import { parseDateOnly, toDateOnly } from '../../lib/date-only';
 import { cn } from '../../lib/utils';
@@ -31,6 +31,10 @@ interface DatePickerProps {
   id?: string;
   name?: string;
   required?: boolean;
+  /** Shows a button to clear the date (optional dates). */
+  clearable?: boolean;
+  /** Accessible name of the clear button. */
+  clearLabel?: string;
   'aria-label'?: string;
   className?: string;
 }
@@ -49,6 +53,8 @@ function DatePicker({
   id,
   name,
   required,
+  clearable = false,
+  clearLabel = 'Clear date',
   'aria-label': ariaLabel,
   className,
 }: DatePickerProps) {
@@ -88,6 +94,7 @@ function DatePicker({
             'focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40',
             'aria-invalid:border-expense aria-invalid:ring-expense/20',
             !display && 'text-on-surface-variant',
+            clearable && display && 'pr-16',
             className,
           )}
         >
@@ -118,13 +125,29 @@ function DatePicker({
       {name ? <input type="hidden" name={name} value={value ?? ''} /> : null}
     </Popover>
   );
+  const field =
+    clearable && display && !disabled ? (
+      <div className="relative">
+        {trigger}
+        <button
+          type="button"
+          aria-label={clearLabel}
+          onClick={() => onChange?.(undefined)}
+          className="absolute top-1/2 right-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-on-surface-variant outline-none hover:bg-accent hover:text-on-background focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        >
+          <XIcon aria-hidden className="size-4" />
+        </button>
+      </div>
+    ) : (
+      trigger
+    );
 
-  if (!label && !error) return trigger;
+  if (!label && !error) return field;
 
   return (
     <div className="flex flex-col gap-1">
       {label ? <Label htmlFor={triggerId}>{label}</Label> : null}
-      {trigger}
+      {field}
       {error ? (
         <p id={errorId} role="alert" className="text-xs text-expense">
           {error}

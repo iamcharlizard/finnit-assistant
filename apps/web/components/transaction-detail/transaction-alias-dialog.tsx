@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
+import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { Input } from '@finnit/ui/components/ui/input';
 
 import { SwitchField } from '@/components/finance/switch-field';
@@ -48,6 +49,8 @@ export function TransactionAliasDialog({
   onClose: () => void;
   onSaved: (removed: boolean) => void;
 }) {
+  // Closes with the exit animation before telling the parent.
+  const exit = useDialogExit();
   const { t } = useLocalizer();
   const tr = useTranslations('categorize.renameDialog');
   const [form, setForm] = React.useState<RenameForm>(() =>
@@ -70,7 +73,7 @@ export function TransactionAliasDialog({
         id: transactionId,
         input: renameInput(value),
       });
-      onSaved(value === 'remove');
+      exit.after(onSaved)(value === 'remove');
     } catch (e) {
       setSubmitError(transactionErrorMessage(e, t));
       setSaving(false);
@@ -78,8 +81,15 @@ export function TransactionAliasDialog({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !saving && onClose()}>
-      <DialogContent closeLabel={t('common.close')} className="sm:max-w-md">
+    <Dialog
+      open={exit.open}
+      onOpenChange={(open) => !open && !saving && exit.close(onClose)}
+    >
+      <DialogContent
+        onExitComplete={exit.onExitComplete}
+        closeLabel={t('common.close')}
+        className="sm:max-w-md"
+      >
         <form
           noValidate
           className="flex flex-col gap-5"

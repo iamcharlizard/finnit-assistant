@@ -7,6 +7,11 @@ import { useTranslations } from 'next-intl';
 import { TopAppBar } from '@finnit/ui/components/navigation/top-app-bar';
 import { Toaster } from '@finnit/ui/components/ui/toaster';
 
+import {
+  HeaderChromeContext,
+  type HeaderChrome,
+} from '@/components/header-chrome';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { AppBottomNav } from '@/components/navigation/app-bottom-nav';
 import { AppSideNav } from '@/components/navigation/app-side-nav';
 import { NewEntrySheet } from '@/components/new-entry/new-entry-sheet';
@@ -39,6 +44,18 @@ export function AppShell({
   const handleAdd = () => setAdding(true);
   // The bell's panel (latest notifications).
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
+  const chrome = React.useMemo<HeaderChrome>(
+    () => ({
+      notificationCount,
+      onNotificationsClick: () => setNotificationsOpen(true),
+      avatarFallback: initials(user.name),
+      notificationsLabel: (count) =>
+        count > 0 ? tu('notificationsUnread', { count }) : tu('notifications'),
+      profileLabel: tu('userProfile'),
+      tools: <ThemeToggle />,
+    }),
+    [notificationCount, user.name, tu],
+  );
 
   return (
     <div className="flex min-h-dvh bg-background">
@@ -49,23 +66,24 @@ export function AppShell({
         className="sticky top-0 hidden h-dvh shrink-0 lg:flex"
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <TopAppBar
-          title={t(pageTitleKey(pathname))}
-          notificationCount={notificationCount}
-          onNotificationsClick={() => setNotificationsOpen(true)}
-          avatarFallback={initials(user.name)}
-          notificationsLabel={(count) =>
-            count > 0
-              ? tu('notificationsUnread', { count })
-              : tu('notifications')
-          }
-          profileLabel={tu('userProfile')}
-        />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 pb-28 sm:px-6 lg:px-8 lg:pb-10">
-          {children}
-        </main>
-      </div>
+      {/*
+        Header and page share the column width, so the floating bar lines up
+        with the content. Screens with their own heading render <PageHeader>
+        (class "page-header"); then the generic bar is hidden with :has(), which
+        works from the first server render.
+      */}
+      <HeaderChromeContext.Provider value={chrome}>
+        <div className="group/shell mx-auto flex w-full max-w-6xl min-w-0 flex-1 flex-col px-4 pt-3 sm:px-6 lg:px-8">
+          <TopAppBar
+            {...chrome}
+            title={t(pageTitleKey(pathname))}
+            className="group-has-[.page-header]/shell:hidden"
+          />
+          <main className="w-full flex-1 pt-5 pb-28 group-has-[.page-header]/shell:pt-0 lg:pb-10">
+            {children}
+          </main>
+        </div>
+      </HeaderChromeContext.Provider>
 
       <AppBottomNav
         sections={sections}

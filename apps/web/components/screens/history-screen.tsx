@@ -6,6 +6,7 @@ import { PopularCategoriesCard } from '@finnit/ui/components/finance/popular-cat
 
 import { HistoryFilters } from '@/components/history/history-filters';
 import { HistoryList } from '@/components/history/history-list';
+import { PageHeader } from '@/components/page-header';
 import {
   historyQuery,
   type HistoryFilters as Filters,
@@ -21,37 +22,35 @@ export function HistoryScreen({
 }) {
   const t = useTranslations('history');
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className="min-w-0 lg:col-span-2">
-        <h1 className="mb-1 text-[32px] font-bold text-on-background">
-          {t('title')}
-        </h1>
-        <p className="mb-6 text-sm text-on-surface-variant">{t('subtitle')}</p>
-
-        <HistoryFilters
-          filters={filters}
-          accounts={data.accounts}
-          categories={data.categoryOptions}
-        />
-
-        {/* New filters → new first page from the server: start the list over. */}
-        <HistoryList
-          key={historyQuery(filters)}
-          initial={data.page}
-          filters={filters}
-          categories={data.categories}
-          today={data.today}
-        />
-      </div>
-
-      {data.topCategories.rows.length > 0 ? (
-        <aside className="flex flex-col gap-4 lg:pt-23">
-          <PopularCategoriesCard
-            title={data.topCategories.title}
-            categories={data.topCategories.rows}
+    <div className="flex flex-col gap-6">
+      <PageHeader title={t('title')} subtitle={t('subtitle')} />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="min-w-0 lg:col-span-2">
+          <HistoryFilters
+            filters={filters}
+            accounts={data.accounts}
+            categories={data.categoryOptions}
           />
-        </aside>
-      ) : null}
+
+          {/* New filters → new first page from the server: start the list over. */}
+          <HistoryList
+            key={historyQuery(filters)}
+            initial={data.page}
+            filters={filters}
+            categories={data.categories}
+            today={data.today}
+          />
+        </div>
+
+        {data.topCategories.rows.length > 0 ? (
+          <aside className="flex flex-col gap-4">
+            <PopularCategoriesCard
+              title={data.topCategories.title}
+              categories={data.topCategories.rows}
+            />
+          </aside>
+        ) : null}
+      </div>
     </div>
   );
 }

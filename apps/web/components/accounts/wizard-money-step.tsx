@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 
-import { Input } from '@finnit/ui/components/ui/input';
+import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
 import type { ManualAccountForm } from '@/lib/accounts/form';
 import { CreditTermsFields } from './credit-terms-fields';
@@ -18,17 +18,15 @@ export function WizardMoneyStep({
   errors: Partial<Record<string, string>>;
 }) {
   const t = useTranslations('accounts.wizard');
-  const symbol = form.currency === 'USD' ? 'US$' : '$';
 
   if (form.type !== 'credit') {
     return (
       <div className="flex flex-col gap-1">
-        <Input
-          label={`${t('balance')} (${symbol})`}
-          inputMode="decimal"
-          placeholder="0.00"
+        <MoneyInput
+          label={t('balance')}
+          currency={form.currency}
           value={form.balance}
-          onChange={(e) => onChange({ balance: e.target.value })}
+          onValueChange={(value) => onChange({ balance: value })}
           error={errors.balance}
         />
         <p className="px-1 text-xs text-on-surface-variant">
@@ -41,22 +39,20 @@ export function WizardMoneyStep({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <Input
-          label={`${t('debt')} (${symbol})`}
-          inputMode="decimal"
-          placeholder="0.00"
+        <MoneyInput
+          label={t('debt')}
+          currency={form.currency}
           value={form.debt}
-          onChange={(e) => onChange({ debt: e.target.value })}
+          onValueChange={(value) => onChange({ debt: value })}
           error={errors.debt}
         />
         <p className="px-1 text-xs text-on-surface-variant">{t('debtHint')}</p>
       </div>
-      <Input
-        label={`${t('creditLimit')} (${symbol})`}
-        inputMode="decimal"
-        placeholder="0.00"
+      <MoneyInput
+        label={t('creditLimit')}
+        currency={form.currency}
         value={form.creditLimit}
-        onChange={(e) => onChange({ creditLimit: e.target.value })}
+        onValueChange={(value) => onChange({ creditLimit: value })}
         error={errors.creditLimit}
       />
       <h3 className="pt-1 text-sm font-medium text-on-background">

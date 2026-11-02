@@ -1,5 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 
+import { cn } from '@finnit/ui/lib/utils';
+
 /** One figure of the period summary: label, amount and a short detail. */
 export function SummaryCard({
   icon: Icon,
@@ -7,6 +9,7 @@ export function SummaryCard({
   amount,
   detail,
   accent,
+  className,
 }: {
   icon: LucideIcon;
   label: string;
@@ -14,10 +17,14 @@ export function SummaryCard({
   detail: string;
   /** Any CSS color, for the icon and the tint. */
   accent: string;
+  className?: string;
 }) {
   return (
     <section
-      className="flex min-w-0 flex-col gap-2 rounded-card border p-4"
+      className={cn(
+        'flex min-w-0 flex-col gap-2 rounded-card border p-4',
+        className,
+      )}
       style={{
         backgroundColor: `color-mix(in srgb, ${accent} 6%, transparent)`,
         borderColor: `color-mix(in srgb, ${accent} 22%, transparent)`,

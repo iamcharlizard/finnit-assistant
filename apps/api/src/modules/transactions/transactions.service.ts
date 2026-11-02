@@ -445,12 +445,22 @@ export class TransactionsService {
         transferFrom: true,
         transferTo: true,
         debtPayment: true,
+        debtCharge: { select: { id: true } },
+        debtDisbursement: { select: { id: true } },
         goalContributions: true,
       },
     });
 
     if (!transaction) {
       throw new NotFoundError('Transaction not found');
+    }
+
+    // Loan deposits add to the balance (unlike other adjustments): they are
+    // undone from the loan, which reverts them correctly.
+    if (transaction.debtCharge || transaction.debtDisbursement) {
+      throw new ValidationError(
+        'This movement is the money of a loan; delete it from the loan',
+      );
     }
 
     if (transaction.source !== TransactionSource.manual) {

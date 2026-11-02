@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Plus, Sparkles, X } from 'lucide-react';
+import { Landmark, Plus, Sparkles, X } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
 import { Button } from '@finnit/ui/components/ui/button';
@@ -14,10 +14,13 @@ import { SuggestionEvidence } from './suggestion-evidence';
 export function SuggestionCard({
   card,
   onAdd,
+  onLoan,
   onDismiss,
 }: {
   card: SuggestionCardData;
   onAdd: () => void;
+  /** Save it as a loan instead (with its own terms and schedule). */
+  onLoan: () => void;
   onDismiss: () => void;
 }) {
   const t = useTranslations();
@@ -55,6 +58,11 @@ export function SuggestionCard({
             {t('recurring.suggestions.nextDue', { date: card.nextDueLabel })}
           </span>
         </div>
+        {card.kind === 'loan' ? (
+          <Badge variant="highlight">
+            {t('recurring.suggestions.looksLikeLoan')}
+          </Badge>
+        ) : null}
         {card.isVariableAmount ? (
           <Badge variant="highlight">
             {t('recurring.suggestions.variable')}
@@ -72,7 +80,18 @@ export function SuggestionCard({
             percent: card.confidence,
           })}
         </span>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant={card.kind === 'loan' ? 'secondary' : 'ghost'}
+            onClick={onLoan}
+            aria-label={t('recurring.suggestions.asLoanLabel', {
+              name: card.name,
+            })}
+          >
+            <Landmark aria-hidden /> {t('recurring.suggestions.asLoan')}
+          </Button>
           <Button
             type="button"
             size="sm"
@@ -87,7 +106,7 @@ export function SuggestionCard({
           <Button
             type="button"
             size="sm"
-            variant="secondary"
+            variant={card.kind === 'loan' ? 'outline' : 'secondary'}
             onClick={onAdd}
             aria-label={t('recurring.suggestions.addLabel', {
               name: card.name,

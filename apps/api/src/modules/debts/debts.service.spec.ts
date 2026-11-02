@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import {
+  DEBT_INCLUDE,
   DebtsService,
   PAYOFF_MAX_MONTHS,
   simulatePayoff,
@@ -12,7 +13,8 @@ import {
   DebtOverpaymentError,
 } from '../../common/exceptions/graphql-error.exception';
 import { PaginationUtil } from '../../common/utils/pagination.util';
-import { DebtKind } from '@finnit/database';
+import { DebtKind, DebtStatus } from '@finnit/database';
+import { RecurringExpensesService } from '../recurring-expenses/recurring-expenses.service';
 
 describe('DebtsService', () => {
   let service: DebtsService;
@@ -27,6 +29,7 @@ describe('DebtsService', () => {
     id: 'payment-1',
     debtId: mockDebtId,
     transactionId: mockTransactionId,
+    isHistorical: false,
     amount: 200.0,
     date: new Date('2024-01-15'),
   };
@@ -42,8 +45,22 @@ describe('DebtsService', () => {
     startDate: new Date('2024-01-01'),
     dueDate: new Date('2026-01-01'),
     linkedAccountId: mockAccountId,
+    loanType: null,
+    status: DebtStatus.active,
+    lenderName: null,
+    paymentFrequency: null,
+    installmentsTotal: null,
+    installmentAmount: null,
+    totalToRepay: null,
+    interestMode: null,
+    includesVat: false,
+    destination: null,
+    disbursementTransactionId: null,
     createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
     payments: [mockPayment],
+    charges: [],
+    recurringExpense: null,
   };
 
   beforeEach(async () => {
@@ -56,10 +73,19 @@ describe('DebtsService', () => {
           provide: PrismaService,
           useValue: prismaService,
         },
+        {
+          provide: RecurringExpensesService,
+          useValue: mockDeep<RecurringExpensesService>(),
+        },
       ],
     }).compile();
 
     service = module.get<DebtsService>(DebtsService);
+    // Interactive transactions run against the same mock.
+    prismaService.$transaction.mockImplementation(((fn: unknown) =>
+      typeof fn === 'function'
+        ? (fn as (tx: unknown) => unknown)(prismaService)
+        : Promise.all(fn as unknown[])) as never);
 
     jest.clearAllMocks();
   });
@@ -102,7 +128,9 @@ describe('DebtsService', () => {
           startDate: createInput.startDate,
           dueDate: createInput.dueDate,
           linkedAccountId: createInput.linkedAccountId,
+          lenderName: null,
         },
+        include: DEBT_INCLUDE,
       });
       expect(result.principal).toBe(Number(createInput.principal));
       expect(result.totalPaid).toBe(0);
@@ -126,6 +154,7 @@ describe('DebtsService', () => {
         data: expect.objectContaining({
           linkedAccountId: undefined,
         }),
+        include: DEBT_INCLUDE,
       });
       expect(result.linkedAccountId).toBeUndefined();
     });
@@ -173,7 +202,7 @@ describe('DebtsService', () => {
         name: 'Loan Shark',
         kind: DebtKind.loan,
         principal: 1000.0,
-        interestRateAnnual: 999.99,
+        interestRateAnnual: 1000.01,
       };
 
       // Act & Assert
@@ -201,7 +230,7 @@ describe('DebtsService', () => {
         where: { userId: mockUserId },
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         take: 11,
-        include: { payments: { orderBy: { date: 'desc' } } },
+        include: DEBT_INCLUDE,
       });
       expect(prismaService.debt.count).toHaveBeenCalledWith({
         where: { userId: mockUserId },
@@ -289,7 +318,7 @@ describe('DebtsService', () => {
       // Assert
       expect(prismaService.debt.findFirst).toHaveBeenCalledWith({
         where: { id: mockDebtId, userId: mockUserId },
-        include: { payments: { orderBy: { date: 'desc' } } },
+        include: DEBT_INCLUDE,
       });
       expect(result.id).toBe(mockDebtId);
       expect(result.totalPaid).toBe(200);
@@ -321,6 +350,9 @@ describe('DebtsService', () => {
 
       prismaService.debt.findFirst.mockResolvedValue(existingDebt as any);
       prismaService.debt.update.mockResolvedValue(updatedDebt as any);
+      prismaService.debt.findUniqueOrThrow.mockResolvedValue(
+        updatedDebt as any,
+      );
 
       // Act
       const result = await service.update(mockDebtId, mockUserId, updateInput);
@@ -328,12 +360,11 @@ describe('DebtsService', () => {
       // Assert
       expect(prismaService.debt.findFirst).toHaveBeenCalledWith({
         where: { id: mockDebtId, userId: mockUserId },
-        include: { payments: true },
+        include: DEBT_INCLUDE,
       });
       expect(prismaService.debt.update).toHaveBeenCalledWith({
         where: { id: mockDebtId },
         data: updateInput,
-        include: { payments: true },
       });
       expect(result.name).toBe(updateInput.name);
       expect(result.minPaymentAmount).toBe(200);
@@ -359,7 +390,7 @@ describe('DebtsService', () => {
         startDate: new Date('2024-02-01'),
       };
       prismaService.debt.findFirst.mockResolvedValue(mockDebt as any);
-      prismaService.debt.update.mockResolvedValue({
+      prismaService.debt.findUniqueOrThrow.mockResolvedValue({
         ...mockDebt,
         ...input,
       } as any);
@@ -371,7 +402,6 @@ describe('DebtsService', () => {
       expect(prismaService.debt.update).toHaveBeenCalledWith({
         where: { id: mockDebtId },
         data: input,
-        include: { payments: true },
       });
       expect(result.kind).toBe(DebtKind.loan);
       expect(result.remainingBalance).toBe(5800);
@@ -398,7 +428,7 @@ describe('DebtsService', () => {
       // Act & Assert
       for (const input of [
         { name: '  ' },
-        { interestRateAnnual: 120 },
+        { interestRateAnnual: 1200 },
         { interestRateAnnual: -1 },
         { minPaymentAmount: 0 },
       ]) {
@@ -445,7 +475,7 @@ describe('DebtsService', () => {
       // Assert
       expect(prismaService.debt.findFirst).toHaveBeenCalledWith({
         where: { id: mockDebtId, userId: mockUserId },
-        include: { payments: true },
+        include: DEBT_INCLUDE,
       });
       expect(prismaService.debt.delete).toHaveBeenCalledWith({
         where: { id: mockDebtId },
@@ -492,7 +522,11 @@ describe('DebtsService', () => {
         userId: mockUserId,
       } as any);
 
-      const createdPayment = { id: 'payment-2', ...paymentInput };
+      const createdPayment = {
+        id: 'payment-2',
+        ...paymentInput,
+        isHistorical: false,
+      };
       prismaService.debtPayment.create.mockResolvedValue(createdPayment as any);
 
       // Act
@@ -501,21 +535,66 @@ describe('DebtsService', () => {
       // Assert
       expect(prismaService.debt.findFirst).toHaveBeenCalledWith({
         where: { id: mockDebtId, userId: mockUserId },
-        include: { payments: true },
+        include: DEBT_INCLUDE,
       });
       expect(prismaService.transaction.findFirst).toHaveBeenCalledWith({
         where: { id: mockTransactionId, userId: mockUserId },
       });
       expect(prismaService.debtPayment.create).toHaveBeenCalledWith({
-        data: paymentInput,
+        data: { ...paymentInput, isHistorical: false },
       });
       expect(result).toEqual({
         id: 'payment-2',
         debtId: mockDebtId,
         transactionId: mockTransactionId,
+        isHistorical: false,
         amount: 250,
         date: paymentInput.date,
       });
+    });
+
+    it('should record a historical payment without a movement', async () => {
+      prismaService.debt.findFirst.mockResolvedValue(mockDebt as any);
+      prismaService.debtPayment.create.mockResolvedValue({
+        id: 'payment-3',
+        debtId: mockDebtId,
+        transactionId: null,
+        isHistorical: true,
+        amount: 100,
+        date: new Date('2023-12-01'),
+      } as any);
+
+      const result = await service.createPayment(mockUserId, {
+        debtId: mockDebtId,
+        isHistorical: true,
+        amount: 100,
+        date: new Date('2023-12-01'),
+      });
+
+      expect(prismaService.transaction.findFirst).not.toHaveBeenCalled();
+      expect(prismaService.debtPayment.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          transactionId: null,
+          isHistorical: true,
+        }),
+      });
+      expect(result.isHistorical).toBe(true);
+    });
+
+    it('should need a movement unless the payment is historical', async () => {
+      await expect(
+        service.createPayment(mockUserId, {
+          debtId: mockDebtId,
+          amount: 100,
+          date: new Date('2024-02-01'),
+        }),
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        service.createPayment(mockUserId, {
+          ...paymentInput,
+          isHistorical: true,
+        }),
+      ).rejects.toThrow(ValidationError);
     });
 
     it('should allow a payment equal to the remaining balance', async () => {
@@ -660,7 +739,7 @@ describe('DebtsService', () => {
       // Assert
       expect(prismaService.debt.findMany).toHaveBeenCalledWith({
         where: { userId: mockUserId },
-        include: { payments: true },
+        include: DEBT_INCLUDE,
       });
       expect(result.totalDebt).toBe(2800);
       expect(result.totalPaid).toBe(300);
@@ -762,7 +841,7 @@ describe('DebtsService', () => {
       // Assert
       expect(prismaService.debt.findMany).toHaveBeenCalledWith({
         where: { userId: mockUserId, id: { in: ['debt-low', 'debt-high'] } },
-        include: { payments: true },
+        include: DEBT_INCLUDE,
       });
       expect(result.map((p) => p.debtId)).toEqual(['debt-high', 'debt-low']);
       // Extra payment goes to the priority debt...
@@ -953,29 +1032,33 @@ describe('DebtsService', () => {
   describe('mapDebt', () => {
     it('should correctly map debt with all fields', () => {
       // Act
-      const result = service['mapDebt'](
-        mockDebt as any,
-        mockDebt.payments as any,
-        200,
-      );
+      const result = service.mapDebt(mockDebt as any);
 
       // Assert
-      expect(result).toEqual({
-        id: mockDebt.id,
-        userId: mockDebt.userId,
-        name: mockDebt.name,
-        kind: mockDebt.kind,
-        principal: Number(mockDebt.principal),
-        interestRateAnnual: Number(mockDebt.interestRateAnnual),
-        minPaymentAmount: Number(mockDebt.minPaymentAmount),
-        startDate: mockDebt.startDate,
-        dueDate: mockDebt.dueDate,
-        linkedAccountId: mockDebt.linkedAccountId,
-        createdAt: mockDebt.createdAt,
-        remainingBalance: 4800,
-        totalPaid: 200,
-        monthlyPayment: Number(mockDebt.minPaymentAmount),
-      });
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: mockDebt.id,
+          userId: mockDebt.userId,
+          name: mockDebt.name,
+          kind: mockDebt.kind,
+          principal: Number(mockDebt.principal),
+          interestRateAnnual: Number(mockDebt.interestRateAnnual),
+          minPaymentAmount: Number(mockDebt.minPaymentAmount),
+          startDate: mockDebt.startDate,
+          dueDate: mockDebt.dueDate,
+          linkedAccountId: mockDebt.linkedAccountId,
+          status: DebtStatus.active,
+          createdAt: mockDebt.createdAt,
+          remainingBalance: 4800,
+          totalPaid: 200,
+          historicalPaid: 0,
+          totalOwed: 5000,
+          installmentsPaid: 1,
+          monthlyPayment: Number(mockDebt.minPaymentAmount),
+          charges: [],
+        }),
+      );
+      expect(result.payments).toHaveLength(1);
     });
 
     it('should map null optional fields to undefined', () => {
@@ -990,7 +1073,7 @@ describe('DebtsService', () => {
       };
 
       // Act
-      const result = service['mapDebt'](debtWithNulls as any, [], 0);
+      const result = service.mapDebt(debtWithNulls as any);
 
       // Assert
       expect(result.interestRateAnnual).toBeUndefined();
@@ -999,15 +1082,57 @@ describe('DebtsService', () => {
       expect(result.startDate).toBeUndefined();
       expect(result.dueDate).toBeUndefined();
       expect(result.linkedAccountId).toBeUndefined();
+      expect(result.loanType).toBeUndefined();
     });
 
     it('should never report a negative remaining balance', () => {
       // Act
-      const result = service['mapDebt'](mockDebt as any, [], 6000);
+      const result = service.mapDebt({
+        ...mockDebt,
+        payments: [{ ...mockPayment, amount: 6000 }],
+      } as any);
 
       // Assert
       expect(result.remainingBalance).toBe(0);
       expect(result.totalPaid).toBe(6000);
+    });
+
+    it('should add charges to the balance and report historical payments apart', () => {
+      const result = service.mapDebt({
+        ...mockDebt,
+        totalToRepay: 6000,
+        charges: [
+          {
+            id: 'charge-1',
+            debtId: mockDebtId,
+            date: new Date('2024-03-01'),
+            description: 'Préstamo extra',
+            principal: 1000,
+            totalToRepay: 1000,
+            installments: null,
+            destination: 'deposit',
+            transactionId: 'deposit-1',
+            createdAt: new Date('2024-03-01'),
+          },
+        ],
+        payments: [
+          mockPayment,
+          {
+            ...mockPayment,
+            id: 'payment-old',
+            transactionId: null,
+            isHistorical: true,
+            amount: 300,
+          },
+        ],
+      } as any);
+
+      expect(result.totalOwed).toBe(7000);
+      expect(result.remainingBalance).toBe(6500);
+      expect(result.historicalPaid).toBe(300);
+      expect(result.charges[0]).toEqual(
+        expect.objectContaining({ id: 'charge-1', totalToRepay: 1000 }),
+      );
     });
   });
 

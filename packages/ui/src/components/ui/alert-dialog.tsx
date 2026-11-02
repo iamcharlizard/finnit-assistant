@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { AlertDialog as AlertDialogPrimitive } from 'radix-ui';
 
+import { exitHandler, MODAL_MOTION, OVERLAY_MOTION } from '../../lib/motion';
 import { cn } from '../../lib/utils';
 import { buttonVariants } from './button';
 
@@ -23,21 +24,27 @@ function AlertDialogTrigger(
 
 function AlertDialogContent({
   className,
+  onExitComplete,
+  onAnimationEnd,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
+  /** After the exit animation (see useDialogExit). */
+  onExitComplete?: () => void;
+}) {
   return (
     <AlertDialogPrimitive.Portal>
       <AlertDialogPrimitive.Overlay
         data-slot="alert-dialog-overlay"
-        className="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+        className={cn('fixed inset-0 z-50 bg-black/50', OVERLAY_MOTION)}
       />
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
           'fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-card border border-glass-border bg-popover p-6 text-popover-foreground shadow-lg outline-none',
-          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+          MODAL_MOTION,
           className,
         )}
+        onAnimationEnd={exitHandler(onExitComplete, onAnimationEnd)}
         {...props}
       />
     </AlertDialogPrimitive.Portal>

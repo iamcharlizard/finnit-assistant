@@ -74,6 +74,8 @@ is_default | boolean | ✔ | Default category marker | Read-only for system
 sort_order | int2 | — | Suggested order | UI
 created_at | timestamptz | ✔ | Creation | —
 
+Every user gets the starter list (`default-categories.ts`), including **Loans & Debts** (`categories.debts`) with *Loan Payments* and *Installment Payments*: the default category of loan, purchase-financing and MSI payments.
+
 ---
 
 ## Table: `transaction`
@@ -206,7 +208,56 @@ min_payment_amount | numeric | — | Minimum payment | Can derive from rule
 start_date | date | — | Credit start date | —
 due_date | date | — | Due date/payment date | Card: payment date
 linked_account_id | uuid | — | Linked account | FK→account.id
+loan_type | enum | — | Loan type (kind = loan) | `institutional|personal|purchase_financing`
+status | enum | ✔ | Debt status | `active|paid_off` (set from the balance)
+lender_name | text | — | Who lent the money | —
+payment_frequency | enum | — | Payment frequency | `RecurringFrequency`
+installments_total | smallint | — | Number of payments | Purchase financing: of the initial purchase
+installment_amount | numeric | — | Amount of each payment | —
+total_to_repay | numeric | — | Principal + interest of the initial amount | Null = principal
+interest_mode | enum | — | Which value gave the terms | `rate|total_amount|installment_amount`
+includes_vat | boolean | ✔ | 16% VAT on interest | Default false
+opening_fee | numeric | — | Opening fee (comisión por apertura), VAT included | Institutional loans; deposit = principal − fee; not an expense
+periodic_fee | numeric | — | Fixed fee with every payment (administración, seguro), VAT included | Institutional loans by rate; added to each installment and to total_to_repay, not to interest
+destination | enum | — | Where the money went | `deposit|purchase`
+disbursement_transaction_id | uuid | — | Deposit of the money into an account | FK→transaction.id, unique
+purpose_category_id | uuid | — | What the borrowed money was for | FK→category.id (set null); informative only, the expense is the payments
+lender_contact_id | uuid | — | Personal loans: who lent it | FK→contact.id (set null); lender_name keeps the name
+lending_method | enum | — | Personal loans: how the initial amount was lent | `cash|transfer|credit_card|debit_card|other`
 created_at | timestamptz | ✔ | Creation | —
+updated_at | timestamptz | ✔ | Last change | —
+
+Balance = (total_to_repay ?? principal) + Σ debt_charge.total_to_repay − Σ debt_payment.amount.
+
+---
+
+## Table: `contact`
+Field | Type | Req | Description | Notes
+---|---|---|---|---
+id | uuid | ✔ | Identifier | PK
+user_id | uuid | ✔ | Owner | FK→user.id (cascade)
+name | text | ✔ | Person's name | Unique per user (case-insensitive in the API)
+created_at | timestamptz | ✔ | Creation | —
+updated_at | timestamptz | ✔ | Last change | —
+
+People the user deals with; for now, who lent them money (personal loans). Payment details may come later.
+
+---
+
+## Table: `debt_charge`
+Field | Type | Req | Description | Notes
+---|---|---|---|---
+id | uuid | ✔ | Identifier | PK
+debt_id | uuid | ✔ | Debt it adds to | FK→debt.id (cascade)
+date | date | ✔ | Date of the loan or purchase | —
+description | text | — | What it was for | —
+principal | numeric | ✔ | Amount borrowed | —
+total_to_repay | numeric | ✔ | Principal + interest | —
+installments | smallint | — | Payments of this charge | Required for purchase financing
+destination | enum | ✔ | Where the money went | `deposit|purchase`
+transaction_id | uuid | — | Deposit into an account | FK→transaction.id, unique
+purpose_category_id | uuid | — | What this money was for | FK→category.id (set null); informative only
+lending_method | enum | — | Personal loans: how it was lent | `cash|transfer|credit_card|debit_card|other`
 
 ---
 
@@ -215,7 +266,8 @@ Field | Type | Req | Description | Notes
 ---|---|---|---|---
 id | uuid | ✔ | Identifier | PK
 debt_id | uuid | ✔ | Paid debt | FK→debt.id
-transaction_id | uuid | ✔ | Payment transaction | FK→transaction.id
+transaction_id | uuid | — | Payment transaction | FK→transaction.id; null for historical payments
+is_historical | boolean | ✔ | Made before the debt was registered | Outside income/expense totals
 amount | numeric | ✔ | Payment amount | —
 date | date | ✔ | Payment date | —
 

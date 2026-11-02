@@ -1,6 +1,6 @@
 import type { CardVariant } from '@finnit/ui/components/finance/bank-payment-card';
 
-import type { Localizer, Translate } from '@/lib/i18n/translator';
+import type { Localizer } from '@/lib/i18n/translator';
 import {
   accountDesign,
   accountLabel,
@@ -15,7 +15,11 @@ import {
 } from '@/lib/finance/dates';
 import { formatMoney, roundCents } from '@/lib/finance/money';
 import type { TransactionRow } from '@/lib/finance/transactions';
-import type { AccountType, ApiAccount } from '@/lib/finance/types';
+import type {
+  AccountType,
+  ApiAccount,
+  ApiUpcomingPayment,
+} from '@/lib/finance/types';
 import type { AccountEditValues } from './form';
 
 /** A linked bank account as bankConnections returns it. */
@@ -54,6 +58,8 @@ export interface AccountSummary {
   label: string;
   /** The account's own name (shown under a nickname). */
   name: string;
+  /** The user's nickname for it, if any: the card's title. */
+  nickname: string | null;
   bankName: string | null;
   last4: string | null;
   tier: string;
@@ -68,6 +74,8 @@ export interface AccountSummary {
   currency: string;
   /** Debit/cash/savings: money in the account. Credit: what is owed. */
   balance: string;
+  /** `balance` as a number. */
+  amount: number;
   /** Credit cards only. */
   credit: {
     owed: number;
@@ -176,6 +184,7 @@ export function buildAccounts(
       group,
       label: accountLabel(account),
       name: account.name,
+      nickname: account.metadata?.nickname?.trim() || null,
       bankName: account.metadata?.bank ?? bank?.institution ?? null,
       last4,
       tier: t(`accounts.tier.${account.type}`),
@@ -191,6 +200,7 @@ export function buildAccounts(
         account.currency,
         locale,
       ),
+      amount: isCredit ? credit!.owed : account.balanceCurrent,
       credit,
       statementDay: terms?.statementDay ?? null,
       paymentDueDay: terms?.paymentDueDay ?? null,
@@ -216,24 +226,6 @@ export function buildAccounts(
   });
 }
 
-export interface AccountGroup {
-  key: AccountGroupKey;
-  title: string;
-  accounts: AccountSummary[];
-}
-
-/** Non-empty sections, in ACCOUNT_GROUPS order. */
-export function groupAccounts(
-  accounts: ReadonlyArray<AccountSummary>,
-  t: Translate,
-): AccountGroup[] {
-  return ACCOUNT_GROUPS.map((key) => ({
-    key,
-    title: t(`accounts.groups.${key}`),
-    accounts: accounts.filter((a) => a.group === key),
-  })).filter((g) => g.accounts.length > 0);
-}
-
 /** The account in ?account=… (or the legacy ?card=…), or the first one. */
 export function pickAccount<T extends { id: string }>(
   accounts: ReadonlyArray<T>,
@@ -242,22 +234,27 @@ export function pickAccount<T extends { id: string }>(
   return accounts.find((c) => c.id === requested) ?? accounts[0] ?? null;
 }
 
-/** "20 oct · En 6 días" */
-function dueLabel(
-  day: DayKey,
-  today: DayKey,
-  { locale, t }: Localizer,
-): string {
-  return t('cards.facts.due', {
-    date: shortDate(day, locale),
-    relative: relativeDayLabel(day, today, locale),
-  });
+/** A date and how far it is: "20 oct" · "En 6 días". */
+export interface DateFact {
+  date: string;
+  relative: string;
 }
 
+function dateFact(
+  day: DayKey,
+  today: DayKey,
+  locale: Localizer['locale'],
+): DateFact {
+  return {
+    date: shortDate(day, locale),
+    relative: relativeDayLabel(day, today, locale),
+  };
+}
+
+export const PENDING_CHARGE_FIELDS =
+  'dueDate expectedAmount status recurringExpense { currency }';
+
 export interface CardMonthSummaryData {
-  recurringExpected: number;
-  recurringPaid: number;
-  recurringPayments: { name: string }[];
   statement: {
     statementDate: string | null;
     paymentDueDate: string | null;
@@ -267,55 +264,77 @@ export interface CardMonthSummaryData {
   } | null;
 }
 
+/** A recurring payment charged to the account, as upcomingPayments returns it. */
+export type PendingCharge = Pick<
+  ApiUpcomingPayment,
+  'dueDate' | 'expectedAmount' | 'status'
+> & {
+  recurringExpense: Pick<ApiUpcomingPayment['recurringExpense'], 'currency'>;
+};
+
 export interface AccountDetail {
   account: AccountSummary;
-  monthLabel: string;
-  monthSpending: string;
   recent: TransactionRow[];
-  /** Label/value pairs: next cut-off, payment date, statement amounts. */
+  /** "Movimientos" filtered by this account. */
+  historyHref: string;
+  /** Credit cards with a limit. */
+  limit: string | null;
+  /** Credit cards with a limit: share used, 0–100. */
+  usedPercent: number | null;
+  /** Next cut-off (credit cards with a statement day). */
+  statementDate: DateFact | null;
+  /** The statement's due date, else the next payment day. */
+  paymentDate: DateFact | null;
+  /**
+   * Balance (or debt) at the end of the month: today's, minus (plus, on a
+   * credit card) the recurring payments still due on this account.
+   */
+  projection: {
+    amount: string;
+    /** A debit account that would end below zero. */
+    short: boolean;
+    pendingCount: number;
+    pendingTotal: string;
+  };
+  /** Statement amounts and the interest rate. */
   facts: { label: string; value: string }[];
-  recurring: { expected: string; paid: string; count: number } | null;
 }
 
 export function buildAccountDetail(
   card: AccountSummary,
   {
     today,
-    monthLabel,
-    monthSpending,
     recent,
     summary,
+    pending,
   }: {
     today: DayKey;
-    monthLabel: string;
-    monthSpending: number;
     recent: TransactionRow[];
     summary: CardMonthSummaryData | null;
+    /** Recurring payments due from today to the end of the month. */
+    pending: ReadonlyArray<PendingCharge>;
   },
-  l: Localizer,
+  { locale, t }: Localizer,
 ): AccountDetail {
-  const { locale, t } = l;
   const money = (n: number) => formatMoney(n, card.currency, locale);
-  const facts: AccountDetail['facts'] = [];
   const statement = summary?.statement;
+  const isCredit = card.credit !== null;
 
-  if (card.statementDay) {
-    facts.push({
-      label: t('cards.facts.nextStatement'),
-      value: dueLabel(nextMonthlyDay(today, card.statementDay), today, l),
-    });
-  }
-  if (statement?.paymentDueDate) {
-    facts.push({
-      label: t('cards.facts.paymentDue'),
-      value: dueLabel(dayKeyOf(statement.paymentDueDate), today, l),
-    });
-  } else if (card.paymentDueDay) {
-    facts.push({
-      label: t('cards.facts.nextPayment'),
-      value: dueLabel(nextMonthlyDay(today, card.paymentDueDay), today, l),
-    });
-  }
+  // Paid or skipped ones are done; reminders (no status) still count.
+  const due = pending.filter(
+    (p) =>
+      (p.status === null || p.status === 'upcoming') &&
+      p.recurringExpense.currency === card.currency &&
+      dayKeyOf(p.dueDate) >= today,
+  );
+  const pendingTotal = roundCents(
+    due.reduce((sum, p) => sum + p.expectedAmount, 0),
+  );
+  const projected = roundCents(
+    isCredit ? card.amount + pendingTotal : card.amount - pendingTotal,
+  );
+
+  const facts: AccountDetail['facts'] = [];
   if (statement?.statementBalance != null) {
     facts.push({
       label: statement.statementDate
@@ -347,20 +366,33 @@ export function buildAccountDetail(
     });
   }
 
+  const limit = card.credit?.limit ?? null;
+  const paymentDay = statement?.paymentDueDate
+    ? dayKeyOf(statement.paymentDueDate)
+    : card.paymentDueDay
+      ? nextMonthlyDay(today, card.paymentDueDay)
+      : null;
+
   return {
     account: card,
-    monthLabel,
-    monthSpending: money(monthSpending),
     recent,
-    facts,
-    recurring:
-      summary && summary.recurringPayments.length > 0
-        ? {
-            expected: money(summary.recurringExpected),
-            paid: money(summary.recurringPaid),
-            count: summary.recurringPayments.length,
-          }
+    historyHref: `/history?account=${encodeURIComponent(card.id)}`,
+    limit: limit !== null ? money(limit) : null,
+    usedPercent:
+      limit !== null
+        ? Math.min(100, Math.max(0, Math.round((card.amount / limit) * 100)))
         : null,
+    statementDate: card.statementDay
+      ? dateFact(nextMonthlyDay(today, card.statementDay), today, locale)
+      : null,
+    paymentDate: paymentDay ? dateFact(paymentDay, today, locale) : null,
+    projection: {
+      amount: money(projected),
+      short: !isCredit && projected < 0,
+      pendingCount: due.length,
+      pendingTotal: money(pendingTotal),
+    },
+    facts,
   };
 }
 
@@ -370,6 +402,7 @@ export type CardPreview = Pick<
   | 'type'
   | 'tier'
   | 'label'
+  | 'nickname'
   | 'bankName'
   | 'maskedNumber'
   | 'variant'
@@ -380,6 +413,7 @@ export function cardPreview(
   {
     type,
     label,
+    nickname,
     bankName,
     last4,
     balance,
@@ -387,6 +421,7 @@ export function cardPreview(
   }: {
     type: AccountType;
     label: string;
+    nickname: string | null;
     bankName: string | null;
     last4: string | null;
     balance: number;
@@ -398,6 +433,7 @@ export function cardPreview(
     type,
     tier: t(`accounts.tier.${type}`),
     label,
+    nickname,
     bankName,
     maskedNumber: maskedNumberOf(type, last4),
     variant: VARIANTS[groupOf(type)][0]!,

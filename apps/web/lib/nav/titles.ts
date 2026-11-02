@@ -12,6 +12,7 @@ export type PageTitleKey =
   | 'cards'
   | 'budgets'
   | 'debts'
+  | 'loans'
   | 'goals'
   | 'simulator'
   | 'notifications'
@@ -37,6 +38,9 @@ export const PAGE_TITLES: ReadonlyArray<
   ['/accounts', 'cards'],
   ['/planning/budgets', 'budgets'],
   ['/planning/debts', 'debts'],
+  ['/planning/debts/[id]', 'debts'],
+  ['/planning/loans', 'loans'],
+  ['/planning/loans/[id]', 'loans'],
   ['/planning/goals', 'goals'],
   ['/planning/simulator', 'simulator'],
   ['/notifications', 'notifications'],

@@ -9,6 +9,7 @@ import { FilterChipGroup } from '@finnit/ui/components/finance/filter-chip-group
 import { Button } from '@finnit/ui/components/ui/button';
 
 import { EmptyState } from '@/components/finance/empty-state';
+import { PageHeader } from '@/components/page-header';
 import { useNotificationActions } from '@/hooks/use-notification-actions';
 import { todayKey } from '@/lib/finance/dates';
 import type { Connection } from '@/lib/finance/types';
@@ -81,82 +82,78 @@ export function NotificationsScreen({
   const unread = items.some((item) => item.unread);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
-      <div>
-        <h1 className="mb-1 text-[32px] font-bold text-on-background">
-          {t('title')}
-        </h1>
-        <p className="text-sm text-on-surface-variant">{t('subtitle')}</p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader title={t('title')} subtitle={t('subtitle')} />
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <FilterChipGroup
+            aria-label={t('filterLabel')}
+            items={[
+              { value: 'all', label: t('filters.all') },
+              { value: 'unread', label: t('filters.unread') },
+            ]}
+            activeValue={filter}
+            onSelect={(value) =>
+              router.push(
+                value === 'unread' ? `${pathname}?filter=unread` : pathname,
+              )
+            }
+          />
+          {unread ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={markingAll}
+              onClick={() => void markAll()}
+            >
+              <CheckCheck aria-hidden /> {t('markAllRead')}
+            </Button>
+          ) : null}
+        </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <FilterChipGroup
-          aria-label={t('filterLabel')}
-          items={[
-            { value: 'all', label: t('filters.all') },
-            { value: 'unread', label: t('filters.unread') },
-          ]}
-          activeValue={filter}
-          onSelect={(value) =>
-            router.push(
-              value === 'unread' ? `${pathname}?filter=unread` : pathname,
-            )
-          }
-        />
-        {unread ? (
+        {items.length === 0 ? (
+          <EmptyState
+            icon={BellOff}
+            title={filter === 'unread' ? t('emptyUnread') : t('empty')}
+            description={t('emptyDescription')}
+          />
+        ) : (
+          <>
+            <p
+              className="px-1 text-xs text-on-surface-variant"
+              aria-live="polite"
+            >
+              {t('count', {
+                shown: String(items.length),
+                total: page.totalCount,
+              })}
+            </p>
+            <div className="flex flex-col gap-2">
+              {items.map((item) => (
+                <NotificationRow
+                  key={item.id}
+                  item={item}
+                  onOpen={(i) => void open(i)}
+                />
+              ))}
+            </div>
+          </>
+        )}
+        {error ? (
+          <p role="alert" className="text-sm text-expense">
+            {error}
+          </p>
+        ) : null}
+        {page.hasNextPage ? (
           <Button
-            variant="ghost"
-            size="sm"
-            disabled={markingAll}
-            onClick={() => void markAll()}
+            variant="outline"
+            onClick={() => void loadMore()}
+            disabled={loading}
           >
-            <CheckCheck aria-hidden /> {t('markAllRead')}
+            {loading ? l.t('common.loading') : l.t('common.loadMore')}
           </Button>
         ) : null}
       </div>
-
-      {items.length === 0 ? (
-        <EmptyState
-          icon={BellOff}
-          title={filter === 'unread' ? t('emptyUnread') : t('empty')}
-          description={t('emptyDescription')}
-        />
-      ) : (
-        <>
-          <p
-            className="px-1 text-xs text-on-surface-variant"
-            aria-live="polite"
-          >
-            {t('count', {
-              shown: String(items.length),
-              total: page.totalCount,
-            })}
-          </p>
-          <div className="flex flex-col gap-2">
-            {items.map((item) => (
-              <NotificationRow
-                key={item.id}
-                item={item}
-                onOpen={(i) => void open(i)}
-              />
-            ))}
-          </div>
-        </>
-      )}
-      {error ? (
-        <p role="alert" className="text-sm text-expense">
-          {error}
-        </p>
-      ) : null}
-      {page.hasNextPage ? (
-        <Button
-          variant="outline"
-          onClick={() => void loadMore()}
-          disabled={loading}
-        >
-          {loading ? l.t('common.loading') : l.t('common.loadMore')}
-        </Button>
-      ) : null}
     </div>
   );
 }

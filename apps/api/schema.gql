@@ -16,6 +16,90 @@ input AcceptRecurringSuggestionInput {
   trackingMode: RecurringTrackingMode
 }
 
+"""
+Turns a recurring suggestion into a loan; omitted fields come from recurringSuggestionLoanDraft
+"""
+input AcceptSuggestionAsLoanInput {
+  """Category of the payments; default: Loan Payments"""
+  categoryId: String
+
+  """destination = deposit: account that received the money"""
+  depositAccountId: String
+
+  """
+  Count the deposit as income (default: a balance adjustment outside totals)
+  """
+  depositCountsAsIncome: Boolean
+  destination: DebtChargeDestination
+  dueDate: DateTime
+
+  """First due date; anchors the payment schedule"""
+  firstPaymentDate: DateTime
+
+  """
+  Past payments of any amount (e.g. personal loans); with an account they become movements and count in totals
+  """
+  historicalPayments: [HistoricalDebtPaymentInput!]
+
+  """Add 16% VAT to the interest"""
+  includesVat: Boolean
+  installmentAmount: Float
+
+  """
+  Scheduled payments already made before registering the loan; recorded as historical (outside totals)
+  """
+  installmentsPaid: Int
+
+  """
+  Number of payments (institutional) or of the initial purchase (purchase financing)
+  """
+  installmentsTotal: Int
+  interestMode: LoanInterestMode
+  interestRateAnnual: Float
+  kind: DebtKind
+
+  """
+  Personal loans: the contact who lent it (default: a contact named lenderName, created if needed)
+  """
+  lenderContactId: String
+  lenderName: String
+
+  """Personal loans: how it was lent (cash, transfer, their card…)"""
+  lendingMethod: LendingMethod
+  linkedAccountId: String
+  loanType: LoanType
+
+  """Text that identifies the payments in bank movements"""
+  merchantPattern: String
+  minPaymentAmount: Float
+  name: String
+
+  """
+  Institutional loans: opening fee (comisión por apertura, VAT included). Not an expense: the deposit is principal − fee and the whole principal is owed
+  """
+  openingFee: Float
+
+  """Account the payments are made from"""
+  paymentAccountId: String
+  paymentFrequency: RecurringFrequency
+
+  """
+  Institutional loans with a rate: fixed fee charged with every payment (administración, seguro), VAT included. Added to each payment, not to the interest
+  """
+  periodicFee: Float
+
+  """
+  Amount borrowed; personal loans may start at 0 and get amounts added later
+  """
+  principal: Float
+
+  """What the money was for (informative; the expense is the payments)"""
+  purposeCategoryId: String
+  startDate: DateTime
+  totalToRepay: Float
+  trackingMode: RecurringTrackingMode
+}
+
 type Account {
   archived: Boolean!
   balanceCurrent: Float!
@@ -98,6 +182,32 @@ enum AccountType {
   debit
   ewallet
   savings
+}
+
+input AddDebtChargeInput {
+  date: DateTime!
+  debtId: String!
+  depositAccountId: String
+  depositCountsAsIncome: Boolean
+  description: String
+  destination: DebtChargeDestination!
+  includesVat: Boolean
+  installmentAmount: Float
+
+  """Installments of this charge (required for purchase financing)"""
+  installments: Int
+
+  """Default: total_amount (no interest unless totalToRepay)"""
+  interestMode: LoanInterestMode
+  interestRateAnnual: Float
+
+  """Personal loans: how it was lent (cash, transfer, their card…)"""
+  lendingMethod: LendingMethod
+  principal: Float!
+
+  """What the money was for (informative; the expense is the payments)"""
+  purposeCategoryId: String
+  totalToRepay: Float
 }
 
 input AdjustBalanceInput {
@@ -485,6 +595,15 @@ input ConfirmReceiptImportInput {
   total: Float!
 }
 
+"""
+A person the user deals with (e.g. who lent them money). Only the name for now
+"""
+type Contact {
+  createdAt: DateTime!
+  id: ID!
+  name: String!
+}
+
 input CreateAccountInput {
   currency: String!
   initialBalance: Float!
@@ -517,22 +636,103 @@ input CreateCategoryInput {
   sortOrder: Float
 }
 
+input CreateContactInput {
+  name: String!
+}
+
 input CreateDebtInput {
+  """Category of the payments; default: Loan Payments"""
+  categoryId: String
+
+  """destination = deposit: account that received the money"""
+  depositAccountId: String
+
+  """
+  Count the deposit as income (default: a balance adjustment outside totals)
+  """
+  depositCountsAsIncome: Boolean
+  destination: DebtChargeDestination
   dueDate: DateTime
+
+  """First due date; anchors the payment schedule"""
+  firstPaymentDate: DateTime
+
+  """
+  Past payments of any amount (e.g. personal loans); with an account they become movements and count in totals
+  """
+  historicalPayments: [HistoricalDebtPaymentInput!]
+
+  """Add 16% VAT to the interest"""
+  includesVat: Boolean
+  installmentAmount: Float
+
+  """
+  Scheduled payments already made before registering the loan; recorded as historical (outside totals)
+  """
+  installmentsPaid: Int
+
+  """
+  Number of payments (institutional) or of the initial purchase (purchase financing)
+  """
+  installmentsTotal: Int
+  interestMode: LoanInterestMode
   interestRateAnnual: Float
   kind: DebtKind!
+
+  """
+  Personal loans: the contact who lent it (default: a contact named lenderName, created if needed)
+  """
+  lenderContactId: String
+  lenderName: String
+
+  """Personal loans: how it was lent (cash, transfer, their card…)"""
+  lendingMethod: LendingMethod
   linkedAccountId: String
+  loanType: LoanType
+
+  """Text that identifies the payments in bank movements"""
+  merchantPattern: String
   minPaymentAmount: Float
   name: String!
+
+  """
+  Institutional loans: opening fee (comisión por apertura, VAT included). Not an expense: the deposit is principal − fee and the whole principal is owed
+  """
+  openingFee: Float
+
+  """Account the payments are made from"""
+  paymentAccountId: String
+  paymentFrequency: RecurringFrequency
+
+  """
+  Institutional loans with a rate: fixed fee charged with every payment (administración, seguro), VAT included. Added to each payment, not to the interest
+  """
+  periodicFee: Float
+
+  """
+  Amount borrowed; personal loans may start at 0 and get amounts added later
+  """
   principal: Float!
+
+  """What the money was for (informative; the expense is the payments)"""
+  purposeCategoryId: String
   startDate: DateTime
+  totalToRepay: Float
+  trackingMode: RecurringTrackingMode
 }
 
 input CreateDebtPaymentInput {
   amount: Float!
   date: DateTime!
   debtId: String!
-  transactionId: String!
+
+  """
+  Made before the debt was registered: lowers the balance, outside totals
+  """
+  isHistorical: Boolean
+
+  """The movement that paid it; omit only for historical payments"""
+  transactionId: String
 }
 
 input CreateGoalContributionInput {
@@ -634,20 +834,99 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 scalar DateTime
 
 type Debt {
+  """Newest first"""
+  charges: [DebtCharge!]!
   createdAt: DateTime!
+  destination: DebtChargeDestination
+  disbursementTransactionId: String
   dueDate: DateTime
+
+  """Paid before the debt was registered (outside totals)"""
+  historicalPaid: Float!
   id: ID!
+  includesVat: Boolean!
+  installmentAmount: Float
+
+  """Payments made so far, historical ones included"""
+  installmentsPaid: Int!
+  installmentsTotal: Int
+  interestMode: LoanInterestMode
   interestRateAnnual: Float
   kind: DebtKind!
+
+  """Personal loans: the contact who lent it"""
+  lenderContactId: String
+  lenderName: String
+
+  """Personal loans: how it was lent"""
+  lendingMethod: LendingMethod
   linkedAccountId: String
+  loanType: LoanType
   minPaymentAmount: Float
   monthlyPayment: Float
   name: String!
+  nextPaymentDate: DateTime
+
+  """Opening fee (comisión por apertura), taken from the money deposited"""
+  openingFee: Float
+  paymentFrequency: RecurringFrequency
+
+  """Newest first"""
+  payments: [DebtPayment!]!
+
+  """
+  Fixed fee charged with every payment (administración, seguro), VAT included
+  """
+  periodicFee: Float
   principal: Float!
+
+  """
+  What the borrowed money was for (informative; the expense is the payments)
+  """
+  purposeCategoryId: String
+
+  """Recurring expense that schedules the payments"""
+  recurringExpenseId: String
   remainingBalance: Float!
   startDate: DateTime
+  status: DebtStatus!
+
+  """Everything owed over time: initial total + charges"""
+  totalOwed: Float!
   totalPaid: Float!
+
+  """Principal + interest of the initial amount"""
+  totalToRepay: Float
+  updatedAt: DateTime!
   userId: String!
+}
+
+"""Money added to a debt after it was registered"""
+type DebtCharge {
+  createdAt: DateTime!
+  date: DateTime!
+  debtId: String!
+  description: String
+  destination: DebtChargeDestination!
+  id: ID!
+  installments: Int
+
+  """Personal loans: how it was lent"""
+  lendingMethod: LendingMethod
+  principal: Float!
+
+  """What this money was for (informative)"""
+  purposeCategoryId: String
+  totalToRepay: Float!
+  transactionId: String
+}
+
+"""
+deposit: the money went into an account; purchase: it paid for something directly
+"""
+enum DebtChargeDestination {
+  deposit
+  purchase
 }
 
 type DebtConnection {
@@ -661,10 +940,40 @@ type DebtEdge {
   node: Debt!
 }
 
+"""Figures for the debts charts; card MSI plans are always reported apart"""
+type DebtInsights {
+  """Average income of the last 3 full months"""
+  averageMonthlyIncome: Float!
+  byType: [DebtTypeTotal!]!
+  monthlyPayments: Float!
+  msi: [MsiPlan!]!
+  msiMonthlyPayments: Float!
+
+  """Oldest first"""
+  paidByMonth: [DebtPaidMonth!]!
+  projection: [DebtProjectedMonth!]!
+  upcoming: DebtUpcomingTotals!
+  upcomingMsi: DebtUpcomingTotals!
+}
+
 enum DebtKind {
   card
   loan
   other
+}
+
+type DebtPaidMonth {
+  """Payments that are movements (in totals)"""
+  counted: Float!
+
+  """Paid before registering the debt"""
+  historical: Float!
+
+  """YYYY-MM"""
+  month: String!
+
+  """Card MSI installments paid"""
+  msi: Float!
 }
 
 type DebtPayment {
@@ -672,7 +981,8 @@ type DebtPayment {
   date: DateTime!
   debtId: String!
   id: ID!
-  transactionId: String!
+  isHistorical: Boolean!
+  transactionId: String
 }
 
 type DebtPayoffProjection {
@@ -689,12 +999,43 @@ type DebtPayoffProjection {
   totalInterest: Float!
 }
 
+type DebtProjectedMonth {
+  debt: Float!
+
+  """YYYY-MM; balance at the end of the month"""
+  month: String!
+  msi: Float!
+}
+
+enum DebtStatus {
+  active
+  paid_off
+}
+
 type DebtSummary {
   payoffProjections: [DebtPayoffProjection!]!
   totalDebt: Float!
   totalMonthlyPayments: Float!
   totalPaid: Float!
   totalRemaining: Float!
+}
+
+type DebtTypeTotal {
+  count: Int!
+  paid: Float!
+  remaining: Float!
+  totalOwed: Float!
+
+  """
+  institutional, personal, purchase_financing, card, other or msi (card installment plans)
+  """
+  type: String!
+}
+
+type DebtUpcomingTotals {
+  days30: Float!
+  days60: Float!
+  days90: Float!
 }
 
 type Goal {
@@ -754,6 +1095,27 @@ type GoalRecommendations {
   totalSavedAmount: Float!
 }
 
+input HistoricalDebtPaymentInput {
+  """
+  Count it in income/expense totals: creates an expense movement in this account
+  """
+  accountId: String
+  amount: Float!
+  categoryId: String
+  date: DateTime!
+}
+
+"""
+How someone lent the money: cash, transfer, their credit or debit card, other
+"""
+enum LendingMethod {
+  cash
+  credit_card
+  debit_card
+  other
+  transfer
+}
+
 input LinkBankAccountInput {
   """Existing Finnit account; omit with createAccount to create one"""
   accountId: String
@@ -774,6 +1136,111 @@ type LinkedBankAccount {
   mask: String
   name: String
   type: String
+}
+
+"""
+Which value defines the amount to repay: rate (principal + annual rate, French amortization), total_amount or installment_amount
+"""
+enum LoanInterestMode {
+  installment_amount
+  rate
+  total_amount
+}
+
+"""A bank movement that looks like an open payment of a loan"""
+type LoanPaymentCandidate {
+  accountName: String!
+  amount: Float!
+  date: DateTime!
+  description: String!
+  dueDate: DateTime!
+  expectedAmount: Float!
+  occurrenceId: ID!
+
+  """
+  history (same merchant as earlier payments), text (names the lender), amount (amount and date only) or ai (picked by AI among similar ones)
+  """
+  reason: String!
+
+  """0..1"""
+  score: Float!
+  transactionId: ID!
+}
+
+"""One payment of a loan over time"""
+type LoanScheduleItem {
+  amount: Float!
+
+  """
+  Left after this payment: principal for loans by rate, else everything owed
+  """
+  balance: Float!
+  dueDate: DateTime!
+
+  """Fixed fee of this payment, VAT included"""
+  fee: Float
+
+  """Loans by rate: interest of the period, VAT excluded"""
+  interest: Float
+
+  """Paid before the loan was registered"""
+  isHistorical: Boolean!
+
+  """Scheduled payment; null for projected or unscheduled ones"""
+  occurrenceId: ID
+
+  """Loans by rate: principal repaid by this payment"""
+  principal: Float
+
+  """Not generated yet: from the terms and the balance"""
+  projected: Boolean!
+
+  """Projected payments are upcoming"""
+  status: OccurrenceStatus!
+  transactionId: ID
+
+  """Loans by rate: VAT on the interest"""
+  vat: Float
+}
+
+"""
+A loan prefilled from a recurring suggestion (schedule from the detected charges, lender and type from AI)
+"""
+type LoanSuggestionDraft {
+  categoryId: ID
+
+  """"ai" when the AI described the loan"""
+  classifiedBy: String
+  currency: String!
+  fingerprint: ID!
+
+  """Oldest detected charge"""
+  firstPaymentDate: DateTime!
+  installmentAmount: Float!
+
+  """Detected every N periods"""
+  interval: Int!
+
+  """Newest detected charge"""
+  lastPaymentDate: DateTime!
+  lenderName: String!
+  loanType: LoanType!
+  merchantPattern: String!
+  name: String!
+  paymentAccountId: ID
+  paymentFrequency: RecurringFrequency!
+
+  """Charges detected; they become paid installments"""
+  paymentsDetected: Int!
+}
+
+"""
+institutional: bank or lending company, fixed payments; personal: family or friends, flexible and may grow; purchase_financing: Kueski / Didi, each purchase adds installments on the same due dates
+"""
+enum LoanType {
+  institutional
+  personal
+  purchase_financing
 }
 
 """
@@ -837,6 +1304,18 @@ type MonthlyReport {
   year: Int!
 }
 
+"""A card purchase in interest-free installments"""
+type MsiPlan {
+  accountName: String
+  id: ID!
+  installmentAmount: Float!
+  installmentsPaid: Int!
+  installmentsTotal: Int!
+  name: String!
+  nextDueDate: DateTime
+  remaining: Float!
+}
+
 type Mutation {
   """
   Applies the pending suggestions and learns merchant rules; returns how many were applied
@@ -847,6 +1326,14 @@ type Mutation {
   Creates the recurring expense of a suggestion and links its past movements as paid occurrences
   """
   acceptRecurringSuggestion(fingerprint: ID!, input: AcceptRecurringSuggestionInput): RecurringExpense!
+
+  """
+  Turns a recurring suggestion into a loan: its detected charges become paid installments
+  """
+  acceptRecurringSuggestionAsLoan(fingerprint: ID!, input: AcceptSuggestionAsLoanInput!): Debt!
+
+  """Adds money to a loan: another personal loan or a financed purchase"""
+  addDebtCharge(input: AddDebtChargeInput!): Debt!
   addGoalContribution(input: CreateGoalContributionInput!): GoalContribution!
   adjustAccountBalance(input: AdjustBalanceInput!): Account!
 
@@ -854,6 +1341,11 @@ type Mutation {
   Moves movements (max 500) to a category; with createRule, learns a merchant rule per merchant. Returns how many changed
   """
   categorizeTransactions(categoryId: ID!, createRule: Boolean = true, ids: [ID!]!): Int!
+
+  """
+  Links a movement to an open payment of a loan; its merchant becomes the loan pattern for later syncs
+  """
+  confirmLoanPayment(occurrenceId: ID!, transactionId: ID!): Debt!
 
   """
   Creates the expense with the photo attached, or attaches the photo to `attachToTransactionId`
@@ -876,6 +1368,13 @@ type Mutation {
   createBudget(input: CreateBudgetInput!): Budget!
   createBudgetFromTemplate(input: BudgetFromTemplateInput!): Budget!
   createCategory(input: CreateCategoryInput!): Category!
+
+  """Adds a contact; returns the existing one with that name"""
+  createContact(input: CreateContactInput!): Contact!
+
+  """
+  Creates a debt; with a loanType, a loan with its terms, payment schedule and payments already made
+  """
   createDebt(input: CreateDebtInput!): Debt!
   createDebtPayment(input: CreateDebtPaymentInput!): DebtPayment!
   createDefaultCategories: Boolean!
@@ -903,9 +1402,13 @@ type Mutation {
   deleteBudget(id: String!): Boolean!
   deleteCategory(id: String!): Boolean!
   deleteDebt(id: String!): Boolean!
+  deleteDebtCharge(id: ID!): Debt!
 
   """Fails while the goal has contributions"""
   deleteGoal(id: ID!): Boolean!
+
+  """Deletes a historical payment (one without a movement)"""
+  deleteHistoricalDebtPayment(id: ID!): Boolean!
   deleteMerchantAlias(id: ID!): Boolean!
   deleteMerchantRule(id: ID!): Boolean!
   deleteRecurringExpense(id: ID!): Boolean!
@@ -936,6 +1439,9 @@ type Mutation {
 
   """Marks a manual (or unmatched automatic) payment as paid"""
   markRecurringPaymentPaid(occurrenceId: ID!, transactionId: ID): RecurringOccurrence!
+
+  """Pays a debt from an account: creates the expense movement and links it"""
+  recordDebtPayment(input: RecordDebtPaymentInput!): Debt!
   refreshToken(input: RefreshTokenInput!): AuthPayload!
   registerBankConnection(idCredential: String!): BankSyncResult!
 
@@ -1006,6 +1512,11 @@ type Mutation {
   updateCategory(id: String!, input: UpdateCategoryInput!): Category!
   updateDebt(id: String!, input: UpdateDebtInput!): Debt!
   updateGoal(id: ID!, input: UpdateGoalInput!): Goal!
+
+  """
+  Edits a loan: name, lender, amount, number of payments, date, fees and purpose; recomputes its terms and open payments
+  """
+  updateLoan(id: ID!, input: UpdateLoanInput!): Debt!
   updateMerchantAlias(id: ID!, input: MerchantAliasInput!): MerchantAlias!
 
   """Saves the signed-in user's preferences (e.g. locale)."""
@@ -1124,8 +1635,25 @@ type Query {
   categories: [Category!]!
   category(id: String!): Category!
   categoryUsage(dateFrom: DateTime, dateTo: DateTime): [CategoryUsage!]!
+
+  """By name"""
+  contacts: [Contact!]!
   currentBudget: Budget
   debt(id: String!): Debt!
+
+  """
+  Debt by type, payments per month (historical apart), projected balance and what is due soon
+  """
+  debtInsights(
+    """Months of balance projection (default 24)"""
+    horizon: Int
+
+    """Only loans (no cards, other debts or card MSI plans)"""
+    loansOnly: Boolean
+
+    """Months of payment history, this one included (default 12)"""
+    months: Int
+  ): DebtInsights!
   debtSummary: DebtSummary!
   debts(after: String, before: String, first: Int, includePayoffProjections: Boolean, kind: DebtKind, last: Int): DebtConnection!
   goal(id: String!): Goal!
@@ -1145,6 +1673,16 @@ type Query {
   """Over all the user's goals, or only goalId when given"""
   goalRecommendations(goalId: ID): GoalRecommendations!
   goals: [Goal!]!
+
+  """
+  Bank movements that look like open payments of a loan; confirm them with confirmLoanPayment
+  """
+  loanPaymentCandidates(debtId: ID!): [LoanPaymentCandidate!]!
+
+  """
+  Every payment of a loan by date: paid (historical included), open and projected until it is paid off
+  """
+  loanSchedule(debtId: ID!): [LoanScheduleItem!]!
   me: User!
 
   """The user's merchant aliases, highest priority first"""
@@ -1188,6 +1726,11 @@ type Query {
     trackingMode: RecurringTrackingMode
   ): RecurringExpenseConnection!
   recurringExpensesSummary: RecurringExpensesSummary!
+
+  """
+  Prefilled loan for a suggestion that pays a loan; accept it with acceptRecurringSuggestionAsLoan
+  """
+  recurringSuggestionLoanDraft(fingerprint: ID!): LoanSuggestionDraft!
 
   """
   Recurring payments detected in the movements (not dismissed, not accepted yet), most confident first
@@ -1299,6 +1842,20 @@ enum ReceiptStatus {
   needs_review
   processing
   uploaded
+}
+
+"""
+A new payment made from an account: creates the expense movement and links it to the loan (and its next scheduled payment)
+"""
+input RecordDebtPaymentInput {
+  accountId: String!
+  amount: Float!
+  categoryId: String
+  date: DateTime!
+  debtId: String!
+
+  """Scheduled payment it pays; default: the oldest open one"""
+  occurrenceId: String
 }
 
 type RecurringAccountTotal {
@@ -1815,12 +2372,16 @@ input UpdateDebtInput {
   dueDate: DateTime
   interestRateAnnual: Float
   kind: DebtKind
+  lenderName: String
   linkedAccountId: String
   minPaymentAmount: Float
   name: String
 
   """Cannot be less than what has been paid already"""
   principal: Float
+
+  """What the money was for; null or "" clears it"""
+  purposeCategoryId: String
   startDate: DateTime
 }
 
@@ -1828,6 +2389,45 @@ input UpdateGoalInput {
   dueDate: DateTime
   name: String
   targetAmount: Float
+}
+
+"""
+Edits a loan; omitted fields stay. Changing the amount, the number of payments or the fees recomputes its terms and reprices its open scheduled payments
+"""
+input UpdateLoanInput {
+  """Fixed-term loans: number of payments"""
+  installmentsTotal: Int
+
+  """
+  Personal loans: the contact who lent it; null clears it. Its name becomes lenderName
+  """
+  lenderContactId: String
+
+  """"" or null clears it"""
+  lenderName: String
+
+  """Personal loans: how it was lent; null clears it"""
+  lendingMethod: LendingMethod
+  name: String
+
+  """
+  Bank or lender loans: opening fee, VAT included; 0 removes it. The deposit follows it
+  """
+  openingFee: Float
+
+  """
+  Bank or lender loans by rate: fixed fee per payment, VAT included; 0 removes it
+  """
+  periodicFee: Float
+
+  """Amount borrowed; personal loans may be 0"""
+  principal: Float
+
+  """What the money was for; null or "" clears it"""
+  purposeCategoryId: String
+
+  """Date of the loan; null clears it (it may be unknown)"""
+  startDate: DateTime
 }
 
 input UpdateMyPreferencesInput {

@@ -290,6 +290,15 @@ export function longDate(key: DayKey, today: DayKey, locale: Locale): string {
   return `${day} de ${name}${sameYear ? '' : ` de ${year}`}`;
 }
 
+/** "14 de octubre de 2026" / "October 14, 2026": always with the year. */
+export function fullDate(key: DayKey, locale: Locale): string {
+  const { year, month, day } = parseDayKey(key);
+  const name = monthNameOf(month, locale);
+  return locale === 'en'
+    ? `${name} ${day}, ${year}`
+    : `${day} de ${name} de ${year}`;
+}
+
 /** "14 oct" / "Oct 14" */
 export function shortDate(key: DayKey, locale: Locale): string {
   const { month, day } = parseDayKey(key);

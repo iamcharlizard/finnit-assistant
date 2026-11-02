@@ -13,7 +13,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
+import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { Input } from '@finnit/ui/components/ui/input';
+import { NumberInput } from '@finnit/ui/components/ui/number-input';
+import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 import { Label } from '@finnit/ui/components/ui/label';
 import { Switch } from '@finnit/ui/components/ui/switch';
 
@@ -53,6 +56,8 @@ export function EditAccountDialog({
   /** After saving or (un)archiving: refresh the data. */
   onSaved: (change?: { archived: boolean }) => void;
 }) {
+  // Closes with the exit animation before telling the parent.
+  const exit = useDialogExit();
   const l = useLocalizer();
   const { t } = l;
   const tw = useTranslations('accounts.wizard');
@@ -88,14 +93,14 @@ export function EditAccountDialog({
     const metadata = buildMetadataPatch(form, initial);
     const terms = buildTermsChange(form, initial);
     if (!metadata && !terms) {
-      onClose();
+      exit.close(onClose);
       return;
     }
     setSaving(true);
     setSubmitError(null);
     try {
       await saveAccountChanges(account.id, { metadata, terms }, gql);
-      onSaved();
+      exit.after(onSaved)();
     } catch (error) {
       setSubmitError(accountErrorMessage(error, t));
     } finally {
@@ -109,6 +114,7 @@ export function EditAccountDialog({
       {
         type: account.type,
         label: nickname || account.name,
+        nickname: nickname || null,
         bankName: account.bankName ?? (nickname || account.name),
         last4: account.last4,
         balance: 0,
@@ -122,8 +128,15 @@ export function EditAccountDialog({
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !saving && onClose()}>
-      <DialogContent closeLabel={t('common.close')} className="sm:max-w-xl">
+    <Dialog
+      open={exit.open}
+      onOpenChange={(open) => !open && !saving && exit.close(onClose)}
+    >
+      <DialogContent
+        onExitComplete={exit.onExitComplete}
+        closeLabel={t('common.close')}
+        className="sm:max-w-xl"
+      >
         <form onSubmit={submit} noValidate className="flex flex-col gap-5">
           <DialogHeader>
             <DialogTitle>{t('accounts.editDialog.title')}</DialogTitle>
@@ -176,26 +189,21 @@ export function EditAccountDialog({
                     error={errorText(errors.bank)}
                   />
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Input
+                    <NumberInput
                       label={tw('last4')}
-                      inputMode="numeric"
-                      autoComplete="off"
-                      maxLength={4}
+                      maxDigits={4}
                       value={form.last4}
                       placeholder={tw('last4Placeholder')}
-                      onChange={(e) =>
-                        update({ last4: e.target.value.replace(/\D/g, '') })
-                      }
+                      onValueChange={(value) => update({ last4: value })}
                       error={errorText(errors.last4)}
                     />
                     {isCredit ? (
-                      <Input
+                      <MoneyInput
                         label={tw('creditLimit')}
-                        inputMode="decimal"
+                        currency={account.currency}
                         value={form.creditLimit}
-                        placeholder="0.00"
-                        onChange={(e) =>
-                          update({ creditLimit: e.target.value })
+                        onValueChange={(value) =>
+                          update({ creditLimit: value })
                         }
                         error={errorText(errors.creditLimit)}
                       />
@@ -270,7 +278,7 @@ export function EditAccountDialog({
               label={account.label}
               archived={account.archived}
               disabled={saving}
-              onDone={(archived) => onSaved({ archived })}
+              onDone={(archived) => exit.after(onSaved)({ archived })}
               onError={setSubmitError}
             />
             <div className="flex flex-col-reverse gap-2 sm:flex-row">

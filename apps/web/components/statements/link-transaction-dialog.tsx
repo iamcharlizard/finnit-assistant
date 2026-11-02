@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
+import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 
 import { dayKeyOf, shortDate } from '@/lib/finance/dates';
 import { formatMoney } from '@/lib/finance/money';
@@ -42,6 +43,8 @@ export function LinkTransactionDialog({
   onClose: () => void;
   onPick: (transactionId: string) => void;
 }) {
+  // Closes with the exit animation before telling the parent.
+  const exit = useDialogExit();
   const { t } = useLocalizer();
   const tl = useTranslations('statements.linkDialog');
   const locale = useLocale() as 'es' | 'en';
@@ -63,8 +66,15 @@ export function LinkTransactionDialog({
   }, [accountId, line, t]);
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={t('common.close')} className="sm:max-w-md">
+    <Dialog
+      open={exit.open}
+      onOpenChange={(open) => !open && exit.close(onClose)}
+    >
+      <DialogContent
+        onExitComplete={exit.onExitComplete}
+        closeLabel={t('common.close')}
+        className="sm:max-w-md"
+      >
         <DialogHeader>
           <DialogTitle>{tl('title')}</DialogTitle>
           <DialogDescription>
@@ -107,7 +117,7 @@ export function LinkTransactionDialog({
                     {formatMoney(c.amount, c.currency, locale)}
                   </p>
                 </div>
-                <Button size="sm" onClick={() => onPick(c.id)}>
+                <Button size="sm" onClick={() => exit.after(onPick)(c.id)}>
                   {tl('choose')}
                 </Button>
               </li>

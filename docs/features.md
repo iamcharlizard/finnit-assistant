@@ -2,7 +2,7 @@
 
 Inventario de funcionalidades y su estado **real**, verificado contra el código. Es la fuente de verdad del avance; [prd.md](./prd.md) describe el alcance y [user-stories.md](./user-stories.md) los criterios de aceptación.
 
-**Última revisión:** 15 de octubre de 2026
+**Última revisión:** 30 de octubre de 2026
 
 **Leyenda:** ✅ hecho · 🟡 parcial · ⏳ pendiente · — no aplica
 
@@ -101,7 +101,19 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Registro de deudas (préstamo, tarjeta) | ✅ | ⏳ | ✅ | `/planning/debts`: resumen (saldo, mínimos y tasa ponderada), alta, edición y baja. |
 | Pagos de deuda | ✅ | ⏳ | ✅ | `createDebtPayment`. Web: gasto, o transferencia a la tarjeta si la deuda está ligada a una. |
 | Estrategias avalanche / snowball | ✅ | ⏳ | ✅ | `payoffStrategy` simula mes a mes (intereses, mínimos y excedente en cascada). Web: comparación lado a lado con pago extra. |
-| Resumen de deudas | ✅ | ⏳ | ✅ | `debtSummary`. |
+| Resumen de deudas | ✅ | ⏳ | ✅ | `debtSummary`. Deuda total = monto inicial con intereses + aumentos; saldo = eso − todos los pagos. |
+| Préstamos por tipo (institucional, personal, compra a plazos) | ✅ | ⏳ | ✅ | Bancos y financieras: tasa de interés ordinaria anual (no el CAT) y comisión por apertura (se descuenta del depósito; no es gasto; el formulario bloquea guardar si el depósito no cuadra) y comisión fija por pago (administración o seguro, con IVA; se suma a cada pago y al total, no a los intereses; editable desde el detalle, que recalcula los pagos pendientes). Sección propia en Planeación → **Préstamos** (`/planning/loans`, agrupados por tipo, con sus gráficas); Deudas lista tarjetas y otras deudas y los incluye en totales y plan. `createDebt` con `loanType`: términos por tasa (amortización francesa, IVA opcional), total o pago por periodo; periodicidad semanal/catorcenal/quincenal/mensual; calendario como gasto recurrente ligado (`debtId`). |
+| Pagos hechos antes de registrar el préstamo | ✅ | ⏳ | ✅ | `installmentsPaid` / `historicalPayments`: pagos sin movimiento (no cuentan en ingresos/gastos); con cuenta se crea el gasto y sí cuentan. `createDebtPayment` con `isHistorical`. |
+| Aumentos del préstamo (otro préstamo, compra a plazos) | ✅ | ⏳ | ✅ | `addDebtCharge` / `deleteDebtCharge`. Depósito a una cuenta (ajuste, o ingreso si se pide) o compra directa. En compra a plazos cada compra suma sus parcialidades a las mismas fechas. |
+| Préstamos recibidos (personales) | ✅ | ⏳ | ✅ | Pestaña con el préstamo inicial y cada monto agregado después (`addDebtCharge`), con fecha, cómo te prestó (`lendingMethod`: efectivo, transferencia, su tarjeta de crédito o débito, otro), para qué y monto. En compras a plazos la misma pestaña lista las compras. La fecha del préstamo es opcional y se puede borrar. Un préstamo personal puede empezar en $0 (sin depósito ni método) y se va llenando con cada monto; no cuenta como liquidado mientras no se deba nada. |
+| Contactos (quién te prestó) | ✅ | ⏳ | ✅ | `contacts` / `createContact` (solo nombre por ahora). En préstamos personales "¿Quién te prestó?" es un combobox que permite agregar personas; `lenderContactId` en el préstamo (un `lenderName` nuevo crea el contacto). |
+| Categoría de los pagos y "en qué se usó" | ✅ | ⏳ | ✅ | Categoría predeterminada **Préstamos y deudas** (*Pago de préstamos*, *Pagos a plazos*): la usan por defecto los pagos de préstamos, compras a plazos y MSI (calendario, pago manual, sugerencias y movimientos de banco sin categoría al conciliarlos). `purposeCategoryId` en el préstamo y en cada aumento: categoría informativa de en qué se usó el dinero (no cuenta como gasto); se edita en el detalle. |
+| Pago desde una cuenta | ✅ | ⏳ | ✅ | `recordDebtPayment`: crea el gasto, el pago de la deuda y marca la parcialidad, en una transacción. Pagar una parcialidad (manual o conciliada con banco/estado de cuenta) registra el pago de la deuda; sin movimiento se rechaza. Al llegar a 0 la deuda queda `paid_off`. |
+| Sugerencia recurrente → préstamo (con IA) | ✅ | — | ✅ | `recurringSuggestionLoanDraft` (IA propone tipo, prestamista y nombre; se guarda en caché) y `acceptRecurringSuggestionAsLoan` (los cargos detectados quedan como parcialidades pagadas). |
+| Detalle del préstamo y calendario completo | ✅ | ⏳ | ✅ | `/planning/debts/[id]` en tres pestañas: **Detalles** (editables con `updateLoan`: nombre, institución, monto, número de pagos, fecha, comisión por apertura y por pago, uso; recalcula términos, pagos pendientes y el depósito), **Tabla de amortización** (`loanSchedule` con capital, interés, IVA, comisión y saldo por pago en préstamos por tasa; pagos hechos, abiertos y proyectados; pagar una parcialidad) y **Pagos registrados** (con los movimientos detectados). |
+| Conciliación de pagos de préstamo | ✅ | ⏳ | ✅ | `loanPaymentCandidates`: monto ±15% (±50% compra a plazos) y fecha ±10 días, más fuerte si el texto nombra al prestamista o el comercio ya pagó antes; la IA desempata. `confirmLoanPayment` liga el movimiento y aprende el patrón del comercio para que las siguientes sincronizaciones concilien solas. |
+| Gráficas de deuda | ✅ | ⏳ | ✅ | `debtInsights`: deuda actual vs total, deuda actual por tipo, pagado por mes (en gastos / antes de registrar / MSI), proyección del saldo, por pagar a 30/60/90 días y carga de deuda (pagos ÷ ingreso promedio de 3 meses). Interruptor para incluir los MSI. Colores categóricos validados para daltonismo (`--chart-1…6`), con etiquetas directas y vista de tabla. |
+| MSI / MCI de tarjetas en Deudas | ✅ | ⏳ | ✅ | Siguen siendo gastos recurrentes `installment` (usan la línea de crédito, no son préstamos); Deudas los lista aparte con su avance y los suma a las gráficas solo si se pide. |
 
 ### 7. Metas y ahorro
 

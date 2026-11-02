@@ -103,3 +103,31 @@ export const Dark: Story = {
   args: { value: 'groceries' },
   parameters: { themes: { themeOverride: 'dark' } },
 };
+
+/** Lets the user add what they typed (e.g. a new person who lent money). */
+function CreatableExample() {
+  const [people, setPeople] = React.useState<ComboboxOption[]>([
+    { value: 'ana', label: 'Ana López' },
+    { value: 'luis', label: 'Luis Díaz' },
+  ]);
+  const [value, setValue] = React.useState<string | undefined>();
+  return (
+    <Combobox
+      label="¿Quién te prestó?"
+      placeholder="Elige o escribe un nombre"
+      searchPlaceholder="Buscar o agregar…"
+      options={people}
+      value={value}
+      onChange={setValue}
+      clearable
+      createLabel={(text) => `Agregar «${text}»`}
+      onCreate={(text) => {
+        const id = text.toLowerCase();
+        setPeople((current) => [...current, { value: id, label: text }]);
+        setValue(id);
+      }}
+    />
+  );
+}
+
+export const Creatable: Story = { render: () => <CreatableExample /> };

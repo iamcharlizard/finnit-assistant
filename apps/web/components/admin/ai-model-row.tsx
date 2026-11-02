@@ -6,6 +6,7 @@ import { Star, Trash2 } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
 import { Button } from '@finnit/ui/components/ui/button';
+import { NumberInput } from '@finnit/ui/components/ui/number-input';
 import { Switch } from '@finnit/ui/components/ui/switch';
 
 import { PROVIDER_LABELS, type AiModel } from '@/lib/admin/ai';
@@ -83,19 +84,17 @@ export function AiModelRow({
           >
             {t('order')}
           </label>
-          <input
+          <NumberInput
             id={`${id}-order`}
-            type="number"
-            min={0}
-            inputMode="numeric"
+            maxDigits={4}
             value={order}
             disabled={saving}
-            onChange={(e) => setOrder(e.target.value)}
+            onValueChange={setOrder}
             onBlur={commitOrder}
             onKeyDown={(e) => {
               if (e.key === 'Enter') e.currentTarget.blur();
             }}
-            className="min-h-11 w-20 rounded-input border border-input bg-surface px-3 text-sm text-on-background outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40"
+            className="w-20 px-3"
           />
         </div>
         <div className="flex items-center gap-2">

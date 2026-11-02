@@ -1,7 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { CheckIcon, ChevronsUpDownIcon, type LucideIcon } from 'lucide-react';
+import {
+  CheckIcon,
+  ChevronsUpDownIcon,
+  PlusIcon,
+  type LucideIcon,
+} from 'lucide-react';
 
 import { cn } from '../../lib/utils';
 import {
@@ -35,6 +40,14 @@ interface ComboboxProps {
   emptyText?: string;
   /** Allow choosing the selected option again to clear it. */
   clearable?: boolean;
+  /**
+   * Lets the user add what they typed when no option has that label. Called
+   * with the trimmed text; select the new option (e.g. after saving it) by
+   * updating `options` and `value`.
+   */
+  onCreate?: (text: string) => void | Promise<void>;
+  /** Text of the "add" option. */
+  createLabel?: (text: string) => string;
   disabled?: boolean;
   label?: string;
   error?: string;
@@ -72,6 +85,8 @@ function Combobox({
   searchPlaceholder = 'Search…',
   emptyText = 'No results.',
   clearable = false,
+  onCreate,
+  createLabel = (text) => `Add "${text}"`,
   disabled,
   label,
   error,
@@ -81,6 +96,31 @@ function Combobox({
   className,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
+  const [query, setQuery] = React.useState('');
+  const [creating, setCreating] = React.useState(false);
+  const typed = query.trim().replace(/\s+/g, ' ');
+  const canCreate =
+    Boolean(onCreate) &&
+    typed.length > 0 &&
+    !options.some(
+      (option) => option.label.toLowerCase() === typed.toLowerCase(),
+    );
+
+  function changeOpen(next: boolean) {
+    setOpen(next);
+    if (!next) setQuery('');
+  }
+
+  async function create() {
+    if (!onCreate || creating) return;
+    setCreating(true);
+    try {
+      await onCreate(typed);
+      changeOpen(false);
+    } finally {
+      setCreating(false);
+    }
+  }
   const generatedId = React.useId();
   const triggerId = id ?? generatedId;
   const errorId = `${triggerId}-error`;
@@ -90,7 +130,9 @@ function Combobox({
   const SelectedIcon = selected?.icon;
 
   const trigger = (
-    <Popover open={open} onOpenChange={setOpen}>
+    // Modal so it takes over the scroll lock: inside a Dialog, the dialog's
+    // lock would otherwise swallow the wheel on the (portaled) list.
+    <Popover open={open} onOpenChange={changeOpen} modal>
       <PopoverTrigger asChild>
         <button
           id={triggerId}
@@ -128,9 +170,13 @@ function Combobox({
         align="start"
       >
         <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput
+            placeholder={searchPlaceholder}
+            value={query}
+            onValueChange={setQuery}
+          />
           <CommandList>
-            <CommandEmpty>{emptyText}</CommandEmpty>
+            {canCreate ? null : <CommandEmpty>{emptyText}</CommandEmpty>}
             {groups.map((group) => (
               <CommandGroup key={group.heading ?? ''} heading={group.heading}>
                 {group.options.map((option) => {
@@ -148,7 +194,7 @@ function Combobox({
                         onChange?.(
                           clearable && isSelected ? undefined : option.value,
                         );
-                        setOpen(false);
+                        changeOpen(false);
                       }}
                     >
                       {Icon ? <Icon aria-hidden /> : null}
@@ -165,6 +211,19 @@ function Combobox({
                 })}
               </CommandGroup>
             ))}
+            {canCreate ? (
+              <CommandGroup forceMount>
+                <CommandItem
+                  forceMount
+                  value={`__create__ ${typed}`}
+                  disabled={creating}
+                  onSelect={() => void create()}
+                >
+                  <PlusIcon aria-hidden />
+                  <span className="flex-1 truncate">{createLabel(typed)}</span>
+                </CommandItem>
+              </CommandGroup>
+            ) : null}
           </CommandList>
         </Command>
       </PopoverContent>

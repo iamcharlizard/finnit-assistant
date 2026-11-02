@@ -1,0 +1,172 @@
+import { isDayKey, type DayKey } from '@/lib/finance/dates';
+import { parseAmount } from '@/lib/new-entry/form';
+import { MAX_AMOUNT, parseRate } from './form';
+import { MAX_ANNUAL_RATE, MAX_INSTALLMENTS } from './loan-form';
+import { previewLoanTerms, type LoanTermsPreview } from './loan-terms';
+import type {
+  ApiDebt,
+  DebtDestination,
+  LendingMethod,
+  LoanFrequency,
+} from './types';
+
+/**
+ * Money added to a loan: another personal loan, or a purchase financed with
+ * Kueski / Didi (its own interest and number of payments, on the loan's
+ * existing due dates).
+ */
+export interface ChargeForm {
+  date: string;
+  description: string;
+  principal: string;
+  /** '' = no fixed number of payments (personal loans). */
+  installments: string;
+  /** total: the total to repay ('' = no interest); rate: annual rate. */
+  interest: 'total' | 'rate';
+  totalToRepay: string;
+  rate: string;
+  includesVat: boolean;
+  destination: DebtDestination;
+  depositAccountId: string;
+  depositCountsAsIncome: boolean;
+  /** What this money was for (informative); '' = not said. */
+  purposeCategoryId: string;
+  /** Personal loans: how it was lent ('' = not said). */
+  lendingMethod: LendingMethod | '';
+}
+
+export type ChargeField = keyof ChargeForm;
+
+export type ChargeErrorCode =
+  | 'dateRequired'
+  | 'dateInFuture'
+  | 'principalRequired'
+  | 'principalInvalid'
+  | 'installmentsRequired'
+  | 'installmentsInvalid'
+  | 'totalInvalid'
+  | 'totalBelowPrincipal'
+  | 'rateRequired'
+  | 'rateInvalid'
+  | 'depositAccountRequired';
+
+export type ChargeFormErrors = Partial<Record<ChargeField, ChargeErrorCode>>;
+
+export function newChargeForm(
+  debt: Pick<ApiDebt, 'loanType'>,
+  today: DayKey,
+): ChargeForm {
+  const purchase = debt.loanType === 'purchase_financing';
+  return {
+    date: today,
+    description: '',
+    principal: '',
+    installments: '',
+    interest: 'total',
+    totalToRepay: '',
+    rate: '',
+    includesVat: false,
+    destination: purchase ? 'purchase' : 'deposit',
+    depositAccountId: '',
+    depositCountsAsIncome: false,
+    purposeCategoryId: '',
+    lendingMethod: '',
+  };
+}
+
+const parseCount = (text: string): number | null =>
+  /^\d+$/.test(text.trim()) ? Number(text.trim()) : null;
+
+/** Payments of a financed purchase, or null while something is missing. */
+export function chargePreview(
+  form: ChargeForm,
+  frequency: LoanFrequency,
+): LoanTermsPreview | null {
+  const principal = parseAmount(form.principal);
+  const installments = parseCount(form.installments);
+  if (principal === null || installments === null) return null;
+  return previewLoanTerms({
+    mode: form.interest === 'rate' ? 'rate' : 'total_amount',
+    principal,
+    installments,
+    frequency,
+    annualRate: parseRate(form.rate),
+    includesVat: form.includesVat,
+    totalToRepay: form.totalToRepay.trim()
+      ? parseAmount(form.totalToRepay)
+      : principal,
+  });
+}
+
+export function validateChargeForm(
+  form: ChargeForm,
+  { today, needsInstallments }: { today: DayKey; needsInstallments: boolean },
+): ChargeFormErrors {
+  const errors: ChargeFormErrors = {};
+  if (!isDayKey(form.date)) errors.date = 'dateRequired';
+  else if (form.date > today) errors.date = 'dateInFuture';
+
+  const principal = parseAmount(form.principal);
+  if (!form.principal.trim()) errors.principal = 'principalRequired';
+  else if (principal === null || principal <= 0 || principal > MAX_AMOUNT)
+    errors.principal = 'principalInvalid';
+
+  if (!form.installments.trim()) {
+    if (needsInstallments) errors.installments = 'installmentsRequired';
+  } else {
+    const n = parseCount(form.installments);
+    if (n === null || n < 1 || n > MAX_INSTALLMENTS)
+      errors.installments = 'installmentsInvalid';
+  }
+
+  if (form.interest === 'rate' && form.installments.trim()) {
+    const rate = parseRate(form.rate);
+    if (!form.rate.trim()) errors.rate = 'rateRequired';
+    else if (rate === null || rate > MAX_ANNUAL_RATE)
+      errors.rate = 'rateInvalid';
+  } else if (form.totalToRepay.trim()) {
+    const total = parseAmount(form.totalToRepay);
+    if (total === null || total <= 0 || total > MAX_AMOUNT)
+      errors.totalToRepay = 'totalInvalid';
+    else if (principal !== null && total < principal)
+      errors.totalToRepay = 'totalBelowPrincipal';
+  }
+
+  if (form.destination === 'deposit' && !form.depositAccountId)
+    errors.depositAccountId = 'depositAccountRequired';
+  return errors;
+}
+
+/** AddDebtChargeInput of a valid form. */
+export function buildChargeInput(
+  form: ChargeForm,
+  debtId: string,
+): Record<string, unknown> {
+  const installments = parseCount(form.installments);
+  const useRate = form.interest === 'rate' && installments !== null;
+  return {
+    debtId,
+    date: form.date,
+    principal: parseAmount(form.principal),
+    destination: form.destination,
+    ...(form.description.trim() && { description: form.description.trim() }),
+    ...(form.purposeCategoryId && {
+      purposeCategoryId: form.purposeCategoryId,
+    }),
+    ...(form.lendingMethod && { lendingMethod: form.lendingMethod }),
+    ...(installments !== null && { installments }),
+    ...(useRate
+      ? {
+          interestMode: 'rate',
+          interestRateAnnual: parseRate(form.rate),
+          includesVat: form.includesVat,
+        }
+      : form.totalToRepay.trim()
+        ? { totalToRepay: parseAmount(form.totalToRepay) }
+        : {}),
+    ...(form.destination === 'deposit' && {
+      depositAccountId: form.depositAccountId,
+      depositCountsAsIncome: form.depositCountsAsIncome,
+    }),
+  };
+}

@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ChartLine, CreditCard, House, Settings } from 'lucide-react';
+import { ChartLine, CreditCard, House, Plus, Settings } from 'lucide-react';
 
 import { BottomNavBar } from './bottom-nav-bar';
 import type { NavItem } from './nav-types';
+import { Button } from '../ui/button';
 import { SideNav } from './side-nav';
 import { TopAppBar } from './top-app-bar';
 
@@ -26,6 +27,18 @@ type Story = StoryObj<typeof meta>;
 export const AppBar: Story = {};
 export const AppBarNoNotifications: Story = {
   args: { notificationCount: 0, title: 'Finnit Analytics' },
+};
+export const AppBarPageHeading: Story = {
+  args: {
+    title: 'Recurring payments',
+    titleAs: 'h1',
+    subtitle: 'Your subscriptions, utilities and monthly payments.',
+    actions: (
+      <Button variant="secondary">
+        <Plus aria-hidden /> New recurring payment
+      </Button>
+    ),
+  },
 };
 
 export const BottomBar: Story = {

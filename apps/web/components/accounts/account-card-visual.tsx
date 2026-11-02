@@ -11,6 +11,7 @@ type CardFields = Pick<
   | 'type'
   | 'tier'
   | 'label'
+  | 'nickname'
   | 'bankName'
   | 'maskedNumber'
   | 'variant'
@@ -19,7 +20,8 @@ type CardFields = Pick<
 
 /**
  * An account drawn as a card, with the user's colors when they chose some.
- * Cards show the holder; cash and savings show their balance instead.
+ * The title is the nickname when there is one, else the bank. Cards show
+ * the holder; cash and savings show their balance instead.
  */
 export function AccountCardVisual({
   account,
@@ -46,7 +48,7 @@ export function AccountCardVisual({
       primaryColor={primaryColor ?? undefined}
       secondaryColor={secondaryColor ?? undefined}
       cardTier={account.tier}
-      bankName={account.bankName ?? account.label}
+      bankName={account.nickname ?? account.bankName ?? account.label}
       maskedNumber={account.maskedNumber}
       holderName={isCard ? holderName.toUpperCase() : undefined}
       holderLabel={tu('holder')}

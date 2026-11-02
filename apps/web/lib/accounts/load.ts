@@ -5,14 +5,11 @@ import { getLocalizer } from '@/lib/i18n/server';
 import { indexCategories } from '@/lib/finance/categories';
 import {
   endOfDayIso,
-  firstDayOf,
   lastDayOf,
-  monthLabel,
   monthOf,
   startOfDayIso,
   todayKey,
 } from '@/lib/finance/dates';
-import { roundCents } from '@/lib/finance/money';
 import { toTransactionRow } from '@/lib/finance/transactions';
 import {
   ACCOUNT_FIELDS,
@@ -25,6 +22,7 @@ import {
 } from '@/lib/finance/types';
 import {
   BANK_CONNECTIONS_FIELDS,
+  PENDING_CHARGE_FIELDS,
   buildAccountDetail,
   buildAccounts,
   pickAccount,
@@ -32,6 +30,7 @@ import {
   type AccountSummary,
   type BankConnectionInfo,
   type CardMonthSummaryData,
+  type PendingCharge,
 } from './view';
 
 export interface AccountsData {
@@ -49,31 +48,25 @@ const ACCOUNTS_QUERY = `query Accounts {
   bankConnections { ${BANK_CONNECTIONS_FIELDS} }
 }`;
 
-const CARD_DETAIL_QUERY = `query CardDetail($accountId: String!, $month: TransactionFilters!, $recent: Int!) {
+const ACCOUNT_DETAIL_QUERY = `query AccountDetail($accountId: String!, $recent: Int!, $from: DateTime!, $to: DateTime!) {
   recent: transactions(first: $recent, filters: { accountId: $accountId }) { edges { node { ${TRANSACTION_FIELDS} } } }
   categories { ${CATEGORY_FIELDS} }
-  monthExpenses: transactions(first: 100, filters: $month) { edges { node { amount } } pageInfo { endCursor hasNextPage } }
+  upcomingPayments(from: $from, to: $to, accountId: $accountId) { ${PENDING_CHARGE_FIELDS} }
 }`;
 
 const CARD_SUMMARY_QUERY = `query CardMonth($accountId: String!, $year: Int!, $month: Int!) {
   cardMonthSummary(accountId: $accountId, year: $year, month: $month) {
-    recurringExpected recurringPaid recurringPayments { name }
     statement { statementDate paymentDueDate statementBalance minimumPayment noInterestPayment }
   }
 }`;
 
-const MONTH_EXPENSES_PAGE = `query CardMonthExpenses($month: TransactionFilters!, $after: String) {
-  transactions(first: 100, after: $after, filters: $month) { edges { node { amount } } pageInfo { endCursor hasNextPage } }
-}`;
-
-/** At most this many extra pages (100 each) when adding up a month. */
-const MAX_EXTRA_PAGES = 9;
-
-type AmountsPage = Connection<Pick<ApiTransaction, 'amount'>>;
+/** Movements in the detail's list (it scrolls); the rest are in "Movimientos". */
+const RECENT_COUNT = 30;
 
 /**
  * The user's accounts, and for the selected one (?account=…) its recent
- * movements, this month's spending and, for credit cards, the month summary.
+ * movements, the recurring payments still due this month and, for credit
+ * cards, the month's statement.
  */
 export async function loadAccounts({
   requested,
@@ -103,22 +96,17 @@ export async function loadAccounts({
 
   const today = todayKey();
   const month = monthOf(today);
-  const monthFilter = {
-    accountId: card.id,
-    type: 'expense',
-    startDate: startOfDayIso(firstDayOf(month)),
-    endDate: endOfDayIso(lastDayOf(month)),
-  };
 
   const [detail, summary] = await Promise.all([
     serverGraphql<{
       recent: Connection<ApiTransaction>;
       categories: ApiCategory[];
-      monthExpenses: AmountsPage;
-    }>(CARD_DETAIL_QUERY, {
+      upcomingPayments: PendingCharge[];
+    }>(ACCOUNT_DETAIL_QUERY, {
       accountId: card.id,
-      month: monthFilter,
-      recent: 8,
+      recent: RECENT_COUNT,
+      from: startOfDayIso(today),
+      to: endOfDayIso(lastDayOf(month)),
     }),
     card.type === 'credit'
       ? serverGraphql<{ cardMonthSummary: CardMonthSummaryData }>(
@@ -128,18 +116,6 @@ export async function loadAccounts({
       : Promise.resolve(null),
   ]);
 
-  // A month rarely has more than 100 charges on one card; add up the rest.
-  let spending = sumAmounts(detail.monthExpenses);
-  let page = detail.monthExpenses.pageInfo;
-  for (let i = 0; page.hasNextPage && i < MAX_EXTRA_PAGES; i++) {
-    const next = await serverGraphql<{ transactions: AmountsPage }>(
-      MONTH_EXPENSES_PAGE,
-      { month: monthFilter, after: page.endCursor },
-    );
-    spending = roundCents(spending + sumAmounts(next.transactions));
-    page = next.transactions.pageInfo;
-  }
-
   const categories = indexCategories(detail.categories);
   return {
     ...base,
@@ -147,18 +123,13 @@ export async function loadAccounts({
       card,
       {
         today,
-        monthLabel: monthLabel(month, l.locale),
-        monthSpending: spending,
         recent: detail.recent.edges.map((e) =>
           toTransactionRow(e.node, categories, l, { withDate: true }),
         ),
         summary,
+        pending: detail.upcomingPayments,
       },
       l,
     ),
   };
-}
-
-function sumAmounts(page: AmountsPage): number {
-  return roundCents(page.edges.reduce((sum, e) => sum + e.node.amount, 0));
 }

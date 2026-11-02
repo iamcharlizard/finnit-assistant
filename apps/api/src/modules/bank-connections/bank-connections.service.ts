@@ -441,7 +441,18 @@ export class BankConnectionsService {
     const last = connection.lastPullRequestedAt;
     if (last && Date.now() - last.getTime() < hours * 3_600_000) return false;
 
-    await this.syncfy.requestRefresh(token, connection.providerItemId);
+    try {
+      await this.syncfy.requestRefresh(token, connection.providerItemId);
+    } catch (error) {
+      // The refresh is extra: when Syncfy refuses it (e.g. HTTP 402, the
+      // plan doesn't allow it or its quota ran out), still import what it
+      // already has instead of failing the whole sync.
+      if (!(error instanceof SyncfyError)) throw error;
+      this.logger.warn(
+        `Bank connection ${connection.id}: Syncfy refused the refresh (HTTP ${error.status ?? '?'}); importing what it already has`,
+      );
+      return false;
+    }
     await this.prisma.bankConnection.update({
       where: { id: connection.id },
       data: { lastPullRequestedAt: new Date() },

@@ -191,6 +191,41 @@ describe('BankConnectionsService', () => {
       expect(syncfy.requestRefresh).not.toHaveBeenCalled();
     });
 
+    it('still imports when Syncfy refuses the refresh (HTTP 402)', async () => {
+      arrangeSync();
+      syncfy.requestRefresh.mockRejectedValue(
+        new SyncfyError(
+          'Syncfy PUT /credentials/cred-1/pulls failed with HTTP 402',
+          402,
+        ),
+      );
+      const result = await service.sync('conn-1', userId, {
+        requestRefresh: true,
+      });
+      expect(result.refreshRequested).toBe(false);
+      // The import still runs: accounts are read and the sync finishes.
+      expect(syncfy.listAccounts).toHaveBeenCalled();
+      expect(prisma.bankConnection.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ lastSyncedAt: expect.any(Date) }),
+        }),
+      );
+      expect(prisma.bankConnection.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            lastPullRequestedAt: expect.any(Date),
+          }),
+        }),
+      );
+      expect(prisma.bankConnection.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: BankConnectionStatus.error,
+          }),
+        }),
+      );
+    });
+
     it('stores accounts with only the last 4 digits and takes the bank balance', async () => {
       arrangeSync();
       syncfy.listAccounts.mockResolvedValue([

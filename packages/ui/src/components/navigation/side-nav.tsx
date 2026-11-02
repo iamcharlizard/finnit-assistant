@@ -54,10 +54,7 @@ function SideNav({
         {addLabel}
       </button>
 
-      <nav
-        aria-label={navLabel}
-        className="flex flex-1 flex-col gap-1"
-      >
+      <nav aria-label={navLabel} className="flex flex-1 flex-col gap-1">
         {items.map((item) => {
           const isActive = item.href === activeHref;
           const Icon = item.icon;

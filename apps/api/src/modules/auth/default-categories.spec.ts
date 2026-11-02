@@ -2,7 +2,10 @@ import { mockDeep } from 'jest-mock-extended';
 import type { PrismaClient } from '@finnit/database';
 import {
   DEFAULT_CATEGORIES,
+  INSTALLMENT_PAYMENTS_CATEGORY_KEY,
+  LOAN_PAYMENTS_CATEGORY_KEY,
   createDefaultCategories,
+  debtPaymentCategoryKey,
 } from './default-categories';
 
 describe('default categories', () => {
@@ -52,5 +55,15 @@ describe('default categories', () => {
     await createDefaultCategories(prisma, 'user-1', { skipExisting: true });
 
     expect(prisma.category.create).not.toHaveBeenCalled();
+  });
+
+  it('files loan and installment payments under Loans & Debts', () => {
+    const keys = all.map((c) => c.key);
+    expect(keys).toContain(LOAN_PAYMENTS_CATEGORY_KEY);
+    expect(keys).toContain(INSTALLMENT_PAYMENTS_CATEGORY_KEY);
+    expect(debtPaymentCategoryKey('loan')).toBe(LOAN_PAYMENTS_CATEGORY_KEY);
+    expect(debtPaymentCategoryKey('installment')).toBe(
+      INSTALLMENT_PAYMENTS_CATEGORY_KEY,
+    );
   });
 });

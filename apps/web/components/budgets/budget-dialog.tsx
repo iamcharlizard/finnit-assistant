@@ -7,6 +7,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '@finnit/ui/components/ui/button';
 import {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -14,7 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
-import { Input } from '@finnit/ui/components/ui/input';
+import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
+import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
 import {
   budgetErrorMessage,
@@ -58,6 +60,8 @@ export function BudgetDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  // Closes with the exit animation before telling the parent.
+  const exit = useDialogExit();
   const { t } = useLocalizer();
   const tf = useTranslations('budgets.form');
   const locale = useLocale();
@@ -106,7 +110,7 @@ export function BudgetDialog({
     setSubmitError(null);
     try {
       await saveBudget(form, target, gql);
-      onSaved();
+      exit.after(onSaved)();
     } catch (error) {
       setSubmitError(budgetErrorMessage(error, t));
       setSaving(false);
@@ -117,10 +121,14 @@ export function BudgetDialog({
   const isEdit = target.mode === 'edit';
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !saving && onClose()}>
+    <Dialog
+      open={exit.open}
+      onOpenChange={(open) => !open && !saving && exit.close(onClose)}
+    >
       <DialogContent
+        onExitComplete={exit.onExitComplete}
         closeLabel={t('common.close')}
-        className="max-h-[92dvh] overflow-y-auto sm:max-w-2xl"
+        className="sm:max-w-2xl"
       >
         <form onSubmit={submit} noValidate className="flex flex-col gap-5">
           <DialogHeader>
@@ -132,103 +140,103 @@ export function BudgetDialog({
             <DialogDescription>{tf('description')}</DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col gap-1">
-            <Input
-              label={tf('total')}
-              inputMode="decimal"
-              autoComplete="off"
-              placeholder={tf('totalPlaceholder')}
-              value={form.total}
-              onChange={(e) => update({ total: e.target.value })}
-              error={
-                errors.total
-                  ? t(`budgets.validation.${errors.total}`)
-                  : undefined
-              }
-            />
-            <p className="px-1 text-xs text-on-surface-variant">
-              {tf('totalHint')}
-            </p>
-          </div>
-
-          <fieldset className="flex flex-col gap-3">
-            <legend className="mb-2 px-1 text-sm font-bold text-on-background">
-              {tf('caps')}
-            </legend>
-            {form.caps.length > 0 ? (
-              <ul className="flex flex-col gap-3">
-                {form.caps.map((row) => {
-                  const usedElsewhere = new Set(
-                    form.caps
-                      .filter((other) => other.key !== row.key)
-                      .map((other) => other.categoryId),
-                  );
-                  return (
-                    <CapField
-                      key={row.key}
-                      row={row}
-                      options={allOptions.map((option) => ({
-                        ...option,
-                        disabled: usedElsewhere.has(option.value),
-                      }))}
-                      categoryLabel={nameOf(row.categoryId)}
-                      errors={errors.caps?.[row.key]}
-                      onChange={(patch) => updateRow(row.key, patch)}
-                      onRemove={() =>
-                        update({
-                          caps: form.caps.filter(
-                            (other) => other.key !== row.key,
-                          ),
-                        })
-                      }
-                    />
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="px-1 text-sm text-on-surface-variant">
-                {tf('noCaps')}
+          <DialogBody>
+            <div className="flex flex-col gap-1">
+              <MoneyInput
+                label={tf('total')}
+                placeholder={tf('totalPlaceholder')}
+                value={form.total}
+                onValueChange={(value) => update({ total: value })}
+                error={
+                  errors.total
+                    ? t(`budgets.validation.${errors.total}`)
+                    : undefined
+                }
+              />
+              <p className="px-1 text-xs text-on-surface-variant">
+                {tf('totalHint')}
               </p>
-            )}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addRow}
-              >
-                <Plus aria-hidden /> {tf('addCap')}
-              </Button>
-              {form.caps.length > 0 ? (
-                <span className="text-xs text-on-surface-variant tabular-nums">
-                  {tf('capsSum', { amount: sum })}
-                </span>
-              ) : null}
             </div>
-            <p className="px-1 text-xs text-on-surface-variant">
-              {tf('capsHint')}
-            </p>
-          </fieldset>
 
-          {totalBelowCaps(form) ? (
-            <p className="rounded-input bg-amber-500/10 p-3 text-xs text-on-background">
-              {tf('totalBelowCaps', { amount: sum })}
-            </p>
-          ) : null}
-          {errors.form ? (
-            <p role="alert" className="text-[13px] text-expense">
-              {t('budgets.validation.empty')}
-            </p>
-          ) : hasBudgetErrors(errors) ? (
-            <p role="alert" className="text-[13px] text-expense">
-              {tf('fixErrors')}
-            </p>
-          ) : null}
-          {submitError ? (
-            <p role="alert" className="text-[13px] text-expense">
-              {submitError}
-            </p>
-          ) : null}
+            <fieldset className="flex flex-col gap-3">
+              <legend className="mb-2 px-1 text-sm font-bold text-on-background">
+                {tf('caps')}
+              </legend>
+              {form.caps.length > 0 ? (
+                <ul className="flex flex-col gap-3">
+                  {form.caps.map((row) => {
+                    const usedElsewhere = new Set(
+                      form.caps
+                        .filter((other) => other.key !== row.key)
+                        .map((other) => other.categoryId),
+                    );
+                    return (
+                      <CapField
+                        key={row.key}
+                        row={row}
+                        options={allOptions.map((option) => ({
+                          ...option,
+                          disabled: usedElsewhere.has(option.value),
+                        }))}
+                        categoryLabel={nameOf(row.categoryId)}
+                        errors={errors.caps?.[row.key]}
+                        onChange={(patch) => updateRow(row.key, patch)}
+                        onRemove={() =>
+                          update({
+                            caps: form.caps.filter(
+                              (other) => other.key !== row.key,
+                            ),
+                          })
+                        }
+                      />
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="px-1 text-sm text-on-surface-variant">
+                  {tf('noCaps')}
+                </p>
+              )}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addRow}
+                >
+                  <Plus aria-hidden /> {tf('addCap')}
+                </Button>
+                {form.caps.length > 0 ? (
+                  <span className="text-xs text-on-surface-variant tabular-nums">
+                    {tf('capsSum', { amount: sum })}
+                  </span>
+                ) : null}
+              </div>
+              <p className="px-1 text-xs text-on-surface-variant">
+                {tf('capsHint')}
+              </p>
+            </fieldset>
+
+            {totalBelowCaps(form) ? (
+              <p className="rounded-input bg-amber-500/10 p-3 text-xs text-on-background">
+                {tf('totalBelowCaps', { amount: sum })}
+              </p>
+            ) : null}
+            {errors.form ? (
+              <p role="alert" className="text-[13px] text-expense">
+                {t('budgets.validation.empty')}
+              </p>
+            ) : hasBudgetErrors(errors) ? (
+              <p role="alert" className="text-[13px] text-expense">
+                {tf('fixErrors')}
+              </p>
+            ) : null}
+            {submitError ? (
+              <p role="alert" className="text-[13px] text-expense">
+                {submitError}
+              </p>
+            ) : null}
+          </DialogBody>
 
           <DialogFooter>
             <DialogClose asChild>

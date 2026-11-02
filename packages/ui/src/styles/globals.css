@@ -31,6 +31,15 @@
   --violet-ink: #5b61c2;
   --tertiary: #006688;
   --highlight: #ad009b;
+  /* Categorical chart series, in this fixed order (validated for color
+     vision deficiency on --surface; light 3–5 are below 3:1, so charts
+     using them carry direct labels or a table). */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #008300;
   --glass: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(0, 0, 0, 0.07);
   --track: rgba(0, 0, 0, 0.06);
@@ -73,6 +82,13 @@
   --violet-ink: #9aa0f0;
   --tertiary: #27dec1;
   --highlight: #ffabf2;
+  /* Same hues stepped for the dark surface (all >= 3:1). */
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #008300;
   --glass: rgba(23, 24, 31, 0.85);
   --glass-border: rgba(255, 255, 255, 0.08);
   --track: rgba(255, 255, 255, 0.06);

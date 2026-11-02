@@ -83,6 +83,11 @@ Checkboxes reflect the **API** state, verified against the code. Per-platform st
 - [x] Credit cards as special accounts with statement/payment dates.
 - [x] Avalanche and snowball payoff strategies.
 - [x] Repayment plan.
+- [x] Loan payments default to the Loans & Debts category (Loan Payments / Installment Payments); loans and their charges keep an informative "what it was for" category.
+- [x] Loan types (institutional, personal, purchase financing) with terms, payment schedule, payments made before registering (outside totals), charges that grow the loan, and payments from an account.
+- [x] Recurring suggestions can become a loan, prefilled by AI.
+- [x] Loan page: full schedule (paid, open, projected), charges, payments, and bank movements proposed as payments (deterministic matching, AI tie-break, learned merchant pattern).
+- [x] Debt charts: current vs total debt, debt by type, paid per month (historical apart), projected balance, due in 30/60/90 days, debt load; card MSI plans listed apart and optional in the charts.
 
 ---
 

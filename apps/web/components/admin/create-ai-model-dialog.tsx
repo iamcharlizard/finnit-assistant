@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
+import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { Input } from '@finnit/ui/components/ui/input';
 import { Label } from '@finnit/ui/components/ui/label';
 import {
@@ -40,6 +41,8 @@ export function CreateAiModelDialog({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  // Closes with the exit animation before telling the parent.
+  const exit = useDialogExit();
   const [provider, setProvider] = React.useState<AiProvider>('anthropic');
   const [modelId, setModelId] = React.useState('');
   const [label, setLabel] = React.useState('');
@@ -67,8 +70,10 @@ export function CreateAiModelDialog({
           isActive,
         },
       });
-      onCreated();
-      onClose();
+      exit.close(() => {
+        onCreated();
+        onClose();
+      });
     } catch (e) {
       setError(adminErrorMessage(e, t));
     } finally {
@@ -77,8 +82,14 @@ export function CreateAiModelDialog({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={t('common.close')}>
+    <Dialog
+      open={exit.open}
+      onOpenChange={(open) => !open && exit.close(onClose)}
+    >
+      <DialogContent
+        onExitComplete={exit.onExitComplete}
+        closeLabel={t('common.close')}
+      >
         <form onSubmit={submit} noValidate className="flex flex-col gap-5">
           <DialogHeader>
             <DialogTitle>{t('admin.ai.create.title')}</DialogTitle>

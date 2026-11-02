@@ -81,6 +81,40 @@ enum DebtKind {
   other
 }
 
+// Only for kind = loan.
+enum LoanType {
+  institutional // bank or lending company: fixed payments and term
+  personal // family or friends: flexible payments, may grow
+  purchase_financing // Kueski, Didi Paga Después: each purchase adds installments on the same due dates
+}
+
+// How the amount to repay of a loan (or charge) was given.
+enum LoanInterestMode {
+  rate // principal + annual rate, French amortization
+  total_amount // the user entered the total to repay
+  installment_amount // the user entered the amount of each payment
+}
+
+enum DebtStatus {
+  active
+  paid_off
+}
+
+// Where the money of a loan or charge went.
+/// How someone lent the money (personal loans).
+enum LendingMethod {
+  cash
+  transfer
+  credit_card
+  debit_card
+  other
+}
+
+enum DebtChargeDestination {
+  deposit // into one of the user's accounts
+  purchase // paid for something directly (no account movement)
+}
+
 enum RecurringFrequency {
   weekly
   biweekly // every 14 days
@@ -252,6 +286,7 @@ model User {
   statementImports  StatementImport[]
   budgets           Budget[]
   goals             Goal[]
+  contacts          Contact[]
   notifications     Notification[]
   bankConnections   BankConnection[]
   bankProviderUsers BankProviderUser[]
@@ -330,6 +365,8 @@ model Category {
   merchantRules             MerchantRule[]
   receiptSuggestions        ReceiptImport[]            @relation("receipt_suggested_category")
   merchantTaxIds            MerchantTaxId[]
+  debtPurposes              Debt[]                     @relation("debt_purpose_category")
+  debtChargePurposes        DebtCharge[]               @relation("debt_charge_purpose_category")
 
   @@unique([userId, name], name: "category_user_name_unique")
   @@unique([userId, key], name: "category_user_key_unique")
@@ -392,6 +429,8 @@ model Transaction {
 
   attachments       Attachment[]
   debtPayment       DebtPayment?
+  debtCharge        DebtCharge?
+  debtDisbursement  Debt?                 @relation("debt_disbursement")
   goalContributions GoalContribution[] // <-- ahora 1–N (fix)
   transactionTags   TransactionTag[]
   importedMatches   ImportedTransaction[] @relation("imported_matched")
@@ -542,18 +581,22 @@ model RecurringOccurrence {
 /// suggestion). `fingerprint` identifies the detected group (merchant +
 /// currency), it is not a foreign key.
 model RecurringSuggestionState {
-  id           String                @id @default(uuid())
-  userId       String
-  fingerprint  String                @db.VarChar(64)
-  dismissedAt  DateTime?
-  acceptedAt   DateTime?
-  aiName       String?
-  aiKind       RecurringExpenseKind?
-  aiCategoryId String?
-  aiModel      String? // provider model id that classified it
-  classifiedAt DateTime?
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
+  id               String                @id @default(uuid())
+  userId           String
+  fingerprint      String                @db.VarChar(64)
+  dismissedAt      DateTime?
+  acceptedAt       DateTime?
+  aiName           String?
+  aiKind           RecurringExpenseKind?
+  aiCategoryId     String?
+  aiModel          String? // provider model id that classified it
+  classifiedAt     DateTime?
+  // Loan details proposed by AI when the user turns the suggestion into a loan.
+  aiLoanType       LoanType?
+  aiLenderName     String?
+  loanClassifiedAt DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
 
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   aiCategory Category? @relation(fields: [aiCategoryId], references: [id], onDelete: SetNull)
@@ -659,36 +702,109 @@ model GoalContribution {
 }
 
 model Debt {
-  id                 String    @id @default(uuid())
-  userId             String
-  name               String
-  kind               DebtKind
-  principal          Decimal   @db.Decimal(18, 2)
-  interestRateAnnual Decimal?  @db.Decimal(9, 4)
-  minPaymentAmount   Decimal?  @db.Decimal(18, 2)
-  startDate          DateTime? @db.Date
-  dueDate            DateTime? @db.Date
-  linkedAccountId    String?
-  createdAt          DateTime  @default(now())
+  id                        String                 @id @default(uuid())
+  userId                    String
+  name                      String
+  kind                      DebtKind
+  principal                 Decimal                @db.Decimal(18, 2)
+  interestRateAnnual        Decimal?               @db.Decimal(9, 4)
+  minPaymentAmount          Decimal?               @db.Decimal(18, 2)
+  startDate                 DateTime?              @db.Date
+  dueDate                   DateTime?              @db.Date
+  linkedAccountId           String?
+  loanType                  LoanType?
+  status                    DebtStatus             @default(active)
+  lenderName                String? // personal loans: who lent the money
+  paymentFrequency          RecurringFrequency?
+  installmentsTotal         Int?                   @db.SmallInt
+  installmentAmount         Decimal?               @db.Decimal(18, 2)
+  totalToRepay              Decimal?               @db.Decimal(18, 2) // principal + interest; null = principal
+  interestMode              LoanInterestMode?
+  includesVat               Boolean                @default(false) // 16% VAT on interest (Mexico)
+  // Opening fee (comisión por apertura), taken from the money deposited:
+  // the deposit is principal − fee, the debt is still the whole principal.
+  openingFee                Decimal?               @db.Decimal(18, 2)
+  // Fixed fee charged with every payment (administración, seguro), VAT
+  // included; part of each installment, not interest.
+  periodicFee               Decimal?               @db.Decimal(18, 2)
+  destination               DebtChargeDestination?
+  // The deposit of the borrowed money into an account (destination = deposit).
+  disbursementTransactionId String?                @unique
+  // What the borrowed money was for (informative: the expense is the payments).
+  purposeCategoryId         String?
+  // Personal loans: the contact who lent it (lenderName keeps their name).
+  lenderContactId           String?
+  // Personal loans: how the initial amount was lent.
+  lendingMethod             LendingMethod?
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @default(now()) @updatedAt
 
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  payments         DebtPayment[]
-  linkedAccount    Account?          @relation("debt_linked_account", fields: [linkedAccountId], references: [id], onDelete: SetNull)
-  recurringExpense RecurringExpense?
+  user                    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments                DebtPayment[]
+  charges                 DebtCharge[]
+  linkedAccount           Account?          @relation("debt_linked_account", fields: [linkedAccountId], references: [id], onDelete: SetNull)
+  disbursementTransaction Transaction?      @relation("debt_disbursement", fields: [disbursementTransactionId], references: [id], onDelete: SetNull)
+  purposeCategory         Category?         @relation("debt_purpose_category", fields: [purposeCategoryId], references: [id], onDelete: SetNull)
+  lenderContact           Contact?          @relation(fields: [lenderContactId], references: [id], onDelete: SetNull)
+  recurringExpense        RecurringExpense?
 
   @@unique([userId, name])
   @@index([userId])
 }
 
+/// A person the user deals with (e.g. who lent them money). Only the name
+/// for now; payment details may come later.
+model Contact {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  debts Debt[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+/// Money added to a debt after it was created: another personal loan, or a
+/// purchase financed with Kueski / Didi (with its own interest and term).
+model DebtCharge {
+  id                String                @id @default(uuid())
+  debtId            String
+  date              DateTime              @db.Date
+  description       String?
+  principal         Decimal               @db.Decimal(18, 2)
+  totalToRepay      Decimal               @db.Decimal(18, 2)
+  installments      Int?                  @db.SmallInt
+  destination       DebtChargeDestination
+  transactionId     String?               @unique // deposit into an account
+  // What this money was for (informative: the expense is the payments).
+  purposeCategoryId String?
+  // Personal loans: how it was lent (cash, transfer, their card…).
+  lendingMethod     LendingMethod?
+  createdAt         DateTime              @default(now())
+
+  debt            Debt         @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  transaction     Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  purposeCategory Category?    @relation("debt_charge_purpose_category", fields: [purposeCategoryId], references: [id], onDelete: SetNull)
+
+  @@index([debtId, date])
+}
+
 model DebtPayment {
   id            String   @id @default(uuid())
   debtId        String
-  transactionId String
+  // Null for payments made before the debt was registered: they lower the
+  // balance but are no movement, so they stay out of income/expense totals.
+  transactionId String?
+  isHistorical  Boolean  @default(false)
   amount        Decimal  @db.Decimal(18, 2)
   date          DateTime @db.Date
 
-  debt        Debt        @relation(fields: [debtId], references: [id], onDelete: Cascade)
-  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  debt        Debt         @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Restrict)
 
   @@unique([transactionId])
   @@index([debtId, date])

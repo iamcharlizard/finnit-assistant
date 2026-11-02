@@ -34,6 +34,16 @@ import {
   nextDueDate,
   toDateOnly,
 } from './schedule.util';
+import {
+  financedCharges,
+  isPurchaseFinancing,
+  syncDebtStatus,
+} from '../debts/debt-ledger';
+import { purchaseFinancingSchedule } from '../debts/loan-math';
+import {
+  debtPaymentCategoryKey,
+  defaultCategoryId,
+} from '../auth/default-categories';
 
 // Occurrences are kept from this many days back, so last month's card
 // statement can still be reconciled against them.
@@ -47,7 +57,8 @@ const MAX_UPCOMING_RANGE_DAYS = 400;
 
 /** A past payment recorded when the expense is created. */
 export interface PaidHistoryItem {
-  transactionId: string;
+  /** Null for a loan payment made before the loan was registered. */
+  transactionId: string | null;
   dueDate: Date;
   amount: number;
   matchedBy: OccurrenceMatchSource;
@@ -172,7 +183,8 @@ export class RecurringExpensesService {
       isVariableAmount: input.isVariableAmount ?? false,
       currency: (input.currency ?? 'MXN').toUpperCase(),
       accountId: input.accountId,
-      categoryId: input.categoryId,
+      categoryId:
+        input.categoryId ?? (await this.debtCategoryId(userId, input)),
       debtId: input.debtId,
       merchantPattern: this.normalizePattern(input.merchantPattern),
       installmentsTotal: input.installmentsTotal,
@@ -505,6 +517,12 @@ export class RecurringExpensesService {
       throw new ConflictError('This payment is already marked as paid');
     }
 
+    if (occurrence.recurringExpense.debtId && !transactionId) {
+      throw new ValidationError(
+        'A loan payment needs the movement it was paid with',
+      );
+    }
+
     if (transactionId) {
       const transaction = await this.prisma.transaction.findFirst({
         where: { id: transactionId, userId },
@@ -572,7 +590,16 @@ export class RecurringExpensesService {
       },
     });
 
-    if (expense.kind === RecurringExpenseKind.installment) {
+    if (expense.debtId && transactionId) {
+      await this.recordDebtPayment(
+        tx,
+        expense.debtId,
+        transactionId,
+        expense.categoryId,
+      );
+    }
+
+    if (this.countsInstallments(expense)) {
       const installmentsPaid = expense.installmentsPaid + 1;
       const finished =
         expense.installmentsTotal !== null &&
@@ -591,7 +618,77 @@ export class RecurringExpensesService {
         });
       }
     }
+    if (expense.debtId) await syncDebtStatus(tx, expense.debtId);
     return row;
+  }
+
+  /** The loan payment of a paid occurrence, unless that movement already pays it. */
+  private async recordDebtPayment(
+    tx: Prisma.TransactionClient,
+    debtId: string,
+    transactionId: string,
+    categoryId: string | null,
+  ) {
+    const existing = await tx.debtPayment.findUnique({
+      where: { transactionId },
+      select: { id: true },
+    });
+    if (existing) return;
+    const transaction = await tx.transaction.findUnique({
+      where: { id: transactionId },
+      select: {
+        amount: true,
+        txnDate: true,
+        category: { select: { key: true } },
+      },
+    });
+    if (!transaction) return;
+    // A bank movement without a category takes the loan's (Loan Payments).
+    if (
+      categoryId &&
+      (!transaction.category ||
+        transaction.category.key === 'categories.uncategorized')
+    ) {
+      await tx.transaction.update({
+        where: { id: transactionId },
+        data: { categoryId },
+      });
+    }
+    await tx.debtPayment.create({
+      data: {
+        debtId,
+        transactionId,
+        amount: transaction.amount,
+        date: transaction.txnDate,
+      },
+    });
+  }
+
+  /** MSI plans and loans without a category get the Loans & Debts one. */
+  private debtCategoryId(
+    userId: string,
+    input: { kind: RecurringExpenseKind },
+  ): Promise<string | undefined> | undefined {
+    if (
+      input.kind !== RecurringExpenseKind.installment &&
+      input.kind !== RecurringExpenseKind.loan
+    ) {
+      return undefined;
+    }
+    return defaultCategoryId(
+      this.prisma,
+      userId,
+      debtPaymentCategoryKey(input.kind),
+    );
+  }
+
+  /** MSI plans and fixed-term loans count paid installments. */
+  private countsInstallments(expense: RecurringExpenseRow): boolean {
+    return (
+      expense.kind === RecurringExpenseKind.installment ||
+      (expense.kind === RecurringExpenseKind.loan &&
+        expense.installmentsTotal !== null)
+    );
   }
 
   async skipOccurrence(
@@ -620,7 +717,19 @@ export class RecurringExpensesService {
     const row = await this.prisma.$transaction(async (tx) => {
       if (
         occurrence.status === OccurrenceStatus.paid &&
-        expense.kind === RecurringExpenseKind.installment &&
+        expense.debtId &&
+        occurrence.transactionId
+      ) {
+        await tx.debtPayment.deleteMany({
+          where: {
+            debtId: expense.debtId,
+            transactionId: occurrence.transactionId,
+          },
+        });
+      }
+      if (
+        occurrence.status === OccurrenceStatus.paid &&
+        this.countsInstallments(expense) &&
         expense.installmentsPaid > 0
       ) {
         await tx.recurringExpense.update({
@@ -631,7 +740,7 @@ export class RecurringExpensesService {
           },
         });
       }
-      return tx.recurringOccurrence.update({
+      const reopened = await tx.recurringOccurrence.update({
         where: { id: occurrenceId },
         data: {
           status: OccurrenceStatus.upcoming,
@@ -640,6 +749,8 @@ export class RecurringExpensesService {
           transactionId: null,
         },
       });
+      if (expense.debtId) await syncDebtStatus(tx, expense.debtId);
+      return reopened;
     });
     return this.mapOccurrence(row);
   }
@@ -659,18 +770,98 @@ export class RecurringExpensesService {
     ) {
       return 0;
     }
-    const dueDates = dueDatesBetween(expense, from, to);
+    const amounts = await this.loanAmounts(this.prisma, expense);
+    const dueDates = dueDatesBetween(expense, from, to).filter(
+      (date) => !amounts || amounts.has(date.getTime()),
+    );
     if (dueDates.length === 0) return 0;
 
     const { count } = await this.prisma.recurringOccurrence.createMany({
       data: dueDates.map((dueDate) => ({
         recurringExpenseId: expense.id,
         dueDate,
-        expectedAmount: expense.amount,
+        expectedAmount: amounts?.get(dueDate.getTime()) ?? expense.amount,
       })),
       skipDuplicates: true,
     });
     return count;
+  }
+
+  /**
+   * Purchase-financing loans (Kueski, Didi) owe a different amount on each
+   * due date: the sum of the installments of every purchase. Null for any
+   * other expense, which owes `amount` every time.
+   */
+  private async loanAmounts(
+    client: Prisma.TransactionClient,
+    expense: RecurringExpenseRow,
+  ): Promise<Map<number, number> | null> {
+    if (!expense.debtId) return null;
+    const debt = await client.debt.findUnique({
+      where: { id: expense.debtId },
+      include: { charges: true },
+    });
+    if (!debt || !isPurchaseFinancing(debt)) return null;
+    const schedule = purchaseFinancingSchedule(expense, financedCharges(debt));
+    return new Map(schedule.map((s) => [s.dueDate.getTime(), s.amount]));
+  }
+
+  /**
+   * After a purchase is added to (or removed from) a purchase-financing loan:
+   * reprices its open occurrences, drops the ones nothing is due on, and
+   * creates the new due dates within the usual window.
+   */
+  async resyncLoanOccurrences(tx: Prisma.TransactionClient, debtId: string) {
+    const expense = await tx.recurringExpense.findUnique({
+      where: { debtId },
+    });
+    if (!expense) return;
+    const amounts = await this.loanAmounts(tx, expense);
+    if (!amounts) return;
+
+    const open = await tx.recurringOccurrence.findMany({
+      where: {
+        recurringExpenseId: expense.id,
+        status: OccurrenceStatus.upcoming,
+      },
+    });
+    for (const occurrence of open) {
+      const amount = amounts.get(occurrence.dueDate.getTime());
+      if (amount === undefined) {
+        await tx.recurringOccurrence.delete({ where: { id: occurrence.id } });
+      } else if (amount !== Number(occurrence.expectedAmount)) {
+        await tx.recurringOccurrence.update({
+          where: { id: occurrence.id },
+          data: { expectedAmount: amount },
+        });
+      }
+    }
+
+    const today = this.today();
+    const window = dueDatesBetween(
+      expense,
+      addDays(today, -OCCURRENCE_LOOKBACK_DAYS),
+      addDays(today, OCCURRENCE_HORIZON_DAYS),
+    ).filter((date) => amounts.has(date.getTime()));
+    if (window.length > 0) {
+      await tx.recurringOccurrence.createMany({
+        data: window.map((dueDate) => ({
+          recurringExpenseId: expense.id,
+          dueDate,
+          expectedAmount: amounts.get(dueDate.getTime())!,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    const next = [...amounts.keys()].find((time) => time >= today.getTime());
+    await tx.recurringExpense.update({
+      where: { id: expense.id },
+      data: {
+        nextDueDate: next === undefined ? null : new Date(next),
+        ...(next !== undefined && { amount: amounts.get(next) }),
+      },
+    });
   }
 
   /**

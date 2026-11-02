@@ -6,6 +6,7 @@ import { Plus, ShoppingBag } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import { Input } from '@finnit/ui/components/ui/input';
+import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
 import { SelectField } from '@/components/recurring/select-field';
 import {
@@ -86,13 +87,10 @@ export function OneTimeControl({
           error={errors.name ? tv(errors.name) : undefined}
         />
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input
+          <MoneyInput
             label={t('amount')}
-            inputMode="decimal"
-            autoComplete="off"
-            placeholder="0.00"
             value={draft.amount}
-            onChange={(e) => update({ amount: e.target.value })}
+            onValueChange={(value) => update({ amount: value })}
             error={errors.amount ? tv(errors.amount) : undefined}
           />
           <SelectField

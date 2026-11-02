@@ -1,14 +1,18 @@
 'use client';
 
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
   Banknote,
+  ChevronRight,
   CreditCard,
   HandCoins,
   Landmark,
   MoreHorizontal,
   Pencil,
+  ShoppingBag,
   Trash2,
+  UserRound,
 } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
@@ -23,14 +27,27 @@ import {
 import { Progress } from '@finnit/ui/components/ui/progress';
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { DebtKind } from '@/lib/debts/types';
+import { CATEGORY_COLOR } from '@/lib/debts/insights-view';
+import type { DebtCategory } from '@/lib/debts/types';
 import type { DebtItem } from '@/lib/debts/view';
 
-const KIND_ICONS: Record<DebtKind, typeof Landmark> = {
-  loan: Landmark,
+const TYPE_ICONS: Record<Exclude<DebtCategory, 'msi'>, typeof Landmark> = {
+  institutional: Landmark,
+  personal: UserRound,
+  purchase_financing: ShoppingBag,
   card: CreditCard,
   other: HandCoins,
 };
+
+/** Its type for icon and color (same colors as the loan charts). */
+function typeOf(item: DebtItem): Exclude<DebtCategory, 'msi'> {
+  if (item.debt.loanType) return item.debt.loanType;
+  return item.kind === 'card' ? 'card' : 'other';
+}
+
+/** A soft tint of a chart color, for backgrounds. */
+const tint = (color: string, percent: number) =>
+  `color-mix(in oklab, ${color} ${percent}%, transparent)`;
 
 /** One debt: what is left, how much is paid, its terms and actions. */
 export function DebtCard({
@@ -47,7 +64,9 @@ export function DebtCard({
   onDelete: () => void;
 }) {
   const t = useTranslations('debts');
-  const Icon = KIND_ICONS[item.kind];
+  const type = typeOf(item);
+  const Icon = TYPE_ICONS[type];
+  const color = CATEGORY_COLOR[type];
   const facts = [
     item.rate ? t('card.rate', { rate: item.rate }) : t('card.noRate'),
     item.minPayment ? t('card.minPayment', { amount: item.minPayment }) : null,
@@ -63,19 +82,45 @@ export function DebtCard({
         item.paidOff && 'bg-muted/40',
       )}
     >
-      <div className="flex items-start gap-3">
+      {/*
+        The icon stretches to the height of the title, lender and pill
+        (about 60px, hence w-15); a flex row's stretch sets the height.
+      */}
+      <div className="flex items-stretch gap-3">
         <span
           aria-hidden
-          className="flex size-10 shrink-0 items-center justify-center rounded-chip bg-track text-on-surface-variant"
+          className="flex w-15 shrink-0 items-center justify-center rounded-chip"
+          style={{ background: tint(color, 16), color }}
         >
-          <Icon className="size-5" />
+          <Icon className="size-8" />
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <h3 className="truncate text-base font-bold text-on-background">
-            {item.name}
+            <Link href={item.href} className="hover:underline">
+              {item.name}
+            </Link>
           </h3>
+          {item.debt.lenderName ? (
+            <p className="truncate text-xs text-on-surface-variant">
+              {item.debt.lenderName}
+            </p>
+          ) : null}
           <div className="flex flex-wrap gap-1">
-            <Badge variant="muted">{t(`kinds.${item.kind}`)}</Badge>
+            {/* Tinted with the type's color; the text keeps the ink color. */}
+            <Badge
+              variant="muted"
+              className="gap-1.5 text-on-background"
+              style={{ background: tint(color, 18) }}
+            >
+              <span
+                aria-hidden
+                className="size-2 shrink-0 rounded-full"
+                style={{ background: color }}
+              />
+              {item.debt.loanType
+                ? t(`loanTypes.${item.debt.loanType}`)
+                : t(`kinds.${item.kind}`)}
+            </Badge>
             {item.paidOff ? (
               <Badge variant="income">{t('card.paidOff')}</Badge>
             ) : null}
@@ -92,7 +137,7 @@ export function DebtCard({
               size="icon"
               disabled={busy}
               aria-label={t('card.more', { name: item.name })}
-              className="-mt-2 -mr-2"
+              className="-mt-2 -mr-2 self-start"
             >
               <MoreHorizontal aria-hidden />
             </Button>
@@ -142,6 +187,11 @@ export function DebtCard({
 
       <div className="flex flex-col gap-0.5 border-t border-outline pt-2 text-xs text-on-surface-variant">
         <span>{facts.join(' · ')}</span>
+        {item.nextPayment ? (
+          <span className="font-medium text-on-background">
+            {t('card.nextPayment', { date: item.nextPayment })}
+          </span>
+        ) : null}
         {item.dueLabel ? (
           <span
             className={cn(
@@ -154,18 +204,27 @@ export function DebtCard({
         ) : null}
       </div>
 
-      {item.paidOff ? null : (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={busy}
-          onClick={onPay}
-          className="self-start"
-        >
-          <Banknote aria-hidden /> {t('card.pay')}
+      {/* Pinned to the bottom so cards in a row line up. */}
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
+        {item.paidOff ? (
+          <span />
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={onPay}
+          >
+            <Banknote aria-hidden /> {t('card.pay')}
+          </Button>
+        )}
+        <Button type="button" variant="ghost" size="sm" asChild>
+          <Link href={item.href}>
+            {t('card.details')} <ChevronRight aria-hidden />
+          </Link>
         </Button>
-      )}
+      </div>
     </li>
   );
 }

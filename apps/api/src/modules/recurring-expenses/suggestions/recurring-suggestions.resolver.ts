@@ -7,6 +7,7 @@ import { AppLocale, RequestLocale } from '../../translation/locale';
 import { RecurringExpense } from '../dto/recurring-expense.dto';
 import {
   AcceptRecurringSuggestionInput,
+  LoanSuggestionDraft,
   RecurringSuggestion,
   RecurringSuggestionsArgs,
 } from './recurring-suggestion.dto';
@@ -43,6 +44,18 @@ export class RecurringSuggestionsResolver {
     input?: AcceptRecurringSuggestionInput,
   ): Promise<RecurringExpense> {
     return this.service.accept(user.id, fingerprint, input ?? {});
+  }
+
+  @Query(() => LoanSuggestionDraft, {
+    description:
+      'Prefilled loan for a suggestion that pays a loan; accept it with acceptRecurringSuggestionAsLoan',
+  })
+  async recurringSuggestionLoanDraft(
+    @CurrentUser() user: User,
+    @Args('fingerprint', { type: () => ID }) fingerprint: string,
+    @RequestLocale() locale: AppLocale,
+  ): Promise<LoanSuggestionDraft> {
+    return this.service.loanDraft(user.id, fingerprint, locale);
   }
 
   @Mutation(() => Boolean)

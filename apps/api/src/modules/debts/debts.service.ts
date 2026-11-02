@@ -11,6 +11,8 @@ import {
   DebtPayoffProjection,
   PayoffStrategyInput,
   DebtPayment,
+  DebtCharge,
+  MAX_ANNUAL_RATE,
 } from './dto/debt.dto';
 import {
   NotFoundError,
@@ -18,7 +20,48 @@ import {
   DebtOverpaymentError,
 } from '../../common/exceptions/graphql-error.exception';
 import { KeysetPage } from '../../common/utils/keyset-pagination.util';
-import { Prisma } from '@finnit/database';
+import {
+  OccurrenceMatchSource,
+  OccurrenceStatus,
+  Prisma,
+} from '@finnit/database';
+import { RecurringExpensesService } from '../recurring-expenses/recurring-expenses.service';
+import { monthlyEquivalent } from '../recurring-expenses/schedule.util';
+import {
+  balanceOf,
+  deleteDeposit,
+  syncDebtStatus,
+  totalOwedOf,
+} from './debt-ledger';
+
+/** What every read of a debt loads. */
+export const DEBT_INCLUDE = {
+  payments: { orderBy: [{ date: 'desc' }, { id: 'desc' }] },
+  charges: { orderBy: [{ date: 'desc' }, { id: 'desc' }] },
+  recurringExpense: { select: { id: true, nextDueDate: true } },
+} satisfies Prisma.DebtInclude;
+
+export type DebtRow = Prisma.DebtGetPayload<{ include: typeof DEBT_INCLUDE }>;
+
+/** Monthly amount a debt asks for: its minimum, else its payments per month. */
+export function monthlyPaymentOf(debt: {
+  minPaymentAmount: Prisma.Decimal | null;
+  installmentAmount: Prisma.Decimal | null;
+  paymentFrequency: DebtRow['paymentFrequency'];
+}): number {
+  if (debt.minPaymentAmount) return Number(debt.minPaymentAmount);
+  if (debt.installmentAmount && debt.paymentFrequency) {
+    return monthlyEquivalent(
+      Number(debt.installmentAmount),
+      debt.paymentFrequency,
+      1,
+    );
+  }
+  return 0;
+}
+
+/** Days after a payment's date an open scheduled payment may still be its match. */
+const PAYMENT_MATCH_DAYS = 20;
 
 /** A debt as the payoff simulation sees it. */
 export interface PayoffDebt {
@@ -101,7 +144,10 @@ export function simulatePayoff(
 
 @Injectable()
 export class DebtsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly recurring: RecurringExpensesService,
+  ) {}
 
   async create(userId: string, input: CreateDebtInput): Promise<Debt> {
     // Enforced here: no ValidationPipe runs the DTO's decorators.
@@ -110,10 +156,13 @@ export class DebtsService {
     }
     if (
       input.interestRateAnnual != null &&
-      !(input.interestRateAnnual >= 0 && input.interestRateAnnual <= 100)
+      !(
+        input.interestRateAnnual >= 0 &&
+        input.interestRateAnnual <= MAX_ANNUAL_RATE
+      )
     ) {
       throw new ValidationError(
-        'The annual interest rate must be between 0 and 100',
+        `The annual interest rate must be between 0 and ${MAX_ANNUAL_RATE}`,
       );
     }
 
@@ -139,10 +188,12 @@ export class DebtsService {
         startDate: input.startDate,
         dueDate: input.dueDate,
         linkedAccountId: input.linkedAccountId,
+        lenderName: input.lenderName?.trim() || null,
       },
+      include: DEBT_INCLUDE,
     });
 
-    return this.mapDebt(debt, [], 0);
+    return this.mapDebt(debt);
   }
 
   async findMany(userId: string, args: DebtsArgs): Promise<DebtConnection> {
@@ -158,43 +209,25 @@ export class DebtsService {
       where,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       ...page.query,
-      include: {
-        payments: {
-          orderBy: { date: 'desc' },
-        },
-      },
+      include: DEBT_INCLUDE,
     });
 
     const totalCount = await this.prisma.debt.count({ where });
 
-    return page.toConnection(debts, totalCount, (debt) => {
-      const totalPaid = debt.payments.reduce(
-        (sum, payment) => sum + Number(payment.amount),
-        0,
-      );
-      return this.mapDebt(debt, debt.payments, totalPaid);
-    });
+    return page.toConnection(debts, totalCount, (debt) => this.mapDebt(debt));
   }
 
   async findById(id: string, userId: string): Promise<Debt> {
     const debt = await this.prisma.debt.findFirst({
       where: { id, userId },
-      include: {
-        payments: {
-          orderBy: { date: 'desc' },
-        },
-      },
+      include: DEBT_INCLUDE,
     });
 
     if (!debt) {
       throw new NotFoundError('Debt not found');
     }
 
-    const totalPaid = debt.payments.reduce(
-      (sum, payment) => sum + Number(payment.amount),
-      0,
-    );
-    return this.mapDebt(debt, debt.payments, totalPaid);
+    return this.mapDebt(debt);
   }
 
   async update(
@@ -204,7 +237,7 @@ export class DebtsService {
   ): Promise<Debt> {
     const existingDebt = await this.prisma.debt.findFirst({
       where: { id, userId },
-      include: { payments: true },
+      include: DEBT_INCLUDE,
     });
 
     if (!existingDebt) {
@@ -219,11 +252,18 @@ export class DebtsService {
       if (!(input.principal > 0)) {
         throw new ValidationError('The principal must be greater than 0');
       }
+      if (existingDebt.totalToRepay !== null) {
+        throw new ValidationError(
+          'The principal of a loan with terms cannot change',
+        );
+      }
       const paid = existingDebt.payments.reduce(
         (sum, payment) => sum + Number(payment.amount),
         0,
       );
-      if (input.principal < paid) {
+      const charges =
+        totalOwedOf(existingDebt) - Number(existingDebt.principal);
+      if (input.principal + charges < paid) {
         throw new ValidationError(
           `The principal cannot be less than what has been paid (${paid})`,
         );
@@ -231,10 +271,13 @@ export class DebtsService {
     }
     if (
       input.interestRateAnnual != null &&
-      !(input.interestRateAnnual >= 0 && input.interestRateAnnual <= 100)
+      !(
+        input.interestRateAnnual >= 0 &&
+        input.interestRateAnnual <= MAX_ANNUAL_RATE
+      )
     ) {
       throw new ValidationError(
-        'The annual interest rate must be between 0 and 100',
+        `The annual interest rate must be between 0 and ${MAX_ANNUAL_RATE}`,
       );
     }
     if (input.minPaymentAmount != null && !(input.minPaymentAmount > 0)) {
@@ -252,35 +295,77 @@ export class DebtsService {
       }
     }
 
-    const updatedDebt = await this.prisma.debt.update({
-      where: { id },
-      data: input,
-      include: { payments: true },
+    if (input.purposeCategoryId) {
+      const category = await this.prisma.category.findFirst({
+        where: {
+          id: input.purposeCategoryId,
+          OR: [{ userId }, { userId: null, isDefault: true }],
+        },
+        select: { id: true },
+      });
+      if (!category) throw new NotFoundError('Category not found');
+    }
+
+    const { lenderName, purposeCategoryId, ...fields } = input;
+    const updatedDebt = await this.prisma.$transaction(async (tx) => {
+      await tx.debt.update({
+        where: { id },
+        data: {
+          ...fields,
+          ...(lenderName !== undefined && {
+            lenderName: lenderName?.trim() || null,
+          }),
+          ...(purposeCategoryId !== undefined && {
+            purposeCategoryId: purposeCategoryId || null,
+          }),
+        },
+      });
+      // A new principal can pay a debt off or make it owe again.
+      await syncDebtStatus(tx, id);
+      return tx.debt.findUniqueOrThrow({
+        where: { id },
+        include: DEBT_INCLUDE,
+      });
     });
 
-    const totalPaid = updatedDebt.payments.reduce(
-      (sum, payment) => sum + Number(payment.amount),
-      0,
-    );
-    return this.mapDebt(updatedDebt, updatedDebt.payments, totalPaid);
+    return this.mapDebt(updatedDebt);
   }
 
   async delete(id: string, userId: string): Promise<boolean> {
     const debt = await this.prisma.debt.findFirst({
       where: { id, userId },
-      include: { payments: true },
+      include: DEBT_INCLUDE,
     });
 
     if (!debt) {
       throw new NotFoundError('Debt not found');
     }
 
-    if (debt.payments.length > 0) {
+    // Historical payments are no movement: they go with the debt.
+    if (debt.payments.some((payment) => payment.transactionId)) {
       throw new ValidationError('Cannot delete debt with existing payments');
     }
 
-    await this.prisma.debt.delete({
-      where: { id },
+    await this.prisma.$transaction(async (tx) => {
+      // The money it put into accounts and its payment schedule go too.
+      const deposits = [
+        debt.disbursementTransactionId,
+        ...debt.charges.map((charge) => charge.transactionId),
+      ].filter((id): id is string => Boolean(id));
+      await tx.debt.update({
+        where: { id },
+        data: { disbursementTransactionId: null },
+      });
+      await tx.debtCharge.deleteMany({ where: { debtId: id } });
+      for (const transactionId of deposits) {
+        await deleteDeposit(tx, transactionId);
+      }
+      if (debt.recurringExpense) {
+        await tx.recurringExpense.delete({
+          where: { id: debt.recurringExpense.id },
+        });
+      }
+      await tx.debt.delete({ where: { id } });
     });
 
     return true;
@@ -294,9 +379,16 @@ export class DebtsService {
       throw new ValidationError('The payment must be greater than 0');
     }
 
+    const isHistorical = input.isHistorical ?? false;
+    if (isHistorical === Boolean(input.transactionId)) {
+      throw new ValidationError(
+        'A payment needs the movement that paid it, unless it is historical',
+      );
+    }
+
     const debt = await this.prisma.debt.findFirst({
       where: { id: input.debtId, userId },
-      include: { payments: true },
+      include: DEBT_INCLUDE,
     });
 
     if (!debt) {
@@ -304,20 +396,18 @@ export class DebtsService {
     }
 
     // Validate transaction belongs to user
-    const transaction = await this.prisma.transaction.findFirst({
-      where: { id: input.transactionId, userId },
-    });
+    if (input.transactionId) {
+      const transaction = await this.prisma.transaction.findFirst({
+        where: { id: input.transactionId, userId },
+      });
 
-    if (!transaction) {
-      throw new NotFoundError('Transaction not found');
+      if (!transaction) {
+        throw new NotFoundError('Transaction not found');
+      }
     }
 
     // Check if payment would exceed remaining debt
-    const totalPaid = debt.payments.reduce(
-      (sum, payment) => sum + Number(payment.amount),
-      0,
-    );
-    const remainingBalance = Number(debt.principal) - totalPaid;
+    const remainingBalance = balanceOf(debt);
 
     if (input.amount > remainingBalance) {
       throw new DebtOverpaymentError(
@@ -325,44 +415,109 @@ export class DebtsService {
       );
     }
 
-    const payment = await this.prisma.debtPayment.create({
-      data: {
-        debtId: input.debtId,
-        transactionId: input.transactionId,
-        amount: input.amount,
-        date: input.date,
-      },
+    const payment = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.debtPayment.create({
+        data: {
+          debtId: input.debtId,
+          transactionId: input.transactionId ?? null,
+          isHistorical,
+          amount: input.amount,
+          date: input.date,
+        },
+      });
+      if (input.transactionId) {
+        await this.payScheduled(tx, debt.id, input.transactionId, input.date);
+      }
+      await syncDebtStatus(tx, debt.id);
+      return created;
     });
 
     return this.mapDebtPayment(payment);
   }
 
+  /**
+   * Marks the debt's scheduled payment paid by this movement: the given one,
+   * else the oldest open one due by `date` + a few days. No-op without a
+   * schedule. The debt payment must already exist (it is not created twice).
+   */
+  async payScheduled(
+    tx: Prisma.TransactionClient,
+    debtId: string,
+    transactionId: string,
+    date: Date,
+    occurrenceId?: string,
+  ) {
+    const occurrence = occurrenceId
+      ? await tx.recurringOccurrence.findFirst({
+          where: { id: occurrenceId, recurringExpense: { debtId } },
+        })
+      : await tx.recurringOccurrence.findFirst({
+          where: {
+            recurringExpense: { debtId },
+            status: {
+              in: [OccurrenceStatus.upcoming, OccurrenceStatus.missed],
+            },
+            dueDate: {
+              lte: new Date(
+                new Date(date).getTime() + PAYMENT_MATCH_DAYS * 86_400_000,
+              ),
+            },
+          },
+          orderBy: { dueDate: 'asc' },
+        });
+    if (occurrenceId && !occurrence) {
+      throw new NotFoundError('Scheduled payment not found');
+    }
+    if (!occurrence) return;
+    await this.recurring.markPaidInTransaction(
+      tx,
+      occurrence.id,
+      transactionId,
+      OccurrenceMatchSource.manual,
+    );
+  }
+
+  /** Deletes a historical payment (one with no movement). */
+  async deleteHistoricalPayment(id: string, userId: string): Promise<boolean> {
+    const payment = await this.prisma.debtPayment.findFirst({
+      where: { id, debt: { userId } },
+    });
+    if (!payment) throw new NotFoundError('Payment not found');
+    if (payment.transactionId) {
+      throw new ValidationError(
+        'Only historical payments can be deleted; reopen the scheduled payment instead',
+      );
+    }
+    await this.prisma.$transaction(async (tx) => {
+      await tx.debtPayment.delete({ where: { id } });
+      await syncDebtStatus(tx, payment.debtId);
+    });
+    return true;
+  }
+
   async getDebtSummary(userId: string): Promise<DebtSummary> {
     const debts = await this.prisma.debt.findMany({
       where: { userId },
-      include: {
-        payments: true,
-      },
+      include: DEBT_INCLUDE,
     });
 
     let totalDebt = 0;
     let totalPaid = 0;
+    let totalRemaining = 0;
     let totalMonthlyPayments = 0;
     const payoffProjections: DebtPayoffProjection[] = [];
 
     for (const debt of debts) {
-      const principal = Number(debt.principal);
       const paidAmount = debt.payments.reduce(
         (sum, payment) => sum + Number(payment.amount),
         0,
       );
-      const remainingBalance = principal - paidAmount;
-      const monthlyPayment = debt.minPaymentAmount
-        ? Number(debt.minPaymentAmount)
-        : 0;
+      const remainingBalance = balanceOf(debt);
+      const monthlyPayment = remainingBalance > 0 ? monthlyPaymentOf(debt) : 0;
 
-      totalDebt += principal;
+      totalDebt += totalOwedOf(debt);
       totalPaid += paidAmount;
+      totalRemaining += remainingBalance;
       totalMonthlyPayments += monthlyPayment;
 
       if (remainingBalance > 0 && monthlyPayment > 0) {
@@ -378,7 +533,7 @@ export class DebtsService {
     return {
       totalDebt,
       totalPaid,
-      totalRemaining: totalDebt - totalPaid,
+      totalRemaining,
       totalMonthlyPayments,
       payoffProjections: payoffProjections.sort(
         (a, b) => a.payoffDate.getTime() - b.payoffDate.getTime(),
@@ -399,7 +554,7 @@ export class DebtsService {
         userId,
         id: { in: input.debtIds },
       },
-      include: { payments: true },
+      include: DEBT_INCLUDE,
     });
 
     if (debts.length !== input.debtIds.length) {
@@ -409,14 +564,8 @@ export class DebtsService {
     // Calculate remaining balances
     const debtData = debts
       .map((debt) => {
-        const paidAmount = debt.payments.reduce(
-          (sum, payment) => sum + Number(payment.amount),
-          0,
-        );
-        const remainingBalance = Number(debt.principal) - paidAmount;
-        const monthlyPayment = debt.minPaymentAmount
-          ? Number(debt.minPaymentAmount)
-          : 0;
+        const remainingBalance = balanceOf(debt);
+        const monthlyPayment = monthlyPaymentOf(debt);
         const interestRate = debt.interestRateAnnual
           ? Number(debt.interestRateAnnual) / 100 / 12
           : 0;
@@ -533,12 +682,13 @@ export class DebtsService {
     };
   }
 
-  private mapDebt(
-    debt: Prisma.DebtGetPayload<Record<string, never>>,
-    payments: Prisma.DebtPaymentGetPayload<Record<string, never>>[],
-    totalPaid: number,
-  ): Debt {
-    const remainingBalance = Number(debt.principal) - totalPaid;
+  mapDebt(debt: DebtRow): Debt {
+    const payments = debt.payments.map((p) => this.mapDebtPayment(p));
+    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+    const historicalPaid = payments
+      .filter((p) => p.isHistorical)
+      .reduce((sum, p) => sum + p.amount, 0);
+    const monthlyPayment = monthlyPaymentOf(debt);
 
     return {
       id: debt.id,
@@ -555,22 +705,64 @@ export class DebtsService {
       startDate: debt.startDate || undefined,
       dueDate: debt.dueDate || undefined,
       linkedAccountId: debt.linkedAccountId || undefined,
-      createdAt: debt.createdAt,
-      remainingBalance: Math.max(0, remainingBalance),
-      totalPaid,
-      monthlyPayment: debt.minPaymentAmount
-        ? Number(debt.minPaymentAmount)
+      loanType: debt.loanType ?? undefined,
+      status: debt.status,
+      lenderName: debt.lenderName ?? undefined,
+      lenderContactId: debt.lenderContactId ?? undefined,
+      lendingMethod: debt.lendingMethod ?? undefined,
+      paymentFrequency: debt.paymentFrequency ?? undefined,
+      installmentsTotal: debt.installmentsTotal ?? undefined,
+      installmentsPaid: payments.length,
+      installmentAmount: debt.installmentAmount
+        ? Number(debt.installmentAmount)
         : undefined,
+      totalToRepay: debt.totalToRepay ? Number(debt.totalToRepay) : undefined,
+      interestMode: debt.interestMode ?? undefined,
+      includesVat: debt.includesVat,
+      openingFee: debt.openingFee ? Number(debt.openingFee) : undefined,
+      periodicFee: debt.periodicFee ? Number(debt.periodicFee) : undefined,
+      destination: debt.destination ?? undefined,
+      purposeCategoryId: debt.purposeCategoryId ?? undefined,
+      disbursementTransactionId: debt.disbursementTransactionId ?? undefined,
+      recurringExpenseId: debt.recurringExpense?.id,
+      nextPaymentDate: debt.recurringExpense?.nextDueDate ?? undefined,
+      createdAt: debt.createdAt,
+      updatedAt: debt.updatedAt,
+      remainingBalance: balanceOf(debt),
+      totalPaid: Math.round(totalPaid * 100) / 100,
+      historicalPaid: Math.round(historicalPaid * 100) / 100,
+      totalOwed: totalOwedOf(debt),
+      monthlyPayment: monthlyPayment > 0 ? monthlyPayment : undefined,
+      payments,
+      charges: debt.charges.map((c) => this.mapDebtCharge(c)),
     };
   }
 
-  private mapDebtPayment(
+  mapDebtCharge(charge: DebtRow['charges'][number]): DebtCharge {
+    return {
+      id: charge.id,
+      debtId: charge.debtId,
+      date: charge.date,
+      description: charge.description ?? undefined,
+      principal: Number(charge.principal),
+      totalToRepay: Number(charge.totalToRepay),
+      installments: charge.installments ?? undefined,
+      destination: charge.destination,
+      transactionId: charge.transactionId ?? undefined,
+      purposeCategoryId: charge.purposeCategoryId ?? undefined,
+      lendingMethod: charge.lendingMethod ?? undefined,
+      createdAt: charge.createdAt,
+    };
+  }
+
+  mapDebtPayment(
     payment: Prisma.DebtPaymentGetPayload<Record<string, never>>,
   ): DebtPayment {
     return {
       id: payment.id,
       debtId: payment.debtId,
       transactionId: payment.transactionId,
+      isHistorical: payment.isHistorical,
       amount: Number(payment.amount),
       date: payment.date,
     };

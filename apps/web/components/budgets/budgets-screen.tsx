@@ -13,6 +13,7 @@ import {
   type ConfirmRequest,
 } from '@/components/admin/confirm-dialog';
 import { MonthSwitcher } from '@/components/finance/month-switcher';
+import { PageHeader } from '@/components/page-header';
 import {
   budgetErrorMessage,
   copyBudget,
@@ -110,22 +111,18 @@ export function BudgetsScreen({ view }: { view: BudgetsView }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-3 px-1">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-[28px] leading-9 font-bold text-brand-ink sm:text-[32px] sm:leading-10">
-            {t('budgets.title')}
-          </h1>
-          <p className="text-[15px] text-on-surface-variant">
-            {t('budgets.subtitle')}
-          </p>
-        </div>
-        <MonthSwitcher
-          as="h2"
-          label={month.label}
-          prevHref={month.prevHref}
-          nextHref={month.nextHref}
-        />
-      </header>
+      <PageHeader
+        title={t('budgets.title')}
+        subtitle={t('budgets.subtitle')}
+        actions={
+          <MonthSwitcher
+            as="h2"
+            label={month.label}
+            prevHref={month.prevHref}
+            nextHref={month.nextHref}
+          />
+        }
+      />
 
       <div
         aria-busy={pending || busy}

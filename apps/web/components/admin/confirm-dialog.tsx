@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import {
   AlertDialog,
@@ -20,7 +21,10 @@ export interface ConfirmRequest {
   onConfirm: () => void;
 }
 
-/** Asks before an admin action; `request` null keeps it closed. */
+/**
+ * Asks before an action; `request` null keeps it closed. The last request
+ * stays rendered while the dialog animates out.
+ */
 export function ConfirmDialog({
   request,
   onClose,
@@ -29,23 +33,23 @@ export function ConfirmDialog({
   onClose: () => void;
 }) {
   const t = useTranslations('common');
+  const [shown, setShown] = React.useState(request);
+  if (request && request !== shown) setShown(request);
   return (
     <AlertDialog open={request !== null} onOpenChange={(o) => !o && onClose()}>
-      {request ? (
+      {shown ? (
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{request.title}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {request.description}
-            </AlertDialogDescription>
+            <AlertDialogTitle>{shown.title}</AlertDialogTitle>
+            <AlertDialogDescription>{shown.description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              destructive={request.destructive}
-              onClick={request.onConfirm}
+              destructive={shown.destructive}
+              onClick={shown.onConfirm}
             >
-              {request.confirmLabel}
+              {shown.confirmLabel}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

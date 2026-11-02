@@ -1,8 +1,11 @@
 import { redirect } from 'next/navigation';
 
+import { MoneyFormatProvider } from '@finnit/ui/components/ui/money-input';
+
 import { AppShell } from '@/components/app-shell';
 import { SessionProvider } from '@/components/session-provider';
 import { getCurrentUser } from '@/lib/auth/session';
+import { MONEY_COUNTRY } from '@/lib/finance/money';
 import { unreadNotificationCount } from '@/lib/notifications/unread';
 
 export default async function AppLayout({
@@ -18,7 +21,9 @@ export default async function AppLayout({
 
   return (
     <SessionProvider user={user}>
-      <AppShell notificationCount={unread}>{children}</AppShell>
+      <MoneyFormatProvider country={MONEY_COUNTRY}>
+        <AppShell notificationCount={unread}>{children}</AppShell>
+      </MoneyFormatProvider>
     </SessionProvider>
   );
 }

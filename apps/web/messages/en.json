@@ -44,7 +44,8 @@
       "debts": "Debts",
       "goals": "Goals",
       "simulator": "Simulator",
-      "statements": "Statements"
+      "statements": "Statements",
+      "loans": "Loans"
     },
     "short": {
       "dashboard": "Home",
@@ -74,7 +75,8 @@
     "debts": "Debts",
     "goals": "Savings goals",
     "simulator": "What-if simulator",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "loans": "Loans"
   },
   "newEntry": {
     "title": "New transaction",
@@ -337,23 +339,9 @@
   },
   "cards": {
     "count": "{count, plural, one {# card} other {# cards}}",
-    "expensesOf": "Spending · {month}",
-    "movementsOf": "{name} transactions",
     "noMovementsTitle": "No transactions",
     "noMovementsDescription": "This account has no transactions yet.",
-    "carouselLabel": "{group} accounts",
-    "availableCredit": "Available credit: {amount}",
-    "currentDebt": "Current debt",
-    "availableBalance": "Available balance",
-    "noLimit": "No credit limit recorded for this card.",
-    "factsTitle": "Statement and payment",
-    "noFacts": "We don't have this card's statement day or this month's statement yet. Add it from Edit.",
-    "recurringSummary": "{count, plural, one {# recurring charge} other {# recurring charges}} this period: {expected} expected, {paid} already charged.",
     "facts": {
-      "due": "{date} · {relative}",
-      "nextStatement": "Next statement",
-      "paymentDue": "Payment due date",
-      "nextPayment": "Next payment date",
       "statementBalanceOn": "Statement balance ({date})",
       "statementBalance": "Statement balance",
       "noInterest": "Payment to avoid interest",
@@ -371,11 +359,6 @@
     "showArchived": "Show archived ({count})",
     "emptyTitle": "No accounts yet",
     "emptyDescription": "Connect your bank to import your accounts and transactions, or add an account by hand.",
-    "groups": {
-      "credit": "Credit cards",
-      "debit": "Debit & cash",
-      "savings": "Savings & other"
-    },
     "tier": {
       "cash": "CASH",
       "credit": "CREDIT",
@@ -388,13 +371,7 @@
       "manual": "Manual",
       "archived": "Archived"
     },
-    "tile": {
-      "owed": "You owe {amount}",
-      "available": "Balance {amount}",
-      "select": "View {name}"
-    },
     "cardBalance": "Balance",
-    "detailTitle": "Details",
     "manualLink": {
       "question": "Can't find your bank?",
       "action": "Add it manually"
@@ -528,6 +505,26 @@
       "hex": "Use the #RRGGBB format.",
       "duplicateName": "You already have an account with that name.",
       "notFound": "We couldn't find this account."
+    },
+    "stackLabel": "Your accounts and cards",
+    "detail": {
+      "limit": "Credit limit",
+      "noLimit": "No limit on file",
+      "available": "Available: {amount}",
+      "used": "Credit used",
+      "usedHint": "{percent}% of your limit",
+      "balance": "Balance",
+      "projected": "Projected month-end balance",
+      "projectedNone": "No recurring payments left this month.",
+      "projectedDebit": "Minus {count, plural, one {# pending recurring payment} other {# pending recurring payments}} ({amount}).",
+      "projectedCredit": "Plus {count, plural, one {# pending recurring payment} other {# pending recurring payments}} ({amount}).",
+      "statementDate": "Statement date",
+      "paymentDate": "Payment date",
+      "notSet": "Not set",
+      "notSetHint": "Add it from Edit.",
+      "statement": "Statement",
+      "movements": "Transactions",
+      "seeAll": "See all"
     }
   },
   "recurring": {
@@ -604,15 +601,14 @@
       "resumed": "{name} is active again",
       "deleted": "{name} deleted",
       "accepted": "{name} added to your recurring payments",
-      "dismissed": "Suggestion {name} dismissed"
+      "dismissed": "Suggestion {name} dismissed",
+      "acceptedAsLoan": "We saved {name} as a loan"
     },
     "cardDates": {
       "statement": "{name} statement",
       "paymentDue": "{name} payment due"
     },
     "list": {
-      "title": "My recurring payments",
-      "count": "{count, plural, one {# recurring payment} other {# recurring payments}}",
       "filterKind": "Filter by kind",
       "filterStatus": "Filter by status",
       "allKinds": "All kinds",
@@ -717,7 +713,9 @@
       "create": "Create payment",
       "save": "Save",
       "accept": "Add",
-      "saving": "Saving…"
+      "saving": "Saving…",
+      "loanSwitchHint": "A loan has an amount, a term and payments already made. Save it as a loan to keep track of it.",
+      "loanSwitch": "Save as a loan"
     },
     "validation": {
       "nameRequired": "Enter a name.",
@@ -756,7 +754,6 @@
       "suggestionGone": "This suggestion is no longer available."
     },
     "suggestions": {
-      "title": "Suggested",
       "subtitle": "Payments that repeat in your transactions and you haven't added yet.",
       "loading": "Looking for repeating payments in your transactions…",
       "empty": "We didn't find new recurring payments in your transactions.",
@@ -770,7 +767,16 @@
       "nextDue": "next {date}",
       "ai": "Classified with AI",
       "confidence": "Confidence {percent}%",
-      "evidence": "{count, plural, one {Seen # time} other {Seen # times}}"
+      "evidence": "{count, plural, one {Seen # time} other {Seen # times}}",
+      "looksLikeLoan": "Looks like a loan",
+      "asLoan": "It's a loan",
+      "asLoanLabel": "Save {name} as a loan"
+    },
+    "tabs": {
+      "label": "Recurring payment sections",
+      "calendar": "Calendar",
+      "list": "My payments",
+      "suggestions": "Suggested"
     }
   },
   "budgets": {
@@ -927,7 +933,9 @@
       "of": "of {amount}",
       "paidLabel": "Paid: {percent}%",
       "paid": "You have paid {amount} ({percent}%)",
-      "due": "Due {date}"
+      "due": "Due {date}",
+      "nextPayment": "Next payment: {date}",
+      "details": "Details"
     },
     "delete": {
       "title": "Delete {name}?",
@@ -951,7 +959,7 @@
       "kind": "Type",
       "principal": "Debt amount",
       "principalHint": "What you borrowed, or what you owed when you added it. Your payments are subtracted from it.",
-      "rate": "Annual interest rate (%)",
+      "rate": "Annual interest rate",
       "ratePlaceholder": "e.g. 36",
       "minPayment": "Monthly minimum payment",
       "startDate": "Start date",
@@ -967,7 +975,8 @@
       "fixErrors": "Check the highlighted fields.",
       "saving": "Saving…",
       "save": "Save changes",
-      "create": "Add debt"
+      "create": "Add debt",
+      "lockedTerms": "This loan's terms (amount, rate and payments) can't change. You can change its name, dates and account."
     },
     "validation": {
       "nameRequired": "Enter a name.",
@@ -1050,8 +1059,455 @@
       "account": "The linked account no longer exists.",
       "principalBelowPaid": "The amount can't be less than what you have paid.",
       "notFound": "This debt no longer exists. Reload the page.",
-      "paymentUndone": "We couldn't record the payment: {reason} No transaction was saved.",
-      "paymentNotLinked": "We saved the transaction, but couldn't link it to the debt: {reason}"
+      "paymentNotLinked": "We saved the transaction, but couldn't link it to the debt: {reason}",
+      "paidTooMuch": "The payments already made add up to more than you have to repay.",
+      "firstPaymentTooLate": "You've made more payments than we found: pick an earlier first payment date.",
+      "suggestionGone": "This suggestion is no longer available. Reload the page.",
+      "candidateTaken": "That movement or payment is already recorded.",
+      "frequency": "Choose how often you pay.",
+      "totalBelowPrincipal": "The amount borrowed cannot be more than the total to repay.",
+      "installmentsBelowPaid": "The number of payments cannot be less than the payments already made."
+    },
+    "newLoan": "Loan",
+    "newOther": "Card or other debt",
+    "loanTypes": {
+      "institutional": "Bank or lender",
+      "personal": "Personal",
+      "purchase_financing": "Buy now, pay later"
+    },
+    "loanTypeHints": {
+      "institutional": "A bank or lending company (e.g. YoTePresto): fixed payments over a term.",
+      "personal": "A relative, friend or acquaintance: payments can vary and the debt can grow if they lend you more.",
+      "purchase_financing": "Kueski, Didi Paga Después and the like: each purchase adds its payments on the same dates."
+    },
+    "loanFrequencies": {
+      "weekly": "weekly",
+      "biweekly": "every two weeks",
+      "semimonthly": "twice a month",
+      "monthly": "monthly"
+    },
+    "interestModes": {
+      "rate": "From the interest rate",
+      "total_amount": "From the total to repay",
+      "installment_amount": "From each payment's amount"
+    },
+    "interestModeHints": {
+      "rate": "We work out the fixed payment from the amount borrowed and the annual rate.",
+      "total_amount": "Enter what you'll repay in total (amount borrowed + interest).",
+      "installment_amount": "Enter how much you pay each time; the total is that payment times the number of payments."
+    },
+    "destinations": {
+      "deposit": "I got it in an account",
+      "purchase": "I used it to buy something"
+    },
+    "destinationHints": {
+      "deposit": "The money goes into the account. It doesn't count as income unless you say so.",
+      "purchase": "No account changes: only what you owe grows."
+    },
+    "loan": {
+      "createTitle": "New loan",
+      "createDescription": "Add what you borrowed, how you repay it and what you've already paid.",
+      "fromSuggestionTitle": "Save as a loan",
+      "fromSuggestionDescription": "Check what we suggested and fill in the rest.",
+      "draftLoading": "Preparing the loan's details…",
+      "draftDetected": "{count, plural, one {We found # payment} other {We found # payments}} of {amount}. They'll be recorded as payments made.",
+      "type": "Loan type",
+      "name": "Name",
+      "namePlaceholder": {
+        "institutional": "E.g. YoTePresto loan",
+        "personal": "E.g. Loan from my sister",
+        "purchase_financing": "E.g. Kueski"
+      },
+      "lender": {
+        "institutional": "Bank or lender",
+        "personal": "Who lent it to you?",
+        "purchase_financing": "Service"
+      },
+      "principal": {
+        "institutional": "Amount borrowed",
+        "personal": "Amount lent (optional)",
+        "purchase_financing": "Purchase amount"
+      },
+      "startDate": {
+        "institutional": "Loan date (optional)",
+        "personal": "Loan date (optional)",
+        "purchase_financing": "Purchase date (optional)"
+      },
+      "datePlaceholder": "Pick a date",
+      "termsTitle": "How it's repaid",
+      "installments": "Number of payments",
+      "installmentsPlaceholder": "E.g. 12",
+      "frequency": "Frequency",
+      "interestMode": "How you know the interest",
+      "rate": "Ordinary annual interest rate",
+      "ratePlaceholder": "E.g. 45",
+      "vat": "Add VAT to the interest (16%)",
+      "vatHint": "In Mexico, loan interest usually carries VAT.",
+      "totalToRepay": "Total to repay",
+      "installmentAmount": "Amount of each payment",
+      "personalTotal": "Total to repay (optional)",
+      "personalTotalPlaceholder": "Same as the amount borrowed",
+      "personalTotalHint": "If you agreed on interest, enter what you'll repay in total.",
+      "hasSchedule": "There's an agreed payment",
+      "hasScheduleHint": "We remind you of each payment and look for it in your movements.",
+      "agreedPayment": "Agreed payment",
+      "firstPaymentDate": "First payment date",
+      "preview": "{count, plural, one {# payment} other {# payments}} of {amount} · total {total} · interest {interest}",
+      "paidTitle": "Payments you've already made",
+      "paidHint": "They lower what you owe, but don't count in your spending because you didn't record them at the time.",
+      "installmentsPaid": "Payments already made",
+      "historicalAmount": "Amount",
+      "historicalDate": "Date",
+      "historicalAccount": "Count in my spending (optional)",
+      "historicalAccountPlaceholder": "Don't count",
+      "accountSearch": "Search accounts…",
+      "noResults": "No results.",
+      "removeHistorical": "Remove payment {number}",
+      "addHistorical": "Add payment",
+      "destinationTitle": "What happened to the money?",
+      "depositAccount": "Account that received it",
+      "accountPlaceholder": "Choose an account",
+      "countsAsIncome": "Count it as income",
+      "countsAsIncomeHint": "A loan usually isn't income: it's money you'll pay back.",
+      "paymentAccount": "Account you pay from (optional)",
+      "paymentAccountHint": "With a connected card or account, we look for the payments in your movements.",
+      "category": "Category of the payments",
+      "categoryPlaceholder": "No category",
+      "categorySearch": "Search categories…",
+      "fixErrors": "Check the highlighted fields.",
+      "saving": "Saving…",
+      "create": "Add loan",
+      "rateHint": "Your contract calls it the “ordinary interest rate” (VAT excluded). Don't use the total annual cost (CAT): it already includes fees.",
+      "openingFee": "Opening fee (optional)",
+      "openingFeeHint": "What they kept when giving you the loan, VAT included if charged. It isn't an expense: you just get less money and still owe the amount borrowed.",
+      "depositAmount": "Amount deposited",
+      "editDeposit": "Edit amount deposited",
+      "depositAmountHint": "Worked out as the amount borrowed minus the opening fee.",
+      "purpose": "What was it for? (optional)",
+      "purposePlaceholder": "E.g. Electronics",
+      "purposeHint": "Informative only: the payments are what counts as an expense, under Loans & Debts.",
+      "periodicFee": "Fixed fee per payment (optional)",
+      "periodicFeeHint": "Administration, insurance or rent charged with every payment, apart from the interest. E.g. $257.76 + VAT.",
+      "periodicFeeAddVat": "Add VAT (16%)",
+      "previewFees": "fees {fees}",
+      "clearDate": "Clear date",
+      "principalPersonalHint": "Leave it empty or at 0 to record each loan separately from its page."
+    },
+    "loanValidation": {
+      "nameRequired": "Enter a name.",
+      "nameTooLong": "The name is too long.",
+      "principalRequired": "Enter the amount.",
+      "principalInvalid": "Enter an amount greater than 0.",
+      "installmentsRequired": "Enter the number of payments.",
+      "installmentsInvalid": "Enter a whole number of payments (1 to 1000).",
+      "rateRequired": "Enter the annual rate.",
+      "rateInvalid": "The rate must be between 0 and 1000%.",
+      "totalRequired": "Enter the total to repay.",
+      "totalInvalid": "Enter a total greater than 0.",
+      "totalBelowPrincipal": "The total can't be less than the amount borrowed.",
+      "installmentAmountRequired": "Enter the amount of each payment.",
+      "installmentAmountInvalid": "That payment doesn't cover the amount borrowed.",
+      "firstPaymentRequired": "Pick the first payment date.",
+      "purchaseAfterFirstPayment": "The purchase must be before the first payment.",
+      "paidInvalid": "Enter a whole number.",
+      "paidTooMany": "You can't have made more payments than the loan has.",
+      "paidBelowDetected": "We already found more payments than that in your movements.",
+      "depositAccountRequired": "Choose the account that received the money.",
+      "historicalInvalid": "Check the payments: each needs an amount and a date that isn't in the future.",
+      "historicalTooMuch": "The payments add up to more than you owed.",
+      "openingFeeInvalid": "The fee must be less than the amount borrowed.",
+      "depositMismatch": "It doesn't add up: amount borrowed − fee = {expected}, but the amount deposited is {typed}. Fix the fee or the deposit to save.",
+      "periodicFeeInvalid": "Enter a valid fee."
+    },
+    "charge": {
+      "title": "Add to the loan",
+      "purchaseTitle": "Add purchase",
+      "description": "They lent you more: we add it to what you owe on {name}.",
+      "purchaseDescription": "Its payments are added to the dates you already have on {name}.",
+      "descriptionLabel": "Description (optional)",
+      "placeholder": "E.g. For tuition",
+      "purchasePlaceholder": "E.g. Headphones",
+      "amount": "Amount borrowed",
+      "purchaseAmount": "Purchase amount",
+      "date": "Date",
+      "datePlaceholder": "Pick a date",
+      "installments": "Number of payments",
+      "installmentsOptional": "Number of payments (optional)",
+      "installmentsPlaceholder": "E.g. 4",
+      "interest": "Interest",
+      "interestTotal": "From the total to repay",
+      "interestRate": "From the annual rate",
+      "rate": "Ordinary annual interest rate",
+      "ratePlaceholder": "E.g. 90",
+      "vat": "Add VAT to the interest (16%)",
+      "totalToRepay": "Total to repay (optional)",
+      "totalPlaceholder": "Same as the amount",
+      "totalHint": "Leave it empty if there's no interest.",
+      "preview": "{count, plural, one {# payment} other {# payments}} of {amount} · total {total}",
+      "depositAccount": "Account that received it",
+      "accountPlaceholder": "Choose an account",
+      "accountSearch": "Search accounts…",
+      "noResults": "No results.",
+      "saving": "Saving…",
+      "submit": "Add",
+      "purpose": "What was it for? (optional)",
+      "purposePlaceholder": "E.g. Electronics",
+      "purposeSearch": "Search category…",
+      "purposeHint": "Informative only: it does not count as an expense."
+    },
+    "chargeValidation": {
+      "dateRequired": "Pick the date.",
+      "dateInFuture": "The date can't be in the future.",
+      "principalRequired": "Enter the amount.",
+      "principalInvalid": "Enter an amount greater than 0.",
+      "installmentsRequired": "Enter the purchase's number of payments.",
+      "installmentsInvalid": "Enter a whole number of payments (1 to 1000).",
+      "totalInvalid": "Enter a total greater than 0.",
+      "totalBelowPrincipal": "The total can't be less than the amount.",
+      "rateRequired": "Enter the annual rate.",
+      "rateInvalid": "The rate must be between 0 and 1000%.",
+      "depositAccountRequired": "Choose the account that received the money."
+    },
+    "detail": {
+      "back": "Debts",
+      "terms": "{count, plural, one {# {frequency} payment} other {# {frequency} payments}} of {amount}",
+      "termsOpen": "{frequency} payment of {amount}",
+      "remaining": "Left to pay",
+      "next": "Next payment: {date} · {amount}",
+      "nextOverdue": "Overdue payment: {date} · {amount}",
+      "noNext": "No scheduled payments",
+      "totalOwed": "Total debt",
+      "interest": "Includes {amount} of interest",
+      "noInterest": "No interest",
+      "paid": "Paid",
+      "historicalPaid": "{amount} before you added it (not in your spending)",
+      "paidDetail": "{count, plural, =0 {No payments yet} one {# payment} other {# payments}}",
+      "progress": "{percent}% paid",
+      "rateWithVat": "{rate} a year + VAT",
+      "addCharge": "Add money",
+      "addPurchase": "Add purchase",
+      "scheduleEmpty": "This loan has no scheduled payments. Record each payment when you make it.",
+      "status": {
+        "paid": "Paid",
+        "historical": "Paid before",
+        "upcoming": "To pay",
+        "overdue": "Overdue",
+        "skipped": "Skipped",
+        "projected": "Scheduled"
+      },
+      "payThis": "Pay",
+      "chargesTitle": "Money added",
+      "chargeUntitled": "No description",
+      "chargeInstallments": "{count, plural, one {# payment} other {# payments}}",
+      "chargePrincipal": "Borrowed: {amount}",
+      "deleteCharge": "Remove",
+      "deleteChargeTitle": "Remove this money from the loan?",
+      "deleteChargeDescription": "What you owe goes down. If you got it in an account, that movement is removed too.",
+      "chargeDeleted": "We removed the money from the loan",
+      "chargeAdded": "We added it to your loan",
+      "paymentsTitle": "Recorded payments",
+      "paymentsEmpty": "No payments yet.",
+      "historical": "Before you added it",
+      "counted": "In your spending",
+      "deletePayment": "Remove payment",
+      "deletePaymentTitle": "Remove this payment?",
+      "deletePaymentDescription": "What you owe goes back up. No account is touched.",
+      "deleteConfirm": "Remove",
+      "paymentDeleted": "We removed the payment",
+      "paymentsHint": "Payments “In your spending” are removed from the schedule (by reopening the payment) or from the movement.",
+      "candidatesTitle": "Payments found in your movements",
+      "candidatesLoading": "Looking for your payments…",
+      "candidatesError": "We couldn't look for your payments.",
+      "retry": "Retry",
+      "candidatesHint": "Confirm the ones that are payments of this loan. That's how we learn to recognize them on our own.",
+      "candidatePays": "Payment due {date} · {amount}",
+      "reasons": {
+        "history": "Like earlier payments",
+        "text": "Mentions the lender",
+        "amount": "By amount and date",
+        "ai": "Picked with AI"
+      },
+      "confirmCandidate": "This one",
+      "candidateConfirmed": "We recorded the payment",
+      "backLoans": "Loans",
+      "openingFee": "Opening fee {fee} (you received {received})",
+      "purpose": "What was it for?",
+      "purposePlaceholder": "Not specified",
+      "purposeSearch": "Search category…",
+      "noResults": "No results.",
+      "periodicFee": "Fee per payment {fee}",
+      "tabs": {
+        "details": "Details",
+        "amortization": "Amortization table",
+        "payments": "Recorded payments",
+        "lentPersonal": "Loans received",
+        "lentPurchase": "Purchases"
+      },
+      "detailsTitle": "Loan details",
+      "edit": "Edit",
+      "editTitle": "Edit loan",
+      "editHint": "If you change the amount, the number of payments or the fee per payment, we recompute the payment and the open payments. Payments already made do not change.",
+      "cancel": "Cancel",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "detailsSaved": "Loan updated",
+      "datePlaceholder": "Pick a date",
+      "facts": {
+        "name": "Name",
+        "lender": "Institution or lender",
+        "type": "Type",
+        "principal": "Amount borrowed",
+        "installments": "Number of payments",
+        "frequency": "Frequency",
+        "rate": "Annual ordinary interest rate",
+        "payment": "Payment per period",
+        "total": "Total to repay",
+        "startDate": "Loan date",
+        "openingFee": "Opening fee",
+        "periodicFee": "Fixed fee per payment",
+        "purpose": "What was it for?",
+        "purposeNone": "Not specified",
+        "lenderPerson": "Who lent it to you?",
+        "lendingMethod": "How did they lend it?"
+      },
+      "columns": {
+        "number": "#",
+        "date": "Date",
+        "payment": "Payment",
+        "principal": "Principal",
+        "interest": "Interest",
+        "vat": "VAT",
+        "fee": "Fee",
+        "balance": "Balance",
+        "status": "Status",
+        "actions": "Actions",
+        "kind": "Type",
+        "amount": "Amount",
+        "description": "Description",
+        "method": "How",
+        "purpose": "What for"
+      },
+      "summary": {
+        "paidTitle": "Loan progress",
+        "paidCenter": "paid",
+        "paidAria": "{percent}% paid: {paid} of {total}",
+        "paid": "Paid",
+        "pending": "Pending",
+        "total": "Loan total",
+        "historical": "{amount} before registering it (not in your expenses)",
+        "outstandingTitle": "What is left",
+        "payoff": "To pay it off today",
+        "payoffHint": "Principal left, without future interest, VAT or fees.",
+        "payoffEstimated": "Approximate principal left, without future interest.",
+        "withInterest": "Left with interest",
+        "withInterestHint": "What you would pay following the schedule: principal, interest, VAT and fees.",
+        "saving": "Paying it off today saves you about {amount}. Confirm the exact amount with {lender}: it may add the current period's interest.",
+        "lenderFallback": "the lender",
+        "share": "{percent}% of what is left",
+        "parts": {
+          "principal": "Principal",
+          "interest": "Interest",
+          "vat": "VAT",
+          "fees": "Fees"
+        },
+        "paidInfo": "More about what was paid",
+        "payoffInfo": "More about paying it off today",
+        "withInterestInfo": "More about what is left with interest"
+      },
+      "clearDate": "Clear date",
+      "startDateOptional": "Loan date (optional)",
+      "lent": {
+        "initial": "Initial loan",
+        "noDate": "No date",
+        "toRepay": "To repay: {amount}",
+        "titlePersonal": "What they have lent you",
+        "titlePurchase": "Purchases",
+        "hintPersonal": "Every time they lent you money: the initial loan and what was added (another loan, a purchase with their card…).",
+        "addPersonal": "Add loan",
+        "addPurchase": "Add purchase"
+      }
+    },
+    "categories": {
+      "institutional": "Banks and lenders",
+      "personal": "Personal",
+      "purchase_financing": "Buy now, pay later",
+      "card": "Cards",
+      "other": "Other debts",
+      "msi": "Card installments"
+    },
+    "insights": {
+      "title": "Your debt in numbers",
+      "includeMsi": "Include card installments",
+      "includeMsiHint": "Installment purchases on your cards: they use your credit line.",
+      "current": "Current debt",
+      "total": "Total debt",
+      "paidSoFar": "Paid",
+      "currentVsTotal": "You've paid {percent}% of everything you've owed",
+      "byTypeTitle": "Current debt by type",
+      "nothingOwed": "You don't owe anything right now.",
+      "count": "{count, plural, one {· # debt} other {· # debts}}",
+      "paidTitle": "Paid per month",
+      "paidSeries": {
+        "counted": "In your spending",
+        "historical": "Before you added it",
+        "msi": "Installments"
+      },
+      "monthLabel": "{month}: {amount} paid",
+      "monthTotal": "Total",
+      "seeTable": "See as a table",
+      "month": "Month",
+      "noPayments": "No payments in these months yet.",
+      "projectionTitle": "How your debt will go down",
+      "projectionPaidOff": "At this pace you'll be done in {month}.",
+      "projectionNotPaidOff": "At this pace you'll still owe something in {count, plural, one {# month} other {# months}}.",
+      "projectionLabel": "Projected debt: from {from} to {to} in {month}",
+      "owedThen": "You'll owe",
+      "upcomingTitle": "Due soon",
+      "upcoming": {
+        "days30": "30 days",
+        "days60": "60 days",
+        "days90": "90 days"
+      },
+      "loadTitle": "Debt load",
+      "loadLevels": {
+        "low": "Healthy",
+        "moderate": "Moderate",
+        "high": "High"
+      },
+      "loadDetail": "You pay {monthly} a month out of {income} of average monthly income (last 3 months).",
+      "loadNoIncome": "You pay {monthly} a month. Record your income to see how much of it goes to debts."
+    },
+    "msi": {
+      "title": "Installments on your cards",
+      "manage": "See in recurring payments",
+      "hint": "They aren't loans: they use part of your credit line. They come from your recurring payments or statements.",
+      "progress": "{paid} of {total} payments",
+      "installment": "{amount} per payment",
+      "next": "Next: {date}"
+    },
+    "loansLink": "{count, plural, one {You have # loan} other {You have # loans}} ({active, plural, =0 {all paid off} one {# active} other {# active}}). They're in the totals and the plan; see them in Loans.",
+    "loanEditValidation": {
+      "nameRequired": "Enter a name.",
+      "nameTooLong": "The name is too long.",
+      "principalRequired": "Enter the amount borrowed.",
+      "principalInvalid": "Enter a valid amount.",
+      "installmentsRequired": "Enter the number of payments.",
+      "installmentsInvalid": "Enter a valid number of payments.",
+      "installmentsBelowPaid": "It cannot be less than the payments already made.",
+      "dateInFuture": "The date cannot be in the future.",
+      "openingFeeInvalid": "The fee must be less than the amount borrowed.",
+      "periodicFeeInvalid": "Enter a valid fee."
+    },
+    "lending": {
+      "label": "How did they lend it? (optional)",
+      "none": "Not specified",
+      "methods": {
+        "cash": "Cash",
+        "transfer": "Transfer",
+        "credit_card": "Their credit card",
+        "debit_card": "Their debit card",
+        "other": "Other"
+      }
     }
   },
   "analytics": {
@@ -1435,6 +1891,18 @@
       "premium": "Premium",
       "verified": "Verified account",
       "avatar": "User avatar: {name}"
+    },
+    "darkMode": "Switch to dark mode",
+    "lightMode": "Switch to light mode",
+    "table": {
+      "rowsPerPage": "Rows per page",
+      "page": "Page {page} of {pageCount}",
+      "firstPage": "First page",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "lastPage": "Last page",
+      "sortBy": "Sort by {column}",
+      "empty": "No records."
     }
   },
   "categorize": {
@@ -2075,7 +2543,7 @@
       "mode": "How to change income",
       "percentMode": "Change in %",
       "amountMode": "New amount",
-      "percent": "Change in your income (%)",
+      "percent": "Change in your income",
       "amount": "Monthly income",
       "percentHint": "E.g. 10 for a raise, -20 if it drops.",
       "result": "Monthly income in the scenario: {amount}."
@@ -2234,5 +2702,33 @@
       "attached": "Receipt added to the movement you already had.",
       "discarded": "Receipt discarded."
     }
+  },
+  "loans": {
+    "title": "Loans",
+    "subtitle": "What you borrowed, how you're paying it back and what's left.",
+    "new": "New loan",
+    "empty": {
+      "title": "You have no loans yet",
+      "description": "Add loans from banks, lenders, relatives or buy-now-pay-later services to track their payments and see what's left."
+    },
+    "summary": {
+      "owed": "Left to pay",
+      "monthly": "Payments a month",
+      "monthlyDetail": "What your loans ask for in a month",
+      "next": "Next payment",
+      "noNext": "No scheduled payments"
+    },
+    "insightsTitle": "Your loans in numbers",
+    "tabs": {
+      "analysis": "Analysis",
+      "list": "Loans ({count})"
+    }
+  },
+  "contacts": {
+    "placeholder": "Pick or type a name",
+    "search": "Search or add…",
+    "loading": "Loading…",
+    "empty": "No contacts yet. Type a name to add it.",
+    "add": "Add \"{name}\""
   }
 }

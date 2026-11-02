@@ -6,7 +6,7 @@ import { Plus } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import { DatePicker } from '@finnit/ui/components/ui/date-picker';
-import { Input } from '@finnit/ui/components/ui/input';
+import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
 import { todayKey } from '@/lib/finance/dates';
 import { addContribution, goalErrorMessage } from '@/lib/goals/api';
@@ -74,13 +74,10 @@ export function ContributionForm({
       className="flex flex-col gap-3 rounded-input border border-outline/70 p-3"
     >
       <div className="grid gap-3 sm:grid-cols-2">
-        <Input
+        <MoneyInput
           label={tc('amount')}
-          inputMode="decimal"
-          autoComplete="off"
-          placeholder="0.00"
           value={form.amount}
-          onChange={(e) => update({ amount: e.target.value })}
+          onValueChange={(value) => update({ amount: value })}
           error={
             errors.amount ? t(`goals.validation.${errors.amount}`) : undefined
           }

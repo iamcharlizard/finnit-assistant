@@ -8,6 +8,7 @@ import { Button } from '@finnit/ui/components/ui/button';
 import { LabelSm } from '@finnit/ui/components/ui/typography';
 
 import { EmptyState } from '@/components/finance/empty-state';
+import { PageHeader } from '@/components/page-header';
 import type { Connection } from '@/lib/finance/types';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
@@ -83,12 +84,7 @@ export function StatementsScreen({
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="mb-1 text-[32px] font-bold text-on-background">
-          {t('title')}
-        </h1>
-        <p className="text-sm text-on-surface-variant">{t('subtitle')}</p>
-      </div>
+      <PageHeader title={t('title')} subtitle={t('subtitle')} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:items-start">
         <StatementUploadCard

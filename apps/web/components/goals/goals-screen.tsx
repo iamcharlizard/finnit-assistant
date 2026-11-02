@@ -12,6 +12,7 @@ import {
   ConfirmDialog,
   type ConfirmRequest,
 } from '@/components/admin/confirm-dialog';
+import { PageHeader } from '@/components/page-header';
 import {
   deleteGoal,
   deleteGoalWithContributions,
@@ -164,25 +165,21 @@ export function GoalsScreen({ view }: { view: GoalsScreenView }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-3 px-1">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-[28px] leading-9 font-bold text-brand-ink sm:text-[32px] sm:leading-10">
-            {t('goals.title')}
-          </h1>
-          <p className="text-[15px] text-on-surface-variant">
-            {t('goals.subtitle')}
-          </p>
-        </div>
-        {view.cards.length > 0 ? (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => setDialog({ mode: 'create' })}
-          >
-            <Plus aria-hidden /> {t('goals.new')}
-          </Button>
-        ) : null}
-      </header>
+      <PageHeader
+        title={t('goals.title')}
+        subtitle={t('goals.subtitle')}
+        actions={
+          view.cards.length > 0 ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setDialog({ mode: 'create' })}
+            >
+              <Plus aria-hidden /> {t('goals.new')}
+            </Button>
+          ) : null
+        }
+      />
 
       {view.cards.length === 0 ? (
         <GoalsEmpty onCreate={() => setDialog({ mode: 'create' })} />

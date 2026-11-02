@@ -15,6 +15,12 @@ import type { ApiDebt, DebtKind } from './types';
  * card per debt (paid-off ones last).
  */
 export const DEBTS_PATH = '/planning/debts';
+export const LOANS_PATH = '/planning/loans';
+
+/** A debt's own page: loans live under Préstamos, the rest under Deudas. */
+export function debtHref(debt: Pick<ApiDebt, 'id' | 'kind'>): string {
+  return `${debt.kind === 'loan' ? LOANS_PATH : DEBTS_PATH}/${debt.id}`;
+}
 
 export interface DebtTotals {
   /** What is still owed. */
@@ -40,7 +46,10 @@ export function summarizeDebts(debts: ReadonlyArray<ApiDebt>): DebtTotals {
   return {
     owed: roundCents(active.reduce((s, d) => s + d.remainingBalance, 0)),
     minimums: roundCents(
-      active.reduce((s, d) => s + (d.minPaymentAmount ?? 0), 0),
+      active.reduce(
+        (s, d) => s + (d.minPaymentAmount ?? d.monthlyPayment ?? 0),
+        0,
+      ),
     ),
     weightedRate:
       ratedBalance > 0
@@ -82,6 +91,12 @@ export interface DebtItem {
   /** Linked to a credit card account: payments go as transfers to it. */
   linkedToCard: boolean;
   paidOff: boolean;
+  /** The debt's page (see debtHref). */
+  href: string;
+  /** Next scheduled payment, e.g. "15 nov · $1,234.56". */
+  nextPayment: string | null;
+  /** Paid before registering it, formatted; null when none. */
+  historicalPaid: string | null;
 }
 
 export interface DebtsView {
@@ -115,7 +130,8 @@ export function buildDebtsView(
     const account = debt.linkedAccountId
       ? byId.get(debt.linkedAccountId)
       : undefined;
-    const paidOff = debt.remainingBalance <= 0;
+    const paidOff = debt.status === 'paid_off' || debt.remainingBalance <= 0;
+    const owed = debt.totalOwed || debt.principal;
     const due = debt.dueDate ? dayKeyOf(debt.dueDate) : null;
     return {
       id: debt.id,
@@ -123,9 +139,9 @@ export function buildDebtsView(
       name: debt.name,
       kind: debt.kind,
       remaining: money(debt.remainingBalance),
-      principal: money(debt.principal),
+      principal: money(owed),
       paid: money(debt.totalPaid),
-      paidPercent: Math.min(100, percentOf(debt.totalPaid, debt.principal)),
+      paidPercent: Math.min(100, percentOf(debt.totalPaid, owed)),
       rate:
         debt.interestRateAnnual != null
           ? formatRate(debt.interestRateAnnual)
@@ -137,6 +153,13 @@ export function buildDebtsView(
       accountLabel: account ? accountLabel(account) : null,
       linkedToCard: account?.type === 'credit',
       paidOff,
+      href: debtHref(debt),
+      nextPayment:
+        !paidOff && debt.nextPaymentDate
+          ? longDate(dayKeyOf(debt.nextPaymentDate), today, locale)
+          : null,
+      historicalPaid:
+        debt.historicalPaid > 0 ? money(debt.historicalPaid) : null,
     };
   });
 

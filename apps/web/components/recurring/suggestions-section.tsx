@@ -14,18 +14,20 @@ import type { ApiRecurringSuggestion } from '@/lib/recurring/types';
 import { SuggestionCard } from './suggestion-card';
 import { SuggestionsSkeleton } from './suggestions-skeleton';
 
-/** "Sugeridos": recurring payments found in the user's movements. */
+/** "Sugeridos" tab: recurring payments found in the user's movements. */
 export function SuggestionsSection({
   state,
   today,
   onRetry,
   onAdd,
+  onLoan,
   onDismiss,
 }: {
   state: SuggestionsState;
   today: string;
   onRetry: () => void;
   onAdd: (suggestion: ApiRecurringSuggestion) => void;
+  onLoan: (suggestion: ApiRecurringSuggestion) => void;
   onDismiss: (suggestion: ApiRecurringSuggestion, index: number) => void;
 }) {
   const l = useLocalizer();
@@ -42,20 +44,8 @@ export function SuggestionsSection({
   );
 
   return (
-    <section
-      aria-labelledby="recurring-suggestions-title"
-      aria-busy={state.status === 'loading'}
-      className="flex flex-col gap-4"
-    >
-      <div className="flex flex-col gap-0.5">
-        <h2
-          id="recurring-suggestions-title"
-          className="text-title-lg font-bold text-on-background"
-        >
-          {t('title')}
-        </h2>
-        <p className="text-xs text-on-surface-variant">{t('subtitle')}</p>
-      </div>
+    <div aria-busy={state.status === 'loading'} className="flex flex-col gap-4">
+      <p className="text-sm text-on-surface-variant">{t('subtitle')}</p>
 
       {state.status === 'loading' ? <SuggestionsSkeleton /> : null}
 
@@ -85,11 +75,12 @@ export function SuggestionsSection({
               key={card.fingerprint}
               card={card}
               onAdd={() => onAdd(suggestion)}
+              onLoan={() => onLoan(suggestion)}
               onDismiss={() => onDismiss(suggestion, index)}
             />
           ))}
         </ul>
       ) : null}
-    </section>
+    </div>
   );
 }

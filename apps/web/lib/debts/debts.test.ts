@@ -6,10 +6,9 @@ import type { ApiAccount } from '@/lib/finance/types';
 import { testLocalizer } from '@/lib/i18n/testing';
 import {
   CREATE_DEBT_PAYMENT_MUTATION,
-  CREATE_EXPENSE_MUTATION,
   CREATE_TRANSFER_MUTATION,
-  DELETE_TRANSACTION_MUTATION,
   PaymentLinkError,
+  RECORD_DEBT_PAYMENT_MUTATION,
   debtErrorMessage,
   registerDebtPayment,
 } from './api';
@@ -44,8 +43,29 @@ const debt = (overrides: Partial<ApiDebt> = {}): ApiDebt => ({
   startDate: '2025-01-01T00:00:00.000Z',
   dueDate: '2028-01-01T00:00:00.000Z',
   linkedAccountId: null,
+  loanType: null,
+  status: 'active',
+  lenderName: null,
+  lenderContactId: null,
+  lendingMethod: null,
+  paymentFrequency: null,
+  installmentsTotal: null,
+  installmentsPaid: 0,
+  installmentAmount: null,
+  totalToRepay: null,
+  interestMode: null,
+  includesVat: false,
+  openingFee: null,
+  periodicFee: null,
+  destination: null,
+  purposeCategoryId: null,
+  nextPaymentDate: null,
+  recurringExpenseId: null,
   remainingBalance: 60000,
   totalPaid: 40000,
+  historicalPaid: 0,
+  totalOwed: 100000,
+  monthlyPayment: null,
   createdAt: '2025-01-01T00:00:00.000Z',
   ...overrides,
 });
@@ -187,7 +207,7 @@ describe('debt form', () => {
         ...newDebtForm(),
         name: 'X',
         principal: '1000',
-        rate: '120',
+        rate: '1200',
         minPayment: '0',
         startDate: '2026-05-01',
         dueDate: '2026-04-01',
@@ -224,7 +244,7 @@ describe('debt form', () => {
       }),
       {
         name: 'Préstamo',
-        kind: 'loan',
+        kind: 'card',
         principal: 10000,
         interestRateAnnual: 18,
         dueDate: '2027-01-31',
@@ -385,20 +405,21 @@ describe('registerDebtPayment', () => {
     },
   );
 
-  it('creates the movement, then the debt payment pointing at it', async () => {
+  it('records an expense payment in one call (movement and debt payment together)', async () => {
     const { run, calls } = fakeRunner(
       new Map<string, unknown>([
-        [CREATE_EXPENSE_MUTATION, { createTransaction: { id: 'txn-1' } }],
-        [CREATE_DEBT_PAYMENT_MUTATION, { createDebtPayment: { id: 'p-1' } }],
+        [RECORD_DEBT_PAYMENT_MUTATION, { recordDebtPayment: { id: 'car' } }],
       ]),
     );
-    await registerDebtPayment('car', expense, run);
-    assert.deepEqual(calls[1]!.variables, {
+    await registerDebtPayment('car', expense, run, { occurrenceId: 'occ-1' });
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0]!.variables, {
       input: {
         debtId: 'car',
-        transactionId: 'txn-1',
+        accountId: 'debit',
         amount: 500,
         date: '2026-10-10',
+        occurrenceId: 'occ-1',
       },
     });
   });
@@ -429,32 +450,41 @@ describe('registerDebtPayment', () => {
     );
   });
 
-  it('deletes the expense again when the payment is refused', async () => {
-    const { run, calls } = fakeRunner(
+  it('says the transfer stayed when linking it is refused', async () => {
+    const transfer = buildPaymentMovement(
+      { amount: '500', date: '2026-10-10', accountId: 'debit', categoryId: '' },
+      {
+        debt: debt(),
+        mode: { kind: 'transfer', card },
+        account: account(),
+        description: 'Pago',
+      },
+    );
+    const { run } = fakeRunner(
       new Map<string, unknown>([
-        [CREATE_EXPENSE_MUTATION, { createTransaction: { id: 'txn-1' } }],
+        [
+          CREATE_TRANSFER_MUTATION,
+          { createTransfer: { id: 't', fromTxnId: 'out-1' } },
+        ],
         [
           CREATE_DEBT_PAYMENT_MUTATION,
           new Error(
             'Payment amount (500) exceeds remaining debt balance (100)',
           ),
         ],
-        [DELETE_TRANSACTION_MUTATION, { deleteTransaction: true }],
       ]),
     );
     await assert.rejects(
-      registerDebtPayment('car', expense, run),
+      registerDebtPayment('car', transfer, run),
       (error: unknown) => {
         assert.ok(error instanceof PaymentLinkError);
-        assert.equal(error.undone, true);
         assert.equal(
           debtErrorMessage(error, es.t),
-          'No pudimos registrar el pago: El pago es mayor que lo que te falta pagar. No se guardó ningún movimiento.',
+          'Guardamos el movimiento, pero no pudimos ligarlo a la deuda: El pago es mayor que lo que te falta pagar.',
         );
         return true;
       },
     );
-    assert.deepEqual(calls[2]!.variables, { id: 'txn-1' });
   });
 });
 

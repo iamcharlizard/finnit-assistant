@@ -38,9 +38,11 @@ All 11 original GraphQL modules implemented, plus recurring expenses in `apps/ap
 | Statements (PDF import + reconciliation) | `src/modules/statements/` (+ `src/modules/storage/` for S3) |
 | AI model catalog + providers (Anthropic, OpenAI, Gemini) | `src/modules/ai/` |
 | Bank connections (Syncfy aggregation) | `src/modules/bank-connections/` |
+| Loans (types, terms, schedule, charges, historical payments, payment matching, charts) | `src/modules/debts/` (`loans.service.ts`, `loan-tracking.service.ts`, `debt-insights.service.ts`; pure math in `loan-math.ts`) |
 | Receipts (photo → draft expense: CFDI QR, OCR + rules, AI fallback) | `src/modules/receipts/` |
 | OCR client (internal `ocr` service, `OCR_SERVICE_URL` / `OCR_SERVICE_TOKEN`) | `src/modules/ocr/` |
 | Admin (user access; master/admin rules) | `src/modules/admin/` |
+| Contacts (people the user deals with; lender of personal loans; name only for now) | `src/modules/contacts/` |
 | Categorization (merchant rules, aliases, AI suggestions) | `src/modules/categorization/` |
 
 Auto-generated schema at `apps/api/src/schema.gql`.
@@ -63,6 +65,14 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - Web auth (backend-for-frontend): login/logout are server actions (`app/login/actions.ts`) that keep the API tokens in httpOnly cookies (`lib/auth/cookies.ts`); browser JS never sees them. `proxy.ts` (Next 16's middleware) renews the access token with the refresh token and guards routes. Server components read the user with `getCurrentUser()`; client components call GraphQL through `POST /api/graphql`, which adds the token (same-origin only). The Next server reaches the API at `FINNIT_API_URL` (default `http://localhost:3000` in development).
 - `packages/ui/` (`@finnit/ui`): shadcn/ui (new-york) on Radix (`radix-ui` package) + Tailwind v4. Ships TypeScript source (consumers transpile it). Import per file, e.g. `@finnit/ui/components/finance/payment-item`. Folders: `components/ui` (shadcn primitives + typography), `components/finance`, `components/navigation`, `components/settings`. Design tokens in `src/styles/globals.css` are ported from `apps/finnit-app/global.css` (light on `:root`, dark on `.dark`).
   - Web components keep the mobile names/props, with web conventions: `symbolName` → `icon: LucideIcon`, `onPress` → `onClick`.
+  - Chart series colors are `--chart-1` … `--chart-6` (light and dark), in an order validated for color-vision deficiency. Assign them by entity in that fixed order; don't reorder or add hues without re-running a palette validator. Light slots 3–5 are under 3:1 on the surface, so charts using them need direct labels or a table view.
+  - Long dialogs put their fields in `DialogBody` (between `DialogHeader` and `DialogFooter`): only the body scrolls, the title and buttons stay visible. Don't add `overflow-y-auto` / `max-h` to `DialogContent`.
+  - Dialogs the parent mounts only while open (`{x ? <MyDialog /> : null}`) close through `useDialogExit()` (`@finnit/ui/lib/use-dialog-exit`): `open={exit.open}`, `onExitComplete={exit.onExitComplete}` on the content, and `exit.close(onClose)` / `exit.after(onSaved)(…)` so the parent unmounts them after the exit animation, not before.
+  - Money fields use `MoneyInput` (`@finnit/ui/components/ui/money-input`; `useMoneyMask` for custom-looking ones): only digits, masked in the country's format (Mexico: `$ 1'250,000.50 MXN`), while the form keeps the raw value (`"1250000.50"`). The country comes from `MoneyFormatProvider` (web: `MONEY_COUNTRY` in `lib/finance/money.ts`); formats live in `packages/ui/src/lib/money-format.ts`. Pass `currency` for accounts in another currency.
+  - Other numbers (rates, counts, days, priorities) use `NumberInput` (`@finnit/ui/components/ui/number-input`): never letters; whole numbers unless `decimals`, `allowNegative`, `maxDigits`, `suffix="%"`. Don't use `type="number"` (it lets `e`, `+` and `-` in).
+  - Data tables use `DataTable` (`@finnit/ui/components/ui/data-table`, TanStack Table v8): paginated (5 rows by default, rows-per-page selector beside the pager), sortable only where a column sets `enableSorting`, `meta.align: 'right'` for amounts. In the web pass `labels={useTableLabels()}` (`components/use-table-labels.ts`). The plain `Table` primitives are for static layouts only.
+  - `Combobox` takes `onCreate` / `createLabel` to let the user add what they typed (e.g. `ContactCombobox` in `components/contacts/`).
+  - Help text next to figures goes in `InfoHint` (`@finnit/ui/components/ui/info-hint`): an info icon that opens on hover and on click/tap, instead of always-visible paragraphs.
   - Use relative imports inside `packages/ui`. If you add `@theme` font sizes or radii, register them in `src/lib/utils.ts` (`extendTailwindMerge`) or `cn()` will drop them.
   - Avoid locale-dependent `Intl` output that differs between Node and browsers (e.g. `notation: 'compact'`) in SSR'd components; it breaks hydration.
 - `apps/storybook/` (`@finnit/storybook`): Storybook 10 (react-vite), port 6006. Stories are co-located as `packages/ui/src/**/*.stories.tsx`; addons: docs, a11y, themes (light/dark toggle).
@@ -86,6 +96,12 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261013090000_syncfy_bank_sync`
 - `20261013120000_private_attachments` … `20261017090000_merchant_rules_and_aliases` (rollbacks in `packages/database/scripts/rollbacks/`)
 - `20261018090000_receipts_and_merchant_tax_ids` (ReceiptImport, MerchantTaxId with a partial unique index for global rows; rollback in `packages/database/scripts/rollbacks/`)
+- `20261030090000_loans` (loan types and terms on Debt, DebtCharge, historical DebtPayment without transaction, AI loan fields on RecurringSuggestionState; rollback in `packages/database/scripts/rollbacks/`)
+- `20261101090000_loan_opening_fee` (`Debt.openingFee`; rollback in `packages/database/scripts/rollbacks/`)
+- `20261102090000_debt_categories` (default **Loans & Debts** category with *Loan Payments* / *Installment Payments* for existing users; `Debt.purposeCategoryId` and `DebtCharge.purposeCategoryId`, informative; rollback in `packages/database/scripts/rollbacks/`). New default categories need both `default-categories.ts` and a migration for existing users.
+- `20261102120000_loan_periodic_fee` (`Debt.periodicFee`: fixed fee per payment, VAT included; rollback in `packages/database/scripts/rollbacks/`)
+- `20261103120000_lending_method` (`LendingMethod` enum; `Debt.lendingMethod`, `DebtCharge.lendingMethod`; rollback in `packages/database/scripts/rollbacks/`)
+- `20261103090000_contacts` (`Contact`, `Debt.lenderContactId`; existing personal-loan lenders become contacts; rollback in `packages/database/scripts/rollbacks/`)
 - `20261013120000_private_attachments`
 - `20261014090000_admin_access_and_ai_features`
 - `20261015090000_category_i18n_and_ai_features` + `20261015090100_ai_feature_defaults` (enum values added in one file can't be used in the same transaction, so the seed rows live in a second file)

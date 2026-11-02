@@ -16,6 +16,7 @@ import { AliasCard } from '@/components/aliases/alias-card';
 import { AliasDialog } from '@/components/aliases/alias-dialog';
 import { RuleList } from '@/components/aliases/rule-list';
 import { EmptyState } from '@/components/finance/empty-state';
+import { PageHeader } from '@/components/page-header';
 import {
   aliasErrorMessage,
   deleteAlias,
@@ -109,78 +110,79 @@ export function AliasesScreen({ data }: { data: AliasesData }) {
     });
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-8">
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h1 className="mb-1 text-[32px] font-bold text-on-background">
-              {t('aliases.title')}
-            </h1>
-            <p className="text-sm text-on-surface-variant">
-              {t('aliases.subtitle')}
-            </p>
-          </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title={t('aliases.title')}
+        subtitle={t('aliases.subtitle')}
+        actions={
           <Button
             variant="secondary"
             onClick={() => setDialog({ alias: null })}
           >
             <Plus aria-hidden /> {t('aliases.new')}
           </Button>
-        </div>
-        <Button variant="link" asChild className="self-start">
-          <Link href="/transactions/categorize">
-            <Tags aria-hidden /> {t('aliases.categorizeLink')}
-          </Link>
-        </Button>
-
-        {aliases.length === 0 ? (
-          <EmptyState
-            icon={Text}
-            title={t('aliases.emptyTitle')}
-            description={t('aliases.emptyDescription')}
-          />
-        ) : (
-          <section className="flex flex-col gap-3">
-            <p className="px-1 text-xs text-on-surface-variant">
-              {t('aliases.count', { count: aliases.length })}
-            </p>
-            {aliases.map((alias) => (
-              <AliasCard
-                key={alias.id}
-                alias={alias}
-                busy={busy(alias.id)}
-                onToggleActive={(active) => toggleActive(alias, active)}
-                onEdit={() => setDialog({ alias })}
-                onDelete={() => askDeleteAlias(alias)}
-              />
-            ))}
-          </section>
-        )}
-      </div>
-
-      <RuleList
-        rules={data.rules}
-        busyId={pending ? busyId : null}
-        onDelete={askDeleteRule}
+        }
       />
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-8">
+        <div className="flex flex-col gap-4">
+          <Button variant="link" asChild className="self-start">
+            <Link href="/transactions/categorize">
+              <Tags aria-hidden /> {t('aliases.categorizeLink')}
+            </Link>
+          </Button>
 
-      {dialog ? (
-        <AliasDialog
-          alias={dialog.alias}
-          categories={data.categories}
-          onClose={() => setDialog(null)}
-          onSaved={(saved, created) => {
-            setDialog(null);
-            toast.success(
-              t(created ? 'aliases.toasts.created' : 'aliases.toasts.updated', {
-                name: saved.displayName,
-              }),
-            );
-            refresh();
-          }}
+          {aliases.length === 0 ? (
+            <EmptyState
+              icon={Text}
+              title={t('aliases.emptyTitle')}
+              description={t('aliases.emptyDescription')}
+            />
+          ) : (
+            <section className="flex flex-col gap-3">
+              <p className="px-1 text-xs text-on-surface-variant">
+                {t('aliases.count', { count: aliases.length })}
+              </p>
+              {aliases.map((alias) => (
+                <AliasCard
+                  key={alias.id}
+                  alias={alias}
+                  busy={busy(alias.id)}
+                  onToggleActive={(active) => toggleActive(alias, active)}
+                  onEdit={() => setDialog({ alias })}
+                  onDelete={() => askDeleteAlias(alias)}
+                />
+              ))}
+            </section>
+          )}
+        </div>
+
+        <RuleList
+          rules={data.rules}
+          busyId={pending ? busyId : null}
+          onDelete={askDeleteRule}
         />
-      ) : null}
-      <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />
+
+        {dialog ? (
+          <AliasDialog
+            alias={dialog.alias}
+            categories={data.categories}
+            onClose={() => setDialog(null)}
+            onSaved={(saved, created) => {
+              setDialog(null);
+              toast.success(
+                t(
+                  created ? 'aliases.toasts.created' : 'aliases.toasts.updated',
+                  {
+                    name: saved.displayName,
+                  },
+                ),
+              );
+              refresh();
+            }}
+          />
+        ) : null}
+        <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />
+      </div>
     </div>
   );
 }

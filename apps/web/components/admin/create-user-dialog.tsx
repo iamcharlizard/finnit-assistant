@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
+import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { InputWithIcon } from '@finnit/ui/components/ui/input-with-icon';
 import { Label } from '@finnit/ui/components/ui/label';
 import {
@@ -50,6 +51,8 @@ export function CreateUserDialog({
   onClose: () => void;
   onCreated: (user: AdminUser) => void;
 }) {
+  // Closes with the exit animation before telling the parent.
+  const exit = useDialogExit();
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -89,7 +92,7 @@ export function CreateUserDialog({
         },
       });
       setCreated(data.createUser);
-      onCreated(data.createUser);
+      exit.after(onCreated)(data.createUser);
     } catch (error) {
       setSubmitError(adminErrorMessage(error, t));
     } finally {
@@ -98,8 +101,14 @@ export function CreateUserDialog({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={t('common.close')}>
+    <Dialog
+      open={exit.open}
+      onOpenChange={(open) => !open && exit.close(onClose)}
+    >
+      <DialogContent
+        onExitComplete={exit.onExitComplete}
+        closeLabel={t('common.close')}
+      >
         {created ? (
           <>
             <DialogHeader>

@@ -3,7 +3,6 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
 import {
   BellRing,
   ChevronRight,
@@ -29,22 +28,17 @@ import { Switch } from '@finnit/ui/components/ui/switch';
 import { signOut } from '@/app/login/actions';
 import { useSessionUser } from '@/components/session-provider';
 import { LanguageSelect } from '@/components/settings/language-select';
+import { ThemeSwitch } from '@/components/theme-switch';
 
 export function SettingsScreen() {
   const user = useSessionUser();
   const t = useTranslations('settings');
   const tu = useTranslations('ui.profile');
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
   const [toggles, setToggles] = React.useState({
     biometrics: true,
     transactions: true,
     weeklySummary: false,
   });
-
-  // resolvedTheme is only known on the client; avoid a hydration mismatch.
-  React.useEffect(() => setMounted(true), []);
-  const isDark = mounted && resolvedTheme === 'dark';
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
@@ -179,12 +173,7 @@ export function SettingsScreen() {
       >
         <LanguageSelect />
         <SettingRow label={t('darkMode')} icon={Moon} controlId="dark-mode">
-          <Switch
-            id="dark-mode"
-            checked={isDark}
-            disabled={!mounted}
-            onCheckedChange={(v) => setTheme(v ? 'dark' : 'light')}
-          />
+          <ThemeSwitch id="dark-mode" />
         </SettingRow>
         <SettingRow label={t('font')} icon={Type}>
           <span className="text-[13px] font-medium text-highlight">Ubuntu</span>

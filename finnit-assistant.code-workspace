@@ -61,7 +61,7 @@
     "workbench.editor.labelFormat": "short",
     "workbench.tree.indent": 20,
     "workbench.tree.renderIndentGuides": "always",
-    "workbench.colorTheme": "Quiet Light",
+    "workbench.colorTheme": "Dracula Theme",
     "workbench.iconTheme": "material-icon-theme",
     "material-icon-theme.folders.associations": {
       "components": "./packages/ui",

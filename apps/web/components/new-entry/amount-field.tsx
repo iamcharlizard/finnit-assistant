@@ -4,9 +4,16 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 
 import { Label } from '@finnit/ui/components/ui/label';
+import {
+  useMoneyFormat,
+  useMoneyMask,
+} from '@finnit/ui/components/ui/money-input';
 import { cn } from '@finnit/ui/lib/utils';
 
-/** The amount, large, with the account's currency next to it. */
+/**
+ * The amount, large, with the account's currency next to it. Masked like
+ * MoneyInput: only numbers, in the country's format; `value` stays raw.
+ */
 export function AmountField({
   value,
   onChange,
@@ -26,6 +33,8 @@ export function AmountField({
   const t = useTranslations('newEntry.fields');
   const id = React.useId();
   const errorId = `${id}-error`;
+  const format = useMoneyFormat(currency);
+  const mask = useMoneyMask({ value, onValueChange: onChange, format });
   return (
     <div className="flex flex-col gap-1">
       <Label htmlFor={id}>{t('amount')}</Label>
@@ -37,16 +46,13 @@ export function AmountField({
         )}
       >
         <span aria-hidden className="text-title-lg text-on-surface-variant">
-          $
+          {format.symbol}
         </span>
         <input
           id={id}
-          inputMode="decimal"
-          autoComplete="off"
+          {...mask}
           autoFocus={autoFocus}
           placeholder={t('amountPlaceholder')}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           className="min-w-0 flex-1 bg-transparent py-2 text-title-lg font-bold text-on-background tabular-nums outline-none placeholder:text-on-surface-variant/60"

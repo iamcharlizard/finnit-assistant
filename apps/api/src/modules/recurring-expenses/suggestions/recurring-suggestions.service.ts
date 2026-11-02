@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   AccountType,
   AiFeatureKey,
+  LoanType,
   OccurrenceMatchSource,
   Prisma,
   RecurringExpenseKind,
@@ -36,6 +37,7 @@ import {
 } from './detect';
 import {
   AcceptRecurringSuggestionInput,
+  LoanSuggestionDraft,
   RecurringSuggestion,
 } from './recurring-suggestion.dto';
 
@@ -88,6 +90,42 @@ const AI_SCHEMA: JsonSchema = {
   },
   required: ['payments'],
 };
+
+const LOAN_PROMPT = `A Mexican user says a recurring payment detected in their bank movements pays a loan. From the merchant text as printed by the bank, the amount and the cadence, describe the loan for a personal-finance app.
+Return:
+- name: a short name for the loan as the user knows it (e.g. "Préstamo YoTePresto", "Kueski"), generic words in {{language}}.
+- lenderName: who lends the money: the brand of the bank or lending company (e.g. "YoTePresto", "BBVA", "Kueski", "Didi"), or the person's name when the movement is a transfer to a person.
+- loanType: institutional (a bank or lending company: fixed payments for a fixed term, e.g. YoTePresto, Kubo, BBVA personal loan, payroll loan), purchase_financing (buy now pay later, where each purchase adds installments on the same due dates, e.g. Kueski Pay, Didi Paga Después, Aplazo, Atrato, Mercado Crédito, Coppel) or personal (a transfer to a family member, friend or acquaintance).`;
+
+const LOAN_SCHEMA: JsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    name: { type: 'string' },
+    lenderName: { type: 'string' },
+    loanType: { type: 'string', enum: Object.values(LoanType) },
+  },
+  required: ['name', 'lenderName', 'loanType'],
+};
+
+/** Buy-now-pay-later brands, for when there is no AI answer. */
+const PURCHASE_FINANCING =
+  /\b(KUESKI|DIDI|APLAZO|ATRATO|MERCADO ?CREDITO|COPPEL|PAYJOY|KATAPULT)\b/i;
+
+/** Loan type guessed from the merchant text (no AI). */
+export function guessLoanType(merchant: string): LoanType {
+  return PURCHASE_FINANCING.test(merchant)
+    ? LoanType.purchase_financing
+    : LoanType.institutional;
+}
+
+/** A detected suggestion ready to be saved as a recurring expense or a loan. */
+export interface PreparedSuggestion {
+  suggestion: DetectedSuggestion;
+  state: StateRow | null;
+  /** Past charges, oldest first, one per date. */
+  history: PaidHistoryItem[];
+}
 
 const LANGUAGE: Record<AppLocale, string> = {
   es: 'Mexican Spanish',
@@ -159,16 +197,10 @@ export class RecurringSuggestionsService {
     fingerprint: string,
     input: AcceptRecurringSuggestionInput = {},
   ): Promise<RecurringExpense> {
-    this.assertFingerprint(fingerprint);
-    const suggestion = (await this.detect(userId)).find(
-      (s) => s.fingerprint === fingerprint,
+    const { suggestion, state, history } = await this.prepare(
+      userId,
+      fingerprint,
     );
-    if (!suggestion) {
-      throw new NotFoundError('Recurring suggestion not found');
-    }
-    const state = await this.prisma.recurringSuggestionState.findUnique({
-      where: { userId_fingerprint: { userId, fingerprint } },
-    });
 
     const accountId = input.accountId ?? suggestion.accountId ?? undefined;
     const account = accountId
@@ -181,7 +213,6 @@ export class RecurringSuggestionsService {
 
     const frequency = input.frequency ?? suggestion.frequency;
     const interval = input.interval ?? suggestion.interval;
-    const history = this.history(suggestion);
     const lastPaid = history[history.length - 1].dueDate;
     const earliest = history[0].dueDate;
 
@@ -218,15 +249,132 @@ export class RecurringSuggestionsService {
           lastPaid,
           Math.ceil((FREQUENCY_DAYS[frequency] * interval) / 2),
         ),
-        afterCreate: async (tx) => {
-          await tx.recurringSuggestionState.upsert({
-            where: { userId_fingerprint: { userId, fingerprint } },
-            create: { userId, fingerprint, acceptedAt: new Date() },
-            update: { acceptedAt: new Date() },
-          });
-        },
+        afterCreate: (tx) => this.markAccepted(tx, userId, fingerprint),
       },
     );
+  }
+
+  /** The detected suggestion with its stored state and past charges. */
+  async prepare(
+    userId: string,
+    fingerprint: string,
+  ): Promise<PreparedSuggestion> {
+    this.assertFingerprint(fingerprint);
+    const suggestion = (await this.detect(userId)).find(
+      (s) => s.fingerprint === fingerprint,
+    );
+    if (!suggestion) {
+      throw new NotFoundError('Recurring suggestion not found');
+    }
+    const state = await this.prisma.recurringSuggestionState.findUnique({
+      where: { userId_fingerprint: { userId, fingerprint } },
+    });
+    return { suggestion, state, history: this.history(suggestion) };
+  }
+
+  /** Hides the suggestion for good; runs inside the caller's DB transaction. */
+  async markAccepted(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    fingerprint: string,
+  ) {
+    await tx.recurringSuggestionState.upsert({
+      where: { userId_fingerprint: { userId, fingerprint } },
+      create: { userId, fingerprint, acceptedAt: new Date() },
+      update: { acceptedAt: new Date() },
+    });
+  }
+
+  /**
+   * Prefilled loan for a suggestion the user says pays a loan: the schedule
+   * comes from the detected charges, and the AI names the lender and picks
+   * the loan type (asked once per suggestion and cached; without AI the
+   * merchant text decides).
+   */
+  async loanDraft(
+    userId: string,
+    fingerprint: string,
+    locale: AppLocale = DEFAULT_LOCALE,
+  ): Promise<LoanSuggestionDraft> {
+    const prepared = await this.prepare(userId, fingerprint);
+    const { suggestion, history } = prepared;
+    let state = prepared.state;
+    if (!state?.loanClassifiedAt) {
+      state = (await this.classifyLoan(userId, suggestion, locale)) ?? state;
+    }
+
+    const byAi = Boolean(state?.loanClassifiedAt && state.aiLoanType);
+    return {
+      fingerprint,
+      name: state?.aiName || titleCase(suggestion.merchant),
+      lenderName: state?.aiLenderName || titleCase(suggestion.merchant),
+      loanType: state?.aiLoanType ?? guessLoanType(suggestion.merchant),
+      paymentFrequency: suggestion.frequency,
+      interval: suggestion.interval,
+      installmentAmount: suggestion.amount,
+      currency: suggestion.currency,
+      firstPaymentDate: history[0].dueDate,
+      lastPaymentDate: history[history.length - 1].dueDate,
+      paymentsDetected: history.length,
+      paymentAccountId: suggestion.accountId ?? undefined,
+      categoryId: state?.aiCategoryId ?? suggestion.categoryId ?? undefined,
+      merchantPattern: suggestion.merchant,
+      classifiedBy: byAi ? 'ai' : null,
+    };
+  }
+
+  /** One AI call for the loan details; never throws (null without AI). */
+  private async classifyLoan(
+    userId: string,
+    suggestion: DetectedSuggestion,
+    locale: AppLocale,
+  ): Promise<StateRow | null> {
+    try {
+      const { model, data } = await this.withTimeout(
+        this.aiModels.extractFromText(
+          {
+            prompt: LOAN_PROMPT.replace('{{language}}', LANGUAGE[locale]),
+            text: JSON.stringify({
+              merchant: suggestion.merchant,
+              amount: suggestion.amount,
+              currency: suggestion.currency,
+              frequency: suggestion.frequency,
+              interval: suggestion.interval,
+              timesSeen: suggestion.occurrences.length,
+            }),
+            schema: LOAN_SCHEMA,
+            schemaName: 'describe_loan',
+            timeoutMs: AI_TIMEOUT_MS,
+          },
+          { feature: AiFeatureKey.recurring_classification },
+        ),
+      );
+      const answer = (data ?? {}) as Record<string, unknown>;
+      const text = (value: unknown) =>
+        typeof value === 'string'
+          ? value.trim().slice(0, MAX_NAME_LENGTH) || null
+          : null;
+      const values = {
+        aiLoanType:
+          Object.values(LoanType).find((t) => t === answer.loanType) ?? null,
+        aiLenderName: text(answer.lenderName),
+        // The loan name replaces the generic payment name.
+        ...(text(answer.name) && { aiName: text(answer.name) }),
+        aiModel: model.modelId,
+        loanClassifiedAt: new Date(),
+      };
+      const fingerprint = suggestion.fingerprint;
+      return await this.prisma.recurringSuggestionState.upsert({
+        where: { userId_fingerprint: { userId, fingerprint } },
+        create: { userId, fingerprint, ...values },
+        update: values,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Loan suggestion not described by AI: ${(error as Error).message}`,
+      );
+      return null;
+    }
   }
 
   async dismiss(userId: string, fingerprint: string): Promise<boolean> {

@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import { ChartLine } from 'lucide-react';
 
-import { Input } from '@finnit/ui/components/ui/input';
+import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 import { cn } from '@finnit/ui/lib/utils';
 
 import { useGoalProjection } from '@/hooks/use-goal-projection';
@@ -55,12 +55,10 @@ export function GoalProjectionCard({
 
       {view.status !== 'reached' ? (
         <div className="flex flex-col gap-1">
-          <Input
+          <MoneyInput
             label={t('monthly')}
-            inputMode="decimal"
-            autoComplete="off"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onValueChange={(value) => setText(value)}
             error={invalid ? t('monthlyInvalid') : undefined}
           />
           <p className="flex flex-wrap items-center gap-x-2 px-1 text-xs text-on-surface-variant">

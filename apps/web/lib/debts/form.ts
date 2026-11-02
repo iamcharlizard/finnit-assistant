@@ -39,7 +39,7 @@ export type DebtFormErrors = Partial<Record<DebtField, DebtErrorCode>>;
 
 export const NAME_MAX = 100;
 export const MAX_AMOUNT = 999_999_999;
-export const MAX_RATE = 100;
+export const MAX_RATE = 1000;
 
 const amountText = (amount: number) =>
   Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
@@ -47,7 +47,8 @@ const amountText = (amount: number) =>
 export function newDebtForm(): DebtForm {
   return {
     name: '',
-    kind: 'loan',
+    // Loans have their own dialog (types, terms and schedule).
+    kind: 'card',
     principal: '',
     rate: '',
     minPayment: '',

@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Landmark } from 'lucide-react';
 
-import { Input } from '@finnit/ui/components/ui/input';
+import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
 import { ControlSection } from './control-section';
 
@@ -27,13 +27,10 @@ export function ExtraDebtControl({
       title={t('title')}
       description={t('description')}
     >
-      <Input
+      <MoneyInput
         label={t('amount')}
-        inputMode="decimal"
-        autoComplete="off"
-        placeholder="0.00"
         value={text}
-        onChange={(e) => onChange(e.target.value)}
+        onValueChange={(value) => onChange(value)}
         error={error}
       />
       <p className="px-1 text-xs text-on-surface-variant">{t('note')}</p>

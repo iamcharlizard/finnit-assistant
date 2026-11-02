@@ -26,7 +26,8 @@ const child = (
  * Starter categories every new user gets. English names must be unique per
  * user (category_user_name_unique), including children across parents.
  * Migration 20261015090000_category_i18n_and_ai_features keys existing
- * users' categories with this same list: keep them in sync.
+ * users' categories with this same list, and 20261102090000_debt_categories
+ * adds Loans & Debts to them: keep them in sync.
  */
 export const DEFAULT_CATEGORIES: DefaultCategory[] = [
   // Expenses
@@ -132,6 +133,23 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
     ],
   },
 
+  // Payments of loans, purchase financing and MSI (the default category of
+  // their payments; see debtPaymentCategoryKey).
+  {
+    key: 'categories.debts',
+    en: 'Loans & Debts',
+    es: 'Préstamos y deudas',
+    children: [
+      child('debts', 'loan_payments', 'Loan Payments', 'Pago de préstamos'),
+      child(
+        'debts',
+        'installment_payments',
+        'Installment Payments',
+        'Pagos a plazos',
+      ),
+    ],
+  },
+
   // Income
   {
     key: 'categories.income',
@@ -215,4 +233,31 @@ export async function createDefaultCategories(
       });
     }
   }
+}
+
+export const LOAN_PAYMENTS_CATEGORY_KEY = 'categories.debts.loan_payments';
+export const INSTALLMENT_PAYMENTS_CATEGORY_KEY =
+  'categories.debts.installment_payments';
+
+/**
+ * Default category of a debt's payments: purchase financing and MSI are
+ * installment payments, any other loan a loan payment.
+ */
+export function debtPaymentCategoryKey(kind: 'loan' | 'installment'): string {
+  return kind === 'installment'
+    ? INSTALLMENT_PAYMENTS_CATEGORY_KEY
+    : LOAN_PAYMENTS_CATEGORY_KEY;
+}
+
+/** The user's default category with that key, if they still have it. */
+export async function defaultCategoryId(
+  prisma: PrismaClientLike,
+  userId: string,
+  key: string,
+): Promise<string | undefined> {
+  const row = await prisma.category.findFirst({
+    where: { userId, key },
+    select: { id: true },
+  });
+  return row?.id;
 }

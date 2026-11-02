@@ -18,7 +18,7 @@ import { ExpenseCard } from './expense-card';
 
 const STATUS_FILTERS: StatusFilter[] = ['active', 'paused', 'all'];
 
-/** "Mis pagos recurrentes": every expense, filtered by kind and status. */
+/** "Mis pagos recurrentes" tab: every expense, filtered by kind and status. */
 export function ExpenseList({
   expenses,
   busyId,
@@ -45,24 +45,7 @@ export function ExpenseList({
   const shown = filterExpenses(expenses, { kind: activeKind, status });
 
   return (
-    <section
-      aria-labelledby="recurring-list-title"
-      className="flex flex-col gap-4"
-    >
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-col gap-0.5">
-          <h2
-            id="recurring-list-title"
-            className="text-title-lg font-bold text-on-background"
-          >
-            {t('recurring.list.title')}
-          </h2>
-          <span className="text-xs text-on-surface-variant">
-            {t('recurring.list.count', { count: expenses.length })}
-          </span>
-        </div>
-      </div>
-
+    <div className="flex flex-col gap-4">
       {expenses.length === 0 ? (
         <div className="flex flex-col items-center gap-3">
           <EmptyState
@@ -126,6 +109,6 @@ export function ExpenseList({
           )}
         </>
       )}
-    </section>
+    </div>
   );
 }

@@ -5,6 +5,7 @@ import { Info, RotateCcw } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 
+import { PageHeader } from '@/components/page-header';
 import { formatMoney } from '@/lib/finance/money';
 import { useLocalizer } from '@/lib/i18n/client';
 import { compactAmount } from '@/lib/simulator/chart';
@@ -167,24 +168,20 @@ export function SimulatorScreen({ data }: { data: SimulatorData }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-3 px-1">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-[28px] leading-9 font-bold text-brand-ink sm:text-[32px] sm:leading-10">
-            {t('simulator.title')}
-          </h1>
-          <p className="text-[15px] text-on-surface-variant">
-            {t('simulator.subtitle')}
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={reset}
-          disabled={neutral}
-        >
-          <RotateCcw aria-hidden /> {t('simulator.reset')}
-        </Button>
-      </header>
+      <PageHeader
+        title={t('simulator.title')}
+        subtitle={t('simulator.subtitle')}
+        actions={
+          <Button
+            type="button"
+            variant="outline"
+            onClick={reset}
+            disabled={neutral}
+          >
+            <RotateCcw aria-hidden /> {t('simulator.reset')}
+          </Button>
+        }
+      />
 
       <BaselineCard
         balance={money(data.baseline.balance)}

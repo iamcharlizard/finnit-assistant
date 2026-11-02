@@ -8,7 +8,7 @@ import {
   Combobox,
   type ComboboxOption,
 } from '@finnit/ui/components/ui/combobox';
-import { Input } from '@finnit/ui/components/ui/input';
+import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
 import type { BudgetErrorCode, CapRow } from '@/lib/budgets/form';
 
@@ -47,13 +47,11 @@ export function CapField({
         className="col-span-1"
       />
       <div className="order-3 col-span-1 sm:order-none">
-        <Input
+        <MoneyInput
           aria-label={t('form.capAmount', { category: categoryLabel })}
-          inputMode="decimal"
-          autoComplete="off"
           placeholder={t('form.capPlaceholder')}
           value={row.amount}
-          onChange={(e) => onChange({ amount: e.target.value })}
+          onValueChange={(value) => onChange({ amount: value })}
           error={errorText(errors?.amount)}
         />
       </div>

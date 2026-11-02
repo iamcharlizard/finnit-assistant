@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
+import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 
 import { adminErrorMessage } from '@/lib/admin/errors';
 import {
@@ -35,6 +36,8 @@ export function SetPasswordDialog({
   onClose: () => void;
   onSaved: (user: AdminUser) => void;
 }) {
+  // Closes with the exit animation before telling the parent.
+  const exit = useDialogExit();
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState<string | undefined>();
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -65,7 +68,7 @@ export function SetPasswordDialog({
         window.location.assign('/login');
         return;
       }
-      onSaved(data.setUserPassword);
+      exit.after(onSaved)(data.setUserPassword);
       setSaved(true);
     } catch (e) {
       setSubmitError(adminErrorMessage(e, t));
@@ -75,8 +78,14 @@ export function SetPasswordDialog({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={t('common.close')}>
+    <Dialog
+      open={exit.open}
+      onOpenChange={(open) => !open && exit.close(onClose)}
+    >
+      <DialogContent
+        onExitComplete={exit.onExitComplete}
+        closeLabel={t('common.close')}
+      >
         {saved ? (
           <>
             <DialogHeader>

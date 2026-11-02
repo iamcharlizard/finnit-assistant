@@ -847,6 +847,8 @@ describe('TransactionsService', () => {
           transferFrom: true,
           transferTo: true,
           debtPayment: true,
+          debtCharge: { select: { id: true } },
+          debtDisbursement: { select: { id: true } },
           goalContributions: true,
         },
       });

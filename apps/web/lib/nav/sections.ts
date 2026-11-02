@@ -3,6 +3,7 @@ import {
   ChartLine,
   CreditCard,
   FileText,
+  HandCoins,
   History,
   House,
   Landmark,
@@ -42,6 +43,7 @@ export type NavItemKey =
   | 'cards'
   | 'budgets'
   | 'debts'
+  | 'loans'
   | 'goals'
   | 'simulator'
   | 'analytics'
@@ -87,6 +89,7 @@ export const NAV_SECTIONS: ReadonlyArray<NavSection> = [
     items: [
       { key: 'budgets', href: '/planning/budgets', icon: PiggyBank },
       { key: 'debts', href: '/planning/debts', icon: Landmark },
+      { key: 'loans', href: '/planning/loans', icon: HandCoins },
       { key: 'goals', href: '/planning/goals', icon: Target },
       { key: 'simulator', href: '/planning/simulator', icon: Calculator },
     ],

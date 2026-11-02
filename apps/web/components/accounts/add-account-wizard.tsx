@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
+import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 
 import { accountErrorMessage, createManualAccount } from '@/lib/accounts/api';
 import {
@@ -52,6 +53,8 @@ export function AddAccountWizard({
   onClose: () => void;
   onCreated: (accountId: string) => void;
 }) {
+  // Closes with the exit animation before telling the parent.
+  const exit = useDialogExit();
   const l = useLocalizer();
   const { t } = l;
   const [form, setForm] = React.useState<ManualAccountForm>(
@@ -125,7 +128,7 @@ export function AddAccountWizard({
         run: gql,
       });
       if (created.termsSaved) {
-        onCreated(created.id);
+        exit.after(onCreated)(created.id);
       } else {
         setPartial({
           id: created.id,
@@ -146,6 +149,7 @@ export function AddAccountWizard({
     {
       type: form.type ?? 'debit',
       label: form.nickname.trim() || name,
+      nickname: form.nickname.trim() || null,
       bankName: bankNameOf(form) ?? (form.nickname.trim() || name),
       last4: form.last4 || null,
       balance: openingBalance(form),
@@ -155,8 +159,15 @@ export function AddAccountWizard({
   );
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !saving && onClose()}>
-      <DialogContent closeLabel={t('common.close')} className="sm:max-w-xl">
+    <Dialog
+      open={exit.open}
+      onOpenChange={(open) => !open && !saving && exit.close(onClose)}
+    >
+      <DialogContent
+        onExitComplete={exit.onExitComplete}
+        closeLabel={t('common.close')}
+        className="sm:max-w-xl"
+      >
         {partial ? (
           <>
             <DialogHeader>
@@ -169,7 +180,10 @@ export function AddAccountWizard({
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="secondary" onClick={() => onCreated(partial.id)}>
+              <Button
+                variant="secondary"
+                onClick={() => exit.after(onCreated)(partial.id)}
+              >
                 {t('accounts.wizard.viewAccount')}
               </Button>
             </DialogFooter>
@@ -237,7 +251,11 @@ export function AddAccountWizard({
                   {t('accounts.wizard.back')}
                 </Button>
               ) : (
-                <Button type="button" variant="outline" onClick={onClose}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => exit.close(onClose)}
+                >
                   {t('common.cancel')}
                 </Button>
               )}

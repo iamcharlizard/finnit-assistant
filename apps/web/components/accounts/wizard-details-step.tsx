@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 
 import { Input } from '@finnit/ui/components/ui/input';
+import { NumberInput } from '@finnit/ui/components/ui/number-input';
 import { Label } from '@finnit/ui/components/ui/label';
 import {
   Select,
@@ -65,16 +66,12 @@ export function WizardDetailsStep({
 
       <div className="grid gap-4 sm:grid-cols-2">
         {withBank ? (
-          <Input
+          <NumberInput
             label={t('last4')}
-            inputMode="numeric"
-            autoComplete="off"
-            maxLength={4}
+            maxDigits={4}
             placeholder={t('last4Placeholder')}
             value={form.last4}
-            onChange={(e) =>
-              onChange({ last4: e.target.value.replace(/\D/g, '') })
-            }
+            onValueChange={(value) => onChange({ last4: value })}
             error={errors.last4}
           />
         ) : null}

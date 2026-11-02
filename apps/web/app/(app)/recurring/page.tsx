@@ -5,6 +5,7 @@ import { RecurringScreen } from '@/components/screens/recurring-screen';
 import { todayKey } from '@/lib/finance/dates';
 import { loadRecurring } from '@/lib/recurring/load';
 import { parseDateParam, parseViewParam } from '@/lib/recurring/range';
+import { parseTabParam } from '@/lib/recurring/tabs';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();
@@ -15,12 +16,13 @@ export default async function RecurringPage({
   searchParams,
 }: PageProps<'/recurring'>) {
   // ?month= comes from the old /calendar links.
-  const { view, date, month } = await searchParams;
+  const { view, date, month, tab } = await searchParams;
   const parsedView = parseViewParam(view);
   const parsedDate = parseDateParam({ date, month }, todayKey());
   return (
     <RecurringScreen
       data={await loadRecurring({ view: parsedView, date: parsedDate })}
+      initialTab={parseTabParam(tab)}
     />
   );
 }

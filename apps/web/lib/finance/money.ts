@@ -22,6 +22,12 @@ const CONVENTIONS: Record<Locale, MoneyConventions> = {
 
 export const DEFAULT_CURRENCY = 'MXN';
 
+/**
+ * Country whose format money inputs use (MoneyFormatProvider). Mexico for
+ * everyone until users pick their country.
+ */
+export const MONEY_COUNTRY = 'MX' as const;
+
 export interface MoneyOptions {
   /** negative: "-" only when below zero; always: "+"/"-"; never: absolute value. */
   sign?: 'negative' | 'always' | 'never';

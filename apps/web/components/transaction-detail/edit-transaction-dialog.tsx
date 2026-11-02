@@ -8,6 +8,7 @@ import { Combobox } from '@finnit/ui/components/ui/combobox';
 import { DatePicker } from '@finnit/ui/components/ui/date-picker';
 import {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -15,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
+import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { Input } from '@finnit/ui/components/ui/input';
 import { Textarea } from '@finnit/ui/components/ui/textarea';
 
@@ -64,6 +66,8 @@ export function EditTransactionDialog({
   /** `changed` is false when nothing was different. */
   onSaved: (changed: boolean) => void;
 }) {
+  // Closes with the exit animation before telling the parent.
+  const exit = useDialogExit();
   const { t } = useLocalizer();
   const tf = useTranslations('transaction.form');
   const locale = useLocale();
@@ -96,14 +100,14 @@ export function EditTransactionDialog({
     if (Object.keys(found).length > 0) return;
     const input = buildUpdateInput(form, initial, rules);
     if (!input) {
-      onSaved(false);
+      exit.after(onSaved)(false);
       return;
     }
     setSaving(true);
     setSubmitError(null);
     try {
       await updateTransaction(transactionId, input, gql);
-      onSaved(true);
+      exit.after(onSaved)(true);
     } catch (error) {
       setSubmitError(transactionErrorMessage(error, t));
       setSaving(false);
@@ -111,10 +115,14 @@ export function EditTransactionDialog({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !saving && onClose()}>
+    <Dialog
+      open={exit.open}
+      onOpenChange={(open) => !open && !saving && exit.close(onClose)}
+    >
       <DialogContent
+        onExitComplete={exit.onExitComplete}
         closeLabel={t('common.close')}
-        className="max-h-[92dvh] overflow-y-auto sm:max-w-lg"
+        className="sm:max-w-lg"
       >
         <form onSubmit={submit} noValidate className="flex flex-col gap-5">
           <DialogHeader>
@@ -128,73 +136,75 @@ export function EditTransactionDialog({
             </DialogDescription>
           </DialogHeader>
 
-          {rules.amount ? (
-            <AmountField
-              value={form.amount}
-              onChange={(amount) => update({ amount })}
-              currency={currency}
-              error={
-                errors.amount
-                  ? t(`transaction.validation.${errors.amount}`)
-                  : undefined
-              }
-            />
-          ) : null}
-          {rules.date ? (
-            <DatePicker
-              label={tf('date')}
-              value={form.date || undefined}
-              onChange={(date) => update({ date: date ?? '' })}
-              max={today}
-              locale={locale}
-              placeholder={tf('datePlaceholder')}
-              required
-              error={
-                errors.date
-                  ? t(`transaction.validation.${errors.date}`)
-                  : undefined
-              }
-            />
-          ) : null}
-          {rules.category ? (
-            <Combobox
-              label={tf('category')}
-              options={options}
-              value={form.categoryId || undefined}
-              onChange={(categoryId) =>
-                update({ categoryId: categoryId ?? '' })
-              }
-              placeholder={tf('categoryPlaceholder')}
-              searchPlaceholder={tf('categorySearch')}
-              emptyText={tf('noResults')}
-            />
-          ) : null}
-          {rules.merchant ? (
-            <Input
-              label={tf('merchant')}
-              value={form.merchantName}
-              maxLength={MERCHANT_MAX}
-              autoComplete="off"
-              placeholder={tf('merchantPlaceholder')}
-              onChange={(e) => update({ merchantName: e.target.value })}
-            />
-          ) : null}
-          {rules.description ? (
-            <Textarea
-              label={tf('description')}
-              value={form.description}
-              maxLength={DESCRIPTION_MAX}
-              rows={3}
-              placeholder={tf('descriptionPlaceholder')}
-              onChange={(e) => update({ description: e.target.value })}
-            />
-          ) : null}
+          <DialogBody>
+            {rules.amount ? (
+              <AmountField
+                value={form.amount}
+                onChange={(amount) => update({ amount })}
+                currency={currency}
+                error={
+                  errors.amount
+                    ? t(`transaction.validation.${errors.amount}`)
+                    : undefined
+                }
+              />
+            ) : null}
+            {rules.date ? (
+              <DatePicker
+                label={tf('date')}
+                value={form.date || undefined}
+                onChange={(date) => update({ date: date ?? '' })}
+                max={today}
+                locale={locale}
+                placeholder={tf('datePlaceholder')}
+                required
+                error={
+                  errors.date
+                    ? t(`transaction.validation.${errors.date}`)
+                    : undefined
+                }
+              />
+            ) : null}
+            {rules.category ? (
+              <Combobox
+                label={tf('category')}
+                options={options}
+                value={form.categoryId || undefined}
+                onChange={(categoryId) =>
+                  update({ categoryId: categoryId ?? '' })
+                }
+                placeholder={tf('categoryPlaceholder')}
+                searchPlaceholder={tf('categorySearch')}
+                emptyText={tf('noResults')}
+              />
+            ) : null}
+            {rules.merchant ? (
+              <Input
+                label={tf('merchant')}
+                value={form.merchantName}
+                maxLength={MERCHANT_MAX}
+                autoComplete="off"
+                placeholder={tf('merchantPlaceholder')}
+                onChange={(e) => update({ merchantName: e.target.value })}
+              />
+            ) : null}
+            {rules.description ? (
+              <Textarea
+                label={tf('description')}
+                value={form.description}
+                maxLength={DESCRIPTION_MAX}
+                rows={3}
+                placeholder={tf('descriptionPlaceholder')}
+                onChange={(e) => update({ description: e.target.value })}
+              />
+            ) : null}
 
-          {submitError ? (
-            <p role="alert" className="text-sm text-expense">
-              {submitError}
-            </p>
-          ) : null}
+            {submitError ? (
+              <p role="alert" className="text-sm text-expense">
+                {submitError}
+              </p>
+            ) : null}
+          </DialogBody>
 
           <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
             <DialogClose asChild>

@@ -243,6 +243,25 @@ export class DebtCharge {
   })
   installmentsPaid: number;
 
+  @Field({
+    nullable: true,
+    description:
+      'First due date of its installments; null = the first after its date',
+  })
+  firstPaymentDate?: Date;
+
+  @Field(() => LoanInterestMode, {
+    nullable: true,
+    description: 'How its interest was given (with installments)',
+  })
+  interestMode?: LoanInterestMode;
+
+  @Field(() => Float, { nullable: true, description: 'Rate mode: annual %' })
+  interestRateAnnual?: number;
+
+  @Field({ description: 'Rate mode: 16% VAT on the interest' })
+  includesVat: boolean;
+
   @Field(() => DebtChargeDestination)
   destination: DebtChargeDestination;
 
@@ -730,7 +749,7 @@ export class AddDebtChargeInput {
   @Field({
     nullable: true,
     description:
-      'Personal loans paid in installments: first due date when the loan has no payment schedule yet (default: a month after the charge)',
+      'With installments: when the first one is due (may skip due dates of the loan). Default: the first due date after the charge; for a personal loan without a schedule, a month after it',
   })
   @IsOptional()
   @IsDateString()

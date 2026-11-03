@@ -11,7 +11,12 @@ import {
   dueDatesAfter,
   toDateOnly,
 } from '../recurring-expenses/schedule.util';
-import { debtBalance, FinancedCharge, splitInstallments } from './loan-math';
+import {
+  chargeDueDates,
+  debtBalance,
+  FinancedCharge,
+  splitInstallments,
+} from './loan-math';
 
 type Client = Prisma.TransactionClient;
 
@@ -57,6 +62,7 @@ export function financedCharges(debt: {
     totalToRepay: Prisma.Decimal;
     installments: number | null;
     installmentsPaid: number;
+    firstPaymentDate: Date | null;
   }[];
 }): FinancedCharge[] {
   const charges: FinancedCharge[] = [];
@@ -74,6 +80,7 @@ export function financedCharges(debt: {
         totalToRepay: Number(charge.totalToRepay),
         installments: charge.installments,
         installmentsPaid: charge.installmentsPaid,
+        firstPaymentDate: charge.firstPaymentDate,
         description: charge.description,
       });
     }
@@ -181,10 +188,14 @@ export function paidInstallments(
     totalToRepay: number;
     installments: number | null;
     installmentsPaid: number;
+    firstPaymentDate: Date | null;
   },
 ): { date: Date; amount: number }[] {
   if (!rule || !charge.installments || charge.installmentsPaid <= 0) return [];
-  const dates = dueDatesAfter(rule, charge.date, charge.installments);
+  const dates = chargeDueDates(rule, {
+    ...charge,
+    installments: charge.installments,
+  });
   const amounts = splitInstallments(charge.totalToRepay, dates.length);
   return dates
     .slice(0, charge.installmentsPaid)

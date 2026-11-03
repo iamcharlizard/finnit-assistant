@@ -1,5 +1,6 @@
 import { LoanInterestMode, RecurringFrequency } from '@finnit/database';
 import {
+  addDays,
   dueDatesAfter,
   periodsPerYear,
   ScheduleRule,
@@ -201,6 +202,8 @@ export interface FinancedCharge {
   installments: number;
   /** The first ones, paid before registering it. */
   installmentsPaid?: number;
+  /** When the first one is due; else the first due date after `date`. */
+  firstPaymentDate?: Date | null;
   /** What was bought or lent, when said. */
   description?: string | null;
 }
@@ -221,6 +224,21 @@ export interface ChargeInstallment {
 }
 
 /**
+ * Due dates of a charge's installments: from its first payment date (a due
+ * date of the loan on or after it), else from the first one after the
+ * charge.
+ */
+export function chargeDueDates(
+  rule: ScheduleRule,
+  charge: Pick<FinancedCharge, 'date' | 'installments' | 'firstPaymentDate'>,
+): Date[] {
+  const after = charge.firstPaymentDate
+    ? addDays(charge.firstPaymentDate, -1)
+    : charge.date;
+  return dueDatesAfter(rule, after, charge.installments);
+}
+
+/**
  * The installments of every charge by due date: each charge is split into
  * its own installments, which fall on the loan's due dates starting with
  * the first one after the charge. The first `installmentsPaid` are paid.
@@ -231,7 +249,7 @@ export function chargeInstallments(
 ): Map<number, ChargeInstallment[]> {
   const byDate = new Map<number, ChargeInstallment[]>();
   for (const charge of charges) {
-    const dates = dueDatesAfter(rule, charge.date, charge.installments);
+    const dates = chargeDueDates(rule, charge);
     const amounts = splitInstallments(charge.totalToRepay, dates.length);
     dates.forEach((date, i) => {
       const key = date.getTime();

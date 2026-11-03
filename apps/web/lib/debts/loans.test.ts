@@ -392,22 +392,27 @@ describe('charge form', () => {
 });
 
 describe('personal loan in installments', () => {
-  it('asks the first payment only while the loan has no schedule', () => {
+  it('asks the first payment of amounts paid in their own installments', () => {
     const form = { installments: '3' };
     assert.equal(
+      asksFirstPayment({ loanType: 'personal', installmentAmount: null }, form),
+      true,
+    );
+    assert.equal(
       asksFirstPayment(
-        { loanType: 'personal', recurringExpenseId: null },
+        { loanType: 'purchase_financing', installmentAmount: 325 },
         form,
       ),
       true,
     );
+    // A personal loan with a fixed payment takes no installments.
     assert.equal(
-      asksFirstPayment({ loanType: 'personal', recurringExpenseId: 'r' }, form),
+      asksFirstPayment({ loanType: 'personal', installmentAmount: 500 }, form),
       false,
     );
     assert.equal(
       asksFirstPayment(
-        { loanType: 'personal', recurringExpenseId: null },
+        { loanType: 'personal', installmentAmount: null },
         { installments: '' },
       ),
       false,
@@ -444,6 +449,10 @@ describe('personal loan in installments', () => {
       totalToRepay: 3_000,
       installments: 3,
       installmentsPaid: 0,
+      firstPaymentDate: '2026-11-15T00:00:00.000Z',
+      interestMode: 'rate',
+      interestRateAnnual: 60,
+      includesVat: true,
       destination: 'deposit',
       transactionId: 't',
       depositAccountId: 'debit',
@@ -452,6 +461,10 @@ describe('personal loan in installments', () => {
       lendingMethod: 'credit_card',
     });
     assert.equal(form.date, '2026-10-02');
+    assert.equal(form.firstPaymentDate, '2026-11-15');
+    assert.equal(form.interest, 'rate');
+    assert.equal(form.rate, '60');
+    assert.equal(form.includesVat, true);
     assert.equal(form.totalToRepay, '');
     assert.equal(form.installments, '3');
     assert.equal(form.depositAccountId, 'debit');
@@ -734,6 +747,10 @@ describe('loan detail view', () => {
             totalToRepay: 600,
             installments: 2,
             installmentsPaid: 0,
+            firstPaymentDate: null,
+            interestMode: null,
+            interestRateAnnual: null,
+            includesVat: false,
             destination: 'purchase',
             transactionId: null,
             depositAccountId: null,
@@ -828,6 +845,10 @@ describe('loan detail view', () => {
             totalToRepay: 1_000,
             installments: null,
             installmentsPaid: 0,
+            firstPaymentDate: null,
+            interestMode: null,
+            interestRateAnnual: null,
+            includesVat: false,
             destination: 'purchase',
             transactionId: null,
             depositAccountId: null,

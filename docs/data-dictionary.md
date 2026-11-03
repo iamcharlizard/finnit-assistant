@@ -255,6 +255,10 @@ principal | numeric | ✔ | Amount borrowed | —
 total_to_repay | numeric | ✔ | Principal + interest | —
 installments | smallint | — | Payments of this charge | Required for purchase financing
 installments_paid | smallint | ✔ | Of those, paid before it was registered | Default 0; each is a historical `debt_payment` with `charge_id`
+first_payment_date | date | — | When its first installment is due | Null = the loan's first due date after `date`; may skip due dates (next quincena)
+interest_mode | enum | — | How its interest was given | `rate|total_amount|installment_amount`; null without installments
+interest_rate_annual | numeric(9,4) | — | Annual rate (rate mode) | —
+includes_vat | boolean | ✔ | 16% VAT on interest (rate mode) | Default false
 destination | enum | ✔ | Where the money went | `deposit|purchase`
 transaction_id | uuid | — | Deposit into an account | FK→transaction.id, unique
 purpose_category_id | uuid | — | What this money was for | FK→category.id (set null); informative only

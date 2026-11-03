@@ -4,6 +4,7 @@ import {
   debtBalance,
   LoanTermsError,
   periodicRate,
+  chargeDueDates,
   chargeInstallments,
   purchaseFinancingSchedule,
   resolveLoanTerms,
@@ -204,6 +205,32 @@ describe('loan-math', () => {
         ['2026-12-10', ['Pantalla 2/3 1000', '- 1/2 250']],
         ['2027-01-10', ['Pantalla 3/3 1000', '- 2/2 250']],
       ]);
+    });
+  });
+
+  describe('chargeDueDates', () => {
+    const rule = {
+      frequency: RecurringFrequency.semimonthly,
+      interval: 1,
+      startDate: d('2026-10-15'),
+    };
+
+    it('starts from the first due date after the charge', () => {
+      expect(
+        chargeDueDates(rule, { date: d('2026-10-20'), installments: 2 }).map(
+          iso,
+        ),
+      ).toEqual(['2026-10-31', '2026-11-15']);
+    });
+
+    it('starts on or after its first payment date when given', () => {
+      expect(
+        chargeDueDates(rule, {
+          date: d('2026-10-20'),
+          installments: 2,
+          firstPaymentDate: d('2026-11-15'),
+        }).map(iso),
+      ).toEqual(['2026-11-15', '2026-11-30']);
     });
   });
 

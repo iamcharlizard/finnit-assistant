@@ -1266,7 +1266,8 @@
       "save": "Save",
       "installmentsPaid": "Payments already made (optional)",
       "installmentsPaidPlaceholder": "E.g. 1",
-      "installmentsPaidHint": "The ones you paid before registering it: they lower what you owe but do not count as this month’s expenses."
+      "installmentsPaidHint": "The ones you paid before registering it: they lower what you owe but do not count as this month’s expenses.",
+      "firstPaymentHintScheduled": "Left empty, the loan’s next due date after the date. Pick a later one if its first payment comes a period later."
     },
     "chargeValidation": {
       "dateRequired": "Pick the date.",

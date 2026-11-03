@@ -350,6 +350,26 @@ Solo el servidor de Next habla con la API: el navegador llama a `/api/graphql` d
 - `FINNIT_API_URL`: la API de su mismo ambiente (testing → `api-test`, production → `api`).
 - `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`: el cliente "Finnit Web" (ver "Login con Google"). Sin ellas, el botón de Google muestra que no está disponible.
 
+## Copiar una base de producción o testing a local
+
+`pnpm db:pull <production|testing>` reemplaza la base local (`DATABASE_URL` de `packages/database/.env`, debe estar en `localhost`) por una copia del ambiente. Antes respalda la base local.
+
+Las bases no publican puerto, así que el script entra por SSH al servidor y corre `pg_dump` dentro del contenedor de la base del ambiente. La copia regresa por la misma conexión. `pg_restore` corre dentro del contenedor local `finnit-postgres`, así que no hace falta instalar nada en la Mac.
+
+1. Copia `packages/database/.env.remote.example` a `packages/database/.env.remote` (ignorado por git) y pon `SERVER_SSH` (`usuario@servidor` o un alias de `~/.ssh/config`). El contenedor se encuentra solo por nombre: `finnit-db-<sufijo>` para production y `finnit-db-test-<sufijo>` para testing. Si no coincide, ajusta `<ENV>_DB_CONTAINER`. La base y el usuario se leen del contenedor (`POSTGRES_DB`, `POSTGRES_USER`). Si el usuario del servidor necesita `sudo` para Docker, pon `REMOTE_DOCKER=sudo -n docker` y permite `sudo` sin contraseña solo para Docker (`/etc/sudoers.d/`): el script no puede escribir contraseñas.
+2. Revisa la conexión sin copiar nada: `pnpm db:pull testing --check`.
+3. Copia el ambiente: `pnpm db:pull testing`. Pide escribir el nombre del ambiente para confirmar; `--yes` se lo salta.
+
+Qué hace:
+
+- Apaga IPv6 en los servicios de red de la Mac mientras habla con el servidor (pide `sudo`) y lo vuelve a encender al terminar, también si algo falla o lo cancelas con Ctrl-C. Además, `ssh` va forzado a IPv4. `--keep-ipv6` deja IPv6 como está.
+- Respalda la base local en `packages/database/backups/local/<base>-<fecha>.dump` (ignorado por git).
+- Si la restauración falla, deja la base local como estaba usando ese respaldo.
+- Borra la copia del ambiente al terminar, porque contiene datos reales; `--keep-dump` la conserva. Si la restauración falla, la copia se queda para revisarla.
+- Si el repo tiene migraciones más nuevas que el ambiente, corre `pnpm db:migrate:deploy` después. Reinicia la API local, porque se cerraron sus conexiones.
+
+Para volver a un respaldo local: `pnpm db:pull --restore backups/local/<archivo>.dump`. Antes de reemplazar la base, también respalda la actual.
+
 ## Rollback
 
 - **Código:** cada despliegue publica `sha-<commit>`. En Dokploy cambia la imagen a `ghcr.io/iamcharlizard/finnit-api:sha-<commit anterior>` y pulsa *Deploy*. Para volver al flujo automático, regresa la imagen a `:latest` (production) o `:testing` (testing).

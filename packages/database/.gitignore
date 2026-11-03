@@ -3,3 +3,7 @@ node_modules
 .env
 
 /generated
+
+# db:pull: SSH settings and local backups (real users' data)
+.env.remote
+backups/

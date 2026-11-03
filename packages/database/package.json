@@ -22,6 +22,7 @@
     "db:validate": "tsx scripts/validate-schema.ts",
     "db:backup": "psql $DATABASE_URL -f scripts/backup.sql",
     "db:rollback": "psql $DATABASE_URL -f scripts/rollback.sql",
+    "db:pull": "bash scripts/db-pull.sh",
     "dev": "tsup src/* --watch",
     "format": "prisma format",
     "lint": "eslint . --max-warnings 0",

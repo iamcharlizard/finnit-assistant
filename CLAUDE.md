@@ -202,6 +202,7 @@ src/
 ### Root Level
 ```bash
 pnpm dev              # Start all dev servers
+pnpm dev:local        # API (3000) + web (3001) in development: starts Docker services, applies migrations, checks ports (scripts/dev.sh)
 pnpm build            # Build all workspaces
 pnpm lint             # Lint all workspaces
 pnpm format           # Prettier across **/*.{ts,tsx,md}
@@ -228,6 +229,7 @@ pnpm turbo run db:reset:seed --filter=@finnit/database    # Reset + seed in one 
 pnpm turbo run db:validate --filter=@finnit/database      # Validate schema
 pnpm turbo run db:backup --filter=@finnit/database        # Backup via psql
 pnpm turbo run db:rollback --filter=@finnit/database      # Run rollback.sql
+pnpm db:pull <production|testing>                         # Replace the local DB with a copy of an environment over SSH (backs up local first; IPv6 off meanwhile; docs/deployment.md)
 pnpm turbo run studio --filter=@finnit/database           # Prisma Studio (port 5555)
 ```
 

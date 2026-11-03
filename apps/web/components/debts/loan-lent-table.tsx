@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import { DataTable, type ColumnDef } from '@finnit/ui/components/ui/data-table';
@@ -14,14 +14,17 @@ import type { LentRow } from '@/lib/debts/detail-view';
  * Every amount of the loan: the first one and each added later (another
  * loan from the same person, a purchase with their card…), with when, how
  * it was lent and what for. Newest first; amounts without a date go last.
+ * Amounts added later can be edited or removed.
  */
 export function LoanLentTable({
   rows,
   busy,
+  onEdit,
   onDelete,
 }: {
   rows: LentRow[];
   busy: string | null;
+  onEdit: (chargeId: string) => void;
   onDelete: (chargeId: string) => void;
 }) {
   const td = useTranslations('debts.detail');
@@ -68,9 +71,20 @@ export function LoanLentTable({
         cell: ({ row }) => (
           <span className="flex flex-col items-end leading-tight">
             <span className="font-medium">{row.original.amount}</span>
-            {row.original.total ? (
+            {row.original.total || row.original.installments ? (
               <span className="text-xs text-on-surface-variant">
-                {td('lent.toRepay', { amount: row.original.total })}
+                {[
+                  row.original.total
+                    ? td('lent.toRepay', { amount: row.original.total })
+                    : null,
+                  row.original.installments
+                    ? td('lent.installments', {
+                        count: row.original.installments,
+                      })
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
               </span>
             ) : null}
           </span>
@@ -80,24 +94,40 @@ export function LoanLentTable({
       {
         id: 'actions',
         header: () => <span className="sr-only">{td('columns.actions')}</span>,
-        cell: ({ row }) =>
-          row.original.chargeId ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-8 min-h-8"
-              disabled={busy === row.original.chargeId}
-              aria-label={td('deleteCharge')}
-              onClick={() => onDelete(row.original.chargeId!)}
-            >
-              <Trash2 aria-hidden />
-            </Button>
-          ) : null,
-        meta: { align: 'right', headerClassName: 'w-12' },
+        cell: ({ row }) => {
+          const id = row.original.chargeId;
+          if (!id) return null;
+          return (
+            <span className="flex justify-end gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8 min-h-8"
+                disabled={busy === id}
+                aria-label={td('editCharge')}
+                onClick={() => onEdit(id)}
+              >
+                <Pencil aria-hidden />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8 min-h-8"
+                disabled={busy === id}
+                aria-label={td('deleteCharge')}
+                onClick={() => onDelete(id)}
+              >
+                <Trash2 aria-hidden />
+              </Button>
+            </span>
+          );
+        },
+        meta: { align: 'right', headerClassName: 'w-20' },
       },
     ],
-    [busy, onDelete, td],
+    [busy, onDelete, onEdit, td],
   );
 
   return (

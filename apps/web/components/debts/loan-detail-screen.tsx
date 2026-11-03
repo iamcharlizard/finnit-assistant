@@ -47,10 +47,12 @@ import { LoanProgress } from './loan-progress';
 import { PaymentDialog } from './payment-dialog';
 
 /**
- * One loan: what is left on top, then three tabs: its details (editable)
- * and the money added to it, the amortization table (paid, open and
- * projected payments), and the payments made with the bank movements that
- * look like its payments.
+ * One loan: what is left on top, then tabs: its details (editable), the
+ * amortization table (paid, open and projected payments; not for personal
+ * loans), each amount lent (personal loans and purchase financing,
+ * editable), and the payments: scheduled ones for personal loans bought in
+ * installments, the bank movements that look like its payments and those
+ * already made.
  */
 export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
   const { view, accounts, categories, today } = data;
@@ -63,7 +65,8 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
   const [paying, setPaying] = React.useState<{ row?: ScheduleRow } | null>(
     null,
   );
-  const [adding, setAdding] = React.useState(false);
+  // A new amount (true) or the id of the one being edited.
+  const [adding, setAdding] = React.useState<boolean | string>(false);
   const [tab, setTab] = React.useState('details');
   const personal = debt.loanType === 'personal';
   // Personal loans and purchase financing list each amount in its own tab.
@@ -77,6 +80,10 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
   const refresh = () => startTransition(() => router.refresh());
 
   const hasSchedule = Boolean(debt.recurringExpenseId);
+  const editingCharge =
+    typeof adding === 'string'
+      ? debt.charges.find((charge) => charge.id === adding)
+      : undefined;
 
   // Candidates may take a moment (the AI settles ties), so they load after paint.
   const loadCandidates = React.useCallback(() => {
@@ -231,9 +238,11 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="self-start">
             <TabsTrigger value="details">{td('tabs.details')}</TabsTrigger>
-            <TabsTrigger value="amortization">
-              {td('tabs.amortization')}
-            </TabsTrigger>
+            {personal ? null : (
+              <TabsTrigger value="amortization">
+                {td('tabs.amortization')}
+              </TabsTrigger>
+            )}
             {lentTab ? (
               <TabsTrigger value="lent">
                 {td(personal ? 'tabs.lentPersonal' : 'tabs.lentPurchase')} (
@@ -345,21 +354,47 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
               <LoanLentTable
                 rows={view.lent}
                 busy={busy}
+                onEdit={setAdding}
                 onDelete={askDeleteCharge}
               />
             </TabsContent>
           ) : null}
 
-          <TabsContent value="amortization">
-            <LoanAmortizationTable
-              rows={view.schedule}
-              hasBreakdown={view.hasBreakdown}
-              hasFees={view.hasFees}
-              onPay={(row) => setPaying({ row })}
-            />
-          </TabsContent>
+          {personal ? null : (
+            <TabsContent value="amortization">
+              <LoanAmortizationTable
+                rows={view.schedule}
+                hasBreakdown={view.hasBreakdown}
+                hasFees={view.hasFees}
+                onPay={(row) => setPaying({ row })}
+              />
+            </TabsContent>
+          )}
 
           <TabsContent value="payments" className="flex flex-col gap-6">
+            {personal && view.schedule.length > 0 ? (
+              <section
+                aria-labelledby="loan-scheduled"
+                className="flex flex-col gap-3"
+              >
+                <h2
+                  id="loan-scheduled"
+                  className="flex items-center gap-1 px-1 text-lg font-bold text-on-background"
+                >
+                  {td('scheduledTitle')}
+                  <InfoHint label={td('scheduledTitle')}>
+                    {td('scheduledHint')}
+                  </InfoHint>
+                </h2>
+                <LoanAmortizationTable
+                  rows={view.schedule}
+                  hasBreakdown={false}
+                  hasFees={false}
+                  onPay={(row) => setPaying({ row })}
+                />
+              </section>
+            ) : null}
+
             {hasSchedule && !view.paidOff ? (
               <LoanCandidates
                 state={candidates}
@@ -424,13 +459,14 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
       {adding ? (
         <ChargeDialog
           debt={debt}
+          charge={editingCharge}
           accounts={accounts}
           categories={categories}
           today={today}
           onClose={() => setAdding(false)}
           onSaved={() => {
             setAdding(false);
-            toast.success(td('chargeAdded'));
+            toast.success(td(editingCharge ? 'chargeUpdated' : 'chargeAdded'));
             refresh();
           }}
         />

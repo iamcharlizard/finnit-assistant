@@ -38,6 +38,11 @@ export interface ScheduleRow {
   status: ScheduleRowStatus;
   /** Set when it can be paid from the page. */
   occurrenceId: string | null;
+  /**
+   * Loans scheduled by their charges: what each one is for, with its
+   * installment ("Pantalla 01/03 · Audífonos 02/06"), or null.
+   */
+  concept: string | null;
   /** Amortization breakdown (loans by rate), or null. */
   principalLabel: string | null;
   interestLabel: string | null;
@@ -193,6 +198,8 @@ export interface LentRow {
   amount: string;
   /** To repay, when it has interest; else null. */
   total: string | null;
+  /** Paid in installments: how many, else null. */
+  installments: number | null;
 }
 
 export interface PaymentRow {
@@ -288,6 +295,7 @@ export function buildLoanDetailView(
         item.occurrenceId && (status === 'upcoming' || status === 'overdue')
           ? item.occurrenceId
           : null,
+      concept: installmentsConcept(item.installments),
       principalLabel: item.principal != null ? money(item.principal) : null,
       interestLabel: item.interest != null ? money(item.interest) : null,
       vatLabel: item.vat != null ? money(item.vat) : null,
@@ -405,6 +413,22 @@ export function buildLoanDetailView(
   };
 }
 
+const twoDigits = (n: number) => String(n).padStart(2, '0');
+
+/** "Pantalla 01/03 · 02/06": each charge's installment in a payment. */
+export function installmentsConcept(
+  installments: ApiLoanScheduleItem['installments'],
+): string | null {
+  if (!installments?.length) return null;
+  return installments
+    .map((i) =>
+      [i.description, `${twoDigits(i.number)}/${twoDigits(i.of)}`]
+        .filter(Boolean)
+        .join(' '),
+    )
+    .join(' · ');
+}
+
 function lentRows(
   debt: ApiDebtDetail,
   {
@@ -434,6 +458,7 @@ function lentRows(
     value: debt.principal,
     amount: money(debt.principal),
     total: initialTotal !== debt.principal ? money(initialTotal) : null,
+    installments: null,
   };
   const added = debt.charges.map((charge): LentRow => {
     const day = dayKeyOf(charge.date);
@@ -451,6 +476,7 @@ function lentRows(
         charge.totalToRepay !== charge.principal
           ? money(charge.totalToRepay)
           : null,
+      installments: charge.installments,
     };
   });
   // A personal loan started at 0 only lists what was added.

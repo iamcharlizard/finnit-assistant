@@ -199,6 +199,8 @@ export interface FinancedCharge {
   date: Date;
   totalToRepay: number;
   installments: number;
+  /** What was bought or lent, when said. */
+  description?: string | null;
 }
 
 export interface ScheduledInstallment {
@@ -206,27 +208,56 @@ export interface ScheduledInstallment {
   amount: number;
 }
 
+/** One installment of one charge: number `number` of `of`. */
+export interface ChargeInstallment {
+  number: number;
+  of: number;
+  amount: number;
+  description: string | null;
+}
+
 /**
- * Purchase financing (Kueski, Didi): every purchase is split into its own
- * installments, which fall on the loan's existing due dates starting with the
- * first one after the purchase. Returns the total due on each date.
+ * The installments of every charge by due date: each charge is split into
+ * its own installments, which fall on the loan's due dates starting with
+ * the first one after the charge.
  */
-export function purchaseFinancingSchedule(
+export function chargeInstallments(
   rule: ScheduleRule,
   charges: FinancedCharge[],
-): ScheduledInstallment[] {
-  const byDate = new Map<number, number>();
+): Map<number, ChargeInstallment[]> {
+  const byDate = new Map<number, ChargeInstallment[]>();
   for (const charge of charges) {
     const dates = dueDatesAfter(rule, charge.date, charge.installments);
     const amounts = splitInstallments(charge.totalToRepay, dates.length);
     dates.forEach((date, i) => {
       const key = date.getTime();
-      byDate.set(key, cents((byDate.get(key) ?? 0) + amounts[i]));
+      const due = byDate.get(key) ?? [];
+      due.push({
+        number: i + 1,
+        of: charge.installments,
+        amount: amounts[i],
+        description: charge.description ?? null,
+      });
+      byDate.set(key, due);
     });
   }
-  return [...byDate.entries()]
+  return byDate;
+}
+
+/**
+ * Purchase financing (Kueski, Didi) and personal loans paid in installments:
+ * the total due on each date (see `chargeInstallments`).
+ */
+export function purchaseFinancingSchedule(
+  rule: ScheduleRule,
+  charges: FinancedCharge[],
+): ScheduledInstallment[] {
+  return [...chargeInstallments(rule, charges).entries()]
     .sort(([a], [b]) => a - b)
-    .map(([time, amount]) => ({ dueDate: new Date(time), amount }));
+    .map(([time, due]) => ({
+      dueDate: new Date(time),
+      amount: cents(due.reduce((sum, d) => sum + d.amount, 0)),
+    }));
 }
 
 export interface BalanceInput {

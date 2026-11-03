@@ -50,14 +50,17 @@ import {
   Debt,
   MAX_ANNUAL_RATE,
   RecordDebtPaymentInput,
+  UpdateDebtChargeInput,
   UpdateLoanInput,
 } from './dto/debt.dto';
-import { DEBT_INCLUDE, DebtsService } from './debts.service';
+import { DEBT_INCLUDE, DebtRow, DebtsService } from './debts.service';
 import {
   balanceOf,
   createMovement,
   defaultPurchaseDate,
   deleteDeposit,
+  isPurchaseFinancing,
+  isScheduledByCharges,
   syncDebtStatus,
   totalOwedOf,
 } from './debt-ledger';
@@ -528,6 +531,122 @@ export class LoansService {
       include: DEBT_INCLUDE,
     });
     if (!debt) throw new NotFoundError('Debt not found');
+    const charge = await this.chargeData(userId, debt, input);
+    const scheduleName = await this.chargeScheduleName(userId, debt, input);
+
+    await this.prisma.$transaction(async (tx) => {
+      const deposit =
+        input.destination === DebtChargeDestination.deposit
+          ? await this.deposit(tx, userId, {
+              accountId: input.depositAccountId!,
+              amount: input.principal,
+              date: charge.date,
+              description: input.description?.trim() || debt.name,
+              countsAsIncome: input.depositCountsAsIncome ?? false,
+            })
+          : null;
+      await tx.debtCharge.create({
+        data: { ...charge, debtId: debt.id, transactionId: deposit?.id },
+      });
+      if (scheduleName) {
+        await this.createChargeSchedule(tx, userId, debt, {
+          name: scheduleName,
+          startDate: this.firstPaymentDate(charge.date, input),
+        });
+      }
+      await syncDebtStatus(tx, debt.id);
+      await this.recurring.resyncLoanOccurrences(tx, debt.id);
+    });
+
+    return this.debts.findById(debt.id, userId);
+  }
+
+  /**
+   * Edits money added to a loan. Its installments move with it, and its
+   * deposit follows a new amount, date or account (or goes away when it
+   * becomes a purchase).
+   */
+  async updateCharge(
+    userId: string,
+    id: string,
+    input: UpdateDebtChargeInput,
+  ): Promise<Debt> {
+    const existing = await this.prisma.debtCharge.findFirst({
+      where: { id, debt: { userId } },
+      include: { transaction: true },
+    });
+    if (!existing) throw new NotFoundError('Charge not found');
+    const debt = await this.prisma.debt.findFirstOrThrow({
+      where: { id: existing.debtId },
+      include: DEBT_INCLUDE,
+    });
+    const charge = await this.chargeData(userId, debt, input);
+
+    const paid = debt.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const owed = cents(
+      totalOwedOf(debt) - Number(existing.totalToRepay) + charge.totalToRepay,
+    );
+    if (paid > owed + CENT) {
+      throw new DebtOverpaymentError(
+        `Payments made (${cents(paid)}) exceed the new amount to repay (${owed})`,
+      );
+    }
+    const scheduleName = await this.chargeScheduleName(userId, debt, input);
+
+    await this.prisma.$transaction(async (tx) => {
+      const old = existing.transaction;
+      const wantsDeposit = input.destination === DebtChargeDestination.deposit;
+      const sameDeposit =
+        old &&
+        wantsDeposit &&
+        old.accountId === input.depositAccountId &&
+        Number(old.amount) === input.principal &&
+        old.txnDate.getTime() === charge.date.getTime() &&
+        (old.type === TransactionType.income) ===
+          (input.depositCountsAsIncome ?? false);
+      let transactionId = existing.transactionId;
+      if (old && !sameDeposit) {
+        await tx.debtCharge.update({
+          where: { id },
+          data: { transactionId: null },
+        });
+        await deleteDeposit(tx, old.id);
+        transactionId = null;
+      }
+      if (wantsDeposit && !sameDeposit) {
+        transactionId = (
+          await this.deposit(tx, userId, {
+            accountId: input.depositAccountId!,
+            amount: input.principal,
+            date: charge.date,
+            description: input.description?.trim() || debt.name,
+            countsAsIncome: input.depositCountsAsIncome ?? false,
+          })
+        ).id;
+      }
+      await tx.debtCharge.update({
+        where: { id },
+        data: { ...charge, transactionId },
+      });
+      if (scheduleName) {
+        await this.createChargeSchedule(tx, userId, debt, {
+          name: scheduleName,
+          startDate: this.firstPaymentDate(charge.date, input),
+        });
+      }
+      await syncDebtStatus(tx, debt.id);
+      await this.recurring.resyncLoanOccurrences(tx, debt.id);
+    });
+
+    return this.debts.findById(debt.id, userId);
+  }
+
+  /** Checks a charge and works out what it adds to the loan. */
+  private async chargeData(
+    userId: string,
+    debt: DebtRow,
+    input: UpdateDebtChargeInput,
+  ) {
     if (debt.kind !== DebtKind.loan) {
       throw new ValidationError('Only loans can get more money');
     }
@@ -535,10 +654,18 @@ export class LoansService {
       throw new ValidationError('The amount must be greater than 0');
     }
     this.assertRate(input.interestRateAnnual);
-    const isPurchase = debt.loanType === LoanType.purchase_financing;
-    if (isPurchase && !input.installments) {
+    if (isPurchaseFinancing(debt) && !input.installments) {
       throw new ValidationError(
         'A financed purchase needs its number of payments',
+      );
+    }
+    if (
+      input.installments &&
+      debt.loanType === LoanType.personal &&
+      !isScheduledByCharges(debt)
+    ) {
+      throw new ValidationError(
+        'This loan has a fixed payment: add the amount without its own payments',
       );
     }
     if (
@@ -561,41 +688,93 @@ export class LoansService {
       installmentAmount: input.installmentAmount,
     });
     const date = toDateOnly(new Date(input.date));
-    const purposeCategoryId = await this.purposeCategoryId(
-      userId,
-      input.purposeCategoryId,
+    if (
+      input.firstPaymentDate &&
+      toDateOnly(new Date(input.firstPaymentDate)) <= date
+    ) {
+      throw new ValidationError('The first payment must be after the date');
+    }
+    return {
+      date,
+      description: input.description?.trim() || null,
+      principal: input.principal,
+      totalToRepay: terms.totalToRepay,
+      installments: input.installments ?? null,
+      destination: input.destination,
+      purposeCategoryId: await this.purposeCategoryId(
+        userId,
+        input.purposeCategoryId,
+      ),
+      lendingMethod: input.lendingMethod ?? null,
+    };
+  }
+
+  /**
+   * A personal loan gets a monthly payment schedule with its first charge
+   * paid in installments (its installments are what it asks for). The name
+   * of that schedule, free among the user's recurring expenses, or null
+   * when none is needed.
+   */
+  private async chargeScheduleName(
+    userId: string,
+    debt: DebtRow,
+    input: UpdateDebtChargeInput,
+  ): Promise<string | null> {
+    if (debt.recurringExpense || !input.installments) return null;
+    if (debt.loanType !== LoanType.personal) return null;
+    const taken = new Set(
+      (
+        await this.prisma.recurringExpense.findMany({
+          where: { userId, name: { startsWith: debt.name } },
+          select: { name: true },
+        })
+      ).map((e) => e.name),
     );
+    let name = debt.name;
+    for (let n = 2; taken.has(name); n++) name = `${debt.name} (${n})`;
+    return name;
+  }
 
-    await this.prisma.$transaction(async (tx) => {
-      const deposit =
-        input.destination === DebtChargeDestination.deposit
-          ? await this.deposit(tx, userId, {
-              accountId: input.depositAccountId!,
-              amount: input.principal,
-              date,
-              description: input.description?.trim() || debt.name,
-              countsAsIncome: input.depositCountsAsIncome ?? false,
-            })
-          : null;
-      await tx.debtCharge.create({
-        data: {
-          debtId: debt.id,
-          date,
-          description: input.description?.trim() || null,
-          principal: input.principal,
-          totalToRepay: terms.totalToRepay,
-          installments: input.installments,
-          destination: input.destination,
-          transactionId: deposit?.id,
-          purposeCategoryId,
-          lendingMethod: input.lendingMethod,
-        },
-      });
-      await syncDebtStatus(tx, debt.id);
-      await this.recurring.resyncLoanOccurrences(tx, debt.id);
+  /** First due date of a new schedule: the one given, else a month after. */
+  private firstPaymentDate(
+    date: Date,
+    input: { firstPaymentDate?: Date | null },
+  ): Date {
+    if (input.firstPaymentDate) {
+      return toDateOnly(new Date(input.firstPaymentDate));
+    }
+    const monthly: ScheduleRule = {
+      frequency: RecurringFrequency.monthly,
+      interval: 1,
+      startDate: date,
+    };
+    return dueDatesAfter(monthly, date, 1)[0];
+  }
+
+  /** The monthly schedule of a personal loan's installments. */
+  private async createChargeSchedule(
+    tx: Tx,
+    userId: string,
+    debt: DebtRow,
+    schedule: { name: string; startDate: Date },
+  ) {
+    await tx.recurringExpense.create({
+      data: {
+        userId,
+        name: schedule.name,
+        kind: RecurringExpenseKind.loan,
+        trackingMode: RecurringTrackingMode.manual,
+        frequency: RecurringFrequency.monthly,
+        interval: 1,
+        startDate: schedule.startDate,
+        // Each due date asks for its installments (set by the resync).
+        amount: 0,
+        isVariableAmount: true,
+        currency: 'MXN',
+        categoryId: await this.paymentCategoryId(userId, debt.loanType),
+        debtId: debt.id,
+      },
     });
-
-    return this.debts.findById(debt.id, userId);
   }
 
   async deleteCharge(userId: string, id: string): Promise<Debt> {
@@ -845,7 +1024,8 @@ export class LoansService {
 
     const institutional = debt.loanType === LoanType.institutional;
     const byRate = debt.interestMode === LoanInterestMode.rate;
-    const isPurchase = debt.loanType === LoanType.purchase_financing;
+    // Their payments follow their charges, not the terms.
+    const byCharges = isScheduledByCharges(debt);
     const principal = input.principal ?? Number(debt.principal);
     if (input.principal !== undefined) {
       this.assertPrincipal(input.principal, debt.loanType);
@@ -935,7 +1115,7 @@ export class LoansService {
     if (
       expense &&
       installments &&
-      !isPurchase &&
+      !byCharges &&
       expense.installmentsPaid > installments
     ) {
       throw new ValidationError(
@@ -1008,7 +1188,7 @@ export class LoansService {
         },
       });
 
-      if (expense && terms && !isPurchase) {
+      if (expense && terms && !byCharges) {
         const amount = terms.installmentAmount ?? Number(expense.amount);
         const endDate =
           installments && debt.interestMode
@@ -1082,11 +1262,11 @@ export class LoansService {
         }
       }
       await syncDebtStatus(tx, id);
-      if (isPurchase && terms) {
+      if (byCharges && terms) {
         await this.recurring.resyncLoanOccurrences(tx, id);
       }
     });
-    if (expense && terms && !isPurchase && expense.active) {
+    if (expense && terms && !byCharges && expense.active) {
       // A longer loan gets its new due dates within the usual window.
       const fresh = await this.prisma.recurringExpense.findUnique({
         where: { id: expense.id },

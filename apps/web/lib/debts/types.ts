@@ -86,6 +86,9 @@ export interface ApiDebtCharge {
   installments: number | null;
   destination: DebtDestination;
   transactionId: string | null;
+  /** Deposited money: the account that received it. */
+  depositAccountId: string | null;
+  depositCountsAsIncome: boolean | null;
   /** What this money was for (informative). */
   purposeCategoryId: string | null;
   lendingMethod: LendingMethod | null;
@@ -148,7 +151,7 @@ export interface ApiDebtDetail extends ApiDebt {
   charges: ApiDebtCharge[];
 }
 
-export const DEBT_DETAIL_FIELDS = `${DEBT_FIELDS} payments { id transactionId isHistorical amount date } charges { id date description principal totalToRepay installments destination transactionId purposeCategoryId lendingMethod }`;
+export const DEBT_DETAIL_FIELDS = `${DEBT_FIELDS} payments { id transactionId isHistorical amount date } charges { id date description principal totalToRepay installments destination transactionId depositAccountId depositCountsAsIncome purposeCategoryId lendingMethod }`;
 
 export type ScheduleStatus = 'upcoming' | 'paid' | 'skipped' | 'missed';
 
@@ -171,10 +174,20 @@ export interface ApiLoanScheduleItem {
   fee: number | null;
   /** Left after the payment (principal for loans by rate). */
   balance: number;
+  /** Loans scheduled by their charges: the installment of each charge. */
+  installments: ApiLoanScheduleInstallment[] | null;
+}
+
+/** Installment `number` of `of` of one charge, inside a payment. */
+export interface ApiLoanScheduleInstallment {
+  number: number;
+  of: number;
+  amount: number;
+  description: string | null;
 }
 
 export const LOAN_SCHEDULE_FIELDS =
-  'dueDate amount status occurrenceId transactionId isHistorical projected principal interest vat fee balance';
+  'dueDate amount status occurrenceId transactionId isHistorical projected principal interest vat fee balance installments { number of amount description }';
 
 export type CandidateReason = 'history' | 'text' | 'amount' | 'ai';
 

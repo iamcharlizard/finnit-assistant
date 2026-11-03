@@ -191,6 +191,11 @@ input AddDebtChargeInput {
   depositCountsAsIncome: Boolean
   description: String
   destination: DebtChargeDestination!
+
+  """
+  Personal loans paid in installments: first due date when the loan has no payment schedule yet (default: a month after the charge)
+  """
+  firstPaymentDate: DateTime
   includesVat: Boolean
   installmentAmount: Float
 
@@ -906,6 +911,12 @@ type DebtCharge {
   createdAt: DateTime!
   date: DateTime!
   debtId: String!
+
+  """Deposited money: the account that received it"""
+  depositAccountId: String
+
+  """Deposited money: whether it counts as income"""
+  depositCountsAsIncome: Boolean
   description: String
   destination: DebtChargeDestination!
   id: ID!
@@ -1167,6 +1178,20 @@ type LoanPaymentCandidate {
   transactionId: ID!
 }
 
+"""One installment of one charge inside a scheduled payment"""
+type LoanScheduleInstallment {
+  amount: Float!
+
+  """What was bought or lent"""
+  description: String
+
+  """Which installment of the charge (1-based)"""
+  number: Int!
+
+  """Installments of the charge"""
+  of: Int!
+}
+
 """One payment of a loan over time"""
 type LoanScheduleItem {
   amount: Float!
@@ -1179,6 +1204,11 @@ type LoanScheduleItem {
 
   """Fixed fee of this payment, VAT included"""
   fee: Float
+
+  """
+  Loans scheduled by their charges: the installment of each charge this payment covers
+  """
+  installments: [LoanScheduleInstallment!]
 
   """Loans by rate: interest of the period, VAT excluded"""
   interest: Float
@@ -1511,6 +1541,9 @@ type Mutation {
   updateBudget(id: String!, input: UpdateBudgetInput!): Budget!
   updateCategory(id: String!, input: UpdateCategoryInput!): Category!
   updateDebt(id: String!, input: UpdateDebtInput!): Debt!
+
+  """Edits money added to a loan; its installments and deposit follow it"""
+  updateDebtCharge(id: ID!, input: UpdateDebtChargeInput!): Debt!
   updateGoal(id: ID!, input: UpdateGoalInput!): Goal!
 
   """
@@ -2366,6 +2399,37 @@ input UpdateCategoryInput {
   name: String
   parentId: String
   sortOrder: Float
+}
+
+"""Edits money added to a loan: the same fields as when it was added"""
+input UpdateDebtChargeInput {
+  date: DateTime!
+  depositAccountId: String
+  depositCountsAsIncome: Boolean
+  description: String
+  destination: DebtChargeDestination!
+
+  """
+  Personal loans paid in installments: first due date when the loan has no payment schedule yet (default: a month after the charge)
+  """
+  firstPaymentDate: DateTime
+  includesVat: Boolean
+  installmentAmount: Float
+
+  """Installments of this charge (required for purchase financing)"""
+  installments: Int
+
+  """Default: total_amount (no interest unless totalToRepay)"""
+  interestMode: LoanInterestMode
+  interestRateAnnual: Float
+
+  """Personal loans: how it was lent (cash, transfer, their card…)"""
+  lendingMethod: LendingMethod
+  principal: Float!
+
+  """What the money was for (informative; the expense is the payments)"""
+  purposeCategoryId: String
+  totalToRepay: Float
 }
 
 input UpdateDebtInput {

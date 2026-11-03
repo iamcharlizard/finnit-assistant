@@ -28,8 +28,9 @@ const dash = (label: string | null) => label ?? '—';
 /**
  * Every payment of the loan (paid, open and projected): amount and, for
  * loans given by their rate, how much is principal, interest, VAT and fee,
- * with the balance left. Five per page by default; sortable by number and
- * date. Open payments can be paid from here.
+ * with the balance left; for loans scheduled by their charges, which
+ * installment of which charge it is. Five per page by default; sortable by
+ * number and date. Open payments can be paid from here.
  */
 export function LoanAmortizationTable({
   rows,
@@ -45,7 +46,22 @@ export function LoanAmortizationTable({
   const td = useTranslations('debts.detail');
   const labels = useTableLabels();
 
+  const hasConcept = rows.some((row) => row.concept);
+
   const columns = React.useMemo<ColumnDef<ScheduleRow>[]>(() => {
+    const concept: ColumnDef<ScheduleRow>[] = hasConcept
+      ? [
+          {
+            id: 'concept',
+            header: td('columns.concept'),
+            cell: ({ row }) => (
+              <span className="block max-w-64 truncate tabular-nums">
+                {dash(row.original.concept)}
+              </span>
+            ),
+          },
+        ]
+      : [];
     const breakdown: ColumnDef<ScheduleRow>[] = hasBreakdown
       ? [
           {
@@ -93,6 +109,7 @@ export function LoanAmortizationTable({
         cell: ({ row }) => row.original.dateLabel,
         meta: { cellClassName: 'whitespace-nowrap' },
       },
+      ...concept,
       {
         id: 'amount',
         header: td('columns.payment'),
@@ -134,7 +151,7 @@ export function LoanAmortizationTable({
         meta: right,
       },
     ];
-  }, [hasBreakdown, hasFees, onPay, td]);
+  }, [hasBreakdown, hasConcept, hasFees, onPay, td]);
 
   if (rows.length === 0) {
     return (

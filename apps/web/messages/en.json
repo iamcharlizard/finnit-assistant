@@ -1066,7 +1066,9 @@
       "candidateTaken": "That movement or payment is already recorded.",
       "frequency": "Choose how often you pay.",
       "totalBelowPrincipal": "The amount borrowed cannot be more than the total to repay.",
-      "installmentsBelowPaid": "The number of payments cannot be less than the payments already made."
+      "installmentsBelowPaid": "The number of payments cannot be less than the payments already made.",
+      "fixedPayment": "This loan has a fixed payment: add the amount without a number of payments.",
+      "firstPaymentAfterDate": "The first payment must be after the date."
     },
     "newLoan": "Loan",
     "newOther": "Card or other debt",
@@ -1253,7 +1255,14 @@
       "purpose": "What was it for? (optional)",
       "purposePlaceholder": "E.g. Electronics",
       "purposeSearch": "Search category…",
-      "purposeHint": "Informative only: it does not count as an expense."
+      "purposeHint": "Informative only: it does not count as an expense.",
+      "editTitle": "Edit loan",
+      "editPurchaseTitle": "Edit purchase",
+      "editDescription": "Fix this amount of {name}; its payments follow.",
+      "firstPayment": "First payment (optional)",
+      "firstPaymentHint": "Left empty, a month after the date. The rest fall every month on that same day.",
+      "installmentsHintPersonal": "For example, a purchase at 3 interest-free months on their card: 3 payments are scheduled, one a month.",
+      "save": "Save"
     },
     "chargeValidation": {
       "dateRequired": "Pick the date.",
@@ -1266,7 +1275,8 @@
       "totalBelowPrincipal": "The total can't be less than the amount.",
       "rateRequired": "Enter the annual rate.",
       "rateInvalid": "The rate must be between 0 and 1000%.",
-      "depositAccountRequired": "Choose the account that received the money."
+      "depositAccountRequired": "Choose the account that received the money.",
+      "firstPaymentBeforeDate": "The first payment must be after the date."
     },
     "detail": {
       "back": "Debts",
@@ -1385,7 +1395,8 @@
         "amount": "Amount",
         "description": "Description",
         "method": "How",
-        "purpose": "What for"
+        "purpose": "What for",
+        "concept": "Item"
       },
       "summary": {
         "paidTitle": "Loan progress",
@@ -1424,8 +1435,13 @@
         "titlePurchase": "Purchases",
         "hintPersonal": "Every time they lent you money: the initial loan and what was added (another loan, a purchase with their card…).",
         "addPersonal": "Add loan",
-        "addPurchase": "Add purchase"
-      }
+        "addPurchase": "Add purchase",
+        "installments": "{count, plural, one {in # payment} other {in # payments}}"
+      },
+      "chargeUpdated": "Changes saved.",
+      "editCharge": "Edit",
+      "scheduledTitle": "Scheduled payments",
+      "scheduledHint": "What you pay each month for purchases in installments. Each payment says which purchase it belongs to and which of its payments it is (01/03)."
     },
     "categories": {
       "institutional": "Banks and lenders",

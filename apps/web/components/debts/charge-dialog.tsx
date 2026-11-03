@@ -30,8 +30,14 @@ import { SwitchField } from '@/components/finance/switch-field';
 import { SelectField } from '@/components/recurring/select-field';
 import { budgetCategoryOptions } from '@/lib/budgets/options';
 import type { BudgetCategory } from '@/lib/budgets/types';
-import { addDebtCharge, debtErrorMessage } from '@/lib/debts/api';
 import {
+  addDebtCharge,
+  debtErrorMessage,
+  updateDebtCharge,
+} from '@/lib/debts/api';
+import {
+  asksFirstPayment,
+  chargeFormOf,
   chargePreview,
   newChargeForm,
   validateChargeForm,
@@ -41,7 +47,11 @@ import {
 } from '@/lib/debts/charge-form';
 import { loanAccounts } from '@/lib/debts/detail-view';
 import { hasErrors } from '@/lib/debts/form';
-import { destinationOfMethod, type ApiDebt } from '@/lib/debts/types';
+import {
+  destinationOfMethod,
+  type ApiDebt,
+  type ApiDebtCharge,
+} from '@/lib/debts/types';
 import type { DayKey } from '@/lib/finance/dates';
 import { DEFAULT_CURRENCY, formatMoney } from '@/lib/finance/money';
 import type { ApiAccount } from '@/lib/finance/types';
@@ -51,11 +61,13 @@ import { accountOptions } from '@/lib/new-entry/options';
 
 /**
  * More money on a loan: another personal loan (it may be deposited into an
- * account) or a purchase financed on it, whose installments land on the
- * loan's due dates. Mounted while open.
+ * account, or bought in installments with the lender's card) or a purchase
+ * financed on it, whose installments land on the loan's due dates. With
+ * `charge` it edits that one. Mounted while open.
  */
 export function ChargeDialog({
   debt,
+  charge,
   accounts,
   categories,
   today,
@@ -63,6 +75,8 @@ export function ChargeDialog({
   onSaved,
 }: {
   debt: ApiDebt;
+  /** The amount being edited; a new one when missing. */
+  charge?: ApiDebtCharge;
   accounts: ApiAccount[];
   categories: BudgetCategory[];
   today: DayKey;
@@ -75,8 +89,10 @@ export function ChargeDialog({
   const tf = useTranslations('debts.charge');
   const locale = useLocale();
   const purchase = debt.loanType === 'purchase_financing';
+  const personal = debt.loanType === 'personal';
+  const editing = Boolean(charge);
   const [form, setForm] = React.useState<ChargeForm>(() =>
-    newChargeForm(debt, today),
+    charge ? chargeFormOf(charge) : newChargeForm(debt, today),
   );
   const [errors, setErrors] = React.useState<ChargeFormErrors>({});
   const [saving, setSaving] = React.useState(false);
@@ -116,7 +132,8 @@ export function ChargeDialog({
     setSaving(true);
     setSubmitError(null);
     try {
-      await addDebtCharge(form, debt.id, gql);
+      if (charge) await updateDebtCharge(form, charge.id, gql);
+      else await addDebtCharge(form, debt.id, gql);
       exit.after(onSaved)();
     } catch (error) {
       setSubmitError(debtErrorMessage(error, t));
@@ -137,12 +154,16 @@ export function ChargeDialog({
         <form onSubmit={submit} noValidate className="flex flex-col gap-5">
           <DialogHeader>
             <DialogTitle>
-              {purchase ? tf('purchaseTitle') : tf('title')}
+              {editing
+                ? tf(purchase ? 'editPurchaseTitle' : 'editTitle')
+                : tf(purchase ? 'purchaseTitle' : 'title')}
             </DialogTitle>
             <DialogDescription>
-              {purchase
-                ? tf('purchaseDescription', { name: debt.name })
-                : tf('description', { name: debt.name })}
+              {editing
+                ? tf('editDescription', { name: debt.name })
+                : purchase
+                  ? tf('purchaseDescription', { name: debt.name })
+                  : tf('description', { name: debt.name })}
             </DialogDescription>
           </DialogHeader>
 
@@ -217,6 +238,30 @@ export function ChargeDialog({
               ) : null}
             </div>
 
+            {personal && !form.installments.trim() ? (
+              <p className="-mt-2 px-1 text-xs text-on-surface-variant">
+                {tf('installmentsHintPersonal')}
+              </p>
+            ) : null}
+
+            {asksFirstPayment(debt, form) ? (
+              <div className="flex flex-col gap-1">
+                <DatePicker
+                  label={tf('firstPayment')}
+                  value={form.firstPaymentDate || undefined}
+                  onChange={(day) => update({ firstPaymentDate: day ?? '' })}
+                  locale={locale}
+                  placeholder={tf('datePlaceholder')}
+                  clearable
+                  clearLabel={t('debts.detail.clearDate')}
+                  error={errorText(errors.firstPaymentDate)}
+                />
+                <p className="px-1 text-xs text-on-surface-variant">
+                  {tf('firstPaymentHint')}
+                </p>
+              </div>
+            ) : null}
+
             {form.interest === 'rate' && form.installments.trim() ? (
               <div className="flex flex-col gap-3">
                 <NumberInput
@@ -265,7 +310,7 @@ export function ChargeDialog({
               </p>
             ) : null}
 
-            {debt.loanType === 'personal' ? (
+            {personal ? (
               <LendingMethodField
                 value={form.lendingMethod}
                 onChange={(lendingMethod) =>
@@ -338,7 +383,7 @@ export function ChargeDialog({
               </Button>
             </DialogClose>
             <Button type="submit" variant="secondary" disabled={saving}>
-              {saving ? tf('saving') : tf('submit')}
+              {saving ? tf('saving') : editing ? tf('save') : tf('submit')}
             </Button>
           </DialogFooter>
         </form>

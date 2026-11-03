@@ -922,4 +922,95 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
         .purposeCategoryId,
     ).toBeUndefined();
   });
+
+  it('schedules a personal loan bought in installments and edits its charges', async () => {
+    const today = new Date(
+      Date.UTC(
+        new Date().getUTCFullYear(),
+        new Date().getUTCMonth(),
+        new Date().getUTCDate(),
+      ),
+    );
+    const loan = await loans.create(userId, {
+      name: 'Tarjeta de Ana',
+      kind: DebtKind.loan,
+      loanType: LoanType.personal,
+      lenderName: 'Ana',
+      principal: 0,
+    });
+    expect(loan.recurringExpenseId).toBeUndefined();
+
+    const bought = await loans.addCharge(userId, {
+      debtId: loan.id,
+      date: today,
+      description: 'Pantalla',
+      principal: 3_000,
+      installments: 3,
+      destination: DebtChargeDestination.purchase,
+      lendingMethod: LendingMethod.credit_card,
+    });
+    expect(bought.recurringExpenseId).toBeDefined();
+    expect(bought.remainingBalance).toBe(3_000);
+
+    const schedule = await tracking.schedule(userId, loan.id);
+    expect(schedule.map((s) => s.amount)).toEqual([1_000, 1_000, 1_000]);
+    expect(
+      schedule.map((s) => s.installments?.map((i) => `${i.number}/${i.of}`)),
+    ).toEqual([['1/3'], ['2/3'], ['3/3']]);
+    // One a month, from a month after the purchase.
+    const months = schedule.map(
+      (s) => s.dueDate.getUTCFullYear() * 12 + s.dueDate.getUTCMonth(),
+    );
+    const start = today.getUTCFullYear() * 12 + today.getUTCMonth();
+    expect(months).toEqual([start + 1, start + 2, start + 3]);
+    expect(schedule[0].occurrenceId).toBeDefined();
+
+    const chargeId = bought.charges[0].id;
+    const before = await balance();
+    const edited = await loans.updateCharge(userId, chargeId, {
+      date: today,
+      description: 'Pantalla 55"',
+      principal: 3_600,
+      installments: 3,
+      destination: DebtChargeDestination.deposit,
+      depositAccountId: debitId,
+    });
+    expect(edited.remainingBalance).toBe(3_600);
+    expect(edited.charges[0].description).toBe('Pantalla 55"');
+    expect(edited.charges[0].depositAccountId).toBe(debitId);
+    expect(await balance()).toBe(before + 3_600);
+    expect(
+      (await tracking.schedule(userId, loan.id)).map((s) => s.amount),
+    ).toEqual([1_200, 1_200, 1_200]);
+
+    // Back to a purchase: the deposit goes away.
+    await loans.updateCharge(userId, chargeId, {
+      date: today,
+      principal: 3_600,
+      installments: 3,
+      destination: DebtChargeDestination.purchase,
+    });
+    expect(await balance()).toBe(before);
+
+    // A personal loan with a fixed payment takes amounts without a term.
+    const fixed = await loans.create(userId, {
+      name: 'Préstamo fijo de Luis',
+      kind: DebtKind.loan,
+      loanType: LoanType.personal,
+      lenderName: 'Luis',
+      principal: 2_000,
+      installmentAmount: 500,
+      paymentFrequency: RecurringFrequency.monthly,
+      firstPaymentDate: d('2027-01-01'),
+    });
+    await expect(
+      loans.addCharge(userId, {
+        debtId: fixed.id,
+        date: today,
+        principal: 600,
+        installments: 3,
+        destination: DebtChargeDestination.purchase,
+      }),
+    ).rejects.toThrow('fixed payment');
+  });
 });

@@ -86,8 +86,9 @@ export function newChargeForm(
   };
 }
 
-/** The form of a charge being edited (its total, not how it was worked out). */
+/** The form of a charge being edited, with its terms as they were given. */
 export function chargeFormOf(charge: ApiDebtCharge): ChargeForm {
+  const byRate = charge.interestMode === 'rate';
   return {
     date: dayKeyOf(charge.date),
     description: charge.description ?? '',
@@ -96,19 +97,24 @@ export function chargeFormOf(charge: ApiDebtCharge): ChargeForm {
     installmentsPaid: charge.installmentsPaid
       ? String(charge.installmentsPaid)
       : '',
-    interest: 'total',
+    interest: byRate ? 'rate' : 'total',
     totalToRepay:
-      charge.totalToRepay !== charge.principal
+      !byRate && charge.totalToRepay !== charge.principal
         ? String(charge.totalToRepay)
         : '',
-    rate: '',
-    includesVat: false,
+    rate:
+      byRate && charge.interestRateAnnual !== null
+        ? String(charge.interestRateAnnual)
+        : '',
+    includesVat: byRate && charge.includesVat,
     destination: charge.destination,
     depositAccountId: charge.depositAccountId ?? '',
     depositCountsAsIncome: charge.depositCountsAsIncome ?? false,
     purposeCategoryId: charge.purposeCategoryId ?? '',
     lendingMethod: charge.lendingMethod ?? '',
-    firstPaymentDate: '',
+    firstPaymentDate: charge.firstPaymentDate
+      ? dayKeyOf(charge.firstPaymentDate)
+      : '',
   };
 }
 
@@ -128,18 +134,15 @@ export function asksPaidInstallments(
 }
 
 /**
- * A personal loan without a payment schedule gets one with its first amount
- * paid in installments: then the form asks for the first due date.
+ * Amounts paid in their own installments (purchase financing, personal
+ * loans without a fixed payment) may start later than the loan's next due
+ * date (e.g. the quincena after): the form asks when the first one is due.
  */
 export function asksFirstPayment(
-  debt: Pick<ApiDebt, 'loanType' | 'recurringExpenseId'>,
+  debt: Pick<ApiDebt, 'loanType' | 'installmentAmount'>,
   form: Pick<ChargeForm, 'installments'>,
 ): boolean {
-  return (
-    debt.loanType === 'personal' &&
-    !debt.recurringExpenseId &&
-    Boolean(form.installments.trim())
-  );
+  return asksPaidInstallments(debt, form);
 }
 
 const parseCount = (text: string): number | null =>

@@ -311,6 +311,35 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
     expect((await debts.findById(debt.id, userId)).remainingBalance).toBe(
       1_900,
     );
+
+    // A purchase whose first payment skips the next due date, given by
+    // its rate: the terms are kept for editing.
+    const withRate = await loans.addCharge(userId, {
+      debtId: debt.id,
+      date: d('2026-11-20'),
+      description: 'Tenis',
+      principal: 1_000,
+      installments: 2,
+      interestMode: LoanInterestMode.rate,
+      interestRateAnnual: 60,
+      includesVat: true,
+      firstPaymentDate: d('2026-12-10'),
+      destination: DebtChargeDestination.purchase,
+    });
+    const tenis = withRate.charges.find((c) => c.description === 'Tenis')!;
+    expect(tenis.interestMode).toBe(LoanInterestMode.rate);
+    expect(tenis.interestRateAnnual).toBe(60);
+    expect(tenis.includesVat).toBe(true);
+    expect(iso(tenis.firstPaymentDate!)).toBe('2026-12-10');
+    expect(tenis.totalToRepay).toBeGreaterThan(1_000);
+    const schedule = await tracking.schedule(userId, debt.id);
+    expect(
+      schedule
+        .filter((s) => s.installments?.some((i) => i.description === 'Tenis'))
+        .map((s) => iso(s.dueDate)),
+    ).toEqual(['2026-12-15', '2026-12-31']);
+    // Later tests count this loan at 1,900.
+    await loans.deleteCharge(userId, tenis.id);
   });
 
   it('a recurring suggestion becomes a loan, with AI describing it', async () => {

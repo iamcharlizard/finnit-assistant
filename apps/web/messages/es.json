@@ -1266,7 +1266,8 @@
       "save": "Guardar",
       "installmentsPaid": "Pagos ya hechos (opcional)",
       "installmentsPaidPlaceholder": "Ej. 1",
-      "installmentsPaidHint": "Los que pagaste antes de registrarla: bajan lo que debes, pero no cuentan como gasto de este mes."
+      "installmentsPaidHint": "Los que pagaste antes de registrarla: bajan lo que debes, pero no cuentan como gasto de este mes.",
+      "firstPaymentHintScheduled": "Si lo dejas vacío, el siguiente pago del préstamo después de la fecha. Elige una fecha posterior si su primer pago cae una quincena o un mes después."
     },
     "chargeValidation": {
       "dateRequired": "Elige la fecha.",

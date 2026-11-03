@@ -278,7 +278,11 @@ export function ChargeDialog({
                   error={errorText(errors.firstPaymentDate)}
                 />
                 <p className="px-1 text-xs text-on-surface-variant">
-                  {tf('firstPaymentHint')}
+                  {tf(
+                    personal && !debt.recurringExpenseId
+                      ? 'firstPaymentHint'
+                      : 'firstPaymentHintScheduled',
+                  )}
                 </p>
               </div>
             ) : null}

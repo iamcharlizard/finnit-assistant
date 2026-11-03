@@ -702,13 +702,14 @@ export class LoansService {
       );
     }
 
+    const interestMode = input.installments
+      ? (input.interestMode ?? LoanInterestMode.total_amount)
+      : null;
     const terms = this.resolveTerms({
       principal: input.principal,
       installments: input.installments,
       frequency: debt.paymentFrequency ?? RecurringFrequency.monthly,
-      interestMode:
-        input.interestMode ??
-        (input.installments ? LoanInterestMode.total_amount : undefined),
+      interestMode: interestMode ?? undefined,
       interestRateAnnual: input.interestRateAnnual,
       includesVat: input.includesVat,
       totalToRepay: input.totalToRepay ?? input.principal,
@@ -728,6 +729,18 @@ export class LoansService {
       totalToRepay: terms.totalToRepay,
       installments: input.installments ?? null,
       installmentsPaid,
+      // Its first due date may come later than the next one of the loan.
+      firstPaymentDate:
+        input.installments && input.firstPaymentDate
+          ? toDateOnly(new Date(input.firstPaymentDate))
+          : null,
+      interestMode,
+      interestRateAnnual:
+        interestMode === LoanInterestMode.rate
+          ? (input.interestRateAnnual ?? null)
+          : null,
+      includesVat:
+        interestMode === LoanInterestMode.rate && (input.includesVat ?? false),
       destination: input.destination,
       purposeCategoryId: await this.purposeCategoryId(
         userId,

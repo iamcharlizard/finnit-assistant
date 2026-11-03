@@ -764,6 +764,13 @@ export class DebtsService {
       totalToRepay: Number(charge.totalToRepay),
       installments: charge.installments ?? undefined,
       installmentsPaid: charge.installmentsPaid,
+      firstPaymentDate: charge.firstPaymentDate ?? undefined,
+      interestMode: charge.interestMode ?? undefined,
+      interestRateAnnual:
+        charge.interestRateAnnual === null
+          ? undefined
+          : Number(charge.interestRateAnnual),
+      includesVat: charge.includesVat,
       destination: charge.destination,
       transactionId: charge.transactionId ?? undefined,
       depositAccountId: charge.transaction?.accountId,

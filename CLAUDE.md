@@ -102,6 +102,7 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261102120000_loan_periodic_fee` (`Debt.periodicFee`: fixed fee per payment, VAT included; rollback in `packages/database/scripts/rollbacks/`)
 - `20261103120000_lending_method` (`LendingMethod` enum; `Debt.lendingMethod`, `DebtCharge.lendingMethod`; rollback in `packages/database/scripts/rollbacks/`)
 - `20261104090000_charge_installments_paid` (`DebtCharge.installmentsPaid`, `DebtPayment.chargeId`: installments of a later purchase paid before registering it; rollback in `packages/database/scripts/rollbacks/`)
+- `20261105090000_charge_terms` (`DebtCharge.firstPaymentDate`, `interestMode`, `interestRateAnnual`, `includesVat`: a later purchase's first due date and interest terms; rollback in `packages/database/scripts/rollbacks/`)
 - `20261103090000_contacts` (`Contact`, `Debt.lenderContactId`; existing personal-loan lenders become contacts; rollback in `packages/database/scripts/rollbacks/`)
 - `20261013120000_private_attachments`
 - `20261014090000_admin_access_and_ai_features`

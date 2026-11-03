@@ -22,6 +22,8 @@ export interface ChargeForm {
   principal: string;
   /** '' = no fixed number of payments (personal loans). */
   installments: string;
+  /** Of those, how many were paid before registering it ('' = none). */
+  installmentsPaid: string;
   /** total: the total to repay ('' = no interest); rate: annual rate. */
   interest: 'total' | 'rate';
   totalToRepay: string;
@@ -50,6 +52,7 @@ export type ChargeErrorCode =
   | 'principalInvalid'
   | 'installmentsRequired'
   | 'installmentsInvalid'
+  | 'installmentsPaidInvalid'
   | 'totalInvalid'
   | 'totalBelowPrincipal'
   | 'rateRequired'
@@ -69,6 +72,7 @@ export function newChargeForm(
     description: '',
     principal: '',
     installments: '',
+    installmentsPaid: '',
     interest: 'total',
     totalToRepay: '',
     rate: '',
@@ -89,6 +93,9 @@ export function chargeFormOf(charge: ApiDebtCharge): ChargeForm {
     description: charge.description ?? '',
     principal: String(charge.principal),
     installments: charge.installments ? String(charge.installments) : '',
+    installmentsPaid: charge.installmentsPaid
+      ? String(charge.installmentsPaid)
+      : '',
     interest: 'total',
     totalToRepay:
       charge.totalToRepay !== charge.principal
@@ -103,6 +110,21 @@ export function chargeFormOf(charge: ApiDebtCharge): ChargeForm {
     lendingMethod: charge.lendingMethod ?? '',
     firstPaymentDate: '',
   };
+}
+
+/**
+ * Loans whose payments come from each amount's own installments (purchase
+ * financing, personal loans without a fixed payment) take how many of them
+ * were already paid.
+ */
+export function asksPaidInstallments(
+  debt: Pick<ApiDebt, 'loanType' | 'installmentAmount'>,
+  form: Pick<ChargeForm, 'installments'>,
+): boolean {
+  const byCharges =
+    debt.loanType === 'purchase_financing' ||
+    (debt.loanType === 'personal' && debt.installmentAmount === null);
+  return byCharges && Boolean(form.installments.trim());
 }
 
 /**
@@ -163,6 +185,11 @@ export function validateChargeForm(
     const n = parseCount(form.installments);
     if (n === null || n < 1 || n > MAX_INSTALLMENTS)
       errors.installments = 'installmentsInvalid';
+    else if (form.installmentsPaid.trim()) {
+      const paid = parseCount(form.installmentsPaid);
+      if (paid === null || paid > n)
+        errors.installmentsPaid = 'installmentsPaidInvalid';
+    }
   }
 
   if (form.interest === 'rate' && form.installments.trim()) {
@@ -209,6 +236,10 @@ export function buildChargeInput(
     }),
     ...(form.lendingMethod && { lendingMethod: form.lendingMethod }),
     ...(installments !== null && { installments }),
+    ...(installments !== null &&
+      parseCount(form.installmentsPaid) !== null && {
+        installmentsPaid: parseCount(form.installmentsPaid),
+      }),
     ...(installments !== null &&
       isDayKey(form.firstPaymentDate) && {
         firstPaymentDate: form.firstPaymentDate,

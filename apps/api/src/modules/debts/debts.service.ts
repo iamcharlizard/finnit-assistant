@@ -31,6 +31,7 @@ import { monthlyEquivalent } from '../recurring-expenses/schedule.util';
 import {
   balanceOf,
   deleteDeposit,
+  syncChargeHistory,
   syncDebtStatus,
   totalOwedOf,
 } from './debt-ledger';
@@ -493,7 +494,18 @@ export class DebtsService {
       );
     }
     await this.prisma.$transaction(async (tx) => {
-      await tx.debtPayment.delete({ where: { id } });
+      if (payment.chargeId) {
+        // An installment of a charge paid before registering it: one less
+        // paid, so the schedule asks for it again.
+        await tx.debtCharge.update({
+          where: { id: payment.chargeId },
+          data: { installmentsPaid: { decrement: 1 } },
+        });
+        await syncChargeHistory(tx, payment.chargeId);
+        await this.recurring.resyncLoanOccurrences(tx, payment.debtId);
+      } else {
+        await tx.debtPayment.delete({ where: { id } });
+      }
       await syncDebtStatus(tx, payment.debtId);
     });
     return true;
@@ -751,6 +763,7 @@ export class DebtsService {
       principal: Number(charge.principal),
       totalToRepay: Number(charge.totalToRepay),
       installments: charge.installments ?? undefined,
+      installmentsPaid: charge.installmentsPaid,
       destination: charge.destination,
       transactionId: charge.transactionId ?? undefined,
       depositAccountId: charge.transaction?.accountId,

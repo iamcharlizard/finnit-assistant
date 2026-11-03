@@ -1013,4 +1013,81 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       }),
     ).rejects.toThrow('fixed payment');
   });
+
+  it('records installments of a purchase paid before registering it', async () => {
+    const now = new Date();
+    // Three months ago, on a day every month has.
+    const bought = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 3, 10),
+    );
+    const loan = await loans.create(userId, {
+      name: 'Tarjeta de Sofía',
+      kind: DebtKind.loan,
+      loanType: LoanType.personal,
+      lenderName: 'Sofía',
+      principal: 0,
+    });
+    const before = await expenses();
+    const added = await loans.addCharge(userId, {
+      debtId: loan.id,
+      date: bought,
+      description: 'Aspiradora',
+      principal: 3_000,
+      installments: 3,
+      installmentsPaid: 2,
+      destination: DebtChargeDestination.purchase,
+    });
+    expect(added.remainingBalance).toBe(1_000);
+    expect(added.charges[0].installmentsPaid).toBe(2);
+    // Historical: no expense movements.
+    expect(await expenses()).toBe(before);
+
+    const schedule = await tracking.schedule(userId, loan.id);
+    expect(
+      schedule.map((s) => [
+        s.isHistorical,
+        s.amount,
+        s.installments?.map((i) => `${i.number}/${i.of}`).join(),
+      ]),
+    ).toEqual([
+      [true, 1_000, '1/3'],
+      [true, 1_000, '2/3'],
+      [false, 1_000, '3/3'],
+    ]);
+
+    // Deleting one of them asks for that installment again.
+    const historical = added.payments.find((p) => p.isHistorical)!;
+    await debts.deleteHistoricalPayment(historical.id, userId);
+    const fewer = await debts.findById(loan.id, userId);
+    expect(fewer.charges[0].installmentsPaid).toBe(1);
+    expect(fewer.remainingBalance).toBe(2_000);
+
+    // Editing it rewrites them.
+    const edited = await loans.updateCharge(userId, added.charges[0].id, {
+      date: bought,
+      principal: 3_000,
+      installments: 3,
+      installmentsPaid: 3,
+      destination: DebtChargeDestination.purchase,
+    });
+    expect(edited.remainingBalance).toBe(0);
+    expect(edited.status).toBe('paid_off');
+
+    await expect(
+      loans.addCharge(userId, {
+        debtId: loan.id,
+        date: bought,
+        principal: 100,
+        installments: 2,
+        installmentsPaid: 3,
+        destination: DebtChargeDestination.purchase,
+      }),
+    ).rejects.toThrow('cannot exceed');
+
+    // Removing the charge removes its payments.
+    await loans.deleteCharge(userId, added.charges[0].id);
+    expect(await prisma.debtPayment.count({ where: { debtId: loan.id } })).toBe(
+      0,
+    );
+  });
 });

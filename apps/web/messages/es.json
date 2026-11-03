@@ -1068,7 +1068,8 @@
       "totalBelowPrincipal": "El monto prestado no puede ser mayor que el total a pagar.",
       "installmentsBelowPaid": "El número de pagos no puede ser menor que los pagos que ya hiciste.",
       "fixedPayment": "Este préstamo tiene un pago fijo: agrega el monto sin número de pagos.",
-      "firstPaymentAfterDate": "El primer pago debe ser después de la fecha."
+      "firstPaymentAfterDate": "El primer pago debe ser después de la fecha.",
+      "installmentsPaidCount": "Los pagos ya hechos no pueden ser más que el número de pagos."
     },
     "newLoan": "Préstamo",
     "newOther": "Tarjeta u otra deuda",
@@ -1262,7 +1263,10 @@
       "firstPayment": "Primer pago (opcional)",
       "firstPaymentHint": "Si lo dejas vacío, un mes después de la fecha. Los demás caen cada mes ese mismo día.",
       "installmentsHintPersonal": "Por ejemplo, una compra a 3 MSI con su tarjeta: se programan 3 pagos, uno cada mes.",
-      "save": "Guardar"
+      "save": "Guardar",
+      "installmentsPaid": "Pagos ya hechos (opcional)",
+      "installmentsPaidPlaceholder": "Ej. 1",
+      "installmentsPaidHint": "Los que pagaste antes de registrarla: bajan lo que debes, pero no cuentan como gasto de este mes."
     },
     "chargeValidation": {
       "dateRequired": "Elige la fecha.",
@@ -1276,7 +1280,8 @@
       "rateRequired": "Escribe la tasa anual.",
       "rateInvalid": "La tasa debe estar entre 0 y 1000%.",
       "depositAccountRequired": "Elige la cuenta donde recibiste el dinero.",
-      "firstPaymentBeforeDate": "El primer pago debe ser después de la fecha."
+      "firstPaymentBeforeDate": "El primer pago debe ser después de la fecha.",
+      "installmentsPaidInvalid": "No pueden ser más que el número de pagos."
     },
     "detail": {
       "back": "Deudas",

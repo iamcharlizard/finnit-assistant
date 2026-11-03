@@ -37,6 +37,7 @@ import {
 } from '@/lib/debts/api';
 import {
   asksFirstPayment,
+  asksPaidInstallments,
   chargeFormOf,
   chargePreview,
   newChargeForm,
@@ -237,6 +238,26 @@ export function ChargeDialog({
                 />
               ) : null}
             </div>
+
+            {asksPaidInstallments(debt, form) ? (
+              <div className="flex flex-col gap-1">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <NumberInput
+                    maxDigits={4}
+                    label={tf('installmentsPaid')}
+                    placeholder={tf('installmentsPaidPlaceholder')}
+                    value={form.installmentsPaid}
+                    onValueChange={(value) =>
+                      update({ installmentsPaid: value })
+                    }
+                    error={errorText(errors.installmentsPaid)}
+                  />
+                </div>
+                <p className="px-1 text-xs text-on-surface-variant">
+                  {tf('installmentsPaidHint')}
+                </p>
+              </div>
+            ) : null}
 
             {personal && !form.installments.trim() ? (
               <p className="-mt-2 px-1 text-xs text-on-surface-variant">

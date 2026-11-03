@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import { testLocalizer } from '@/lib/i18n/testing';
 import {
   asksFirstPayment,
+  asksPaidInstallments,
   buildChargeInput,
   chargeFormOf,
   newChargeForm,
@@ -442,6 +443,7 @@ describe('personal loan in installments', () => {
       principal: 3_000,
       totalToRepay: 3_000,
       installments: 3,
+      installmentsPaid: 0,
       destination: 'deposit',
       transactionId: 't',
       depositAccountId: 'debit',
@@ -453,6 +455,42 @@ describe('personal loan in installments', () => {
     assert.equal(form.totalToRepay, '');
     assert.equal(form.installments, '3');
     assert.equal(form.depositAccountId, 'debit');
+  });
+
+  it('takes the installments already paid of a purchase', () => {
+    const form = {
+      ...newChargeForm({ loanType: 'purchase_financing' }, today),
+      principal: '3628.48',
+      installments: '4',
+      installmentsPaid: '5',
+    };
+    assert.equal(
+      asksPaidInstallments(
+        { loanType: 'purchase_financing', installmentAmount: 900 },
+        form,
+      ),
+      true,
+    );
+    assert.equal(
+      asksPaidInstallments(
+        { loanType: 'personal', installmentAmount: 500 },
+        form,
+      ),
+      false,
+    );
+    assert.deepEqual(
+      validateChargeForm(form, { today, needsInstallments: true }),
+      { installmentsPaid: 'installmentsPaidInvalid' },
+    );
+    assert.equal(
+      buildChargeInput({ ...form, installmentsPaid: '2' }, 'k')
+        .installmentsPaid,
+      2,
+    );
+    assert.equal(
+      buildChargeInput({ ...form, installmentsPaid: '' }, 'k').installmentsPaid,
+      undefined,
+    );
   });
 
   it('names each installment of a payment', () => {
@@ -695,6 +733,7 @@ describe('loan detail view', () => {
             principal: 600,
             totalToRepay: 600,
             installments: 2,
+            installmentsPaid: 0,
             destination: 'purchase',
             transactionId: null,
             depositAccountId: null,
@@ -788,6 +827,7 @@ describe('loan detail view', () => {
             principal: 1_000,
             totalToRepay: 1_000,
             installments: null,
+            installmentsPaid: 0,
             destination: 'purchase',
             transactionId: null,
             depositAccountId: null,

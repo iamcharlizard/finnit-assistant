@@ -238,6 +238,11 @@ export class DebtCharge {
   @Field(() => Int, { nullable: true })
   installments?: number;
 
+  @Field(() => Int, {
+    description: 'Installments paid before it was registered',
+  })
+  installmentsPaid: number;
+
   @Field(() => DebtChargeDestination)
   destination: DebtChargeDestination;
 
@@ -646,6 +651,17 @@ export class AddDebtChargeInput {
   @Min(1)
   @Max(1000)
   installments?: number;
+
+  @Field(() => Int, {
+    nullable: true,
+    description:
+      'Installments of this charge already paid before registering it (historical payments, outside totals)',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(1000)
+  installmentsPaid?: number;
 
   @Field(() => LoanInterestMode, {
     nullable: true,

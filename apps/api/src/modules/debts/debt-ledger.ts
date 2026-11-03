@@ -6,8 +6,12 @@ import {
   TransactionSource,
   TransactionType,
 } from '@finnit/database';
-import { addDays, toDateOnly } from '../recurring-expenses/schedule.util';
-import { debtBalance, FinancedCharge } from './loan-math';
+import {
+  addDays,
+  dueDatesAfter,
+  toDateOnly,
+} from '../recurring-expenses/schedule.util';
+import { debtBalance, FinancedCharge, splitInstallments } from './loan-math';
 
 type Client = Prisma.TransactionClient;
 
@@ -52,6 +56,7 @@ export function financedCharges(debt: {
     description: string | null;
     totalToRepay: Prisma.Decimal;
     installments: number | null;
+    installmentsPaid: number;
   }[];
 }): FinancedCharge[] {
   const charges: FinancedCharge[] = [];
@@ -68,6 +73,7 @@ export function financedCharges(debt: {
         date: charge.date,
         totalToRepay: Number(charge.totalToRepay),
         installments: charge.installments,
+        installmentsPaid: charge.installmentsPaid,
         description: charge.description,
       });
     }
@@ -161,6 +167,56 @@ export async function createMovement(tx: Client, input: MovementInput) {
     },
   });
   return transaction;
+}
+
+/**
+ * The installments of a charge paid before registering it, as of where they
+ * fall on the loan's schedule: the first `installmentsPaid` (amount, due
+ * date). Empty without installments or a schedule.
+ */
+export function paidInstallments(
+  rule: Parameters<typeof dueDatesAfter>[0] | null,
+  charge: {
+    date: Date;
+    totalToRepay: number;
+    installments: number | null;
+    installmentsPaid: number;
+  },
+): { date: Date; amount: number }[] {
+  if (!rule || !charge.installments || charge.installmentsPaid <= 0) return [];
+  const dates = dueDatesAfter(rule, charge.date, charge.installments);
+  const amounts = splitInstallments(charge.totalToRepay, dates.length);
+  return dates
+    .slice(0, charge.installmentsPaid)
+    .map((date, i) => ({ date, amount: amounts[i] }));
+}
+
+/**
+ * Rewrites the historical payments of a charge from its `installmentsPaid`
+ * (they stay out of income and expense totals).
+ */
+export async function syncChargeHistory(tx: Client, chargeId: string) {
+  await tx.debtPayment.deleteMany({ where: { chargeId } });
+  const charge = await tx.debtCharge.findUniqueOrThrow({
+    where: { id: chargeId },
+  });
+  const rule = await tx.recurringExpense.findUnique({
+    where: { debtId: charge.debtId },
+  });
+  const paid = paidInstallments(rule, {
+    ...charge,
+    totalToRepay: Number(charge.totalToRepay),
+  });
+  if (paid.length === 0) return;
+  await tx.debtPayment.createMany({
+    data: paid.map((p) => ({
+      debtId: charge.debtId,
+      chargeId,
+      isHistorical: true,
+      amount: p.amount,
+      date: p.date,
+    })),
+  });
 }
 
 /** Reverts and deletes a deposit created by `createMovement`. */

@@ -199,6 +199,8 @@ export interface FinancedCharge {
   date: Date;
   totalToRepay: number;
   installments: number;
+  /** The first ones, paid before registering it. */
+  installmentsPaid?: number;
   /** What was bought or lent, when said. */
   description?: string | null;
 }
@@ -214,12 +216,14 @@ export interface ChargeInstallment {
   of: number;
   amount: number;
   description: string | null;
+  /** Paid before the charge was registered (a historical payment). */
+  paid: boolean;
 }
 
 /**
  * The installments of every charge by due date: each charge is split into
  * its own installments, which fall on the loan's due dates starting with
- * the first one after the charge.
+ * the first one after the charge. The first `installmentsPaid` are paid.
  */
 export function chargeInstallments(
   rule: ScheduleRule,
@@ -237,6 +241,7 @@ export function chargeInstallments(
         of: charge.installments,
         amount: amounts[i],
         description: charge.description ?? null,
+        paid: i < (charge.installmentsPaid ?? 0),
       });
       byDate.set(key, due);
     });
@@ -244,9 +249,17 @@ export function chargeInstallments(
   return byDate;
 }
 
+/** What is still due on a date: its installments not paid yet. */
+export function amountDue(due: ChargeInstallment[]): number {
+  return cents(
+    due.filter((d) => !d.paid).reduce((sum, d) => sum + d.amount, 0),
+  );
+}
+
 /**
  * Purchase financing (Kueski, Didi) and personal loans paid in installments:
- * the total due on each date (see `chargeInstallments`).
+ * the total due on each date (see `chargeInstallments`), leaving out dates
+ * whose installments were all paid before registering them.
  */
 export function purchaseFinancingSchedule(
   rule: ScheduleRule,
@@ -254,10 +267,8 @@ export function purchaseFinancingSchedule(
 ): ScheduledInstallment[] {
   return [...chargeInstallments(rule, charges).entries()]
     .sort(([a], [b]) => a - b)
-    .map(([time, due]) => ({
-      dueDate: new Date(time),
-      amount: cents(due.reduce((sum, d) => sum + d.amount, 0)),
-    }));
+    .map(([time, due]) => ({ dueDate: new Date(time), amount: amountDue(due) }))
+    .filter((s) => s.amount > 0);
 }
 
 export interface BalanceInput {

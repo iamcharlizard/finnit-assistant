@@ -254,6 +254,7 @@ description | text | — | What it was for | —
 principal | numeric | ✔ | Amount borrowed | —
 total_to_repay | numeric | ✔ | Principal + interest | —
 installments | smallint | — | Payments of this charge | Required for purchase financing
+installments_paid | smallint | ✔ | Of those, paid before it was registered | Default 0; each is a historical `debt_payment` with `charge_id`
 destination | enum | ✔ | Where the money went | `deposit|purchase`
 transaction_id | uuid | — | Deposit into an account | FK→transaction.id, unique
 purpose_category_id | uuid | — | What this money was for | FK→category.id (set null); informative only
@@ -270,6 +271,7 @@ transaction_id | uuid | — | Payment transaction | FK→transaction.id; null fo
 is_historical | boolean | ✔ | Made before the debt was registered | Outside income/expense totals
 amount | numeric | ✔ | Payment amount | —
 date | date | ✔ | Payment date | —
+charge_id | uuid | — | Charge whose installment this historical payment is | FK→debt_charge.id (set null); rewritten from `installments_paid`
 
 ---
 

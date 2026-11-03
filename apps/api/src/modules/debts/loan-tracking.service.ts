@@ -30,7 +30,11 @@ import {
   isScheduledByCharges,
   totalOwedOf,
 } from './debt-ledger';
-import { amortizationSchedule, chargeInstallments } from './loan-math';
+import {
+  amortizationSchedule,
+  amountDue,
+  chargeInstallments,
+} from './loan-math';
 import {
   MATCH_DATE_WINDOW_DAYS,
   matchLoanPayments,
@@ -90,11 +94,22 @@ export class LoanTrackingService {
     });
     if (!debt) throw new NotFoundError('Debt not found');
 
+    // Historical payments of the loan's own schedule, by date. Those of a
+    // charge's installments are listed apart (several may share a date).
     const historicalByDate = new Map(
       debt.payments
-        .filter((p) => p.isHistorical)
+        .filter((p) => p.isHistorical && !p.chargeId)
         .map((p) => [p.date.getTime(), p]),
     );
+    const chargePaidByDate = new Map<number, number>();
+    for (const p of debt.payments) {
+      if (!p.isHistorical || !p.chargeId) continue;
+      const key = p.date.getTime();
+      chargePaidByDate.set(
+        key,
+        cents((chargePaidByDate.get(key) ?? 0) + Number(p.amount)),
+      );
+    }
     const expense = debt.recurringExpense;
     const items: Omit<LoanScheduleItem, 'balance'>[] = (
       expense?.occurrences ?? []
@@ -122,6 +137,15 @@ export class LoanTrackingService {
         projected: false,
       });
     }
+    for (const [time, amount] of chargePaidByDate) {
+      items.push({
+        dueDate: new Date(time),
+        amount,
+        status: OccurrenceStatus.paid,
+        isHistorical: true,
+        projected: false,
+      });
+    }
 
     // Loans scheduled by their charges: what each payment covers.
     const byCharge =
@@ -129,12 +153,7 @@ export class LoanTrackingService {
         ? chargeInstallments(expense, financedCharges(debt))
         : null;
     const amounts = byCharge
-      ? new Map(
-          [...byCharge].map(([time, due]) => [
-            time,
-            cents(due.reduce((sum, d) => sum + d.amount, 0)),
-          ]),
-        )
+      ? new Map([...byCharge].map(([time, due]) => [time, amountDue(due)]))
       : null;
 
     if (expense?.active) {
@@ -176,10 +195,16 @@ export class LoanTrackingService {
 
     if (byCharge) {
       for (const item of items) {
-        const due = byCharge.get(item.dueDate.getTime());
-        if (due) {
+        // Paid-before rows show the installments paid then; the rest, the
+        // ones still due.
+        const due = byCharge
+          .get(item.dueDate.getTime())
+          ?.filter((d) => d.paid === item.isHistorical);
+        if (due?.length) {
           item.installments = due.map((d) => ({
-            ...d,
+            number: d.number,
+            of: d.of,
+            amount: d.amount,
             description: d.description ?? undefined,
           }));
         }

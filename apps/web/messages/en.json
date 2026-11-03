@@ -1068,7 +1068,8 @@
       "totalBelowPrincipal": "The amount borrowed cannot be more than the total to repay.",
       "installmentsBelowPaid": "The number of payments cannot be less than the payments already made.",
       "fixedPayment": "This loan has a fixed payment: add the amount without a number of payments.",
-      "firstPaymentAfterDate": "The first payment must be after the date."
+      "firstPaymentAfterDate": "The first payment must be after the date.",
+      "installmentsPaidCount": "Payments already made cannot be more than the number of payments."
     },
     "newLoan": "Loan",
     "newOther": "Card or other debt",
@@ -1262,7 +1263,10 @@
       "firstPayment": "First payment (optional)",
       "firstPaymentHint": "Left empty, a month after the date. The rest fall every month on that same day.",
       "installmentsHintPersonal": "For example, a purchase at 3 interest-free months on their card: 3 payments are scheduled, one a month.",
-      "save": "Save"
+      "save": "Save",
+      "installmentsPaid": "Payments already made (optional)",
+      "installmentsPaidPlaceholder": "E.g. 1",
+      "installmentsPaidHint": "The ones you paid before registering it: they lower what you owe but do not count as this month’s expenses."
     },
     "chargeValidation": {
       "dateRequired": "Pick the date.",
@@ -1276,7 +1280,8 @@
       "rateRequired": "Enter the annual rate.",
       "rateInvalid": "The rate must be between 0 and 1000%.",
       "depositAccountRequired": "Choose the account that received the money.",
-      "firstPaymentBeforeDate": "The first payment must be after the date."
+      "firstPaymentBeforeDate": "The first payment must be after the date.",
+      "installmentsPaidInvalid": "Cannot be more than the number of payments."
     },
     "detail": {
       "back": "Debts",

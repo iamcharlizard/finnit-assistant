@@ -61,6 +61,8 @@ import {
   deleteDeposit,
   isPurchaseFinancing,
   isScheduledByCharges,
+  paidInstallments,
+  syncChargeHistory,
   syncDebtStatus,
   totalOwedOf,
 } from './debt-ledger';
@@ -545,7 +547,7 @@ export class LoansService {
               countsAsIncome: input.depositCountsAsIncome ?? false,
             })
           : null;
-      await tx.debtCharge.create({
+      const created = await tx.debtCharge.create({
         data: { ...charge, debtId: debt.id, transactionId: deposit?.id },
       });
       if (scheduleName) {
@@ -554,6 +556,7 @@ export class LoansService {
           startDate: this.firstPaymentDate(charge.date, input),
         });
       }
+      await syncChargeHistory(tx, created.id);
       await syncDebtStatus(tx, debt.id);
       await this.recurring.resyncLoanOccurrences(tx, debt.id);
     });
@@ -582,7 +585,14 @@ export class LoansService {
     });
     const charge = await this.chargeData(userId, debt, input);
 
-    const paid = debt.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const rule = await this.prisma.recurringExpense.findUnique({
+      where: { debtId: debt.id },
+    });
+    const paid =
+      debt.payments
+        .filter((p) => p.chargeId !== id)
+        .reduce((sum, p) => sum + Number(p.amount), 0) +
+      paidInstallments(rule, charge).reduce((sum, p) => sum + p.amount, 0);
     const owed = cents(
       totalOwedOf(debt) - Number(existing.totalToRepay) + charge.totalToRepay,
     );
@@ -634,6 +644,7 @@ export class LoansService {
           startDate: this.firstPaymentDate(charge.date, input),
         });
       }
+      await syncChargeHistory(tx, id);
       await syncDebtStatus(tx, debt.id);
       await this.recurring.resyncLoanOccurrences(tx, debt.id);
     });
@@ -674,6 +685,22 @@ export class LoansService {
     ) {
       throw new ValidationError('Choose the account that received the money');
     }
+    const installmentsPaid = input.installmentsPaid ?? 0;
+    if (installmentsPaid > 0 && !input.installments) {
+      throw new ValidationError(
+        'Payments already made need the number of payments',
+      );
+    }
+    if (installmentsPaid > 0 && !isScheduledByCharges(debt)) {
+      throw new ValidationError(
+        'Only purchases on a schedule can have payments already made',
+      );
+    }
+    if (input.installments && installmentsPaid > input.installments) {
+      throw new ValidationError(
+        'Payments already made cannot exceed the number of payments',
+      );
+    }
 
     const terms = this.resolveTerms({
       principal: input.principal,
@@ -700,6 +727,7 @@ export class LoansService {
       principal: input.principal,
       totalToRepay: terms.totalToRepay,
       installments: input.installments ?? null,
+      installmentsPaid,
       destination: input.destination,
       purposeCategoryId: await this.purposeCategoryId(
         userId,
@@ -784,6 +812,8 @@ export class LoansService {
     if (!charge) throw new NotFoundError('Charge not found');
 
     await this.prisma.$transaction(async (tx) => {
+      // Its installments paid before registering it go with it.
+      await tx.debtPayment.deleteMany({ where: { chargeId: id } });
       await tx.debtCharge.delete({ where: { id } });
       if (charge.transactionId) await deleteDeposit(tx, charge.transactionId);
       await this.recurring.resyncLoanOccurrences(tx, charge.debtId);

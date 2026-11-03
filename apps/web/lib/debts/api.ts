@@ -279,6 +279,10 @@ const MESSAGES: [RegExp, Parameters<Translate>[0]][] = [
   [/choose the payment frequency/i, 'debts.errors.frequency'],
   [/has a fixed payment/i, 'debts.errors.fixedPayment'],
   [/first payment must be after/i, 'debts.errors.firstPaymentAfterDate'],
+  [
+    /payments already made cannot exceed the number/i,
+    'debts.errors.installmentsPaidCount',
+  ],
 ];
 
 export function debtErrorMessage(error: unknown, t: Translate): string {

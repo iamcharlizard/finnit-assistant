@@ -84,6 +84,8 @@ export interface ApiDebtCharge {
   principal: number;
   totalToRepay: number;
   installments: number | null;
+  /** Installments paid before it was registered. */
+  installmentsPaid: number;
   destination: DebtDestination;
   transactionId: string | null;
   /** Deposited money: the account that received it. */
@@ -151,7 +153,7 @@ export interface ApiDebtDetail extends ApiDebt {
   charges: ApiDebtCharge[];
 }
 
-export const DEBT_DETAIL_FIELDS = `${DEBT_FIELDS} payments { id transactionId isHistorical amount date } charges { id date description principal totalToRepay installments destination transactionId depositAccountId depositCountsAsIncome purposeCategoryId lendingMethod }`;
+export const DEBT_DETAIL_FIELDS = `${DEBT_FIELDS} payments { id transactionId isHistorical amount date } charges { id date description principal totalToRepay installments installmentsPaid destination transactionId depositAccountId depositCountsAsIncome purposeCategoryId lendingMethod }`;
 
 export type ScheduleStatus = 'upcoming' | 'paid' | 'skipped' | 'missed';
 

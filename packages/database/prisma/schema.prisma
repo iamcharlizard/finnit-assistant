@@ -778,6 +778,8 @@ model DebtCharge {
   principal         Decimal               @db.Decimal(18, 2)
   totalToRepay      Decimal               @db.Decimal(18, 2)
   installments      Int?                  @db.SmallInt
+  // Installments paid before it was registered (historical payments).
+  installmentsPaid  Int                   @default(0) @db.SmallInt
   destination       DebtChargeDestination
   transactionId     String?               @unique // deposit into an account
   // What this money was for (informative: the expense is the payments).
@@ -786,9 +788,10 @@ model DebtCharge {
   lendingMethod     LendingMethod?
   createdAt         DateTime              @default(now())
 
-  debt            Debt         @relation(fields: [debtId], references: [id], onDelete: Cascade)
-  transaction     Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
-  purposeCategory Category?    @relation("debt_charge_purpose_category", fields: [purposeCategoryId], references: [id], onDelete: SetNull)
+  debt            Debt          @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  transaction     Transaction?  @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  purposeCategory Category?     @relation("debt_charge_purpose_category", fields: [purposeCategoryId], references: [id], onDelete: SetNull)
+  payments        DebtPayment[]
 
   @@index([debtId, date])
 }
@@ -802,12 +805,16 @@ model DebtPayment {
   isHistorical  Boolean  @default(false)
   amount        Decimal  @db.Decimal(18, 2)
   date          DateTime @db.Date
+  // Historical installment of a charge (its `installmentsPaid`).
+  chargeId      String?
 
   debt        Debt         @relation(fields: [debtId], references: [id], onDelete: Cascade)
   transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  charge      DebtCharge?  @relation(fields: [chargeId], references: [id], onDelete: SetNull)
 
   @@unique([transactionId])
   @@index([debtId, date])
+  @@index([chargeId])
 }
 
 model Notification {

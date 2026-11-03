@@ -202,6 +202,11 @@ input AddDebtChargeInput {
   """Installments of this charge (required for purchase financing)"""
   installments: Int
 
+  """
+  Installments of this charge already paid before registering it (historical payments, outside totals)
+  """
+  installmentsPaid: Int
+
   """Default: total_amount (no interest unless totalToRepay)"""
   interestMode: LoanInterestMode
   interestRateAnnual: Float
@@ -921,6 +926,9 @@ type DebtCharge {
   destination: DebtChargeDestination!
   id: ID!
   installments: Int
+
+  """Installments paid before it was registered"""
+  installmentsPaid: Int!
 
   """Personal loans: how it was lent"""
   lendingMethod: LendingMethod
@@ -2418,6 +2426,11 @@ input UpdateDebtChargeInput {
 
   """Installments of this charge (required for purchase financing)"""
   installments: Int
+
+  """
+  Installments of this charge already paid before registering it (historical payments, outside totals)
+  """
+  installmentsPaid: Int
 
   """Default: total_amount (no interest unless totalToRepay)"""
   interestMode: LoanInterestMode

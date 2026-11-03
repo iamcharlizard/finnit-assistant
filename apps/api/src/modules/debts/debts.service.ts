@@ -24,6 +24,7 @@ import {
   OccurrenceMatchSource,
   OccurrenceStatus,
   Prisma,
+  TransactionType,
 } from '@finnit/database';
 import { RecurringExpensesService } from '../recurring-expenses/recurring-expenses.service';
 import { monthlyEquivalent } from '../recurring-expenses/schedule.util';
@@ -37,7 +38,10 @@ import {
 /** What every read of a debt loads. */
 export const DEBT_INCLUDE = {
   payments: { orderBy: [{ date: 'desc' }, { id: 'desc' }] },
-  charges: { orderBy: [{ date: 'desc' }, { id: 'desc' }] },
+  charges: {
+    orderBy: [{ date: 'desc' }, { id: 'desc' }],
+    include: { transaction: { select: { accountId: true, type: true } } },
+  },
   recurringExpense: { select: { id: true, nextDueDate: true } },
 } satisfies Prisma.DebtInclude;
 
@@ -749,6 +753,10 @@ export class DebtsService {
       installments: charge.installments ?? undefined,
       destination: charge.destination,
       transactionId: charge.transactionId ?? undefined,
+      depositAccountId: charge.transaction?.accountId,
+      depositCountsAsIncome: charge.transaction
+        ? charge.transaction.type === TransactionType.income
+        : undefined,
       purposeCategoryId: charge.purposeCategoryId ?? undefined,
       lendingMethod: charge.lendingMethod ?? undefined,
       createdAt: charge.createdAt,

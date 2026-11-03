@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   AiFeatureKey,
   LoanInterestMode,
-  LoanType,
   OccurrenceMatchSource,
   OccurrenceStatus,
   Prisma,
@@ -25,8 +24,13 @@ import {
 } from '../recurring-expenses/schedule.util';
 import { Debt, LoanPaymentCandidate, LoanScheduleItem } from './dto/debt.dto';
 import { DEBT_INCLUDE, DebtsService } from './debts.service';
-import { balanceOf, financedCharges, totalOwedOf } from './debt-ledger';
-import { amortizationSchedule, purchaseFinancingSchedule } from './loan-math';
+import {
+  balanceOf,
+  financedCharges,
+  isScheduledByCharges,
+  totalOwedOf,
+} from './debt-ledger';
+import { amortizationSchedule, chargeInstallments } from './loan-math';
 import {
   MATCH_DATE_WINDOW_DAYS,
   matchLoanPayments,
@@ -119,6 +123,20 @@ export class LoanTrackingService {
       });
     }
 
+    // Loans scheduled by their charges: what each payment covers.
+    const byCharge =
+      expense && isScheduledByCharges(debt)
+        ? chargeInstallments(expense, financedCharges(debt))
+        : null;
+    const amounts = byCharge
+      ? new Map(
+          [...byCharge].map(([time, due]) => [
+            time,
+            cents(due.reduce((sum, d) => sum + d.amount, 0)),
+          ]),
+        )
+      : null;
+
     if (expense?.active) {
       // Still owed beyond the payments already scheduled.
       let left = cents(
@@ -133,17 +151,13 @@ export class LoanTrackingService {
       );
       const last =
         expense.occurrences.at(-1)?.dueDate ?? addDays(expense.startDate, -1);
-      const amounts =
-        debt.loanType === LoanType.purchase_financing
-          ? new Map(
-              purchaseFinancingSchedule(expense, financedCharges(debt)).map(
-                (s) => [s.dueDate.getTime(), s.amount],
-              ),
-            )
-          : null;
       const dates = dueDatesAfter(expense, last, MAX_PROJECTED);
       for (const dueDate of dates) {
         if (left <= 0) break;
+        // Charges scheduled this way end: nothing is projected past them.
+        if (amounts && dueDate.getTime() > Math.max(0, ...amounts.keys())) {
+          break;
+        }
         const due = amounts
           ? (amounts.get(dueDate.getTime()) ?? 0)
           : Number(expense.amount);
@@ -157,6 +171,18 @@ export class LoanTrackingService {
           projected: true,
         });
         left = cents(left - amount);
+      }
+    }
+
+    if (byCharge) {
+      for (const item of items) {
+        const due = byCharge.get(item.dueDate.getTime());
+        if (due) {
+          item.installments = due.map((d) => ({
+            ...d,
+            description: d.description ?? undefined,
+          }));
+        }
       }
     }
 

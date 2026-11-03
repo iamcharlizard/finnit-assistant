@@ -40,6 +40,8 @@ export const LOAN_DRAFT_QUERY = `query LoanDraft($fingerprint: ID!) { recurringS
 
 export const ADD_DEBT_CHARGE_MUTATION = `mutation AddDebtCharge($input: AddDebtChargeInput!) { addDebtCharge(input: $input) { id } }`;
 
+export const UPDATE_DEBT_CHARGE_MUTATION = `mutation UpdateDebtCharge($id: ID!, $input: UpdateDebtChargeInput!) { updateDebtCharge(id: $id, input: $input) { id } }`;
+
 export const DELETE_DEBT_CHARGE_MUTATION = `mutation DeleteDebtCharge($id: ID!) { deleteDebtCharge(id: $id) { id } }`;
 
 export const DELETE_HISTORICAL_PAYMENT_MUTATION = `mutation DeleteHistoricalDebtPayment($id: ID!) { deleteHistoricalDebtPayment(id: $id) }`;
@@ -130,6 +132,14 @@ export async function addDebtCharge(
   await run(ADD_DEBT_CHARGE_MUTATION, {
     input: buildChargeInput(form, debtId),
   });
+}
+
+export async function updateDebtCharge(
+  form: ChargeForm,
+  id: string,
+  run: GqlRunner,
+): Promise<void> {
+  await run(UPDATE_DEBT_CHARGE_MUTATION, { id, input: buildChargeInput(form) });
 }
 
 export async function deleteDebtCharge(
@@ -267,6 +277,8 @@ const MESSAGES: [RegExp, Parameters<Translate>[0]][] = [
   [/already exists/i, 'debts.errors.duplicateName'],
   [/deposit account not found|account not found/i, 'debts.errors.account'],
   [/choose the payment frequency/i, 'debts.errors.frequency'],
+  [/has a fixed payment/i, 'debts.errors.fixedPayment'],
+  [/first payment must be after/i, 'debts.errors.firstPaymentAfterDate'],
 ];
 
 export function debtErrorMessage(error: unknown, t: Translate): string {

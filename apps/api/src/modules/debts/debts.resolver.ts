@@ -13,6 +13,7 @@ import {
   PayoffStrategyInput,
   DebtPayment,
   AddDebtChargeInput,
+  UpdateDebtChargeInput,
   UpdateLoanInput,
   RecordDebtPaymentInput,
   AcceptSuggestionAsLoanInput,
@@ -155,6 +156,18 @@ export class DebtsResolver {
     @Args('input') input: AddDebtChargeInput,
   ): Promise<Debt> {
     return this.loans.addCharge(user.id, input);
+  }
+
+  @Mutation(() => Debt, {
+    description:
+      'Edits money added to a loan; its installments and deposit follow it',
+  })
+  async updateDebtCharge(
+    @CurrentUser() user: User,
+    @Args('id', { type: () => ID }) id: string,
+    @Args('input') input: UpdateDebtChargeInput,
+  ): Promise<Debt> {
+    return this.loans.updateCharge(user.id, id, input);
   }
 
   @Mutation(() => Debt)

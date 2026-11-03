@@ -38,8 +38,9 @@ export function totalOwedOf(debt: DebtWithLedger): number {
 }
 
 /**
- * Purchases of a purchase-financing loan that are paid in installments: the
- * initial one (bought on the debt's start date) plus every charge with a term.
+ * What a loan scheduled by its charges pays in installments: the initial
+ * amount (on the debt's start date) when it has a term, plus every charge
+ * with a term.
  */
 export function financedCharges(debt: {
   startDate: Date | null;
@@ -48,6 +49,7 @@ export function financedCharges(debt: {
   installmentsTotal: number | null;
   charges: {
     date: Date;
+    description: string | null;
     totalToRepay: Prisma.Decimal;
     installments: number | null;
   }[];
@@ -66,6 +68,7 @@ export function financedCharges(debt: {
         date: charge.date,
         totalToRepay: Number(charge.totalToRepay),
         installments: charge.installments,
+        description: charge.description,
       });
     }
   }
@@ -182,4 +185,19 @@ export function defaultPurchaseDate(firstPaymentDate: Date): Date {
 
 export function isPurchaseFinancing(debt: { loanType: LoanType | null }) {
   return debt.loanType === LoanType.purchase_financing;
+}
+
+/**
+ * Loans whose payments come from their charges, each split into its own
+ * installments: purchase financing, and personal loans without a fixed
+ * payment (e.g. a purchase on the lender's card at 3 MSI).
+ */
+export function isScheduledByCharges(debt: {
+  loanType: LoanType | null;
+  installmentAmount: Prisma.Decimal | number | null;
+}) {
+  return (
+    isPurchaseFinancing(debt) ||
+    (debt.loanType === LoanType.personal && debt.installmentAmount === null)
+  );
 }

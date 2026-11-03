@@ -3,13 +3,16 @@ import { describe, it } from 'node:test';
 
 import { testLocalizer } from '@/lib/i18n/testing';
 import {
+  asksFirstPayment,
   buildChargeInput,
+  chargeFormOf,
   newChargeForm,
   validateChargeForm,
 } from './charge-form';
 import {
   buildCandidateRows,
   buildLoanDetailView,
+  installmentsConcept,
   loanOutstanding,
 } from './detail-view';
 import {
@@ -387,6 +390,83 @@ describe('charge form', () => {
   });
 });
 
+describe('personal loan in installments', () => {
+  it('asks the first payment only while the loan has no schedule', () => {
+    const form = { installments: '3' };
+    assert.equal(
+      asksFirstPayment(
+        { loanType: 'personal', recurringExpenseId: null },
+        form,
+      ),
+      true,
+    );
+    assert.equal(
+      asksFirstPayment({ loanType: 'personal', recurringExpenseId: 'r' }, form),
+      false,
+    );
+    assert.equal(
+      asksFirstPayment(
+        { loanType: 'personal', recurringExpenseId: null },
+        { installments: '' },
+      ),
+      false,
+    );
+  });
+
+  it('sends the first payment after the date, and checks it', () => {
+    const form = {
+      ...newChargeForm({ loanType: 'personal' }, today),
+      principal: '3000',
+      installments: '3',
+      destination: 'purchase' as const,
+      firstPaymentDate: today,
+    };
+    assert.deepEqual(
+      validateChargeForm(form, { today, needsInstallments: false }),
+      { firstPaymentDate: 'firstPaymentBeforeDate' },
+    );
+    const later = {
+      ...form,
+      date: '2026-10-01',
+      firstPaymentDate: '2026-10-20',
+    };
+    assert.equal(buildChargeInput(later).firstPaymentDate, '2026-10-20');
+    assert.equal(buildChargeInput(later).debtId, undefined);
+  });
+
+  it('edits a charge from what it saved', () => {
+    const form = chargeFormOf({
+      id: 'c',
+      date: '2026-10-02T00:00:00.000Z',
+      description: 'Pantalla',
+      principal: 3_000,
+      totalToRepay: 3_000,
+      installments: 3,
+      destination: 'deposit',
+      transactionId: 't',
+      depositAccountId: 'debit',
+      depositCountsAsIncome: false,
+      purposeCategoryId: null,
+      lendingMethod: 'credit_card',
+    });
+    assert.equal(form.date, '2026-10-02');
+    assert.equal(form.totalToRepay, '');
+    assert.equal(form.installments, '3');
+    assert.equal(form.depositAccountId, 'debit');
+  });
+
+  it('names each installment of a payment', () => {
+    assert.equal(
+      installmentsConcept([
+        { number: 1, of: 3, amount: 1_000, description: 'Pantalla' },
+        { number: 2, of: 12, amount: 50, description: null },
+      ]),
+      'Pantalla 01/03 · 02/12',
+    );
+    assert.equal(installmentsConcept(null), null);
+  });
+});
+
 describe('personal loan lender', () => {
   it('sends the contact, or the typed name when there is none', () => {
     const base = {
@@ -597,6 +677,7 @@ describe('loan detail view', () => {
     interest: null,
     vat: null,
     fee: null,
+    installments: null,
     balance: 0,
     ...patch,
   });
@@ -616,6 +697,8 @@ describe('loan detail view', () => {
             installments: 2,
             destination: 'purchase',
             transactionId: null,
+            depositAccountId: null,
+            depositCountsAsIncome: null,
             purposeCategoryId: 'tech',
             lendingMethod: null,
           },
@@ -707,6 +790,8 @@ describe('loan detail view', () => {
             installments: null,
             destination: 'purchase',
             transactionId: null,
+            depositAccountId: null,
+            depositCountsAsIncome: null,
             purposeCategoryId: null,
             lendingMethod: 'credit_card',
           },

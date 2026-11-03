@@ -36,7 +36,7 @@ import {
 } from './schedule.util';
 import {
   financedCharges,
-  isPurchaseFinancing,
+  isScheduledByCharges,
   syncDebtStatus,
 } from '../debts/debt-ledger';
 import { purchaseFinancingSchedule } from '../debts/loan-math';
@@ -788,9 +788,10 @@ export class RecurringExpensesService {
   }
 
   /**
-   * Purchase-financing loans (Kueski, Didi) owe a different amount on each
-   * due date: the sum of the installments of every purchase. Null for any
-   * other expense, which owes `amount` every time.
+   * Purchase-financing loans (Kueski, Didi) and personal loans paid in
+   * installments owe a different amount on each due date: the sum of the
+   * installments of every charge. Null for any other expense, which owes
+   * `amount` every time.
    */
   private async loanAmounts(
     client: Prisma.TransactionClient,
@@ -801,7 +802,7 @@ export class RecurringExpensesService {
       where: { id: expense.debtId },
       include: { charges: true },
     });
-    if (!debt || !isPurchaseFinancing(debt)) return null;
+    if (!debt || !isScheduledByCharges(debt)) return null;
     const schedule = purchaseFinancingSchedule(expense, financedCharges(debt));
     return new Map(schedule.map((s) => [s.dueDate.getTime(), s.amount]));
   }

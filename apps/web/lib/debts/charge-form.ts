@@ -1,10 +1,11 @@
-import { isDayKey, type DayKey } from '@/lib/finance/dates';
+import { dayKeyOf, isDayKey, type DayKey } from '@/lib/finance/dates';
 import { parseAmount } from '@/lib/new-entry/form';
 import { MAX_AMOUNT, parseRate } from './form';
 import { MAX_ANNUAL_RATE, MAX_INSTALLMENTS } from './loan-form';
 import { previewLoanTerms, type LoanTermsPreview } from './loan-terms';
 import type {
   ApiDebt,
+  ApiDebtCharge,
   DebtDestination,
   LendingMethod,
   LoanFrequency,
@@ -33,6 +34,11 @@ export interface ChargeForm {
   purposeCategoryId: string;
   /** Personal loans: how it was lent ('' = not said). */
   lendingMethod: LendingMethod | '';
+  /**
+   * Personal loans paid in installments without a schedule yet: first due
+   * date ('' = a month after the date).
+   */
+  firstPaymentDate: string;
 }
 
 export type ChargeField = keyof ChargeForm;
@@ -48,6 +54,7 @@ export type ChargeErrorCode =
   | 'totalBelowPrincipal'
   | 'rateRequired'
   | 'rateInvalid'
+  | 'firstPaymentBeforeDate'
   | 'depositAccountRequired';
 
 export type ChargeFormErrors = Partial<Record<ChargeField, ChargeErrorCode>>;
@@ -71,7 +78,46 @@ export function newChargeForm(
     depositCountsAsIncome: false,
     purposeCategoryId: '',
     lendingMethod: '',
+    firstPaymentDate: '',
   };
+}
+
+/** The form of a charge being edited (its total, not how it was worked out). */
+export function chargeFormOf(charge: ApiDebtCharge): ChargeForm {
+  return {
+    date: dayKeyOf(charge.date),
+    description: charge.description ?? '',
+    principal: String(charge.principal),
+    installments: charge.installments ? String(charge.installments) : '',
+    interest: 'total',
+    totalToRepay:
+      charge.totalToRepay !== charge.principal
+        ? String(charge.totalToRepay)
+        : '',
+    rate: '',
+    includesVat: false,
+    destination: charge.destination,
+    depositAccountId: charge.depositAccountId ?? '',
+    depositCountsAsIncome: charge.depositCountsAsIncome ?? false,
+    purposeCategoryId: charge.purposeCategoryId ?? '',
+    lendingMethod: charge.lendingMethod ?? '',
+    firstPaymentDate: '',
+  };
+}
+
+/**
+ * A personal loan without a payment schedule gets one with its first amount
+ * paid in installments: then the form asks for the first due date.
+ */
+export function asksFirstPayment(
+  debt: Pick<ApiDebt, 'loanType' | 'recurringExpenseId'>,
+  form: Pick<ChargeForm, 'installments'>,
+): boolean {
+  return (
+    debt.loanType === 'personal' &&
+    !debt.recurringExpenseId &&
+    Boolean(form.installments.trim())
+  );
 }
 
 const parseCount = (text: string): number | null =>
@@ -132,20 +178,28 @@ export function validateChargeForm(
       errors.totalToRepay = 'totalBelowPrincipal';
   }
 
+  if (
+    form.installments.trim() &&
+    isDayKey(form.firstPaymentDate) &&
+    isDayKey(form.date) &&
+    form.firstPaymentDate <= form.date
+  )
+    errors.firstPaymentDate = 'firstPaymentBeforeDate';
+
   if (form.destination === 'deposit' && !form.depositAccountId)
     errors.depositAccountId = 'depositAccountRequired';
   return errors;
 }
 
-/** AddDebtChargeInput of a valid form. */
+/** AddDebtChargeInput (or UpdateDebtChargeInput without `debtId`) of a valid form. */
 export function buildChargeInput(
   form: ChargeForm,
-  debtId: string,
+  debtId?: string,
 ): Record<string, unknown> {
   const installments = parseCount(form.installments);
   const useRate = form.interest === 'rate' && installments !== null;
   return {
-    debtId,
+    ...(debtId && { debtId }),
     date: form.date,
     principal: parseAmount(form.principal),
     destination: form.destination,
@@ -155,6 +209,10 @@ export function buildChargeInput(
     }),
     ...(form.lendingMethod && { lendingMethod: form.lendingMethod }),
     ...(installments !== null && { installments }),
+    ...(installments !== null &&
+      isDayKey(form.firstPaymentDate) && {
+        firstPaymentDate: form.firstPaymentDate,
+      }),
     ...(useRate
       ? {
           interestMode: 'rate',

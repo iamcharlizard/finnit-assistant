@@ -4,6 +4,7 @@ import {
   debtBalance,
   LoanTermsError,
   periodicRate,
+  chargeInstallments,
   purchaseFinancingSchedule,
   resolveLoanTerms,
   splitInstallments,
@@ -172,6 +173,37 @@ describe('loan-math', () => {
           installmentAmount: 100,
         }),
       ).toThrow(LoanTermsError);
+    });
+  });
+
+  describe('chargeInstallments', () => {
+    it('numbers each charge installment on its due date', () => {
+      const rule = {
+        frequency: RecurringFrequency.monthly,
+        interval: 1,
+        startDate: d('2026-11-10'),
+      };
+      const due = chargeInstallments(rule, [
+        {
+          date: d('2026-11-01'),
+          totalToRepay: 3_000,
+          installments: 3,
+          description: 'Pantalla',
+        },
+        { date: d('2026-11-20'), totalToRepay: 500, installments: 2 },
+      ]);
+      expect(
+        [...due].map(([time, parts]) => [
+          iso(new Date(time)),
+          parts.map(
+            (p) => `${p.description ?? '-'} ${p.number}/${p.of} ${p.amount}`,
+          ),
+        ]),
+      ).toEqual([
+        ['2026-11-10', ['Pantalla 1/3 1000']],
+        ['2026-12-10', ['Pantalla 2/3 1000', '- 1/2 250']],
+        ['2027-01-10', ['Pantalla 3/3 1000', '- 2/2 250']],
+      ]);
     });
   });
 

@@ -8,6 +8,7 @@ import {
   Int,
   registerEnumType,
   PartialType,
+  OmitType,
 } from '@nestjs/graphql';
 import {
   IsString,
@@ -242,6 +243,18 @@ export class DebtCharge {
 
   @Field({ nullable: true })
   transactionId?: string;
+
+  @Field({
+    nullable: true,
+    description: 'Deposited money: the account that received it',
+  })
+  depositAccountId?: string;
+
+  @Field({
+    nullable: true,
+    description: 'Deposited money: whether it counts as income',
+  })
+  depositCountsAsIncome?: boolean;
 
   @Field({
     nullable: true,
@@ -697,7 +710,26 @@ export class AddDebtChargeInput {
   @IsOptional()
   @IsEnum(LendingMethod)
   lendingMethod?: LendingMethod;
+
+  @Field({
+    nullable: true,
+    description:
+      'Personal loans paid in installments: first due date when the loan has no payment schedule yet (default: a month after the charge)',
+  })
+  @IsOptional()
+  @IsDateString()
+  firstPaymentDate?: Date;
 }
+
+@InputType({
+  description:
+    'Edits money added to a loan: the same fields as when it was added',
+})
+export class UpdateDebtChargeInput extends OmitType(
+  AddDebtChargeInput,
+  ['debtId'] as const,
+  InputType,
+) {}
 
 @InputType({
   description:
@@ -970,6 +1002,25 @@ export class PayoffStrategyInput {
   strategy: 'avalanche' | 'snowball'; // avalanche: highest interest first, snowball: lowest balance first
 }
 
+@ObjectType({
+  description: 'One installment of one charge inside a scheduled payment',
+})
+export class LoanScheduleInstallment {
+  @Field(() => Int, {
+    description: 'Which installment of the charge (1-based)',
+  })
+  number: number;
+
+  @Field(() => Int, { description: 'Installments of the charge' })
+  of: number;
+
+  @Field(() => Float)
+  amount: number;
+
+  @Field({ nullable: true, description: 'What was bought or lent' })
+  description?: string;
+}
+
 @ObjectType({ description: 'One payment of a loan over time' })
 export class LoanScheduleItem {
   @Field()
@@ -1021,6 +1072,13 @@ export class LoanScheduleItem {
     description: 'Fixed fee of this payment, VAT included',
   })
   fee?: number;
+
+  @Field(() => [LoanScheduleInstallment], {
+    nullable: true,
+    description:
+      'Loans scheduled by their charges: the installment of each charge this payment covers',
+  })
+  installments?: LoanScheduleInstallment[];
 
   @Field(() => Float, {
     description:

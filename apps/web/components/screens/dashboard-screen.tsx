@@ -2,19 +2,17 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { CalendarCheck, Inbox, Landmark } from 'lucide-react';
+import { CalendarCheck, Landmark } from 'lucide-react';
 
 import { StatCard } from '@finnit/ui/components/finance/stat-card';
-import { Card } from '@finnit/ui/components/ui/card';
 import { SectionHeading } from '@finnit/ui/components/ui/section-heading';
-import { Separator } from '@finnit/ui/components/ui/separator';
 
 import { BudgetDashboardCard } from '@/components/budgets/budget-dashboard-card';
 import { BalanceSummary } from '@/components/dashboard/balance-summary';
+import { DashboardDebts } from '@/components/dashboard/dashboard-debts';
 import { DashboardWelcome } from '@/components/dashboard/dashboard-welcome';
 import { EmptyState } from '@/components/finance/empty-state';
 import { PaymentRow } from '@/components/finance/payment-row';
-import { TransactionRow } from '@/components/finance/transaction-row';
 import { useSessionUser } from '@/components/session-provider';
 import type { BudgetCardView } from '@/lib/budgets/view';
 import { UPCOMING_DAYS, type DashboardView } from '@/lib/dashboard/view';
@@ -96,43 +94,14 @@ export function DashboardScreen({
         )}
       </section>
 
-      <section className="min-w-0 lg:col-span-2">
-        <SectionHeading
-          title={t('recent')}
-          action={
-            view.recent.length > 0 ? (
-              <Link
-                href="/history"
-                aria-label={t('seeAllLabel')}
-                className={LINK_CLASS}
-              >
-                {t('seeAll')}
-              </Link>
-            ) : null
-          }
-        />
-        {view.recent.length > 0 ? (
-          <Card className="gap-0 overflow-hidden p-0">
-            {view.recent.map((row, i) => (
-              <div key={row.id}>
-                <TransactionRow
-                  row={row}
-                  className="rounded-none bg-transparent"
-                />
-                {i < view.recent.length - 1 ? (
-                  <Separator className="mx-4 w-auto opacity-40 data-[orientation=horizontal]:w-auto" />
-                ) : null}
-              </div>
-            ))}
-          </Card>
-        ) : (
-          <EmptyState
-            icon={Inbox}
-            title={t('noRecentTitle')}
-            description={t('noRecentDescription')}
+      {view.debts ? (
+        <div className="min-w-0 lg:col-span-2">
+          <DashboardDebts
+            insights={view.debts.insights}
+            today={view.debts.today}
           />
-        )}
-      </section>
+        </div>
+      ) : null}
     </div>
   );
 }

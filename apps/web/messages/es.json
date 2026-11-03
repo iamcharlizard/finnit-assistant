@@ -291,11 +291,6 @@
     "calendarLink": "Ver todos",
     "noUpcomingTitle": "Sin pagos próximos",
     "noUpcomingDescription": "No tienes pagos recurrentes en los próximos {days} días.",
-    "recent": "Actividad reciente",
-    "seeAll": "Ver todo",
-    "seeAllLabel": "Ver todos los movimientos",
-    "noRecentTitle": "Sin movimientos todavía",
-    "noRecentDescription": "Cuando tu banco importe movimientos aparecerán aquí.",
     "balance": {
       "available": "Saldo disponible",
       "creditDebt": "Deuda en tarjetas",
@@ -309,6 +304,13 @@
       "stepBank": "Conecta tu banco: importamos tus cuentas, saldos y movimientos.",
       "stepCategories": "Ve en qué se va tu dinero cada mes, por categoría.",
       "stepRecurring": "Ten a la vista tus pagos recurrentes y fechas de tarjeta."
+    },
+    "debts": {
+      "title": "Tus deudas",
+      "seeAll": "Ver deudas",
+      "monthly": "Pagas al mes",
+      "load": "{percent}% de tu ingreso · {level}",
+      "noIncome": "Registra tus ingresos para ver qué parte se va en deudas."
     }
   },
   "history": {

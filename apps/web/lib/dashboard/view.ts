@@ -1,18 +1,12 @@
 import type { Localizer } from '@/lib/i18n/translator';
 import { summarizeBalances } from '@/lib/finance/accounts';
-import { indexCategories } from '@/lib/finance/categories';
 import { monthLabel, type DayKey, type MonthRef } from '@/lib/finance/dates';
 import { formatMoney } from '@/lib/finance/money';
 import { toPaymentRow, type PaymentRow } from '@/lib/finance/payments';
-import {
-  toTransactionRow,
-  type TransactionRow,
-} from '@/lib/finance/transactions';
+import type { ApiDebtInsights } from '@/lib/debts/types';
 import type {
   ApiAccount,
-  ApiCategory,
   ApiMonthlyReport,
-  ApiTransaction,
   ApiUpcomingPayment,
 } from '@/lib/finance/types';
 
@@ -20,9 +14,8 @@ export interface DashboardData {
   accounts: ApiAccount[];
   monthlyReport: ApiMonthlyReport;
   upcomingPayments: ApiUpcomingPayment[];
-  transactions: ApiTransaction[];
   transactionCount: number;
-  categories: ApiCategory[];
+  debtInsights: ApiDebtInsights;
 }
 
 export interface DashboardView {
@@ -43,7 +36,8 @@ export interface DashboardView {
     expenses: string;
   };
   upcoming: PaymentRow[];
-  recent: TransactionRow[];
+  /** Debt charts (built on the client); null without any debt. */
+  debts: { insights: ApiDebtInsights; today: DayKey } | null;
 }
 
 export const UPCOMING_DAYS = 14;
@@ -57,7 +51,6 @@ export function buildDashboardView(
   const { locale, t } = l;
   const accounts = data.accounts.filter((a) => !a.archived);
   const [main, ...others] = summarizeBalances(accounts);
-  const categories = indexCategories(data.categories);
   const currency = data.monthlyReport.currency;
   const hasCredit = accounts.some(
     (a) => a.type === 'credit' && a.currency === main?.currency,
@@ -90,8 +83,11 @@ export function buildDashboardView(
       .map((p) => toPaymentRow(p, today, l))
       .filter((p) => p.open)
       .slice(0, MAX_UPCOMING),
-    recent: data.transactions.map((tx) =>
-      toTransactionRow(tx, categories, l, { withDate: true }),
-    ),
+    // Card MSI plans alone are not shown here (they live in the cards).
+    debts: data.debtInsights.byType.some(
+      (type) => type.type !== 'msi' && type.count > 0,
+    )
+      ? { insights: data.debtInsights, today }
+      : null,
   };
 }

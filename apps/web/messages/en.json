@@ -291,11 +291,6 @@
     "calendarLink": "See all",
     "noUpcomingTitle": "No upcoming payments",
     "noUpcomingDescription": "You have no recurring payments in the next {days} days.",
-    "recent": "Recent activity",
-    "seeAll": "See all",
-    "seeAllLabel": "See all transactions",
-    "noRecentTitle": "No transactions yet",
-    "noRecentDescription": "Transactions your bank imports will show up here.",
     "balance": {
       "available": "Available balance",
       "creditDebt": "Card debt",
@@ -309,6 +304,13 @@
       "stepBank": "Connect your bank: we import your accounts, balances and transactions.",
       "stepCategories": "See where your money goes each month, by category.",
       "stepRecurring": "Keep your recurring payments and card dates in sight."
+    },
+    "debts": {
+      "title": "Your debts",
+      "seeAll": "See debts",
+      "monthly": "Monthly payments",
+      "load": "{percent}% of your income · {level}",
+      "noIncome": "Record your income to see how much goes to debts."
     }
   },
   "history": {

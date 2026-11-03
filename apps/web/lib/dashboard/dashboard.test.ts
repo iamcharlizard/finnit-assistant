@@ -17,9 +17,18 @@ const empty: DashboardData = {
     categoryBreakdown: [],
   },
   upcomingPayments: [],
-  transactions: [],
   transactionCount: 0,
-  categories: [],
+  debtInsights: {
+    byType: [],
+    paidByMonth: [],
+    projection: [],
+    upcoming: { days30: 0, days60: 0, days90: 0 },
+    upcomingMsi: { days30: 0, days60: 0, days90: 0 },
+    monthlyPayments: 0,
+    msiMonthlyPayments: 0,
+    averageMonthlyIncome: 0,
+    msi: [],
+  },
 };
 
 const options = { today: '2026-10-14', month: { year: 2026, month: 10 } };
@@ -43,7 +52,7 @@ describe('buildDashboardView', () => {
     assert.ok(view.isEmpty);
     assert.equal(view.balance, null);
     assert.equal(view.month.income, '$0.00');
-    assert.deepEqual(view.recent, []);
+    assert.equal(view.debts, null);
   });
 
   it('shows available money, card debt and the month totals', () => {
@@ -92,5 +101,26 @@ describe('buildDashboardView', () => {
     );
     assert.deepEqual(en.balance?.otherCurrencies, ['US$50.00 in USD']);
     assert.equal(en.month.label, 'October 2026');
+  });
+
+  it('shows the debts only when there is a loan or debt (card MSI alone is not)', () => {
+    const insights = (type: 'personal' | 'msi') => ({
+      ...empty.debtInsights,
+      byType: [{ type, remaining: 1000, totalOwed: 1000, paid: 0, count: 1 }],
+    });
+    const withLoan = buildDashboardView(
+      { ...empty, debtInsights: insights('personal') },
+      options,
+      es,
+    );
+    assert.equal(withLoan.debts?.today, options.today);
+    assert.equal(
+      buildDashboardView(
+        { ...empty, debtInsights: insights('msi') },
+        options,
+        es,
+      ).debts,
+      null,
+    );
   });
 });

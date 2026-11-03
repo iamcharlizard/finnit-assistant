@@ -19,6 +19,7 @@ import type { BudgetCategory } from '@/lib/budgets/types';
 import { debtErrorMessage, updateLoan } from '@/lib/debts/api';
 import type { DetailFact } from '@/lib/debts/detail-view';
 import { hasErrors } from '@/lib/debts/form';
+import { DESCRIPTION_MAX, hasDescription } from '@/lib/debts/loan-form';
 import {
   buildLoanUpdate,
   loanEditFields,
@@ -158,6 +159,15 @@ export function LoanDetailsTab({
           onChange={(e) => update({ name: e.target.value })}
           error={errorText(errors.name)}
         />
+        {hasDescription(debt.loanType) ? (
+          <Input
+            label={t(`debts.loan.description.${debt.loanType!}`)}
+            value={form.description}
+            maxLength={DESCRIPTION_MAX}
+            autoComplete="off"
+            onChange={(e) => update({ description: e.target.value })}
+          />
+        ) : null}
         {debt.loanType === 'personal' ? (
           <ContactCombobox
             label={td('facts.lenderPerson')}

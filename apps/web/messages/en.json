@@ -1068,7 +1068,7 @@
       "totalBelowPrincipal": "The amount borrowed cannot be more than the total to repay.",
       "installmentsBelowPaid": "The number of payments cannot be less than the payments already made.",
       "fixedPayment": "This loan has a fixed payment: add the amount without a number of payments.",
-      "firstPaymentAfterDate": "The first payment must be after the date.",
+      "firstPaymentAfterDate": "The first payment cannot be before the date.",
       "installmentsPaidCount": "Payments already made cannot be more than the number of payments."
     },
     "newLoan": "Loan",
@@ -1194,7 +1194,15 @@
       "periodicFeeAddVat": "Add VAT (16%)",
       "previewFees": "fees {fees}",
       "clearDate": "Clear date",
-      "principalPersonalHint": "Leave it empty or at 0 to record each loan separately from its page."
+      "principalPersonalHint": "Leave it empty or at 0 to record each loan separately from its page.",
+      "description": {
+        "purchase_financing": "What did you buy? (optional)",
+        "personal": "First loan description (optional)"
+      },
+      "descriptionPlaceholder": {
+        "purchase_financing": "E.g. TV",
+        "personal": "E.g. For tuition"
+      }
     },
     "loanValidation": {
       "nameRequired": "Enter a name.",
@@ -1281,7 +1289,7 @@
       "rateRequired": "Enter the annual rate.",
       "rateInvalid": "The rate must be between 0 and 1000%.",
       "depositAccountRequired": "Choose the account that received the money.",
-      "firstPaymentBeforeDate": "The first payment must be after the date.",
+      "firstPaymentBeforeDate": "The first payment cannot be before the date.",
       "installmentsPaidInvalid": "Cannot be more than the number of payments."
     },
     "detail": {
@@ -1384,7 +1392,8 @@
         "purpose": "What was it for?",
         "purposeNone": "Not specified",
         "lenderPerson": "Who lent it to you?",
-        "lendingMethod": "How did they lend it?"
+        "lendingMethod": "How did they lend it?",
+        "description": "Description"
       },
       "columns": {
         "number": "#",
@@ -1442,7 +1451,8 @@
         "hintPersonal": "Every time they lent you money: the initial loan and what was added (another loan, a purchase with their card…).",
         "addPersonal": "Add loan",
         "addPurchase": "Add purchase",
-        "installments": "{count, plural, one {in # payment} other {in # payments}}"
+        "installments": "{count, plural, one {in # payment} other {in # payments}}",
+        "initialPurchase": "First purchase"
       },
       "chargeUpdated": "Changes saved.",
       "editCharge": "Edit",

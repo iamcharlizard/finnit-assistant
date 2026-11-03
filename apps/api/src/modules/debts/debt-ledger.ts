@@ -52,11 +52,13 @@ export function totalOwedOf(debt: DebtWithLedger): number {
  * with a term.
  */
 export function financedCharges(debt: {
+  description: string | null;
   startDate: Date | null;
   principal: Prisma.Decimal;
   totalToRepay: Prisma.Decimal | null;
   installmentsTotal: number | null;
   charges: {
+    id: string;
     date: Date;
     description: string | null;
     totalToRepay: Prisma.Decimal;
@@ -71,6 +73,8 @@ export function financedCharges(debt: {
       date: debt.startDate,
       totalToRepay: Number(debt.totalToRepay ?? debt.principal),
       installments: debt.installmentsTotal,
+      description: debt.description,
+      chargeId: null,
     });
   }
   for (const charge of debt.charges) {
@@ -82,6 +86,7 @@ export function financedCharges(debt: {
         installmentsPaid: charge.installmentsPaid,
         firstPaymentDate: charge.firstPaymentDate,
         description: charge.description,
+        chargeId: charge.id,
       });
     }
   }

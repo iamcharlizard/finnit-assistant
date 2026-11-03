@@ -201,6 +201,7 @@ Field | Type | Req | Description | Notes
 id | uuid | ✔ | Debt identifier | PK
 user_id | uuid | ✔ | Owner | FK→user.id
 name | text | ✔ | Name (e.g., “Auto BBVA”) | —
+description | text | — | What the first amount was (first purchase, what it was lent for) | Loans; labels its installments like a charge's description
 kind | text | ✔ | Debt type | `loan|card|other`
 principal | numeric | ✔ | Principal pending | —
 interest_rate_annual | numeric | — | Annual interest rate | %

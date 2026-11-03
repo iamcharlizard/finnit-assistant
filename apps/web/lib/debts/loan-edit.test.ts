@@ -11,6 +11,7 @@ import {
 const today = '2026-11-02';
 const yoTePresto = {
   name: 'YoTePresto',
+  description: null,
   lenderName: 'YoTePresto',
   lenderContactId: null,
   lendingMethod: null,

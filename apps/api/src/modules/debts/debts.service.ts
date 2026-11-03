@@ -710,6 +710,7 @@ export class DebtsService {
       id: debt.id,
       userId: debt.userId,
       name: debt.name,
+      description: debt.description ?? undefined,
       kind: debt.kind,
       principal: Number(debt.principal),
       interestRateAnnual: debt.interestRateAnnual

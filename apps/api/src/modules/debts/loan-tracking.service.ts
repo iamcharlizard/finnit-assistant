@@ -137,14 +137,18 @@ export class LoanTrackingService {
         projected: false,
       });
     }
+    // Rows of charge installments paid before registering them.
+    const chargeHistory = new Set<Omit<LoanScheduleItem, 'balance'>>();
     for (const [time, amount] of chargePaidByDate) {
-      items.push({
+      const item = {
         dueDate: new Date(time),
         amount,
         status: OccurrenceStatus.paid,
         isHistorical: true,
         projected: false,
-      });
+      };
+      chargeHistory.add(item);
+      items.push(item);
     }
 
     // Loans scheduled by their charges: what each payment covers.
@@ -195,11 +199,18 @@ export class LoanTrackingService {
 
     if (byCharge) {
       for (const item of items) {
-        // Paid-before rows show the installments paid then; the rest, the
-        // ones still due.
+        // Each row names what it pays: a charge's installments paid before
+        // registering it, the loan's first amount paid before registering
+        // the loan, or the installments still due.
         const due = byCharge
           .get(item.dueDate.getTime())
-          ?.filter((d) => d.paid === item.isHistorical);
+          ?.filter((d) =>
+            chargeHistory.has(item)
+              ? d.paid
+              : item.isHistorical
+                ? d.chargeId === null
+                : !d.paid,
+          );
         if (due?.length) {
           item.installments = due.map((d) => ({
             number: d.number,

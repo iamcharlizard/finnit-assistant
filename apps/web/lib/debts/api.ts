@@ -278,7 +278,7 @@ const MESSAGES: [RegExp, Parameters<Translate>[0]][] = [
   [/deposit account not found|account not found/i, 'debts.errors.account'],
   [/choose the payment frequency/i, 'debts.errors.frequency'],
   [/has a fixed payment/i, 'debts.errors.fixedPayment'],
-  [/first payment must be after/i, 'debts.errors.firstPaymentAfterDate'],
+  [/first payment cannot be before/i, 'debts.errors.firstPaymentAfterDate'],
   [
     /payments already made cannot exceed the number/i,
     'debts.errors.installmentsPaidCount',

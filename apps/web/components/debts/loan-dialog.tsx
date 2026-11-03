@@ -38,8 +38,10 @@ import type { BudgetCategory } from '@/lib/budgets/types';
 import { debtErrorMessage, loadLoanDraft, saveLoan } from '@/lib/debts/api';
 import { hasErrors, NAME_MAX } from '@/lib/debts/form';
 import {
+  DESCRIPTION_MAX,
   depositMismatch,
   expectedDeposit,
+  hasDescription,
   formOfDraft,
   isFixedTerm,
   loanPreview,
@@ -294,6 +296,17 @@ export function LoanDialog({
                 />
               )}
             </div>
+
+            {hasDescription(form.loanType) ? (
+              <Input
+                label={tf(`description.${form.loanType}`)}
+                value={form.description}
+                maxLength={DESCRIPTION_MAX}
+                autoComplete="off"
+                placeholder={tf(`descriptionPlaceholder.${form.loanType}`)}
+                onChange={(e) => update({ description: e.target.value })}
+              />
+            ) : null}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1">

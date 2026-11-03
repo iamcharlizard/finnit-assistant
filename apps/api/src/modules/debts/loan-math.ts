@@ -206,6 +206,8 @@ export interface FinancedCharge {
   firstPaymentDate?: Date | null;
   /** What was bought or lent, when said. */
   description?: string | null;
+  /** The charge it is; null for the loan's first amount. */
+  chargeId?: string | null;
 }
 
 export interface ScheduledInstallment {
@@ -221,6 +223,8 @@ export interface ChargeInstallment {
   description: string | null;
   /** Paid before the charge was registered (a historical payment). */
   paid: boolean;
+  /** The charge it belongs to; null for the loan's first amount. */
+  chargeId: string | null;
 }
 
 /**
@@ -260,6 +264,7 @@ export function chargeInstallments(
         amount: amounts[i],
         description: charge.description ?? null,
         paid: i < (charge.installmentsPaid ?? 0),
+        chargeId: charge.chargeId ?? null,
       });
       byDate.set(key, due);
     });

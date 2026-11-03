@@ -43,6 +43,8 @@ export interface HistoricalRow {
 export interface LoanForm {
   loanType: LoanType;
   name: string;
+  /** Purchases and personal loans: what the first amount was ('' = not said). */
+  description: string;
   lenderName: string;
   /** Personal loans: the contact picked ('' = none; a typed name becomes one). */
   lenderContactId: string;
@@ -123,6 +125,7 @@ export function newLoanForm(loanType: LoanType = 'institutional'): LoanForm {
   return {
     loanType,
     name: '',
+    description: '',
     lenderName: '',
     lenderContactId: '',
     lendingMethod: '',
@@ -463,12 +466,24 @@ export function validateLoanForm(
 
 type Input = Record<string, unknown>;
 
+/** Longest description of a loan's first amount (as a charge's). */
+export const DESCRIPTION_MAX = 200;
+
+/**
+ * Purchase financing and personal loans name their first amount, the label
+ * of its installments (bank loans are one amount: the name says it).
+ */
+export const hasDescription = (loanType: LoanType | null) =>
+  loanType === 'purchase_financing' || loanType === 'personal';
+
 /** CreateDebtInput (and AcceptSuggestionAsLoanInput) of a valid form. */
 export function buildLoanInput(form: LoanForm): Input {
   const fixed = isFixedTerm(form.loanType);
   const scheduled = fixed || form.hasSchedule;
   const input: Input = {
     name: form.name.trim(),
+    ...(hasDescription(form.loanType) &&
+      form.description.trim() && { description: form.description.trim() }),
     kind: 'loan',
     loanType: form.loanType,
     principal: parseAmount(form.principal) ?? 0,

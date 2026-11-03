@@ -304,6 +304,7 @@ export class LoansService {
         data: {
           userId,
           name,
+          description: input.description?.trim() || null,
           kind: DebtKind.loan,
           loanType,
           lenderName: lender.name,
@@ -716,11 +717,12 @@ export class LoansService {
       installmentAmount: input.installmentAmount,
     });
     const date = toDateOnly(new Date(input.date));
+    // It may be due the same day (bought on a due date).
     if (
       input.firstPaymentDate &&
-      toDateOnly(new Date(input.firstPaymentDate)) <= date
+      toDateOnly(new Date(input.firstPaymentDate)) < date
     ) {
-      throw new ValidationError('The first payment must be after the date');
+      throw new ValidationError('The first payment cannot be before the date');
     }
     return {
       date,
@@ -1191,6 +1193,9 @@ export class LoansService {
         where: { id },
         data: {
           ...(name && { name }),
+          ...(input.description !== undefined && {
+            description: input.description?.trim() || null,
+          }),
           ...(lender && {
             lenderName: lender.name,
             lenderContactId: lender.contactId,

@@ -1119,4 +1119,65 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       0,
     );
   });
+
+  it('labels each paid-before row with its own purchase', async () => {
+    const loan = await loans.create(userId, {
+      name: 'Kueski 2',
+      description: 'Pantalla',
+      kind: DebtKind.loan,
+      loanType: LoanType.purchase_financing,
+      principal: 1_200,
+      interestMode: LoanInterestMode.total_amount,
+      totalToRepay: 1_200,
+      installmentsTotal: 12,
+      installmentsPaid: 2,
+      paymentFrequency: RecurringFrequency.semimonthly,
+      firstPaymentDate: d('2026-10-15'),
+    });
+    expect(loan.description).toBe('Pantalla');
+    const added = await loans.addCharge(userId, {
+      debtId: loan.id,
+      date: d('2026-10-15'),
+      // Bought on a due date: its first payment is that same day.
+      firstPaymentDate: d('2026-10-15'),
+      description: 'Aspiradora',
+      principal: 2_400,
+      installments: 12,
+      installmentsPaid: 2,
+      destination: DebtChargeDestination.purchase,
+    });
+    const label = (s: {
+      installments?: { description?: string; number: number }[];
+    }) => s.installments?.map((i) => `${i.description} ${i.number}`).join();
+    const paidBefore = async () =>
+      (await tracking.schedule(userId, loan.id))
+        .filter((s) => s.isHistorical)
+        .map((s) => [iso(s.dueDate), s.amount, label(s)])
+        .sort((a, b) => String(a).localeCompare(String(b)));
+    expect(await paidBefore()).toEqual([
+      ['2026-10-15', 100, 'Pantalla 1'],
+      ['2026-10-15', 200, 'Aspiradora 1'],
+      ['2026-10-31', 100, 'Pantalla 2'],
+      ['2026-10-31', 200, 'Aspiradora 2'],
+    ]);
+
+    // A new date moves its paid-before installments; none stay behind.
+    await loans.updateCharge(userId, added.charges[0].id, {
+      date: d('2026-10-20'),
+      description: 'Aspiradora',
+      principal: 2_400,
+      installments: 12,
+      installmentsPaid: 2,
+      destination: DebtChargeDestination.purchase,
+    });
+    expect(await paidBefore()).toEqual([
+      ['2026-10-15', 100, 'Pantalla 1'],
+      ['2026-10-31', 100, 'Pantalla 2'],
+      ['2026-10-31', 200, 'Aspiradora 1'],
+      ['2026-11-15', 200, 'Aspiradora 2'],
+    ]);
+    expect((await debts.findById(loan.id, userId)).remainingBalance).toBe(
+      3_600 - 600,
+    );
+  });
 });

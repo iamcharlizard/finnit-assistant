@@ -705,6 +705,9 @@ model Debt {
   id                        String                 @id @default(uuid())
   userId                    String
   name                      String
+  // Loans: what the first amount was (the first purchase, what it was lent
+  // for); the label of its installments, like a charge's description.
+  description               String?
   kind                      DebtKind
   principal                 Decimal                @db.Decimal(18, 2)
   interestRateAnnual        Decimal?               @db.Decimal(9, 4)

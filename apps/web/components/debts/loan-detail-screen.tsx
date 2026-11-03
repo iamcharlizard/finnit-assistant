@@ -45,6 +45,7 @@ import { LoanLentTable } from './loan-lent-table';
 import { LoanPaymentsTable } from './loan-payments-table';
 import { LoanProgress } from './loan-progress';
 import { PaymentDialog } from './payment-dialog';
+import { RescheduleDialog } from './reschedule-dialog';
 
 /**
  * One loan: what is left on top, then tabs: its details (editable), the
@@ -71,6 +72,7 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
   const personal = debt.loanType === 'personal';
   // Personal loans and purchase financing list each amount in its own tab.
   const lentTab = personal || debt.loanType === 'purchase_financing';
+  const [moving, setMoving] = React.useState<ScheduleRow | null>(null);
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
   const [candidates, setCandidates] = React.useState<CandidatesState>({
@@ -367,6 +369,7 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
                 hasBreakdown={view.hasBreakdown}
                 hasFees={view.hasFees}
                 onPay={(row) => setPaying({ row })}
+                onReschedule={setMoving}
               />
             </TabsContent>
           )}
@@ -391,6 +394,7 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
                   hasBreakdown={false}
                   hasFees={false}
                   onPay={(row) => setPaying({ row })}
+                  onReschedule={setMoving}
                 />
               </section>
             ) : null}
@@ -467,6 +471,17 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
           onSaved={() => {
             setAdding(false);
             toast.success(td(editingCharge ? 'chargeUpdated' : 'chargeAdded'));
+            refresh();
+          }}
+        />
+      ) : null}
+      {moving?.occurrenceId ? (
+        <RescheduleDialog
+          row={{ ...moving, occurrenceId: moving.occurrenceId }}
+          onClose={() => setMoving(null)}
+          onSaved={() => {
+            setMoving(null);
+            toast.success(td('rescheduled'));
             refresh();
           }}
         />

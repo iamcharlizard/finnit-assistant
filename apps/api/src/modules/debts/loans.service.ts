@@ -820,6 +820,21 @@ export class LoansService {
     });
   }
 
+  /** Moves an open scheduled payment of a loan to another day. */
+  async reschedulePayment(
+    userId: string,
+    occurrenceId: string,
+    dueDate: Date,
+  ): Promise<Debt> {
+    const { debtId } = await this.recurring.rescheduleOccurrence(
+      userId,
+      occurrenceId,
+      new Date(dueDate),
+    );
+    if (!debtId) throw new NotFoundError('Debt not found');
+    return this.debts.findById(debtId, userId);
+  }
+
   async deleteCharge(userId: string, id: string): Promise<Debt> {
     const charge = await this.prisma.debtCharge.findFirst({
       where: { id, debt: { userId } },

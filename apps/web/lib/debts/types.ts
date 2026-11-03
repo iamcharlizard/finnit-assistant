@@ -187,6 +187,8 @@ export interface ApiLoanScheduleItem {
   balance: number;
   /** Loans scheduled by their charges: the installment of each charge. */
   installments: ApiLoanScheduleInstallment[] | null;
+  /** Moved by the user: the date the schedule gave it. */
+  originalDueDate: string | null;
 }
 
 /** Installment `number` of `of` of one charge, inside a payment. */
@@ -198,7 +200,7 @@ export interface ApiLoanScheduleInstallment {
 }
 
 export const LOAN_SCHEDULE_FIELDS =
-  'dueDate amount status occurrenceId transactionId isHistorical projected principal interest vat fee balance installments { number of amount description }';
+  'dueDate amount status occurrenceId transactionId isHistorical projected principal interest vat fee balance originalDueDate installments { number of amount description }';
 
 export type CandidateReason = 'history' | 'text' | 'amount' | 'ai';
 

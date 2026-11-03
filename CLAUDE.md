@@ -102,6 +102,7 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261102120000_loan_periodic_fee` (`Debt.periodicFee`: fixed fee per payment, VAT included; rollback in `packages/database/scripts/rollbacks/`)
 - `20261103120000_lending_method` (`LendingMethod` enum; `Debt.lendingMethod`, `DebtCharge.lendingMethod`; rollback in `packages/database/scripts/rollbacks/`)
 - `20261104090000_charge_installments_paid` (`DebtCharge.installmentsPaid`, `DebtPayment.chargeId`: installments of a later purchase paid before registering it; rollback in `packages/database/scripts/rollbacks/`)
+- `20261107090000_occurrence_original_due_date` (`RecurringOccurrence.originalDueDate`: a scheduled payment moved to another day keeps its schedule date, so it is not generated again there; rollback in `packages/database/scripts/rollbacks/`)
 - `20261106090000_debt_description` (`Debt.description`: what a loan's first amount was, the label of its installments; rollback in `packages/database/scripts/rollbacks/`)
 - `20261105090000_charge_terms` (`DebtCharge.firstPaymentDate`, `interestMode`, `interestRateAnnual`, `includesVat`: a later purchase's first due date and interest terms; rollback in `packages/database/scripts/rollbacks/`)
 - `20261103090000_contacts` (`Contact`, `Debt.lenderContactId`; existing personal-loan lenders become contacts; rollback in `packages/database/scripts/rollbacks/`)

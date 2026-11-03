@@ -111,22 +111,31 @@ export class LoanTrackingService {
       );
     }
     const expense = debt.recurringExpense;
+    // The date the schedule gave each row (a moved payment keeps it).
+    const scheduleDate = new Map<Omit<LoanScheduleItem, 'balance'>, Date>();
     const items: Omit<LoanScheduleItem, 'balance'>[] = (
       expense?.occurrences ?? []
-    ).map((o) => ({
-      dueDate: o.dueDate,
-      amount: Number(o.expectedAmount),
-      status: o.status,
-      occurrenceId: o.id,
-      transactionId: o.transactionId ?? undefined,
-      isHistorical:
-        o.status === OccurrenceStatus.paid &&
-        !o.transactionId &&
-        historicalByDate.has(o.dueDate.getTime()),
-      projected: false,
-    }));
+    ).map((o) => {
+      const item = {
+        dueDate: o.dueDate,
+        amount: Number(o.expectedAmount),
+        status: o.status,
+        occurrenceId: o.id,
+        transactionId: o.transactionId ?? undefined,
+        isHistorical:
+          o.status === OccurrenceStatus.paid &&
+          !o.transactionId &&
+          historicalByDate.has(o.dueDate.getTime()),
+        projected: false,
+        originalDueDate: o.originalDueDate ?? undefined,
+      };
+      scheduleDate.set(item, o.originalDueDate ?? o.dueDate);
+      return item;
+    });
     // Historical payments that are not one of the scheduled dates.
-    const scheduled = new Set(items.map((i) => i.dueDate.getTime()));
+    const scheduled = new Set(
+      items.map((i) => (scheduleDate.get(i) ?? i.dueDate).getTime()),
+    );
     for (const payment of historicalByDate.values()) {
       if (scheduled.has(payment.date.getTime())) continue;
       items.push({
@@ -172,8 +181,13 @@ export class LoanTrackingService {
             )
             .reduce((sum, i) => sum + i.amount, 0),
       );
+      const generated = expense.occurrences.map((o) =>
+        (o.originalDueDate ?? o.dueDate).getTime(),
+      );
       const last =
-        expense.occurrences.at(-1)?.dueDate ?? addDays(expense.startDate, -1);
+        generated.length > 0
+          ? new Date(Math.max(...generated))
+          : addDays(expense.startDate, -1);
       const dates = dueDatesAfter(expense, last, MAX_PROJECTED);
       for (const dueDate of dates) {
         if (left <= 0) break;
@@ -203,7 +217,7 @@ export class LoanTrackingService {
         // registering it, the loan's first amount paid before registering
         // the loan, or the installments still due.
         const due = byCharge
-          .get(item.dueDate.getTime())
+          .get((scheduleDate.get(item) ?? item.dueDate).getTime())
           ?.filter((d) =>
             chargeHistory.has(item)
               ? d.paid

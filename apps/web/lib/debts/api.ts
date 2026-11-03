@@ -1,4 +1,5 @@
 import type { GqlRunner } from '@/lib/accounts/api';
+import type { DayKey } from '@/lib/finance/dates';
 import { requestErrorMessage } from '@/lib/graphql/client';
 import type { Translate } from '@/lib/i18n/translator';
 import {
@@ -41,6 +42,8 @@ export const LOAN_DRAFT_QUERY = `query LoanDraft($fingerprint: ID!) { recurringS
 export const ADD_DEBT_CHARGE_MUTATION = `mutation AddDebtCharge($input: AddDebtChargeInput!) { addDebtCharge(input: $input) { id } }`;
 
 export const UPDATE_DEBT_CHARGE_MUTATION = `mutation UpdateDebtCharge($id: ID!, $input: UpdateDebtChargeInput!) { updateDebtCharge(id: $id, input: $input) { id } }`;
+
+export const RESCHEDULE_LOAN_PAYMENT_MUTATION = `mutation RescheduleLoanPayment($occurrenceId: ID!, $dueDate: DateTime!) { rescheduleLoanPayment(occurrenceId: $occurrenceId, dueDate: $dueDate) { id } }`;
 
 export const DELETE_DEBT_CHARGE_MUTATION = `mutation DeleteDebtCharge($id: ID!) { deleteDebtCharge(id: $id) { id } }`;
 
@@ -140,6 +143,15 @@ export async function updateDebtCharge(
   run: GqlRunner,
 ): Promise<void> {
   await run(UPDATE_DEBT_CHARGE_MUTATION, { id, input: buildChargeInput(form) });
+}
+
+/** Moves an open scheduled payment to another day. */
+export async function rescheduleLoanPayment(
+  occurrenceId: string,
+  dueDate: DayKey,
+  run: GqlRunner,
+): Promise<void> {
+  await run(RESCHEDULE_LOAN_PAYMENT_MUTATION, { occurrenceId, dueDate });
 }
 
 export async function deleteDebtCharge(
@@ -278,6 +290,8 @@ const MESSAGES: [RegExp, Parameters<Translate>[0]][] = [
   [/deposit account not found|account not found/i, 'debts.errors.account'],
   [/choose the payment frequency/i, 'debts.errors.frequency'],
   [/has a fixed payment/i, 'debts.errors.fixedPayment'],
+  [/already a payment on that date/i, 'debts.errors.dateTaken'],
+  [/only open payments can be moved/i, 'debts.errors.notOpen'],
   [/first payment cannot be before/i, 'debts.errors.firstPaymentAfterDate'],
   [
     /payments already made cannot exceed the number/i,

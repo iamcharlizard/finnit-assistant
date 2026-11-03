@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
+import { CalendarClock } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
 import { Button } from '@finnit/ui/components/ui/button';
@@ -37,11 +38,14 @@ export function LoanAmortizationTable({
   hasBreakdown,
   hasFees,
   onPay,
+  onReschedule,
 }: {
   rows: ScheduleRow[];
   hasBreakdown: boolean;
   hasFees: boolean;
   onPay: (row: ScheduleRow) => void;
+  /** Moves an open payment to another day. */
+  onReschedule: (row: ScheduleRow) => void;
 }) {
   const td = useTranslations('debts.detail');
   const labels = useTableLabels();
@@ -106,7 +110,17 @@ export function LoanAmortizationTable({
         header: td('columns.date'),
         enableSorting: true,
         sortingFn: 'text',
-        cell: ({ row }) => row.original.dateLabel,
+        cell: ({ row }) =>
+          row.original.originalDateLabel ? (
+            <span className="flex flex-col leading-tight">
+              <span>{row.original.dateLabel}</span>
+              <span className="text-xs text-on-surface-variant">
+                {td('movedFrom', { date: row.original.originalDateLabel })}
+              </span>
+            </span>
+          ) : (
+            row.original.dateLabel
+          ),
         meta: { cellClassName: 'whitespace-nowrap' },
       },
       ...concept,
@@ -138,20 +152,33 @@ export function LoanAmortizationTable({
         header: () => <span className="sr-only">{td('columns.actions')}</span>,
         cell: ({ row }) =>
           row.original.occurrenceId ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="min-h-8 py-1"
-              onClick={() => onPay(row.original)}
-            >
-              {td('payThis')}
-            </Button>
+            <span className="flex items-center justify-end gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8 min-h-8"
+                aria-label={td('reschedule')}
+                title={td('reschedule')}
+                onClick={() => onReschedule(row.original)}
+              >
+                <CalendarClock aria-hidden />
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="min-h-8 py-1"
+                onClick={() => onPay(row.original)}
+              >
+                {td('payThis')}
+              </Button>
+            </span>
           ) : null,
         meta: right,
       },
     ];
-  }, [hasBreakdown, hasConcept, hasFees, onPay, td]);
+  }, [hasBreakdown, hasConcept, hasFees, onPay, onReschedule, td]);
 
   if (rows.length === 0) {
     return (

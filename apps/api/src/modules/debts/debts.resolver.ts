@@ -189,6 +189,18 @@ export class DebtsResolver {
     return this.loans.recordPayment(user.id, input);
   }
 
+  @Mutation(() => Debt, {
+    description:
+      'Moves an open scheduled payment of a loan to another day (it keeps its schedule date)',
+  })
+  async rescheduleLoanPayment(
+    @CurrentUser() user: User,
+    @Args('occurrenceId', { type: () => ID }) occurrenceId: string,
+    @Args('dueDate') dueDate: Date,
+  ): Promise<Debt> {
+    return this.loans.reschedulePayment(user.id, occurrenceId, dueDate);
+  }
+
   @Mutation(() => Boolean, {
     description: 'Deletes a historical payment (one without a movement)',
   })

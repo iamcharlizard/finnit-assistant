@@ -106,6 +106,8 @@ export interface ApiDebtCharge {
 export interface ApiDebt {
   id: string;
   name: string;
+  /** Loans: what the first amount was (first purchase, what it was for). */
+  description: string | null;
   kind: DebtKind;
   /** What was borrowed (or owed when it was registered). */
   principal: number;
@@ -152,7 +154,7 @@ export interface ApiDebt {
 }
 
 export const DEBT_FIELDS =
-  'id name kind principal interestRateAnnual minPaymentAmount startDate dueDate linkedAccountId loanType status lenderName lenderContactId lendingMethod paymentFrequency installmentsTotal installmentsPaid installmentAmount totalToRepay interestMode includesVat openingFee periodicFee destination purposeCategoryId nextPaymentDate recurringExpenseId remainingBalance totalPaid historicalPaid totalOwed monthlyPayment createdAt';
+  'id name description kind principal interestRateAnnual minPaymentAmount startDate dueDate linkedAccountId loanType status lenderName lenderContactId lendingMethod paymentFrequency installmentsTotal installmentsPaid installmentAmount totalToRepay interestMode includesVat openingFee periodicFee destination purposeCategoryId nextPaymentDate recurringExpenseId remainingBalance totalPaid historicalPaid totalOwed monthlyPayment createdAt';
 
 /** A debt with its payments and charges (the loan's page). */
 export interface ApiDebtDetail extends ApiDebt {

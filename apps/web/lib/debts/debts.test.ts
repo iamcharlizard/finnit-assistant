@@ -36,6 +36,7 @@ const today = '2026-10-13';
 const debt = (overrides: Partial<ApiDebt> = {}): ApiDebt => ({
   id: 'car',
   name: 'Crédito auto',
+  description: null,
   kind: 'loan',
   principal: 100000,
   interestRateAnnual: 12,

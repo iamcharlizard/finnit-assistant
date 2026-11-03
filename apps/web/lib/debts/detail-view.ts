@@ -452,7 +452,13 @@ function lentRows(
     chargeId: null,
     date: start,
     dateLabel: start ? fullDate(start, locale) : t('debts.detail.lent.noDate'),
-    description: t('debts.detail.lent.initial'),
+    description:
+      debt.description ??
+      t(
+        debt.loanType === 'purchase_financing'
+          ? 'debts.detail.lent.initialPurchase'
+          : 'debts.detail.lent.initial',
+      ),
     method: method(debt.lendingMethod),
     purpose: categoryName(debt.purposeCategoryId),
     value: debt.principal,
@@ -496,6 +502,7 @@ function loanFacts(
   const label = (
     key:
       | 'name'
+      | 'description'
       | 'lender'
       | 'type'
       | 'principal'
@@ -513,6 +520,13 @@ function loanFacts(
   ) => t(`debts.detail.facts.${key}`);
   const facts: Array<DetailFact | null> = [
     { key: 'name', label: label('name'), value: debt.name },
+    debt.description
+      ? {
+          key: 'description',
+          label: label('description'),
+          value: debt.description,
+        }
+      : null,
     debt.lenderName
       ? { key: 'lender', label: label('lender'), value: debt.lenderName }
       : null,

@@ -212,7 +212,7 @@ export function validateChargeForm(
     form.installments.trim() &&
     isDayKey(form.firstPaymentDate) &&
     isDayKey(form.date) &&
-    form.firstPaymentDate <= form.date
+    form.firstPaymentDate < form.date
   )
     errors.firstPaymentDate = 'firstPaymentBeforeDate';
 

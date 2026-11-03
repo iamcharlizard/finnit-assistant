@@ -427,8 +427,16 @@ describe('personal loan in installments', () => {
       destination: 'purchase' as const,
       firstPaymentDate: today,
     };
+    // Same day is fine (bought on a due date); before it is not.
     assert.deepEqual(
       validateChargeForm(form, { today, needsInstallments: false }),
+      {},
+    );
+    assert.deepEqual(
+      validateChargeForm(
+        { ...form, firstPaymentDate: '2026-10-01' },
+        { today, needsInstallments: false },
+      ),
       { firstPaymentDate: 'firstPaymentBeforeDate' },
     );
     const later = {
@@ -679,6 +687,7 @@ describe('loan detail view', () => {
   const debt: ApiDebtDetail = {
     id: 'loan',
     name: 'YoTePresto',
+    description: null,
     kind: 'loan',
     principal: 10_000,
     interestRateAnnual: 12,

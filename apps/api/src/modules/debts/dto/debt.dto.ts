@@ -78,6 +78,13 @@ export class Debt {
   @Field()
   name: string;
 
+  @Field({
+    nullable: true,
+    description:
+      'Loans: what the first amount was (first purchase, what it was lent for)',
+  })
+  description?: string;
+
   @Field(() => DebtKind)
   kind: DebtKind;
 
@@ -391,6 +398,16 @@ export class CreateDebtInput {
   @Field()
   @IsString()
   name: string;
+
+  @Field({
+    nullable: true,
+    description:
+      'Loans: what the first amount was (first purchase, what it was lent for)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  description?: string;
 
   @Field(() => DebtKind)
   kind: DebtKind;
@@ -875,6 +892,15 @@ export class UpdateLoanInput {
   @IsString()
   @MaxLength(120)
   name?: string;
+
+  @Field(() => String, {
+    nullable: true,
+    description: 'What the first amount was; "" or null clears it',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  description?: string | null;
 
   @Field(() => String, { nullable: true, description: '"" or null clears it' })
   @IsOptional()

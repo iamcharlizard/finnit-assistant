@@ -1068,7 +1068,7 @@
       "totalBelowPrincipal": "El monto prestado no puede ser mayor que el total a pagar.",
       "installmentsBelowPaid": "El número de pagos no puede ser menor que los pagos que ya hiciste.",
       "fixedPayment": "Este préstamo tiene un pago fijo: agrega el monto sin número de pagos.",
-      "firstPaymentAfterDate": "El primer pago debe ser después de la fecha.",
+      "firstPaymentAfterDate": "El primer pago no puede ser antes de la fecha.",
       "installmentsPaidCount": "Los pagos ya hechos no pueden ser más que el número de pagos."
     },
     "newLoan": "Préstamo",
@@ -1194,7 +1194,15 @@
       "periodicFeeAddVat": "Sumarle IVA (16%)",
       "previewFees": "comisiones {fees}",
       "clearDate": "Quitar fecha",
-      "principalPersonalHint": "Déjalo vacío o en 0 si vas a registrar cada préstamo por separado desde su página."
+      "principalPersonalHint": "Déjalo vacío o en 0 si vas a registrar cada préstamo por separado desde su página.",
+      "description": {
+        "purchase_financing": "¿Qué compraste? (opcional)",
+        "personal": "Descripción del préstamo inicial (opcional)"
+      },
+      "descriptionPlaceholder": {
+        "purchase_financing": "Ej. Pantalla",
+        "personal": "Ej. Para la colegiatura"
+      }
     },
     "loanValidation": {
       "nameRequired": "Escribe un nombre.",
@@ -1281,7 +1289,7 @@
       "rateRequired": "Escribe la tasa anual.",
       "rateInvalid": "La tasa debe estar entre 0 y 1000%.",
       "depositAccountRequired": "Elige la cuenta donde recibiste el dinero.",
-      "firstPaymentBeforeDate": "El primer pago debe ser después de la fecha.",
+      "firstPaymentBeforeDate": "El primer pago no puede ser antes de la fecha.",
       "installmentsPaidInvalid": "No pueden ser más que el número de pagos."
     },
     "detail": {
@@ -1384,7 +1392,8 @@
         "purpose": "¿En qué se usó?",
         "purposeNone": "Sin especificar",
         "lenderPerson": "¿Quién te prestó?",
-        "lendingMethod": "¿Cómo te prestó?"
+        "lendingMethod": "¿Cómo te prestó?",
+        "description": "Descripción"
       },
       "columns": {
         "number": "#",
@@ -1442,7 +1451,8 @@
         "hintPersonal": "Cada vez que te prestó: el préstamo inicial y lo que se fue sumando (otro préstamo, una compra con su tarjeta…).",
         "addPersonal": "Agregar préstamo",
         "addPurchase": "Agregar compra",
-        "installments": "{count, plural, one {en # pago} other {en # pagos}}"
+        "installments": "{count, plural, one {en # pago} other {en # pagos}}",
+        "initialPurchase": "Compra inicial"
       },
       "chargeUpdated": "Guardamos los cambios.",
       "editCharge": "Editar",

@@ -11,6 +11,8 @@ import type { ApiDebt, LendingMethod } from './types';
  */
 export interface LoanEditForm {
   name: string;
+  /** Purchases and personal loans: what the first amount was. */
+  description: string;
   lenderName: string;
   /** Personal loans: the contact who lent it ('' = none). */
   lenderContactId: string;
@@ -55,6 +57,7 @@ export interface LoanEditFields {
 type EditableDebt = Pick<
   ApiDebt,
   | 'name'
+  | 'description'
   | 'lenderName'
   | 'lenderContactId'
   | 'lendingMethod'
@@ -83,6 +86,7 @@ const amountText = (n: number | null) => (n ? String(n) : '');
 export function loanEditFormOf(debt: EditableDebt): LoanEditForm {
   return {
     name: debt.name,
+    description: debt.description ?? '',
     lenderName: debt.lenderName ?? '',
     lenderContactId: debt.lenderContactId ?? '',
     lendingMethod: debt.lendingMethod ?? '',
@@ -151,6 +155,8 @@ export function buildLoanUpdate(
   const fields = loanEditFields(debt);
   const input: Record<string, unknown> = {};
   if (form.name.trim() !== initial.name) input.name = form.name.trim();
+  if (form.description.trim() !== initial.description)
+    input.description = form.description.trim() || null;
   if (debt.loanType === 'personal') {
     if (form.lenderContactId !== initial.lenderContactId)
       input.lenderContactId = form.lenderContactId || null;

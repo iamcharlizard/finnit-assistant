@@ -771,8 +771,10 @@ export class RecurringExpensesService {
       return 0;
     }
     const amounts = await this.loanAmounts(this.prisma, expense);
+    const moved = await this.movedDates(this.prisma, expense.id);
     const dueDates = dueDatesBetween(expense, from, to).filter(
-      (date) => !amounts || amounts.has(date.getTime()),
+      (date) =>
+        (!amounts || amounts.has(date.getTime())) && !moved.has(date.getTime()),
     );
     if (dueDates.length === 0) return 0;
 
@@ -785,6 +787,101 @@ export class RecurringExpensesService {
       skipDuplicates: true,
     });
     return count;
+  }
+
+  /** Schedule dates of payments the user moved to another day. */
+  private async movedDates(
+    client: Prisma.TransactionClient,
+    expenseId: string,
+  ): Promise<Set<number>> {
+    const moved = await client.recurringOccurrence.findMany({
+      where: { recurringExpenseId: expenseId, originalDueDate: { not: null } },
+      select: { originalDueDate: true },
+    });
+    return new Set(
+      (moved ?? []).flatMap((o) =>
+        o.originalDueDate ? [o.originalDueDate.getTime()] : [],
+      ),
+    );
+  }
+
+  /**
+   * Moves an open scheduled payment to another day (e.g. a Kueski
+   * installment due on the 12th instead of the 15th). It keeps the date the
+   * schedule gave it, so that date is not generated again and per-date
+   * amounts still find it. It cannot land on another scheduled date or on
+   * a day that already has a payment. Returns the expense's debt, if any.
+   */
+  async rescheduleOccurrence(
+    userId: string,
+    occurrenceId: string,
+    day: Date,
+  ): Promise<{ debtId: string | null }> {
+    const occurrence = await this.prisma.recurringOccurrence.findFirst({
+      where: { id: occurrenceId, recurringExpense: { userId } },
+      include: { recurringExpense: true },
+    });
+    if (!occurrence) throw new NotFoundError('Scheduled payment not found');
+    if (
+      occurrence.status !== OccurrenceStatus.upcoming &&
+      occurrence.status !== OccurrenceStatus.missed
+    ) {
+      throw new ValidationError('Only open payments can be moved');
+    }
+    const expense = occurrence.recurringExpense;
+    const dueDate = toDateOnly(day);
+    const original = occurrence.originalDueDate ?? occurrence.dueDate;
+    if (dueDate.getTime() !== original.getTime()) {
+      const taken = await this.prisma.recurringOccurrence.findFirst({
+        where: {
+          recurringExpenseId: expense.id,
+          dueDate,
+          id: { not: occurrence.id },
+        },
+        select: { id: true },
+      });
+      const scheduled = dueDatesBetween(expense, dueDate, dueDate).length > 0;
+      if (taken || scheduled) {
+        throw new ConflictError('There is already a payment on that date');
+      }
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.recurringOccurrence.update({
+        where: { id: occurrence.id },
+        data: {
+          dueDate,
+          originalDueDate:
+            dueDate.getTime() === original.getTime() ? null : original,
+          // A missed payment moved ahead is open again.
+          ...(occurrence.status === OccurrenceStatus.missed &&
+            dueDate >= this.today() && { status: OccurrenceStatus.upcoming }),
+        },
+      });
+      await this.refreshNextDueDate(tx, expense.id);
+    });
+    return { debtId: expense.debtId };
+  }
+
+  /** nextDueDate = the earliest open payment from today on, if generated. */
+  private async refreshNextDueDate(
+    tx: Prisma.TransactionClient,
+    expenseId: string,
+  ) {
+    const next = await tx.recurringOccurrence.findFirst({
+      where: {
+        recurringExpenseId: expenseId,
+        status: OccurrenceStatus.upcoming,
+        dueDate: { gte: this.today() },
+      },
+      orderBy: { dueDate: 'asc' },
+    });
+    if (next) {
+      await tx.recurringExpense.update({
+        where: { id: expenseId },
+        data: { nextDueDate: next.dueDate },
+      });
+    }
   }
 
   /**
@@ -827,7 +924,9 @@ export class RecurringExpensesService {
       },
     });
     for (const occurrence of open) {
-      const amount = amounts.get(occurrence.dueDate.getTime());
+      const amount = amounts.get(
+        (occurrence.originalDueDate ?? occurrence.dueDate).getTime(),
+      );
       if (amount === undefined) {
         await tx.recurringOccurrence.delete({ where: { id: occurrence.id } });
       } else if (amount !== Number(occurrence.expectedAmount)) {
@@ -839,11 +938,14 @@ export class RecurringExpensesService {
     }
 
     const today = this.today();
+    const moved = await this.movedDates(tx, expense.id);
     const window = dueDatesBetween(
       expense,
       addDays(today, -OCCURRENCE_LOOKBACK_DAYS),
       addDays(today, OCCURRENCE_HORIZON_DAYS),
-    ).filter((date) => amounts.has(date.getTime()));
+    ).filter(
+      (date) => amounts.has(date.getTime()) && !moved.has(date.getTime()),
+    );
     if (window.length > 0) {
       await tx.recurringOccurrence.createMany({
         data: window.map((dueDate) => ({
@@ -863,6 +965,8 @@ export class RecurringExpensesService {
         ...(next !== undefined && { amount: amounts.get(next) }),
       },
     });
+    // A moved payment may come before the schedule's next date.
+    await this.refreshNextDueDate(tx, expense.id);
   }
 
   /**

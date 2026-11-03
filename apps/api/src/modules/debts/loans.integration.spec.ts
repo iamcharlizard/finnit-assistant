@@ -1180,4 +1180,80 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       3_600 - 600,
     );
   });
+
+  it('moves an open installment to another day', async () => {
+    const now = new Date();
+    const today = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
+    const loan = await loans.create(userId, {
+      name: 'Didi',
+      description: 'Bocina',
+      kind: DebtKind.loan,
+      loanType: LoanType.purchase_financing,
+      principal: 1_200,
+      interestMode: LoanInterestMode.total_amount,
+      totalToRepay: 1_200,
+      installmentsTotal: 6,
+      paymentFrequency: RecurringFrequency.semimonthly,
+      firstPaymentDate: today,
+    });
+    const open = () =>
+      prisma.recurringOccurrence.findMany({
+        where: {
+          recurringExpense: { debtId: loan.id },
+          status: OccurrenceStatus.upcoming,
+        },
+        orderBy: { dueDate: 'asc' },
+      });
+    const target = (await open()).find(
+      (o) => o.dueDate.getTime() >= today.getTime() + 5 * 86_400_000,
+    )!;
+    const original = target.dueDate;
+    const moved = new Date(original.getTime() - 3 * 86_400_000);
+
+    await loans.reschedulePayment(userId, target.id, moved);
+    const after = await prisma.recurringOccurrence.findUniqueOrThrow({
+      where: { id: target.id },
+    });
+    expect(iso(after.dueDate)).toBe(iso(moved));
+    expect(iso(after.originalDueDate!)).toBe(iso(original));
+
+    // Not generated again on its schedule date, and still priced by it.
+    await loans.addCharge(userId, {
+      debtId: loan.id,
+      date: today,
+      firstPaymentDate: today,
+      description: 'Audífonos',
+      principal: 600,
+      installments: 6,
+      destination: DebtChargeDestination.purchase,
+    });
+    const dates = (await open()).map((o) => iso(o.dueDate));
+    expect(dates).not.toContain(iso(original));
+    expect(dates).toContain(iso(moved));
+    const repriced = await prisma.recurringOccurrence.findUniqueOrThrow({
+      where: { id: target.id },
+    });
+    expect(Number(repriced.expectedAmount)).toBe(300);
+    const row = (await tracking.schedule(userId, loan.id)).find(
+      (s) => s.occurrenceId === target.id,
+    )!;
+    expect(iso(row.dueDate)).toBe(iso(moved));
+    expect(row.installments?.map((i) => i.description)).toEqual([
+      'Bocina',
+      'Audífonos',
+    ]);
+
+    // Not onto another scheduled date; back to its own clears the move.
+    const other = (await open()).find((o) => o.id !== target.id)!;
+    await expect(
+      loans.reschedulePayment(userId, target.id, other.dueDate),
+    ).rejects.toThrow('already a payment');
+    await loans.reschedulePayment(userId, target.id, original);
+    const back = await prisma.recurringOccurrence.findUniqueOrThrow({
+      where: { id: target.id },
+    });
+    expect(back.originalDueDate).toBeNull();
+  });
 });

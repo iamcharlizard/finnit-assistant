@@ -291,11 +291,6 @@
     "calendarLink": "Ver todos",
     "noUpcomingTitle": "Sin pagos próximos",
     "noUpcomingDescription": "No tienes pagos recurrentes en los próximos {days} días.",
-    "recent": "Actividad reciente",
-    "seeAll": "Ver todo",
-    "seeAllLabel": "Ver todos los movimientos",
-    "noRecentTitle": "Sin movimientos todavía",
-    "noRecentDescription": "Cuando tu banco importe movimientos aparecerán aquí.",
     "balance": {
       "available": "Saldo disponible",
       "creditDebt": "Deuda en tarjetas",
@@ -309,6 +304,13 @@
       "stepBank": "Conecta tu banco: importamos tus cuentas, saldos y movimientos.",
       "stepCategories": "Ve en qué se va tu dinero cada mes, por categoría.",
       "stepRecurring": "Ten a la vista tus pagos recurrentes y fechas de tarjeta."
+    },
+    "debts": {
+      "title": "Tus deudas",
+      "seeAll": "Ver deudas",
+      "monthly": "Pagas al mes",
+      "load": "{percent}% de tu ingreso · {level}",
+      "noIncome": "Registra tus ingresos para ver qué parte se va en deudas."
     }
   },
   "history": {
@@ -1069,7 +1071,9 @@
       "installmentsBelowPaid": "El número de pagos no puede ser menor que los pagos que ya hiciste.",
       "fixedPayment": "Este préstamo tiene un pago fijo: agrega el monto sin número de pagos.",
       "firstPaymentAfterDate": "El primer pago no puede ser antes de la fecha.",
-      "installmentsPaidCount": "Los pagos ya hechos no pueden ser más que el número de pagos."
+      "installmentsPaidCount": "Los pagos ya hechos no pueden ser más que el número de pagos.",
+      "dateTaken": "Ese día ya tiene un pago de este préstamo.",
+      "notOpen": "Solo se pueden mover los pagos pendientes."
     },
     "newLoan": "Préstamo",
     "newOther": "Tarjeta u otra deuda",
@@ -1457,7 +1461,15 @@
       "chargeUpdated": "Guardamos los cambios.",
       "editCharge": "Editar",
       "scheduledTitle": "Pagos programados",
-      "scheduledHint": "Lo que te toca pagar cada mes por las compras a meses. Cada pago dice a qué compra corresponde y cuál de sus pagos es (01/03)."
+      "scheduledHint": "Lo que te toca pagar cada mes por las compras a meses. Cada pago dice a qué compra corresponde y cuál de sus pagos es (01/03).",
+      "reschedule": "Cambiar fecha",
+      "rescheduleTitle": "Cambiar fecha del pago",
+      "rescheduleDescription": "Pago de {amount} programado para el {date}. Elige el día en que realmente se cobra.",
+      "rescheduleDate": "Nueva fecha",
+      "rescheduleHint": "Solo cambia este pago; los demás siguen en sus fechas.",
+      "rescheduleSave": "Guardar",
+      "rescheduled": "Cambiamos la fecha del pago.",
+      "movedFrom": "Antes: {date}"
     },
     "categories": {
       "institutional": "Bancos y financieras",

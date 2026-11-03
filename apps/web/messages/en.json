@@ -291,11 +291,6 @@
     "calendarLink": "See all",
     "noUpcomingTitle": "No upcoming payments",
     "noUpcomingDescription": "You have no recurring payments in the next {days} days.",
-    "recent": "Recent activity",
-    "seeAll": "See all",
-    "seeAllLabel": "See all transactions",
-    "noRecentTitle": "No transactions yet",
-    "noRecentDescription": "Transactions your bank imports will show up here.",
     "balance": {
       "available": "Available balance",
       "creditDebt": "Card debt",
@@ -309,6 +304,13 @@
       "stepBank": "Connect your bank: we import your accounts, balances and transactions.",
       "stepCategories": "See where your money goes each month, by category.",
       "stepRecurring": "Keep your recurring payments and card dates in sight."
+    },
+    "debts": {
+      "title": "Your debts",
+      "seeAll": "See debts",
+      "monthly": "Monthly payments",
+      "load": "{percent}% of your income · {level}",
+      "noIncome": "Record your income to see how much goes to debts."
     }
   },
   "history": {
@@ -1069,7 +1071,9 @@
       "installmentsBelowPaid": "The number of payments cannot be less than the payments already made.",
       "fixedPayment": "This loan has a fixed payment: add the amount without a number of payments.",
       "firstPaymentAfterDate": "The first payment cannot be before the date.",
-      "installmentsPaidCount": "Payments already made cannot be more than the number of payments."
+      "installmentsPaidCount": "Payments already made cannot be more than the number of payments.",
+      "dateTaken": "That day already has a payment of this loan.",
+      "notOpen": "Only open payments can be moved."
     },
     "newLoan": "Loan",
     "newOther": "Card or other debt",
@@ -1457,7 +1461,15 @@
       "chargeUpdated": "Changes saved.",
       "editCharge": "Edit",
       "scheduledTitle": "Scheduled payments",
-      "scheduledHint": "What you pay each month for purchases in installments. Each payment says which purchase it belongs to and which of its payments it is (01/03)."
+      "scheduledHint": "What you pay each month for purchases in installments. Each payment says which purchase it belongs to and which of its payments it is (01/03).",
+      "reschedule": "Change date",
+      "rescheduleTitle": "Change payment date",
+      "rescheduleDescription": "Payment of {amount} scheduled for {date}. Pick the day it is actually charged.",
+      "rescheduleDate": "New date",
+      "rescheduleHint": "Only this payment changes; the rest keep their dates.",
+      "rescheduleSave": "Save",
+      "rescheduled": "Payment date changed.",
+      "movedFrom": "Was: {date}"
     },
     "categories": {
       "institutional": "Banks and lenders",

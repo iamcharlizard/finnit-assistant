@@ -9,29 +9,24 @@ import {
   startOfDayIso,
   todayKey,
 } from '@/lib/finance/dates';
+import { DEBT_INSIGHTS_FIELDS, type ApiDebtInsights } from '@/lib/debts/types';
 import {
   ACCOUNT_FIELDS,
-  CATEGORY_FIELDS,
   MONTHLY_REPORT_FIELDS,
-  TRANSACTION_FIELDS,
   UPCOMING_PAYMENT_FIELDS,
   type ApiAccount,
-  type ApiCategory,
   type ApiMonthlyReport,
-  type ApiTransaction,
   type ApiUpcomingPayment,
   type Connection,
 } from '@/lib/finance/types';
 import { UPCOMING_DAYS, buildDashboardView, type DashboardView } from './view';
 
-const RECENT_COUNT = 8;
-
-const DASHBOARD_QUERY = `query Dashboard($year: Int!, $month: Int!, $from: DateTime!, $to: DateTime!, $recent: Int!) {
+const DASHBOARD_QUERY = `query Dashboard($year: Int!, $month: Int!, $from: DateTime!, $to: DateTime!) {
   accounts(first: 100, archived: false) { edges { node { ${ACCOUNT_FIELDS} } } }
   monthlyReport(year: $year, month: $month) { ${MONTHLY_REPORT_FIELDS} }
   upcomingPayments(from: $from, to: $to) { ${UPCOMING_PAYMENT_FIELDS} }
-  transactions(first: $recent) { totalCount edges { node { ${TRANSACTION_FIELDS} } } }
-  categories { ${CATEGORY_FIELDS} }
+  transactions(first: 1) { totalCount }
+  debtInsights { ${DEBT_INSIGHTS_FIELDS} }
 }`;
 
 /** Everything the dashboard shows, in one request. */
@@ -43,13 +38,12 @@ export async function loadDashboard(): Promise<DashboardView> {
       accounts: Connection<ApiAccount>;
       monthlyReport: ApiMonthlyReport;
       upcomingPayments: ApiUpcomingPayment[];
-      transactions: Connection<ApiTransaction>;
-      categories: ApiCategory[];
+      transactions: { totalCount: number };
+      debtInsights: ApiDebtInsights;
     }>(DASHBOARD_QUERY, {
       ...month,
       from: startOfDayIso(today),
       to: endOfDayIso(addDays(today, UPCOMING_DAYS)),
-      recent: RECENT_COUNT,
     }),
     getLocalizer(),
   ]);
@@ -59,9 +53,8 @@ export async function loadDashboard(): Promise<DashboardView> {
       accounts: data.accounts.edges.map((e) => e.node),
       monthlyReport: data.monthlyReport,
       upcomingPayments: data.upcomingPayments,
-      transactions: data.transactions.edges.map((e) => e.node),
       transactionCount: data.transactions.totalCount,
-      categories: data.categories,
+      debtInsights: data.debtInsights,
     },
     { today, month },
     l,

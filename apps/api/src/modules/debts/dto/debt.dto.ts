@@ -1110,6 +1110,12 @@ export class LoanScheduleItem {
   @Field({ description: 'Not generated yet: from the terms and the balance' })
   projected: boolean;
 
+  @Field({
+    nullable: true,
+    description: 'Moved by the user: the date the schedule gave it',
+  })
+  originalDueDate?: Date;
+
   @Field(() => Float, {
     nullable: true,
     description: 'Loans by rate: principal repaid by this payment',

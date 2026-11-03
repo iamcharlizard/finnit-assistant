@@ -30,6 +30,11 @@ input AcceptSuggestionAsLoanInput {
   Count the deposit as income (default: a balance adjustment outside totals)
   """
   depositCountsAsIncome: Boolean
+
+  """
+  Loans: what the first amount was (first purchase, what it was lent for)
+  """
+  description: String
   destination: DebtChargeDestination
   dueDate: DateTime
 
@@ -193,7 +198,7 @@ input AddDebtChargeInput {
   destination: DebtChargeDestination!
 
   """
-  Personal loans paid in installments: first due date when the loan has no payment schedule yet (default: a month after the charge)
+  With installments: when the first one is due (may skip due dates of the loan). Default: the first due date after the charge; for a personal loan without a schedule, a month after it
   """
   firstPaymentDate: DateTime
   includesVat: Boolean
@@ -661,6 +666,11 @@ input CreateDebtInput {
   Count the deposit as income (default: a balance adjustment outside totals)
   """
   depositCountsAsIncome: Boolean
+
+  """
+  Loans: what the first amount was (first purchase, what it was lent for)
+  """
+  description: String
   destination: DebtChargeDestination
   dueDate: DateTime
 
@@ -847,6 +857,11 @@ type Debt {
   """Newest first"""
   charges: [DebtCharge!]!
   createdAt: DateTime!
+
+  """
+  Loans: what the first amount was (first purchase, what it was lent for)
+  """
+  description: String
   destination: DebtChargeDestination
   disbursementTransactionId: String
   dueDate: DateTime
@@ -924,11 +939,23 @@ type DebtCharge {
   depositCountsAsIncome: Boolean
   description: String
   destination: DebtChargeDestination!
+
+  """First due date of its installments; null = the first after its date"""
+  firstPaymentDate: DateTime
   id: ID!
+
+  """Rate mode: 16% VAT on the interest"""
+  includesVat: Boolean!
   installments: Int
 
   """Installments paid before it was registered"""
   installmentsPaid: Int!
+
+  """How its interest was given (with installments)"""
+  interestMode: LoanInterestMode
+
+  """Rate mode: annual %"""
+  interestRateAnnual: Float
 
   """Personal loans: how it was lent"""
   lendingMethod: LendingMethod
@@ -1227,6 +1254,9 @@ type LoanScheduleItem {
   """Scheduled payment; null for projected or unscheduled ones"""
   occurrenceId: ID
 
+  """Moved by the user: the date the schedule gave it"""
+  originalDueDate: DateTime
+
   """Loans by rate: principal repaid by this payment"""
   principal: Float
 
@@ -1504,6 +1534,11 @@ type Mutation {
   """
   reprocessStatementImport(id: ID!, parser: String): StatementImport!
   requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
+
+  """
+  Moves an open scheduled payment of a loan to another day (it keeps its schedule date)
+  """
+  rescheduleLoanPayment(dueDate: DateTime!, occurrenceId: ID!): Debt!
   resetPassword(input: ResetPasswordInput!): Boolean!
 
   """Sets the billing terms of one of the user's credit accounts"""
@@ -2418,7 +2453,7 @@ input UpdateDebtChargeInput {
   destination: DebtChargeDestination!
 
   """
-  Personal loans paid in installments: first due date when the loan has no payment schedule yet (default: a month after the charge)
+  With installments: when the first one is due (may skip due dates of the loan). Default: the first due date after the charge; for a personal loan without a schedule, a month after it
   """
   firstPaymentDate: DateTime
   includesVat: Boolean
@@ -2472,6 +2507,9 @@ input UpdateGoalInput {
 Edits a loan; omitted fields stay. Changing the amount, the number of payments or the fees recomputes its terms and reprices its open scheduled payments
 """
 input UpdateLoanInput {
+  """What the first amount was; "" or null clears it"""
+  description: String
+
   """Fixed-term loans: number of payments"""
   installmentsTotal: Int
 

@@ -560,6 +560,9 @@ model RecurringOccurrence {
   id                 String                 @id @default(uuid())
   recurringExpenseId String
   dueDate            DateTime               @db.Date
+  // Set when the user moved it: the date the schedule gave it (it is not
+  // generated again there; per-date amounts are looked up by it).
+  originalDueDate    DateTime?              @db.Date
   expectedAmount     Decimal                @db.Decimal(18, 2)
   status             OccurrenceStatus       @default(upcoming)
   transactionId      String?                @unique

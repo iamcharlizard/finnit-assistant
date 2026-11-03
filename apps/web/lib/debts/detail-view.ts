@@ -36,8 +36,10 @@ export interface ScheduleRow {
   amountLabel: string;
   amount: number;
   status: ScheduleRowStatus;
-  /** Set when it can be paid from the page. */
+  /** Set when it can be paid (or moved to another day) from the page. */
   occurrenceId: string | null;
+  /** Moved by the user: the date the schedule gave it, with the year. */
+  originalDateLabel: string | null;
   /**
    * Loans scheduled by their charges: what each one is for, with its
    * installment ("Pantalla 01/03 · Audífonos 02/06"), or null.
@@ -295,6 +297,9 @@ export function buildLoanDetailView(
         item.occurrenceId && (status === 'upcoming' || status === 'overdue')
           ? item.occurrenceId
           : null,
+      originalDateLabel: item.originalDueDate
+        ? fullDate(dayKeyOf(item.originalDueDate), locale)
+        : null,
       concept: installmentsConcept(item.installments),
       principalLabel: item.principal != null ? money(item.principal) : null,
       interestLabel: item.interest != null ? money(item.interest) : null,

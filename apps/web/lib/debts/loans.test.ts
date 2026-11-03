@@ -738,6 +738,7 @@ describe('loan detail view', () => {
     vat: null,
     fee: null,
     installments: null,
+    originalDueDate: null,
     balance: 0,
     ...patch,
   });
@@ -781,6 +782,25 @@ describe('loan detail view', () => {
     assert.equal(view.purpose, 'Electrónica');
     assert.equal(view.charges[0]?.purpose, 'Electrónica');
     assert.equal(buildLoanDetailView(debt, [], { today }, es).purpose, null);
+  });
+
+  it('shows the schedule date of a moved payment', () => {
+    const view = buildLoanDetailView(
+      debt,
+      [
+        item('2026-11-12', { originalDueDate: '2026-11-15T00:00:00.000Z' }),
+        item('2026-11-30'),
+      ],
+      { today },
+      es,
+    );
+    assert.equal(view.schedule[0]!.dateLabel, '12 de noviembre de 2026');
+    assert.equal(
+      view.schedule[0]!.originalDateLabel,
+      '15 de noviembre de 2026',
+    );
+    assert.equal(view.schedule[0]!.occurrenceId, 'occ-2026-11-12');
+    assert.equal(view.schedule[1]!.originalDateLabel, null);
   });
 
   it('splits what is left from the amortization table', () => {

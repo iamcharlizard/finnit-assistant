@@ -65,6 +65,11 @@ import { ReceiptReadFailed } from '@/components/receipts/receipt-read-failed';
 import { ReceiptReading } from '@/components/receipts/receipt-reading';
 import { ReceiptSummary } from '@/components/receipts/receipt-summary';
 import { ScanReceiptButton } from '@/components/receipts/scan-receipt-button';
+import { ImportScreenshotButton } from '@/components/screenshots/import-screenshot-button';
+import {
+  ScreenshotImportFlow,
+  type ScreenshotPhase,
+} from '@/components/screenshots/screenshot-import-flow';
 import { AttachmentUploadStatus } from './attachment-upload-status';
 import { DuplicateReview } from './duplicate-review';
 import { EntryForm } from './entry-form';
@@ -80,6 +85,8 @@ type Step =
   | { name: 'receipt' }
   /** A read receipt that may already be registered. */
   | { name: 'receiptMatch'; matches: SimilarTransaction[] }
+  /** A screenshot of the bank's movements: capture, read, review, save. */
+  | { name: 'screenshot' }
   | {
       name: 'upload';
       transactionId: string;
@@ -90,7 +97,7 @@ type Step =
 type Busy = null | 'checking' | 'saving';
 
 /** Where "Nuevo movimiento" can start besides the kind step. */
-export type NewEntryAction = EntryKind | 'receipt';
+export type NewEntryAction = EntryKind | 'receipt' | 'screenshot';
 
 /**
  * Fire and forget: an import nobody will review (failed, cancelled). Waits
@@ -147,6 +154,9 @@ export function NewEntryFlow({
   const [transferTried, setTransferTried] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState<Busy>(null);
+  // The screenshot step's own phase (for the title) and whether it saves.
+  const [shotPhase, setShotPhase] = React.useState<ScreenshotPhase>('capture');
+  const [shotBusy, setShotBusy] = React.useState(false);
   const [pending, setPending] = React.useState<CreateTransactionPayload | null>(
     null,
   );
@@ -204,10 +214,17 @@ export function NewEntryFlow({
   React.useEffect(() => {
     onLockChange(
       busy !== null ||
+        shotBusy ||
         attachment.state.status === 'uploading' ||
         reader.state.phase === 'uploading',
     );
-  }, [busy, attachment.state.status, reader.state.phase, onLockChange]);
+  }, [
+    busy,
+    shotBusy,
+    attachment.state.status,
+    reader.state.phase,
+    onLockChange,
+  ]);
 
   // Started from a shortcut: once the accounts are loaded, go straight to
   // that step (adjusting state during render, so there's no extra paint of
@@ -216,6 +233,7 @@ export function NewEntryFlow({
   if (!initialApplied && data.status === 'ready') {
     setInitialApplied(true);
     if (initialAction === 'receipt') startCapture('kind');
+    else if (initialAction === 'screenshot') startScreenshot();
     else if (initialAction) pickKind(initialAction);
   }
 
@@ -274,6 +292,12 @@ export function NewEntryFlow({
       setBusy(null);
       setSubmitError(t(`newEntry.errors.${createErrorKey(error)}`));
     }
+  }
+
+  function startScreenshot() {
+    setSubmitError(null);
+    setShotPhase('capture');
+    setStep({ name: 'screenshot' });
   }
 
   function startCapture(from: 'kind' | 'entry') {
@@ -457,6 +481,8 @@ export function NewEntryFlow({
       setStep({ name: 'entry' });
     } else if (step.name === 'receipt') {
       cancelCapture();
+    } else if (step.name === 'screenshot') {
+      setStep({ name: 'kind' });
     } else {
       // A read receipt stays pending (listed on the first step).
       setReceipt(null);
@@ -489,12 +515,15 @@ export function NewEntryFlow({
           : t('receipts.titles.capture');
       case 'upload':
         return t('newEntry.titles.upload');
+      case 'screenshot':
+        return t(`screenshots.titles.${shotPhase}`);
     }
   })();
   const canGoBack =
     step.name !== 'kind' &&
     step.name !== 'upload' &&
     busy === null &&
+    !shotBusy &&
     reader.state.phase !== 'uploading';
   const busyLabel =
     busy === 'checking' ? t('newEntry.checking') : t('newEntry.saving');
@@ -541,6 +570,7 @@ export function NewEntryFlow({
           variant="shortcut"
           onClick={() => startCapture('kind')}
         />
+        <ImportScreenshotButton onClick={startScreenshot} />
         <PendingReceipts
           receipts={pendingReceipts}
           onResume={(read) => {
@@ -613,6 +643,17 @@ export function NewEntryFlow({
         />
       );
     }
+  } else if (step.name === 'screenshot') {
+    body = (
+      <ScreenshotImportFlow
+        accounts={accounts}
+        categories={categories}
+        onPhaseChange={setShotPhase}
+        onBusyChange={setShotBusy}
+        onManual={() => pickKind('expense')}
+        onDone={onDone}
+      />
+    );
   } else if (step.name === 'receiptMatch') {
     body = (
       <ReceiptMatchReview

@@ -696,7 +696,7 @@ export class BankConnectionsService {
     const reconciled = await this.prisma.importedTransaction.findMany({
       where: { id: { in: pending.map((line) => line.id) } },
     });
-    const { created } = await this.prisma.$transaction(
+    const { created, settledChange } = await this.prisma.$transaction(
       (tx) =>
         this.materializer.materialize(tx, reconciled, {
           userId,
@@ -709,6 +709,14 @@ export class BankConnectionsService {
         }),
       { timeout: 60_000 },
     );
+    // A posted movement that settled an "en proceso" one changed an older
+    // movement's effect: the next reconciliation must expect it too.
+    if (settledChange !== 0) {
+      await this.prisma.linkedAccount.updateMany({
+        where: { id: linked.id, reconciledBalance: { not: null } },
+        data: { reconciledBalance: { increment: settledChange } },
+      });
+    }
     return { imported, created };
   }
 

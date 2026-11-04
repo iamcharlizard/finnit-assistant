@@ -195,6 +195,7 @@ enum AiFeatureKey {
   recurring_classification
   receipt_parsing
   translation
+  screenshot_parsing
 }
 
 /// Where a category name translation came from.
@@ -299,6 +300,7 @@ model User {
   merchantAliases           MerchantAlias[]
   merchantRules             MerchantRule[]
   receiptImports            ReceiptImport[]
+  screenshotImports         ScreenshotImport[]
   merchantTaxIds            MerchantTaxId[]
 }
 
@@ -329,6 +331,7 @@ model Account {
   statementImports            StatementImport[]
   importedLines               ImportedTransaction[] @relation("imported_account")
   receiptSuggestions          ReceiptImport[]       @relation("receipt_suggested_account")
+  screenshotImports           ScreenshotImport[]    @relation("screenshot_account")
 
   @@unique([userId, name])
   @@index([userId])
@@ -411,6 +414,10 @@ model Transaction {
   description         String?
   merchantName        String?
   isPending           Boolean           @default(false)
+  // "En proceso": the bank shows it but hasn't applied it yet. Unlike
+  // isPending it counts in the balance and totals; it is only marked, and
+  // clears when the bank's applied movement is linked to it (or by hand).
+  inProcess           Boolean           @default(false)
   isRecurringInstance Boolean           @default(false)
   source              TransactionSource
   externalId          String?           @unique
@@ -953,16 +960,22 @@ model ImportedTransaction {
   raw                  Json?
   matchedTransactionId String?
   matchedOccurrenceId  String?
+  // Read from a screenshot of the bank's app.
+  screenshotImportId   String?
+  // The bank showed it "en proceso" (not applied yet).
+  inProcess            Boolean            @default(false)
   importedAt           DateTime           @default(now())
 
   account            Account              @relation("imported_account", fields: [accountId], references: [id], onDelete: Cascade)
   linkedAccount      LinkedAccount?       @relation(fields: [linkedAccountId], references: [id], onDelete: Cascade)
   statementImport    StatementImport?     @relation(fields: [statementImportId], references: [id], onDelete: Cascade)
+  screenshotImport   ScreenshotImport?    @relation(fields: [screenshotImportId], references: [id], onDelete: Cascade)
   matchedTransaction Transaction?         @relation("imported_matched", fields: [matchedTransactionId], references: [id], onDelete: SetNull)
   matchedOccurrence  RecurringOccurrence? @relation(fields: [matchedOccurrenceId], references: [id], onDelete: SetNull)
 
   @@index([linkedAccountId, date])
   @@index([statementImportId])
+  @@index([screenshotImportId])
   @@index([accountId, date])
 }
 
@@ -1091,6 +1104,40 @@ model ReceiptImport {
   @@index([suggestedAccountId])
   @@index([suggestedCategoryId])
   @@index([matchedTransactionId])
+}
+
+/// A screenshot of a bank app's movement list: the account it shows and
+/// its movements (stored as ImportedTransaction lines once the account is
+/// known), waiting for the user to review them.
+model ScreenshotImport {
+  id            String        @id @default(uuid())
+  userId        String
+  status        ReceiptStatus @default(uploaded)
+  fileKey       String        @unique // users/<userId>/screenshots/<id>.<ext>
+  fileName      String?
+  fileHash      String // sha256 of the uploaded file
+  mimeType      String
+  fileSize      Int
+  route         ReceiptRoute?
+  // What the screenshot says about the account ("Clásica Banamex **482").
+  accountHint   String?
+  last4         String?       @db.VarChar(4)
+  // Detected, then chosen by the user; its lines are for this account.
+  accountId     String?
+  ocrText       String?       @db.Text
+  // The movements as read (with what needs checking), before an account.
+  rawExtraction Json?
+  errorMessage  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account Account?              @relation("screenshot_account", fields: [accountId], references: [id], onDelete: SetNull)
+  lines   ImportedTransaction[]
+
+  @@unique([userId, fileHash])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([accountId])
 }
 
 /// Merchant tax ID (RFC) → name → category. userId null = global entry

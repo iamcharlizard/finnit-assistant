@@ -48,6 +48,11 @@ export interface ApiTransaction {
    * missing in older data) for adjustments of unknown direction.
    */
   balanceEffect?: number | null;
+  /**
+   * "En proceso": the bank shows it but hasn't applied it. It counts in the
+   * balance; only marked (missing in older data).
+   */
+  inProcess?: boolean;
   currency: string;
   txnDate: string;
   description: string | null;
@@ -75,7 +80,7 @@ export interface ApiTransaction {
 }
 
 export const TRANSACTION_FIELDS =
-  'id type amount balanceEffect currency txnDate description merchantName displayName isPrivate aliasId hasOwnAlias isPending source transferDirection accountId account { id name type metadata { nickname } } category { id name parentId }';
+  'id type amount balanceEffect currency txnDate description merchantName displayName isPrivate aliasId hasOwnAlias isPending inProcess source transferDirection accountId account { id name type metadata { nickname } } category { id name parentId }';
 
 export type CategorySource = 'manual' | 'rule' | 'ai' | 'bank';
 

@@ -253,6 +253,8 @@
     "completed": "Completed",
     "private": "Private",
     "withPending": "{time} · Pending",
+    "withInProcess": "{time} · In process",
+    "inProcess": "In process",
     "inCurrency": "{amount} in {currency}",
     "accountTypes": {
       "cash": "Cash",
@@ -2234,6 +2236,8 @@
     }
   },
   "transaction": {
+    "markApplied": "Mark as applied",
+    "markedApplied": "Marked as applied by the bank",
     "back": "Back",
     "viewDetail": "View details",
     "types": {
@@ -2768,6 +2772,93 @@
       "percentRange": "Between -100% and 1000%.",
       "nameTooLong": "60 characters max.",
       "monthInvalid": "Pick a month in the period."
+    }
+  },
+  "screenshots": {
+    "import": "Import screenshot",
+    "importHint": "Upload a screenshot of your bank's movements",
+    "picker": {
+      "title": "Choose the screenshot of your movements",
+      "hint": "JPG, PNG, WEBP or HEIC, up to 10 MB",
+      "dragActive": "Drop the screenshot here",
+      "remove": "Remove {name}",
+      "tooLarge": "{name} is larger than {max}.",
+      "wrongType": "{name} isn't an image.",
+      "tips": "Take it on your bank app's movement list, with the account name visible at the top."
+    },
+    "errors": {
+      "uploadNetwork": "We couldn't upload the screenshot. Check your connection.",
+      "uploadTooLarge": "The screenshot is larger than 10 MB.",
+      "uploadInvalid": "Only JPG, PNG, WEBP or HEIC images are accepted.",
+      "uploadFailed": "We couldn't upload the screenshot. Try again.",
+      "discardFailed": "We couldn't discard the screenshot. Try again.",
+      "saveFailed": "We couldn't save the movements. Try again.",
+      "lineFailed": "We couldn't save the change. Try again.",
+      "accountFailed": "We couldn't change the account. Try again."
+    },
+    "failed": {
+      "readFailed": "We found no movements in this screenshot. Try another one or enter them by hand.",
+      "timeout": "This is taking longer than usual. You can keep waiting or enter them by hand.",
+      "discarded": "You discarded this screenshot before. Use another one or enter the movements by hand.",
+      "alreadyConfirmed": "The movements of this screenshot are already saved."
+    },
+    "actions": {
+      "manual": "Enter by hand",
+      "otherPhoto": "Use another screenshot",
+      "keepWaiting": "Keep waiting",
+      "close": "Close"
+    },
+    "reading": "Reading your screenshot…",
+    "readingHint": "This takes a few seconds.",
+    "cancel": "Cancel",
+    "uploading": "Uploading the screenshot…",
+    "progress": "{percent}%",
+    "titles": {
+      "capture": "Import screenshot",
+      "reading": "Reading your screenshot…",
+      "failed": "We couldn't read the screenshot",
+      "review": "Review the movements"
+    },
+    "review": {
+      "account": "Account",
+      "accountPlaceholder": "Choose the account",
+      "detected": "In the screenshot: {hint}",
+      "noAccount": "We couldn't find the account “{hint}”. Choose it to see which movements you already have.",
+      "noHint": "Choose the account of these movements.",
+      "read": "{count, plural, one {# movement read} other {# movements read}}",
+      "toCheck": "{count, plural, one {# to check} other {# to check}}",
+      "registered": "Already registered: {name} · {date}",
+      "includeAnyway": "Save it anyway",
+      "include": "Save {merchant}",
+      "inProcess": "In process",
+      "check": "Check",
+      "save": "{count, plural, =0 {Nothing to save} one {Save # movement} other {Save # movements}}",
+      "total": "Total: {amount}",
+      "blocked": "Fill in the amount of the flagged movements or leave them out.",
+      "discard": "Discard screenshot",
+      "edit": "Edit {merchant}",
+      "done": "Save changes",
+      "cancelEdit": "Cancel",
+      "merchant": "Merchant or concept",
+      "date": "Date",
+      "amount": "Amount",
+      "directionOut": "Expense or charge",
+      "directionIn": "Income or payment",
+      "inProcessLabel": "In process",
+      "inProcessHint": "The bank hasn't applied it yet. It counts in your balance and stays marked until it arrives applied.",
+      "category": "Category",
+      "categoryPlaceholder": "No category",
+      "noName": "No name",
+      "errors": {
+        "amountRequired": "Type the amount",
+        "dateInvalid": "Choose a date that isn't in the future",
+        "merchantRequired": "Type the merchant or concept"
+      }
+    },
+    "toasts": {
+      "saved": "{count, plural, one {# movement saved} other {# movements saved}}",
+      "savedNone": "Everything was already registered",
+      "discarded": "Screenshot discarded"
     }
   },
   "receipts": {

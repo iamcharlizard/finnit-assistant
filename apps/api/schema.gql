@@ -366,6 +366,7 @@ type AiFeature {
 enum AiFeatureKey {
   receipt_parsing
   recurring_classification
+  screenshot_parsing
 
   """Read card statements (PDF) without a local parser"""
   statement_parsing
@@ -1519,6 +1520,11 @@ type Mutation {
   confirmReceiptImport(id: ID!, input: ConfirmReceiptImportInput!): ReceiptImport!
 
   """
+  Creates the included movements (the ones already registered are linked, not created)
+  """
+  confirmScreenshotImport(id: ID!): ScreenshotImport!
+
+  """
   Creates the pending movements as transactions and marks matched recurring payments as paid
   """
   confirmStatementImport(id: ID!): StatementImport!
@@ -1586,6 +1592,9 @@ type Mutation {
 
   """Discards the draft and deletes the photo"""
   discardReceiptImport(id: ID!): Boolean!
+
+  """Discards the screenshot and deletes the image"""
+  discardScreenshotImport(id: ID!): Boolean!
   dismissRecurringSuggestion(fingerprint: ID!): Boolean!
 
   """Admin only"""
@@ -1647,6 +1656,9 @@ type Mutation {
   """Sets the billing terms of one of the user's credit accounts"""
   setCreditCardTerms(accountId: ID!, input: CreditCardTermsInput!): Account!
 
+  """The account the screenshot is about; its lines start over"""
+  setScreenshotAccount(accountId: String!, id: ID!): ScreenshotImport!
+
   """
   One-off display name and/or privacy for one movement (no alias rule). displayName null or "" clears it
   """
@@ -1702,6 +1714,7 @@ type Mutation {
   updateMyPreferences(input: UpdateMyPreferencesInput!): User!
   updateReceiptImport(id: ID!, input: UpdateReceiptImportInput!): ReceiptImport!
   updateRecurringExpense(id: ID!, input: UpdateRecurringExpenseInput!): RecurringExpense!
+  updateScreenshotLine(input: UpdateScreenshotLineInput!, lineId: ID!): ScreenshotImport!
   updateStatementLine(id: ID!, input: UpdateStatementLineInput!): StatementLine!
   updateTransaction(id: String!, input: UpdateTransactionInput!): Transaction!
 
@@ -1946,6 +1959,9 @@ type Query {
   """
   recurringSuggestions(accountId: ID): [RecurringSuggestion!]!
   rootCategories: [Category!]!
+
+  """Poll it after uploading (POST /screenshots) to follow the status"""
+  screenshotImport(id: ID!): ScreenshotImport!
 
   """
   Possible duplicates of a transaction about to be created: same account, amount within 0.01, within 3 days; newest first, at most 5
@@ -2234,6 +2250,63 @@ input ResetPasswordInput {
   token: String!
 }
 
+"""A screenshot of a bank app with movements"""
+type ScreenshotImport {
+  account: Account
+
+  """
+  "Clásica Banamex **482"
+  """
+  accountHint: String
+  createdAt: DateTime!
+  errorMessage: String
+  id: ID!
+  last4: String
+
+  """Empty until there is an account"""
+  lines: [ScreenshotLine!]!
+
+  """Movements read (also before choosing the account)"""
+  movementsRead: Float!
+  route: ReceiptRoute
+  status: ReceiptStatus!
+}
+
+"""A movement read from a screenshot"""
+type ScreenshotLine {
+  """0 when it could not be read"""
+  amount: Float!
+
+  """Suggested or chosen category"""
+  categoryId: String
+  date: DateTime!
+
+  """in: money into the account; out: a purchase"""
+  direction: String!
+  id: ID!
+
+  """"En proceso": shown by the bank, not applied yet"""
+  inProcess: Boolean!
+  matchedTransaction: ScreenshotLineMatch
+  merchant: String
+
+  """Fields to check: date, merchant, amount"""
+  review: [String!]!
+
+  """
+  pending: will be created; matched: already registered (not created); ignored: left out
+  """
+  status: StatementLineStatus!
+}
+
+"""An existing movement a screenshot line looks like"""
+type ScreenshotLineMatch {
+  amount: Float!
+  date: DateTime!
+  id: ID!
+  name: String
+}
+
 """
 Sets an account's balance to what the bank shows. The difference is recorded as an adjustment (not income or spending)
 """
@@ -2429,6 +2502,11 @@ type Transaction {
   """A one-off display name is set on this movement"""
   hasOwnAlias: Boolean!
   id: String!
+
+  """
+  "En proceso": the bank shows it but hasn't applied it yet. It counts in the balance; it clears when the applied movement arrives
+  """
+  inProcess: Boolean!
   isPending: Boolean!
 
   """
@@ -2744,6 +2822,22 @@ input UpdateRecurringExpenseInput {
   trackingMode: RecurringTrackingMode
 }
 
+input UpdateScreenshotLineInput {
+  amount: Float
+
+  """"" clears it"""
+  categoryId: String
+  date: DateTime
+  direction: String
+  inProcess: Boolean
+
+  """
+  false leaves it out; true creates it (even when it looks already registered)
+  """
+  include: Boolean
+  merchant: String
+}
+
 input UpdateStatementLineInput {
   categoryId: String
 
@@ -2761,6 +2855,9 @@ input UpdateTransactionInput {
   amount: Float
   categoryId: String
   description: String
+
+  """false: the bank already applied it ("Marcar como aplicado")"""
+  inProcess: Boolean
   isPending: Boolean
   merchantName: String
   txnDate: DateTime

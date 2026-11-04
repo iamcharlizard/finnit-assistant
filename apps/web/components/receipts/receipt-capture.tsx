@@ -8,7 +8,7 @@ import { FileDropzone } from '@finnit/ui/components/ui/file-dropzone';
 import { Progress } from '@finnit/ui/components/ui/progress';
 
 import { MAX_UPLOAD_BYTES } from '@/lib/files/routes';
-import type { ReaderState } from '@/lib/receipts/reader';
+import type { ReadableImport, ReaderState } from '@/lib/receipts/reader';
 import {
   RECEIPT_ACCEPT,
   type ReceiptUploadErrorKey,
@@ -24,13 +24,16 @@ export function ReceiptCapture({
   file,
   onPick,
   onManual,
+  namespace = 'receipts',
 }: {
-  state: ReaderState;
+  state: ReaderState<ReadableImport>;
   file: File | null;
   onPick: (file: File) => void;
   onManual: () => void;
+  /** Texts: a receipt photo, or a screenshot (picked, not taken). */
+  namespace?: 'receipts' | 'screenshots';
 }) {
-  const t = useTranslations('receipts');
+  const t = useTranslations(namespace);
   const uploading = state.phase === 'uploading';
   const uploadError: ReceiptUploadErrorKey | null =
     state.phase === 'failed' && state.receiptId === null
@@ -45,7 +48,7 @@ export function ReceiptCapture({
       </p>
       <FileDropzone
         accept={RECEIPT_ACCEPT}
-        capture="environment"
+        capture={namespace === 'receipts' ? 'environment' : undefined}
         maxSizeBytes={MAX_UPLOAD_BYTES}
         value={file && uploading ? [file] : []}
         onChange={(files) => {

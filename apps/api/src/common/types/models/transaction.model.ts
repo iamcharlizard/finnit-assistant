@@ -66,6 +66,12 @@ export class Transaction {
   @Field()
   isPending: boolean;
 
+  @Field({
+    description:
+      '"En proceso": the bank shows it but hasn\'t applied it yet. It counts in the balance; it clears when the applied movement arrives',
+  })
+  inProcess: boolean;
+
   @Field()
   isRecurringInstance: boolean;
 

@@ -142,6 +142,8 @@ export interface TransactionDetailView {
   categoryLabel: string | null;
   sourceKind: SourceKind;
   pending: boolean;
+  /** "En proceso": counted, the bank hasn't applied it yet. */
+  inProcess: boolean;
   /** The other side of a transfer, linked. */
   counterpart: { href: string; label: string } | null;
   /** The recurring payment it paid, linked. */
@@ -196,6 +198,7 @@ export function toTransactionDetailView(
         : null,
     sourceKind: sourceKind(tx.source),
     pending: tx.isPending,
+    inProcess: Boolean(tx.inProcess),
     counterpart: counterpart
       ? {
           href: `/transactions/${counterpart.transactionId}`,

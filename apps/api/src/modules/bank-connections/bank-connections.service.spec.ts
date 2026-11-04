@@ -98,6 +98,7 @@ describe('BankConnectionsService', () => {
     materializer.materialize.mockResolvedValue({
       created: 0,
       balanceChange: 0,
+      settledChange: 0,
     });
     notifications = mockDeep<NotificationsService>();
     service = new BankConnectionsService(
@@ -310,6 +311,7 @@ describe('BankConnectionsService', () => {
       materializer.materialize.mockResolvedValue({
         created: 1,
         balanceChange: -448,
+        settledChange: 0,
       });
 
       const result = await service.sync('conn-1', userId, {

@@ -24,7 +24,8 @@ export interface TransactionRow {
   /** Signed: "-$80.00", "+$1,200.00"; adjustments have no sign. */
   amount: string;
   variant: 'income' | 'expense' | 'neutral';
-  status: 'completed' | 'pending';
+  /** pending: not counted yet; inProcess: counted, the bank hasn't applied it. */
+  status: 'completed' | 'pending' | 'inProcess';
   iconKey: IconKey;
   day: DayKey;
   /** Private alias: show a lock next to the title. */
@@ -120,7 +121,7 @@ export function toTransactionRow(
       .join(' · '),
     amount: formatMoney(signed, tx.currency, locale, { sign }),
     variant: dir === 'in' ? 'income' : dir === 'out' ? 'expense' : 'neutral',
-    status: tx.isPending ? 'pending' : 'completed',
+    status: tx.isPending ? 'pending' : tx.inProcess ? 'inProcess' : 'completed',
     iconKey:
       tx.type === 'transfer'
         ? 'transfer'

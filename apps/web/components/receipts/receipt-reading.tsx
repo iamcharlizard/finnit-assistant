@@ -6,8 +6,14 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@finnit/ui/components/ui/button';
 
 /** "Leyendo tu ticket…" while the server reads the photo. */
-export function ReceiptReading({ onCancel }: { onCancel: () => void }) {
-  const t = useTranslations('receipts');
+export function ReceiptReading({
+  onCancel,
+  namespace = 'receipts',
+}: {
+  onCancel: () => void;
+  namespace?: 'receipts' | 'screenshots';
+}) {
+  const t = useTranslations(namespace);
   return (
     <div className="flex flex-col items-center gap-3 py-8 text-center">
       <Loader2

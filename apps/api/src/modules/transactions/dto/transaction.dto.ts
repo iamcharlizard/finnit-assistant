@@ -106,6 +106,14 @@ export class UpdateTransactionInput {
   @IsOptional()
   @IsBoolean()
   isPending?: boolean;
+
+  @Field({
+    nullable: true,
+    description: 'false: the bank already applied it ("Marcar como aplicado")',
+  })
+  @IsOptional()
+  @IsBoolean()
+  inProcess?: boolean;
 }
 
 @InputType()

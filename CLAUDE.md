@@ -40,6 +40,7 @@ All 11 original GraphQL modules implemented, plus recurring expenses in `apps/ap
 | Bank connections (Syncfy aggregation) | `src/modules/bank-connections/` |
 | Loans (types, terms, schedule, charges, historical payments, payment matching, charts) | `src/modules/debts/` (`loans.service.ts`, `loan-tracking.service.ts`, `debt-insights.service.ts`; pure math in `loan-math.ts`) |
 | Receipts (photo → draft expense: CFDI QR, OCR + rules, AI fallback) | `src/modules/receipts/` |
+| Screenshots (bank app movement list → several movements; account by last digits; "en proceso" movements) | `src/modules/screenshots/` |
 | OCR client (internal `ocr` service, `OCR_SERVICE_URL` / `OCR_SERVICE_TOKEN`) | `src/modules/ocr/` |
 | Admin (user access; master/admin rules) | `src/modules/admin/` |
 | Contacts (people the user deals with; lender of personal loans; name only for now) | `src/modules/contacts/` |
@@ -108,6 +109,7 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261108090000_deposit_adds_to_balance` (`Debt.depositAddsToBalance`, `DebtCharge.depositAddsToBalance`: whether deposited loan money was added to an account's balance; false = already spent, no movement; rollback in `packages/database/scripts/rollbacks/`)
 - `20261109090000_transaction_balance_effect` (`Transaction.balanceEffect`: signed effect on the account balance, backfilled; rollback in `packages/database/scripts/rollbacks/`)
 - `20261110090000_balance_reconciliation` (`NotificationType.balance_mismatch`, `Account.bankDifferenceTransactionId`, `LinkedAccount.reconciledBalance`/`reconciledAt`; rollback in `packages/database/scripts/rollbacks/`)
+- `20261111090000_screenshot_imports` + `20261111090100_screenshot_parsing_default` (`ScreenshotImport`, `ImportedTransaction.screenshotImportId`/`inProcess`, `Transaction.inProcess`, `AiFeatureKey.screenshot_parsing` and its settings row; one rollback covers both)
 - `20261105090000_charge_terms` (`DebtCharge.firstPaymentDate`, `interestMode`, `interestRateAnnual`, `includesVat`: a later purchase's first due date and interest terms; rollback in `packages/database/scripts/rollbacks/`)
 - `20261103090000_contacts` (`Contact`, `Debt.lenderContactId`; existing personal-loan lenders become contacts; rollback in `packages/database/scripts/rollbacks/`)
 - `20261013120000_private_attachments`

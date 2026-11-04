@@ -169,6 +169,7 @@ export function mapTransaction(
     description: shown.description || undefined,
     merchantName: shown.merchantName || undefined,
     isPending: transaction.isPending,
+    inProcess: transaction.inProcess ?? false,
     isRecurringInstance: transaction.isRecurringInstance,
     source: transaction.source,
     externalId: transaction.externalId || undefined,

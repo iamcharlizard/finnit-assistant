@@ -64,14 +64,26 @@ export function parseUploadResponse(text: string): UploadedReceipt | null {
   return { id, status: status as ReceiptStatus };
 }
 
-export async function uploadReceipt(
+export function uploadReceipt(
+  photo: File,
+  onProgress?: (percent: number) => void,
+): Promise<UploadedReceipt> {
+  return uploadImage('/api/files/receipts', photo, onProgress);
+}
+
+/**
+ * Any image through the file proxy (receipts, screenshots): compressed,
+ * multipart `file`, with progress; the 202 answer is `{ id, status }`.
+ */
+export async function uploadImage(
+  path: '/api/files/receipts' | '/api/files/screenshots',
   photo: File,
   onProgress?: (percent: number) => void,
 ): Promise<UploadedReceipt> {
   const file = await compressImageForUpload(photo);
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/files/receipts');
+    xhr.open('POST', path);
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable && event.total > 0) {
         onProgress?.(Math.round((event.loaded / event.total) * 100));

@@ -994,6 +994,7 @@ describe('TransactionsService', () => {
         description: mockTransaction.description,
         merchantName: mockTransaction.merchantName,
         isPending: mockTransaction.isPending,
+        inProcess: false,
         isRecurringInstance: mockTransaction.isRecurringInstance,
         source: mockTransaction.source,
         externalId: undefined, // null is normalized to undefined

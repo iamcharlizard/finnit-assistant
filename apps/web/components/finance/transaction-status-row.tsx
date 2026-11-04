@@ -20,8 +20,20 @@ export function TransactionStatusRow({ row }: { row: TransactionRow }) {
       category={row.category}
       time={row.time}
       amount={row.amount}
-      statusLabel={pending ? t('pending') : t('completed')}
-      statusVariant={pending ? 'pendiente' : 'completado'}
+      statusLabel={
+        pending
+          ? t('pending')
+          : row.status === 'inProcess'
+            ? t('inProcess')
+            : t('completed')
+      }
+      statusVariant={
+        pending
+          ? 'pendiente'
+          : row.status === 'inProcess'
+            ? 'info'
+            : 'completado'
+      }
       itemVariant={
         pending || row.variant === 'neutral' ? 'pending' : row.variant
       }

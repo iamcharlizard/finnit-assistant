@@ -28,6 +28,32 @@ export interface CandidateTransaction {
   txnDate: Date;
   merchantName: string | null;
   description: string | null;
+  /** "En proceso" (e.g. from a screenshot): its amount may still change. */
+  inProcess?: boolean;
+}
+
+/** An "en proceso" movement may post up to this many days later… */
+export const IN_PROCESS_DAYS_AFTER = 7;
+/** …and for a different amount: up to 15 % or $50, whichever is more. */
+const IN_PROCESS_AMOUNT_SHARE = 0.15;
+const IN_PROCESS_AMOUNT_MIN = 50;
+
+/** The posted line can settle this "en proceso" movement despite another amount. */
+function settlesInProcess(
+  line: LineToMatch,
+  candidate: CandidateTransaction,
+  sharedWords: number,
+): boolean {
+  if (!candidate.inProcess || sharedWords === 0) return false;
+  const diff = Math.abs(candidate.amount - line.amount);
+  if (
+    diff >
+    Math.max(IN_PROCESS_AMOUNT_MIN, candidate.amount * IN_PROCESS_AMOUNT_SHARE)
+  ) {
+    return false;
+  }
+  const days = (line.date.getTime() - candidate.txnDate.getTime()) / DAY_MS;
+  return days >= -1 && days <= IN_PROCESS_DAYS_AFTER;
 }
 
 export interface CandidateOccurrence {
@@ -64,7 +90,9 @@ function typeMatches(kind: ImportedLineKind, type: TransactionType): boolean {
 
 /**
  * Links statement lines to transactions already registered in the app: same
- * amount, compatible direction and a close date. Each transaction is used once.
+ * amount, compatible direction and a close date. An "en proceso" movement
+ * also matches its posted line with another amount or a later date when
+ * they share a word (exact matches win). Each transaction is used once.
  * Returns lineId → transactionId.
  */
 export function matchTransactions(
@@ -76,27 +104,32 @@ export function matchTransactions(
 
   for (const line of lines) {
     const text = lineText(line);
-    let best: { id: string; days: number; score: number } | undefined;
+    let best:
+      | { id: string; exact: boolean; days: number; score: number }
+      | undefined;
 
     for (const candidate of candidates) {
       if (!available.has(candidate.id)) continue;
-      if (Math.abs(candidate.amount - line.amount) > 0.01) continue;
       if (!typeMatches(line.kind, candidate.type)) continue;
       const days = daysBetween(candidate.txnDate, line.date);
-      if (days > TRANSACTION_DATE_WINDOW_DAYS) continue;
-
       const score = similarity(
         text,
         normalizeText(
           `${candidate.merchantName ?? ''} ${candidate.description ?? ''}`,
         ),
       );
+      const exact =
+        Math.abs(candidate.amount - line.amount) <= 0.01 &&
+        days <= TRANSACTION_DATE_WINDOW_DAYS;
+      if (!exact && !settlesInProcess(line, candidate, score)) continue;
+
       if (
         !best ||
-        days < best.days ||
-        (days === best.days && score > best.score)
+        (exact && !best.exact) ||
+        (exact === best.exact &&
+          (days < best.days || (days === best.days && score > best.score)))
       ) {
-        best = { id: candidate.id, days, score };
+        best = { id: candidate.id, exact, days, score };
       }
     }
 

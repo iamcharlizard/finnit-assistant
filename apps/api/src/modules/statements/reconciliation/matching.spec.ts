@@ -163,3 +163,62 @@ describe('matchOccurrences', () => {
     );
   });
 });
+
+describe('matchTransactions with "en proceso" movements', () => {
+  const posted = (overrides: Partial<LineToMatch> = {}) =>
+    line({
+      id: 'posted',
+      amount: 800,
+      date: d('2026-11-04'),
+      merchant: 'APPLE.COM/BILL',
+      description: 'APPLE.COM/BILL',
+      ...overrides,
+    });
+  const shot = (overrides: Partial<CandidateTransaction> = {}) =>
+    txn({
+      id: 'shot',
+      amount: 789,
+      txnDate: d('2026-11-02'),
+      merchantName: 'Apple',
+      description: 'Apple',
+      inProcess: true,
+      ...overrides,
+    });
+
+  it('settles it with another amount and a later date when they share a word', () => {
+    expect(matchTransactions([posted()], [shot()]).get('posted')).toBe('shot');
+  });
+
+  it('not when nothing in the text is shared, or it is already applied', () => {
+    expect(
+      matchTransactions(
+        [posted({ merchant: 'OXXO', description: 'OXXO' })],
+        [shot()],
+      ).size,
+    ).toBe(0);
+    expect(
+      matchTransactions([posted()], [shot({ inProcess: false })]).size,
+    ).toBe(0);
+  });
+
+  it('not too far: more than 15 % (and $50) or more than a week later', () => {
+    expect(matchTransactions([posted({ amount: 1000 })], [shot()]).size).toBe(
+      0,
+    );
+    expect(
+      matchTransactions([posted({ date: d('2026-11-12') })], [shot()]).size,
+    ).toBe(0);
+  });
+
+  it('an exact match wins over an "en proceso" one', () => {
+    const exact = txn({
+      id: 'exact',
+      amount: 800,
+      txnDate: d('2026-11-04'),
+      merchantName: 'Otra',
+    });
+    expect(matchTransactions([posted()], [shot(), exact]).get('posted')).toBe(
+      'exact',
+    );
+  });
+});

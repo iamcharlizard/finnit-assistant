@@ -26,6 +26,8 @@ const line = (
   accountId: 'card-1',
   linkedAccountId: null,
   statementImportId: 'st-1',
+  screenshotImportId: null,
+  inProcess: false,
   providerTxnId: null,
   kind: ImportedLineKind.charge,
   status: ImportedLineStatus.pending,

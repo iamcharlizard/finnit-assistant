@@ -107,6 +107,23 @@ De forma confiable: **total, fecha, comercio (por RFC o por nombre) e IVA**. Las
    - Se busca un movimiento existente en la misma cuenta, con el mismo monto (±0.01) y fecha ±3 días (por ejemplo, uno que vino de Syncfy o de un estado de cuenta). Si existe, la foto se **adjunta** a ese movimiento y no se crea uno nuevo, para no contar el gasto dos veces.
    - Si no existe, se crea la transacción y la foto queda como adjunto (`users/<userId>/attachments/...`, como ya funciona `POST /transactions/:id/attachments`).
 
+## Capturas de pantalla de movimientos
+
+Una captura de la lista de movimientos de la app del banco (p. ej. Banamex: "Clásica Banamex \*\*482", renglones "Netflix $299.00" / "02 Nov En proceso") registra varios movimientos de una vez.
+
+- **OCR:** el mismo `/v1/image`. Con la captura de ejemplo el recorte de tickets no estorba: cada renglón visual sale como una línea con su posición y confianza.
+- **Reglas** (`apps/api/src/modules/screenshots/screenshot-rules.ts`, probadas con la salida real del OCR):
+  - la cuenta es la línea con `**` + 3 o 4 dígitos antes de los movimientos;
+  - un movimiento es una línea que termina en un monto, y la siguiente trae la fecha (día y mes; el año es el más reciente que no sea futuro) y el estado ("En proceso");
+  - pestañas, encabezados ("Anteriores"), conteos y logotipos se ignoran;
+  - lo que no se lee o se lee con poca confianza se marca para revisar.
+- **IA de respaldo** (`screenshot_parsing`, apagada por defecto): solo cuando las reglas no forman movimientos o más de la mitad necesita revisión. Se envía el texto con su posición vertical, nunca la imagen.
+- **Duplicados:**
+  - la misma imagen otra vez devuelve la misma importación (`fileHash`);
+  - cada línea se compara con lo ya registrado en la cuenta, de cualquier fuente (alcance `screenshot` de `reconcileLines`);
+  - al guardar, un `externalId` estable por renglón (`screenshot:<cuenta>:<día>:<monto>:<dirección>:<comercio>:<n>`) impide crearlo dos veces.
+- **"En proceso":** se guardan con `Transaction.inProcess`; cuentan en el saldo. Cuando Syncfy trae el movimiento aplicado se ligan aunque cambie un poco el monto o la fecha (ver features.md).
+
 ## Listado de tareas
 
 ### Fase 0: prueba con datos reales (antes de construir)

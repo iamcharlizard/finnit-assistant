@@ -10,6 +10,7 @@ import {
   Ellipsis,
   Plus,
   ScanLine,
+  Smartphone,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -115,7 +116,7 @@ const BAR_MASK =
 const TAB_POP = 'animate-in zoom-in-75 duration-300 motion-reduce:animate-none';
 
 /**
- * The "+" menu: four shortcuts spread over the screen's width in a wide,
+ * The "+" menu: five shortcuts spread over the screen's width in a wide,
  * flat arc above the button. `k` is the horizontal position in steps of
  * `--dial-step` (a share of the screen, capped), `y` the height in px above
  * the button's center; the outer ones sit lower.
@@ -131,24 +132,31 @@ const ACTIONS: ReadonlyArray<{
     action: 'expense',
     icon: CircleArrowUp,
     tone: 'text-expense',
-    k: -1.5,
-    y: -84,
+    k: -2,
+    y: -76,
   },
   {
     action: 'income',
     icon: CircleArrowDown,
     tone: 'text-income',
-    k: -0.5,
-    y: -132,
+    k: -1,
+    y: -124,
   },
   {
     action: 'transfer',
     icon: ArrowLeftRight,
     tone: 'text-violet-ink',
-    k: 0.5,
-    y: -132,
+    k: 0,
+    y: -144,
   },
-  { action: 'receipt', icon: ScanLine, tone: 'text-brand-ink', k: 1.5, y: -84 },
+  { action: 'receipt', icon: ScanLine, tone: 'text-brand-ink', k: 1, y: -124 },
+  {
+    action: 'screenshot',
+    icon: Smartphone,
+    tone: 'text-brand-ink',
+    k: 2,
+    y: -76,
+  },
 ];
 
 /**
@@ -156,7 +164,8 @@ const ACTIONS: ReadonlyArray<{
  * with Inicio, Movimientos, Cuentas and "Más" (a sheet with every other
  * section), and a round "+" that sticks out of its middle. A highlight
  * slides under the active tab. The "+" turns into an × and fans out the
- * shortcuts (gasto, ingreso, transferencia, escanear ticket), each opening
+ * shortcuts (gasto, ingreso, transferencia, escanear ticket, importar
+ * captura), each opening
  * "Nuevo movimiento" on that step.
  */
 export function AppBottomNav({
@@ -174,6 +183,7 @@ export function AppBottomNav({
   const tc = useTranslations('common');
   const tn = useTranslations('newEntry');
   const tr = useTranslations('receipts');
+  const ts = useTranslations('screenshots');
   const [moreOpen, setMoreOpen] = React.useState(false);
   const [dialOpen, setDialOpen] = React.useState(false);
   const fabRef = React.useRef<HTMLButtonElement>(null);
@@ -327,10 +337,15 @@ export function AppBottomNav({
             // A quarter of the screen per shortcut (less margins), at most
             // 112px: the arc spans the width on phones, stays compact on
             // tablets.
-            style={{ '--dial-step': 'min(22vw, 112px)' } as React.CSSProperties}
+            style={{ '--dial-step': 'min(18vw, 104px)' } as React.CSSProperties}
           >
             {ACTIONS.map(({ action, icon: Icon, tone, k, y }, index) => {
-              const label = action === 'receipt' ? tr('scan') : tn(action);
+              const label =
+                action === 'receipt'
+                  ? tr('scan')
+                  : action === 'screenshot'
+                    ? ts('import')
+                    : tn(action);
               // Out one after another; back in the reverse order.
               const delay = dialOpen
                 ? index * 40

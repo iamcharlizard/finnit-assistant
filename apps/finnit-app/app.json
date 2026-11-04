@@ -4,7 +4,7 @@
     "slug": "finnit-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/brand/finnit-icon-1024.png",
     "scheme": "finnitapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -15,25 +15,29 @@
     "android": {
       "package": "com.karlhub.finnitapp",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#26215C"
+        "foregroundImage": "./assets/images/brand/finnit-adaptive-icon-1024.png",
+        "backgroundColor": "#12131a"
       },
       "edgeToEdgeEnabled": true
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/brand/finnit-favicon-light.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/brand/finnit-splash-icon-light.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#26215C"
+          "backgroundColor": "#f8f9fa",
+          "dark": {
+            "image": "./assets/images/brand/finnit-splash-icon-dark.png",
+            "backgroundColor": "#12131a"
+          }
         }
       ]
     ],

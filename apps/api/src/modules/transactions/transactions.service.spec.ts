@@ -820,6 +820,20 @@ describe('TransactionsService', () => {
       },
     );
 
+    it('does not delete balance adjustments (their direction is unknown)', async () => {
+      prismaService.transaction.findFirst.mockResolvedValue({
+        ...mockTransaction,
+        ...noLinks,
+        source: TransactionSource.manual,
+        type: TransactionType.adjustment,
+      } as any);
+
+      await expect(
+        service.delete(mockTransaction.id, mockUserId),
+      ).rejects.toThrow('update the balance instead');
+      expect(prismaService.$transaction).not.toHaveBeenCalled();
+    });
+
     it('should successfully delete manual transaction with balance adjustment', async () => {
       // Arrange
       const manualTransaction = {

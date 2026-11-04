@@ -31,7 +31,7 @@ import {
 } from '../../common/exceptions/graphql-error.exception';
 import { PaginationUtil } from '../../common/utils/pagination.util';
 import { addDays, toLocalDateOnly } from '../../common/utils/local-date.util';
-import { TransactionSource } from '@finnit/database';
+import { TransactionSource, TransactionType } from '@finnit/database';
 import { Prisma } from '@finnit/database';
 import { Attachment } from '../../common/types/models/attachment.model';
 import {
@@ -465,6 +465,14 @@ export class TransactionsService {
 
     if (transaction.source !== TransactionSource.manual) {
       throw new ValidationError('Cannot delete imported transactions');
+    }
+
+    // Older adjustments don't record which way they moved the balance, so
+    // undoing one could get it wrong: the balance is set again instead.
+    if (transaction.type === TransactionType.adjustment) {
+      throw new ValidationError(
+        'Balance adjustments cannot be deleted; update the balance instead',
+      );
     }
 
     if (transaction.transferFrom || transaction.transferTo) {

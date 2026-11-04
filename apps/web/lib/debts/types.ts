@@ -98,6 +98,8 @@ export interface ApiDebtCharge {
   /** Deposited money: the account that received it. */
   depositAccountId: string | null;
   depositCountsAsIncome: boolean | null;
+  /** Added to the account's balance (false = already spent). */
+  depositAddsToBalance: boolean;
   /** What this money was for (informative). */
   purposeCategoryId: string | null;
   lendingMethod: LendingMethod | null;
@@ -137,6 +139,11 @@ export interface ApiDebt {
   /** Fixed fee with every payment (administración, seguro), VAT included. */
   periodicFee: number | null;
   destination: DebtDestination | null;
+  /**
+   * destination = deposit: the money was added to an account's balance
+   * (false = already spent, only the debt was recorded).
+   */
+  depositAddsToBalance: boolean;
   /** What the borrowed money was for (informative; the expense is the payments). */
   purposeCategoryId: string | null;
   nextPaymentDate: string | null;
@@ -154,7 +161,7 @@ export interface ApiDebt {
 }
 
 export const DEBT_FIELDS =
-  'id name description kind principal interestRateAnnual minPaymentAmount startDate dueDate linkedAccountId loanType status lenderName lenderContactId lendingMethod paymentFrequency installmentsTotal installmentsPaid installmentAmount totalToRepay interestMode includesVat openingFee periodicFee destination purposeCategoryId nextPaymentDate recurringExpenseId remainingBalance totalPaid historicalPaid totalOwed monthlyPayment createdAt';
+  'id name description kind principal interestRateAnnual minPaymentAmount startDate dueDate linkedAccountId loanType status lenderName lenderContactId lendingMethod paymentFrequency installmentsTotal installmentsPaid installmentAmount totalToRepay interestMode includesVat openingFee periodicFee destination depositAddsToBalance purposeCategoryId nextPaymentDate recurringExpenseId remainingBalance totalPaid historicalPaid totalOwed monthlyPayment createdAt';
 
 /** A debt with its payments and charges (the loan's page). */
 export interface ApiDebtDetail extends ApiDebt {
@@ -162,7 +169,7 @@ export interface ApiDebtDetail extends ApiDebt {
   charges: ApiDebtCharge[];
 }
 
-export const DEBT_DETAIL_FIELDS = `${DEBT_FIELDS} payments { id transactionId isHistorical amount date } charges { id date description principal totalToRepay installments installmentsPaid firstPaymentDate interestMode interestRateAnnual includesVat destination transactionId depositAccountId depositCountsAsIncome purposeCategoryId lendingMethod }`;
+export const DEBT_DETAIL_FIELDS = `${DEBT_FIELDS} payments { id transactionId isHistorical amount date } charges { id date description principal totalToRepay installments installmentsPaid firstPaymentDate interestMode interestRateAnnual includesVat destination transactionId depositAccountId depositCountsAsIncome depositAddsToBalance purposeCategoryId lendingMethod }`;
 
 export type ScheduleStatus = 'upcoming' | 'paid' | 'skipped' | 'missed';
 

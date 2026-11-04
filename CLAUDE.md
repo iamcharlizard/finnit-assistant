@@ -105,6 +105,7 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261104090000_charge_installments_paid` (`DebtCharge.installmentsPaid`, `DebtPayment.chargeId`: installments of a later purchase paid before registering it; rollback in `packages/database/scripts/rollbacks/`)
 - `20261107090000_occurrence_original_due_date` (`RecurringOccurrence.originalDueDate`: a scheduled payment moved to another day keeps its schedule date, so it is not generated again there; rollback in `packages/database/scripts/rollbacks/`)
 - `20261106090000_debt_description` (`Debt.description`: what a loan's first amount was, the label of its installments; rollback in `packages/database/scripts/rollbacks/`)
+- `20261108090000_deposit_adds_to_balance` (`Debt.depositAddsToBalance`, `DebtCharge.depositAddsToBalance`: whether deposited loan money was added to an account's balance; false = already spent, no movement; rollback in `packages/database/scripts/rollbacks/`)
 - `20261105090000_charge_terms` (`DebtCharge.firstPaymentDate`, `interestMode`, `interestRateAnnual`, `includesVat`: a later purchase's first due date and interest terms; rollback in `packages/database/scripts/rollbacks/`)
 - `20261103090000_contacts` (`Contact`, `Debt.lenderContactId`; existing personal-loan lenders become contacts; rollback in `packages/database/scripts/rollbacks/`)
 - `20261013120000_private_attachments`

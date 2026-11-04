@@ -741,6 +741,7 @@ export class DebtsService {
       destination: debt.destination ?? undefined,
       purposeCategoryId: debt.purposeCategoryId ?? undefined,
       disbursementTransactionId: debt.disbursementTransactionId ?? undefined,
+      depositAddsToBalance: debt.depositAddsToBalance,
       recurringExpenseId: debt.recurringExpense?.id,
       nextPaymentDate: debt.recurringExpense?.nextDueDate ?? undefined,
       createdAt: debt.createdAt,
@@ -778,6 +779,7 @@ export class DebtsService {
       depositCountsAsIncome: charge.transaction
         ? charge.transaction.type === TransactionType.income
         : undefined,
+      depositAddsToBalance: charge.depositAddsToBalance,
       purposeCategoryId: charge.purposeCategoryId ?? undefined,
       lendingMethod: charge.lendingMethod ?? undefined,
       createdAt: charge.createdAt,

@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { FileUp, Landmark, Pencil, Plus } from 'lucide-react';
+import { FileUp, Landmark, Pencil, Plus, RefreshCw } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import { cn } from '@finnit/ui/lib/utils';
@@ -14,6 +14,7 @@ import { AccountMovements } from '@/components/accounts/account-movements';
 import { AccountStats } from '@/components/accounts/account-stats';
 import { AccountStatusBadge } from '@/components/accounts/account-status-badge';
 import { AddAccountWizard } from '@/components/accounts/add-account-wizard';
+import { BalanceUpdateDialog } from '@/components/accounts/balance-update-dialog';
 import { EditAccountDialog } from '@/components/accounts/edit-account-dialog';
 import { ShowArchivedToggle } from '@/components/accounts/show-archived-toggle';
 import { EmptyState } from '@/components/finance/empty-state';
@@ -52,6 +53,7 @@ export function AccountsScreen({
   const router = useRouter();
   const [wizardOpen, setWizardOpen] = React.useState(openWizard);
   const [editing, setEditing] = React.useState(false);
+  const [updatingBalance, setUpdatingBalance] = React.useState(false);
   const { accounts, detail, showArchived, archivedCount } = data;
   const selected = detail?.account ?? null;
   const [pending, startTransition] = React.useTransition();
@@ -201,6 +203,18 @@ export function AccountsScreen({
                   </Link>
                 </Button>
               ) : null}
+              {selected.archived ? null : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setUpdatingBalance(true)}
+                  aria-label={t('accounts.balanceUpdate.actionLabel', {
+                    name: selected.label,
+                  })}
+                >
+                  <RefreshCw aria-hidden /> {t('accounts.balanceUpdate.action')}
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -222,6 +236,16 @@ export function AccountsScreen({
         </section>
       </div>
 
+      {updatingBalance ? (
+        <BalanceUpdateDialog
+          account={selected}
+          onClose={() => setUpdatingBalance(false)}
+          onSaved={() => {
+            setUpdatingBalance(false);
+            router.refresh();
+          }}
+        />
+      ) : null}
       {editing ? (
         <EditAccountDialog
           account={selected}

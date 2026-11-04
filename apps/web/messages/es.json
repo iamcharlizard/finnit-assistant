@@ -356,6 +356,23 @@
     }
   },
   "accounts": {
+    "balanceUpdate": {
+      "action": "Actualizar saldo",
+      "actionLabel": "Actualizar el saldo de {name}",
+      "title": "Actualizar saldo",
+      "description": "Escribe el saldo que ves en tu banco. La diferencia se guarda como un ajuste: no cuenta como ingreso ni como gasto.",
+      "balance": "Saldo actual",
+      "owed": "Lo que debes hoy",
+      "current": "Saldo registrado: {amount}",
+      "difference": "Ajuste: {amount}",
+      "noChange": "El saldo ya es ese.",
+      "required": "Escribe el saldo",
+      "note": "Nota (opcional)",
+      "notePlaceholder": "Actualización de saldo",
+      "linkedHint": "Esta cuenta está conectada a tu banco: en la próxima sincronización el saldo se reemplaza por el del banco.",
+      "save": "Guardar saldo",
+      "error": "No se pudo actualizar el saldo. Inténtalo de nuevo."
+    },
     "title": "Cuentas y tarjetas",
     "count": "{count, plural, one {# cuenta} other {# cuentas}}",
     "add": "Agregar cuenta",
@@ -1179,6 +1196,8 @@
       "accountPlaceholder": "Elige una cuenta",
       "countsAsIncome": "Contarlo como ingreso",
       "countsAsIncomeHint": "Normalmente un préstamo no es un ingreso: es dinero que vas a devolver.",
+      "addsToBalance": "Sumarlo al saldo de la cuenta",
+      "addsToBalanceHint": "Apágalo si ese dinero ya lo gastaste (por ejemplo, un préstamo de hace meses): solo se registra la deuda.",
       "paymentAccount": "Cuenta con la que pagas (opcional)",
       "paymentAccountHint": "Con una tarjeta o cuenta conectada, buscamos los pagos en tus movimientos.",
       "category": "Categoría de los pagos",
@@ -1378,6 +1397,7 @@
       "edit": "Editar",
       "editTitle": "Editar préstamo",
       "editHint": "Si cambias el monto, el número de pagos o la comisión por pago, recalculamos el pago y los pagos pendientes. Los pagos ya hechos no cambian.",
+      "removeDepositHint": "Apágalo si ese dinero ya no está en la cuenta: se quita el depósito y el saldo baja en esa cantidad. La deuda no cambia.",
       "cancel": "Cancelar",
       "save": "Guardar cambios",
       "saving": "Guardando…",
@@ -2242,6 +2262,7 @@
     "deleteTitle": "¿Eliminar este movimiento?",
     "deleteDescription": "Se quitará de tus movimientos y el saldo de {account} se ajustará. No se puede deshacer.",
     "deleteBlocked": {
+      "adjustment": "Los ajustes de saldo no se pueden eliminar: corrige el saldo con «Actualizar saldo» en la cuenta.",
       "imported": "Los movimientos del banco o de estados de cuenta no se pueden eliminar.",
       "transfer": "Las transferencias no se pueden eliminar desde aquí."
     },

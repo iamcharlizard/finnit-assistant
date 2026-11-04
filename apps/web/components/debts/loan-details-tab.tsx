@@ -13,6 +13,7 @@ import { NumberInput } from '@finnit/ui/components/ui/number-input';
 import { toast } from '@finnit/ui/components/ui/toaster';
 
 import { ContactCombobox } from '@/components/contacts/contact-combobox';
+import { SwitchField } from '@/components/finance/switch-field';
 import { LendingMethodField } from './lending-method-field';
 import { budgetCategoryOptions } from '@/lib/budgets/options';
 import type { BudgetCategory } from '@/lib/budgets/types';
@@ -250,6 +251,16 @@ export function LoanDetailsTab({
           clearable
         />
       </div>
+      {debt.destination === 'deposit' && debt.depositAddsToBalance ? (
+        <SwitchField
+          label={t('debts.loan.addsToBalance')}
+          hint={t('debts.detail.removeDepositHint')}
+          checked={form.depositAddsToBalance}
+          onCheckedChange={(depositAddsToBalance) =>
+            update({ depositAddsToBalance })
+          }
+        />
+      ) : null}
       <p className="px-1 text-xs text-on-surface-variant">{td('editHint')}</p>
       <div className="flex justify-end gap-2">
         <Button

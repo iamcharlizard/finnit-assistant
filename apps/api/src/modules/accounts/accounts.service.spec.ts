@@ -742,6 +742,91 @@ describe('AccountsService', () => {
     });
   });
 
+  describe('setBalance', () => {
+    function withTx(account: unknown) {
+      const tx = {
+        account: {
+          findFirst: jest.fn().mockResolvedValue(account),
+          update: jest.fn().mockImplementation(({ data }) => ({
+            ...mockAccount,
+            balanceCurrent:
+              Number(mockAccount.balanceCurrent) +
+              data.balanceCurrent.increment,
+          })),
+        },
+        transaction: { create: jest.fn() },
+      };
+      prismaService.$transaction.mockImplementation(async (callback) =>
+        callback(tx as any),
+      );
+      return tx;
+    }
+
+    it('records the difference as a signed adjustment (balance going down)', async () => {
+      const tx = withTx(mockAccount);
+      const target = Number(mockAccount.balanceCurrent) - 250.5;
+
+      const result = await service.setBalance(mockUserId, {
+        accountId: mockAccount.id,
+        balance: target,
+      });
+
+      expect(tx.account.findFirst).toHaveBeenCalledWith({
+        where: { id: mockAccount.id, userId: mockUserId },
+      });
+      expect(tx.transaction.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          type: TransactionType.adjustment,
+          amount: -250.5,
+          description: 'Balance update',
+          source: TransactionSource.manual,
+        }),
+      });
+      expect(tx.account.update).toHaveBeenCalledWith({
+        where: { id: mockAccount.id },
+        data: { balanceCurrent: { increment: -250.5 } },
+      });
+      expect(result.balanceCurrent).toBe(target);
+    });
+
+    it('records a rise as a positive adjustment with the given description', async () => {
+      const tx = withTx(mockAccount);
+
+      await service.setBalance(mockUserId, {
+        accountId: mockAccount.id,
+        balance: Number(mockAccount.balanceCurrent) + 10,
+        description: '  Corte de caja ',
+      });
+
+      expect(tx.transaction.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          amount: 10,
+          description: 'Corte de caja',
+        }),
+      });
+    });
+
+    it('does nothing when the balance is already right', async () => {
+      const tx = withTx(mockAccount);
+
+      await service.setBalance(mockUserId, {
+        accountId: mockAccount.id,
+        balance: Number(mockAccount.balanceCurrent),
+      });
+
+      expect(tx.transaction.create).not.toHaveBeenCalled();
+      expect(tx.account.update).not.toHaveBeenCalled();
+    });
+
+    it("rejects another user's account", async () => {
+      withTx(null);
+
+      await expect(
+        service.setBalance(mockUserId, { accountId: 'other', balance: 1 }),
+      ).rejects.toThrow(NotFoundError);
+    });
+  });
+
   describe('delete', () => {
     it('should successfully delete account without transactions', async () => {
       // Arrange

@@ -59,6 +59,7 @@ const debt = (overrides: Partial<ApiDebt> = {}): ApiDebt => ({
   openingFee: null,
   periodicFee: null,
   destination: null,
+  depositAddsToBalance: true,
   purposeCategoryId: null,
   nextPaymentDate: null,
   recurringExpenseId: null,

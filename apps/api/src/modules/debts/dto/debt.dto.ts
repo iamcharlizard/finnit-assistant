@@ -168,6 +168,12 @@ export class Debt {
   disbursementTransactionId?: string;
 
   @Field({
+    description:
+      'destination = deposit: the money was added to an account balance (false = already spent, only the debt was recorded)',
+  })
+  depositAddsToBalance: boolean;
+
+  @Field({
     nullable: true,
     description:
       'What the borrowed money was for (informative; the expense is the payments)',
@@ -286,6 +292,12 @@ export class DebtCharge {
     description: 'Deposited money: whether it counts as income',
   })
   depositCountsAsIncome?: boolean;
+
+  @Field({
+    description:
+      'destination = deposit: added to an account balance (false = already spent)',
+  })
+  depositAddsToBalance: boolean;
 
   @Field({
     nullable: true,
@@ -622,6 +634,15 @@ export class CreateDebtInput {
   @IsOptional()
   @IsBoolean()
   depositCountsAsIncome?: boolean;
+
+  @Field({
+    nullable: true,
+    description:
+      'destination = deposit: add the money to the account balance (default true). False for money already spent, e.g. an old loan: only the debt is recorded, without a movement',
+  })
+  @IsOptional()
+  @IsBoolean()
+  depositAddsToBalance?: boolean;
 }
 
 @InputType()
@@ -744,6 +765,15 @@ export class AddDebtChargeInput {
   @IsOptional()
   @IsBoolean()
   depositCountsAsIncome?: boolean;
+
+  @Field({
+    nullable: true,
+    description:
+      'destination = deposit: add the money to the account balance (default true). False for money already spent, e.g. an old loan: only the debt is recorded, without a movement',
+  })
+  @IsOptional()
+  @IsBoolean()
+  depositAddsToBalance?: boolean;
 
   @Field({
     nullable: true,
@@ -979,6 +1009,15 @@ export class UpdateLoanInput {
   @IsOptional()
   @IsString()
   purposeCategoryId?: string | null;
+
+  @Field({
+    nullable: true,
+    description:
+      'False removes the deposit of the loan money from its account (and takes it off the balance): the money was already spent. True leaves it as it is',
+  })
+  @IsOptional()
+  @IsBoolean()
+  depositAddsToBalance?: boolean;
 }
 
 @InputType()

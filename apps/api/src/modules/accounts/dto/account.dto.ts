@@ -1,4 +1,11 @@
-import { ObjectType, InputType, Field, ArgsType, Int } from '@nestjs/graphql';
+import {
+  ObjectType,
+  InputType,
+  Field,
+  ArgsType,
+  Int,
+  Float,
+} from '@nestjs/graphql';
 import {
   IsString,
   IsEnum,
@@ -8,6 +15,7 @@ import {
   IsInt,
   Min,
   Max,
+  MaxLength,
 } from 'class-validator';
 import {
   Connection,
@@ -97,6 +105,29 @@ export class AdjustBalanceInput {
   @Field()
   @IsString()
   description: string;
+}
+
+@InputType({
+  description:
+    "Sets an account's balance to what the bank shows. The difference is recorded as an adjustment (not income or spending)",
+})
+export class SetAccountBalanceInput {
+  @Field()
+  @IsString()
+  accountId: string;
+
+  @Field(() => Float, {
+    description:
+      'The real balance now. Credit cards: negative is what is owed (e.g. -1500)',
+  })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  balance: number;
+
+  @Field({ nullable: true, description: 'Default: "Balance update"' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  description?: string;
 }
 
 @ArgsType()

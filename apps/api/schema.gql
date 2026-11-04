@@ -27,6 +27,11 @@ input AcceptSuggestionAsLoanInput {
   depositAccountId: String
 
   """
+  destination = deposit: add the money to the account balance (default true). False for money already spent, e.g. an old loan: only the debt is recorded, without a movement
+  """
+  depositAddsToBalance: Boolean
+
+  """
   Count the deposit as income (default: a balance adjustment outside totals)
   """
   depositCountsAsIncome: Boolean
@@ -193,6 +198,11 @@ input AddDebtChargeInput {
   date: DateTime!
   debtId: String!
   depositAccountId: String
+
+  """
+  destination = deposit: add the money to the account balance (default true). False for money already spent, e.g. an old loan: only the debt is recorded, without a movement
+  """
+  depositAddsToBalance: Boolean
   depositCountsAsIncome: Boolean
   description: String
   destination: DebtChargeDestination!
@@ -663,6 +673,11 @@ input CreateDebtInput {
   depositAccountId: String
 
   """
+  destination = deposit: add the money to the account balance (default true). False for money already spent, e.g. an old loan: only the debt is recorded, without a movement
+  """
+  depositAddsToBalance: Boolean
+
+  """
   Count the deposit as income (default: a balance adjustment outside totals)
   """
   depositCountsAsIncome: Boolean
@@ -859,6 +874,11 @@ type Debt {
   createdAt: DateTime!
 
   """
+  destination = deposit: the money was added to an account balance (false = already spent, only the debt was recorded)
+  """
+  depositAddsToBalance: Boolean!
+
+  """
   Loans: what the first amount was (first purchase, what it was lent for)
   """
   description: String
@@ -934,6 +954,11 @@ type DebtCharge {
 
   """Deposited money: the account that received it"""
   depositAccountId: String
+
+  """
+  destination = deposit: added to an account balance (false = already spent)
+  """
+  depositAddsToBalance: Boolean!
 
   """Deposited money: whether it counts as income"""
   depositCountsAsIncome: Boolean
@@ -1541,6 +1566,11 @@ type Mutation {
   rescheduleLoanPayment(dueDate: DateTime!, occurrenceId: ID!): Debt!
   resetPassword(input: ResetPasswordInput!): Boolean!
 
+  """
+  Sets the account's balance to the real one; the difference is an adjustment
+  """
+  setAccountBalance(input: SetAccountBalanceInput!): Account!
+
   """Sets the billing terms of one of the user's credit accounts"""
   setCreditCardTerms(accountId: ID!, input: CreditCardTermsInput!): Account!
 
@@ -2101,6 +2131,23 @@ input ResetPasswordInput {
   token: String!
 }
 
+"""
+Sets an account's balance to what the bank shows. The difference is recorded as an adjustment (not income or spending)
+"""
+input SetAccountBalanceInput {
+  accountId: String!
+
+  """
+  The real balance now. Credit cards: negative is what is owed (e.g. -1500)
+  """
+  balance: Float!
+
+  """
+  Default: "Balance update"
+  """
+  description: String
+}
+
 input SetUserPasswordInput {
   password: String!
 }
@@ -2448,6 +2495,11 @@ input UpdateCategoryInput {
 input UpdateDebtChargeInput {
   date: DateTime!
   depositAccountId: String
+
+  """
+  destination = deposit: add the money to the account balance (default true). False for money already spent, e.g. an old loan: only the debt is recorded, without a movement
+  """
+  depositAddsToBalance: Boolean
   depositCountsAsIncome: Boolean
   description: String
   destination: DebtChargeDestination!
@@ -2507,6 +2559,11 @@ input UpdateGoalInput {
 Edits a loan; omitted fields stay. Changing the amount, the number of payments or the fees recomputes its terms and reprices its open scheduled payments
 """
 input UpdateLoanInput {
+  """
+  False removes the deposit of the loan money from its account (and takes it off the balance): the money was already spent. True leaves it as it is
+  """
+  depositAddsToBalance: Boolean
+
   """What the first amount was; "" or null clears it"""
   description: String
 

@@ -45,6 +45,8 @@ export interface TransactionGroup<R extends TransactionRow = TransactionRow> {
 export function direction(tx: ApiTransaction): 'in' | 'out' | 'unknown' {
   if (tx.type === 'income') return 'in';
   if (tx.type === 'expense') return 'out';
+  // Balance updates are signed: negative took money out.
+  if (tx.type === 'adjustment' && tx.amount < 0) return 'out';
   if (tx.type === 'transfer') {
     if (tx.transferDirection) return tx.transferDirection;
     // Transfers created before the API exposed the side carry it as a suffix.
@@ -99,7 +101,7 @@ export function toTransactionRow(
   const time = timeOf(tx.txnDate);
   const dir = direction(tx);
   const sign = dir === 'unknown' ? 'never' : 'always';
-  const signed = dir === 'out' ? -tx.amount : tx.amount;
+  const signed = dir === 'out' ? -Math.abs(tx.amount) : tx.amount;
 
   return {
     id: tx.id,

@@ -123,6 +123,37 @@ export async function setAccountArchived(
   await run(UPDATE_ACCOUNT_MUTATION, { id: accountId, input: { archived } });
 }
 
+export const SET_ACCOUNT_BALANCE_MUTATION = `mutation SetAccountBalance($input: SetAccountBalanceInput!) { setAccountBalance(input: $input) { id balanceCurrent } }`;
+
+/**
+ * The balance the API stores for what the user typed: the money in the
+ * account, or (credit cards) what is owed, stored as a negative balance.
+ */
+export function balanceFromTyped(typed: number, isCredit: boolean): number {
+  const cents = Math.round(typed * 100) / 100;
+  return isCredit ? -cents : cents;
+}
+
+/** The adjustment a new balance makes (positive raises the balance). */
+export function balanceDifference(current: number, target: number): number {
+  return Math.round((target - current) * 100) / 100;
+}
+
+/** Sets the account's balance to the real one (the API records the difference). */
+export async function setAccountBalance(
+  accountId: string,
+  { balance, description }: { balance: number; description?: string },
+  run: GqlRunner,
+): Promise<void> {
+  await run(SET_ACCOUNT_BALANCE_MUTATION, {
+    input: {
+      accountId,
+      balance,
+      ...(description?.trim() && { description: description.trim() }),
+    },
+  });
+}
+
 /** API validation messages are English; show ours in the user's language. */
 const MESSAGES: [RegExp, Parameters<Translate>[0]][] = [
   [/nickname must be/i, 'accounts.errors.nicknameLength'],

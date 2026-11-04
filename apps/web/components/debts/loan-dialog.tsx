@@ -57,6 +57,7 @@ import {
   type LoanForm,
   type LoanFormErrors,
 } from '@/lib/debts/loan-form';
+import { addsToBalanceByDefault } from '@/lib/debts/charge-form';
 import { loanAccounts } from '@/lib/debts/detail-view';
 import {
   LOAN_FREQUENCIES,
@@ -117,7 +118,14 @@ export function LoanDialog({
         if (!active) return;
         setDraft(loaded);
         // Loans & Debts over the category the charges were guessed under.
-        const prefilled = formOfDraft(loaded);
+        const draftForm = formOfDraft(loaded);
+        const prefilled = {
+          ...draftForm,
+          depositAddsToBalance: addsToBalanceByDefault(
+            draftForm.startDate,
+            today,
+          ),
+        };
         const fallback = defaultPaymentCategoryId(
           categories,
           prefilled.loanType,
@@ -131,7 +139,7 @@ export function LoanDialog({
     return () => {
       active = false;
     };
-  }, [fingerprint, t, categories]);
+  }, [fingerprint, t, categories, today]);
 
   const usable = React.useMemo(() => loanAccounts(accounts), [accounts]);
   const accountItems = React.useMemo(() => accountOptions(usable), [usable]);
@@ -158,7 +166,16 @@ export function LoanDialog({
   const errorText = (code: LoanErrorCode | undefined) =>
     code ? t(`debts.loanValidation.${code}`) : undefined;
 
+  // Until the user decides, an old loan's money starts off the balance.
+  const balanceChosen = React.useRef(false);
+
   function update(patch: Partial<LoanForm>) {
+    if (patch.depositAddsToBalance !== undefined) balanceChosen.current = true;
+    else if (patch.startDate !== undefined && !balanceChosen.current)
+      patch = {
+        ...patch,
+        depositAddsToBalance: addsToBalanceByDefault(patch.startDate, today),
+      };
     setForm((current) => ({ ...current, ...patch }));
     setErrors((current) => {
       const next = { ...current };
@@ -666,6 +683,16 @@ export function LoanDialog({
                   {t(`debts.destinationHints.${form.destination}`)}
                 </p>
                 {form.destination === 'deposit' ? (
+                  <SwitchField
+                    label={tf('addsToBalance')}
+                    hint={tf('addsToBalanceHint')}
+                    checked={form.depositAddsToBalance}
+                    onCheckedChange={(depositAddsToBalance) =>
+                      update({ depositAddsToBalance })
+                    }
+                  />
+                ) : null}
+                {form.destination === 'deposit' && form.depositAddsToBalance ? (
                   <>
                     <Combobox
                       label={tf('depositAccount')}

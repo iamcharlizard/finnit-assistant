@@ -356,6 +356,23 @@
     }
   },
   "accounts": {
+    "balanceUpdate": {
+      "action": "Update balance",
+      "actionLabel": "Update the balance of {name}",
+      "title": "Update balance",
+      "description": "Type the balance your bank shows. The difference is saved as an adjustment: it doesn't count as income or spending.",
+      "balance": "Current balance",
+      "owed": "What you owe today",
+      "current": "Recorded balance: {amount}",
+      "difference": "Adjustment: {amount}",
+      "noChange": "The balance is already that.",
+      "required": "Type the balance",
+      "note": "Note (optional)",
+      "notePlaceholder": "Balance update",
+      "linkedHint": "This account is connected to your bank: the next sync replaces the balance with the bank's.",
+      "save": "Save balance",
+      "error": "Couldn't update the balance. Try again."
+    },
     "title": "Accounts & cards",
     "count": "{count, plural, one {# account} other {# accounts}}",
     "add": "Add account",
@@ -1179,6 +1196,8 @@
       "accountPlaceholder": "Choose an account",
       "countsAsIncome": "Count it as income",
       "countsAsIncomeHint": "A loan usually isn't income: it's money you'll pay back.",
+      "addsToBalance": "Add it to the account balance",
+      "addsToBalanceHint": "Turn it off if you already spent that money (e.g. a loan from months ago): only the debt is recorded.",
       "paymentAccount": "Account you pay from (optional)",
       "paymentAccountHint": "With a connected card or account, we look for the payments in your movements.",
       "category": "Category of the payments",
@@ -1378,6 +1397,7 @@
       "edit": "Edit",
       "editTitle": "Edit loan",
       "editHint": "If you change the amount, the number of payments or the fee per payment, we recompute the payment and the open payments. Payments already made do not change.",
+      "removeDepositHint": "Turn it off if that money is no longer in the account: the deposit is removed and the balance goes down by that amount. The debt doesn't change.",
       "cancel": "Cancel",
       "save": "Save changes",
       "saving": "Saving…",
@@ -2242,6 +2262,7 @@
     "deleteTitle": "Delete this movement?",
     "deleteDescription": "It will be removed from your movements and the balance of {account} will be adjusted. This can't be undone.",
     "deleteBlocked": {
+      "adjustment": "Balance adjustments can't be deleted: fix the balance with “Update balance” on the account.",
       "imported": "Movements from the bank or card statements can't be deleted.",
       "transfer": "Transfers can't be deleted from here."
     },

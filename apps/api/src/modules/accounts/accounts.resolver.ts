@@ -6,6 +6,7 @@ import {
   CreateAccountInput,
   UpdateAccountInput,
   AdjustBalanceInput,
+  SetAccountBalanceInput,
   AccountsArgs,
   CreditCardTermsInput,
 } from './dto/account.dto';
@@ -58,6 +59,17 @@ export class AccountsResolver {
     @Args('input') input: AdjustBalanceInput,
   ): Promise<Account> {
     return this.accountsService.adjustBalance(user.id, input);
+  }
+
+  @Mutation(() => Account, {
+    description:
+      "Sets the account's balance to the real one; the difference is an adjustment",
+  })
+  async setAccountBalance(
+    @CurrentUser() user: User,
+    @Args('input') input: SetAccountBalanceInput,
+  ): Promise<Account> {
+    return this.accountsService.setBalance(user.id, input);
   }
 
   @Mutation(() => Boolean)

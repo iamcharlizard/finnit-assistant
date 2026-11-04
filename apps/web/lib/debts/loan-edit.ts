@@ -29,6 +29,11 @@ export interface LoanEditForm {
   periodicFee: string;
   /** '' = not said. */
   purposeCategoryId: string;
+  /**
+   * Its money still counts in the account it was deposited to. Turning it
+   * off removes that deposit (the money was spent); it can't be turned on.
+   */
+  depositAddsToBalance: boolean;
 }
 
 export type LoanEditField = keyof LoanEditForm;
@@ -70,6 +75,8 @@ type EditableDebt = Pick<
   | 'purposeCategoryId'
   | 'loanType'
   | 'interestMode'
+  | 'destination'
+  | 'depositAddsToBalance'
 >;
 
 export function loanEditFields(debt: EditableDebt): LoanEditFields {
@@ -96,6 +103,8 @@ export function loanEditFormOf(debt: EditableDebt): LoanEditForm {
     openingFee: amountText(debt.openingFee),
     periodicFee: amountText(debt.periodicFee),
     purposeCategoryId: debt.purposeCategoryId ?? '',
+    depositAddsToBalance:
+      debt.destination === 'deposit' && debt.depositAddsToBalance,
   };
 }
 
@@ -177,5 +186,7 @@ export function buildLoanUpdate(
     input.periodicFee = feeOf(form.periodicFee);
   if (form.purposeCategoryId !== initial.purposeCategoryId)
     input.purposeCategoryId = form.purposeCategoryId || null;
+  if (initial.depositAddsToBalance && !form.depositAddsToBalance)
+    input.depositAddsToBalance = false;
   return Object.keys(input).length > 0 ? input : null;
 }

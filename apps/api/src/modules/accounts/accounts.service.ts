@@ -4,6 +4,7 @@ import {
   CreateAccountInput,
   UpdateAccountInput,
   AdjustBalanceInput,
+  SetAccountBalanceInput,
   AccountConnection,
   AccountsArgs,
   CreditCardTermsInput,
@@ -33,6 +34,9 @@ import {
 
 /** Description of the adjustment that records an account's opening balance. */
 export const OPENING_BALANCE_DESCRIPTION = 'Initial balance';
+
+/** Default description of the adjustment that sets an account's balance. */
+export const BALANCE_UPDATE_DESCRIPTION = 'Balance update';
 
 @Injectable()
 export class AccountsService {
@@ -201,6 +205,46 @@ export class AccountsService {
       });
 
       return this.mapAccount(updatedAccount);
+    });
+  }
+
+  /**
+   * Sets the balance to what the bank shows. The difference is an
+   * adjustment dated today, signed (negative when the balance goes down),
+   * so it never counts as income or spending. No change, no movement.
+   */
+  async setBalance(
+    userId: string,
+    input: SetAccountBalanceInput,
+  ): Promise<Account> {
+    return this.prisma.$transaction(async (tx) => {
+      const account = await tx.account.findFirst({
+        where: { id: input.accountId, userId },
+      });
+      if (!account) throw new NotFoundError('Account not found');
+
+      const balance = Math.round(input.balance * 100) / 100;
+      const difference =
+        Math.round((balance - Number(account.balanceCurrent)) * 100) / 100;
+      if (difference === 0) return this.mapAccount(account);
+
+      await tx.transaction.create({
+        data: {
+          userId,
+          accountId: account.id,
+          type: TransactionType.adjustment,
+          amount: difference,
+          currency: account.currency,
+          txnDate: localToday(),
+          description: input.description?.trim() || BALANCE_UPDATE_DESCRIPTION,
+          source: TransactionSource.manual,
+        },
+      });
+      const updated = await tx.account.update({
+        where: { id: account.id },
+        data: { balanceCurrent: { increment: difference } },
+      });
+      return this.mapAccount(updated);
     });
   }
 

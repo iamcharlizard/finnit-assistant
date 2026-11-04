@@ -734,6 +734,9 @@ model Debt {
   // included; part of each installment, not interest.
   periodicFee               Decimal?               @db.Decimal(18, 2)
   destination               DebtChargeDestination?
+  // destination = deposit: whether the money was added to an account's
+  // balance. False = already spent (e.g. an old loan): only the debt counts.
+  depositAddsToBalance      Boolean                @default(true)
   // The deposit of the borrowed money into an account (destination = deposit).
   disbursementTransactionId String?                @unique
   // What the borrowed money was for (informative: the expense is the payments).
@@ -777,29 +780,31 @@ model Contact {
 /// Money added to a debt after it was created: another personal loan, or a
 /// purchase financed with Kueski / Didi (with its own interest and term).
 model DebtCharge {
-  id                 String                @id @default(uuid())
-  debtId             String
-  date               DateTime              @db.Date
-  description        String?
-  principal          Decimal               @db.Decimal(18, 2)
-  totalToRepay       Decimal               @db.Decimal(18, 2)
-  installments       Int?                  @db.SmallInt
+  id                   String                @id @default(uuid())
+  debtId               String
+  date                 DateTime              @db.Date
+  description          String?
+  principal            Decimal               @db.Decimal(18, 2)
+  totalToRepay         Decimal               @db.Decimal(18, 2)
+  installments         Int?                  @db.SmallInt
   // Installments paid before it was registered (historical payments).
-  installmentsPaid   Int                   @default(0) @db.SmallInt
+  installmentsPaid     Int                   @default(0) @db.SmallInt
   // First due date of its installments; null = the first after `date`.
-  firstPaymentDate   DateTime?             @db.Date
+  firstPaymentDate     DateTime?             @db.Date
   // How its interest was given (null = no installments); the rate and VAT
   // when given by rate.
-  interestMode       LoanInterestMode?
-  interestRateAnnual Decimal?              @db.Decimal(9, 4)
-  includesVat        Boolean               @default(false)
-  destination        DebtChargeDestination
-  transactionId      String?               @unique // deposit into an account
+  interestMode         LoanInterestMode?
+  interestRateAnnual   Decimal?              @db.Decimal(9, 4)
+  includesVat          Boolean               @default(false)
+  destination          DebtChargeDestination
+  // destination = deposit: added to an account's balance (false = spent).
+  depositAddsToBalance Boolean               @default(true)
+  transactionId        String?               @unique // deposit into an account
   // What this money was for (informative: the expense is the payments).
-  purposeCategoryId  String?
+  purposeCategoryId    String?
   // Personal loans: how it was lent (cash, transfer, their card…).
-  lendingMethod      LendingMethod?
-  createdAt          DateTime              @default(now())
+  lendingMethod        LendingMethod?
+  createdAt            DateTime              @default(now())
 
   debt            Debt          @relation(fields: [debtId], references: [id], onDelete: Cascade)
   transaction     Transaction?  @relation(fields: [transactionId], references: [id], onDelete: SetNull)

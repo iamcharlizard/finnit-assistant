@@ -40,6 +40,7 @@ import {
   asksPaidInstallments,
   chargeFormOf,
   chargePreview,
+  addsToBalanceByDefault,
   newChargeForm,
   validateChargeForm,
   type ChargeErrorCode,
@@ -112,7 +113,16 @@ export function ChargeDialog({
   const errorText = (code: ChargeErrorCode | undefined) =>
     code ? t(`debts.chargeValidation.${code}`) : undefined;
 
+  // Until the user decides, old money starts off the balance (spent).
+  const balanceChosen = React.useRef(editing);
+
   function update(patch: Partial<ChargeForm>) {
+    if (patch.depositAddsToBalance !== undefined) balanceChosen.current = true;
+    else if (patch.date !== undefined && !balanceChosen.current)
+      patch = {
+        ...patch,
+        depositAddsToBalance: addsToBalanceByDefault(patch.date, today),
+      };
     setForm((current) => ({ ...current, ...patch }));
     setErrors((current) => {
       const next = { ...current };
@@ -370,6 +380,16 @@ export function ChargeDialog({
               </p>
             </div>
             {form.destination === 'deposit' ? (
+              <SwitchField
+                label={t('debts.loan.addsToBalance')}
+                hint={t('debts.loan.addsToBalanceHint')}
+                checked={form.depositAddsToBalance}
+                onCheckedChange={(depositAddsToBalance) =>
+                  update({ depositAddsToBalance })
+                }
+              />
+            ) : null}
+            {form.destination === 'deposit' && form.depositAddsToBalance ? (
               <>
                 <Combobox
                   label={tf('depositAccount')}

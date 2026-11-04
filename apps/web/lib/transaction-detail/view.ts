@@ -64,13 +64,15 @@ export const canEditAnything = (rules: EditRules) =>
   Object.values(rules).some(Boolean);
 
 /** Why the movement can't be deleted here, or null when it can. */
-export type DeleteBlock = 'imported' | 'transfer' | null;
+export type DeleteBlock = 'imported' | 'transfer' | 'adjustment' | null;
 
 export function deleteBlock(
   tx: Pick<TransactionDetail, 'source' | 'type'>,
 ): DeleteBlock {
   if (tx.source !== 'manual') return 'imported';
   if (tx.type === 'transfer') return 'transfer';
+  // The balance is fixed again instead (older ones have no direction).
+  if (tx.type === 'adjustment') return 'adjustment';
   return null;
 }
 
@@ -176,7 +178,7 @@ export function toTransactionDetailView(
         ? original
         : null,
     amount: formatMoney(
-      dir === 'out' ? -tx.amount : tx.amount,
+      dir === 'out' ? -Math.abs(tx.amount) : tx.amount,
       tx.currency,
       locale,
       {

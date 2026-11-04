@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import {
+  appliedEffect,
+  moveBalance,
+} from '../../common/utils/balance-effect.util';
+import {
   DebtChargeDestination,
   DebtKind,
   LoanInterestMode,
@@ -1207,16 +1211,16 @@ export class LoansService {
           (Number(debt.principal) - Number(debt.openingFee ?? 0)),
       );
       if (deposit && depositDelta !== 0) {
+        const amount = cents(Number(deposit.amount) + depositDelta);
         await tx.transaction.update({
           where: { id: deposit.id },
-          data: { amount: cents(Number(deposit.amount) + depositDelta) },
+          data: { amount, balanceEffect: amount },
         });
-        if (!deposit.isPending) {
-          await tx.account.update({
-            where: { id: deposit.accountId },
-            data: { balanceCurrent: { increment: depositDelta } },
-          });
-        }
+        await moveBalance(
+          tx,
+          deposit.accountId,
+          appliedEffect(depositDelta, deposit.isPending),
+        );
       }
 
       await tx.debt.update({

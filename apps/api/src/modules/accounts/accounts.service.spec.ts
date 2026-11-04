@@ -38,6 +38,7 @@ describe('AccountsService', () => {
     balanceCurrent: 1000.0,
     metadata: { test: 'data' },
     archived: false,
+    bankDifferenceTransactionId: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };
@@ -121,6 +122,7 @@ describe('AccountsService', () => {
           accountId: expectedAccount.id,
           type: TransactionType.adjustment,
           amount: Math.abs(createInput.initialBalance),
+          balanceEffect: createInput.initialBalance,
           currency: createInput.currency,
           txnDate: expect.any(Date),
           description: 'Initial balance',
@@ -181,6 +183,7 @@ describe('AccountsService', () => {
         data: expect.objectContaining({
           type: TransactionType.adjustment,
           amount: 200.0,
+          balanceEffect: -200.0,
         }),
       });
     });
@@ -720,6 +723,7 @@ describe('AccountsService', () => {
           accountId: mockAccount.id,
           type: TransactionType.adjustment,
           amount: Math.abs(adjustInput.amount),
+          balanceEffect: adjustInput.amount,
           currency: mockAccount.currency,
           txnDate: expect.any(Date),
           description: adjustInput.description,
@@ -747,12 +751,20 @@ describe('AccountsService', () => {
       const tx = {
         account: {
           findFirst: jest.fn().mockResolvedValue(account),
-          update: jest.fn().mockImplementation(({ data }) => ({
-            ...mockAccount,
-            balanceCurrent:
-              Number(mockAccount.balanceCurrent) +
-              data.balanceCurrent.increment,
-          })),
+          update: jest
+            .fn()
+            .mockImplementation(
+              ({
+                data,
+              }: {
+                data: { balanceCurrent: { increment: number } };
+              }) => ({
+                ...mockAccount,
+                balanceCurrent:
+                  Number(mockAccount.balanceCurrent) +
+                  data.balanceCurrent.increment,
+              }),
+            ),
         },
         transaction: { create: jest.fn() },
       };
@@ -777,7 +789,8 @@ describe('AccountsService', () => {
       expect(tx.transaction.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           type: TransactionType.adjustment,
-          amount: -250.5,
+          amount: 250.5,
+          balanceEffect: -250.5,
           description: 'Balance update',
           source: TransactionSource.manual,
         }),

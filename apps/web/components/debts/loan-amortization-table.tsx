@@ -156,8 +156,7 @@ export function LoanAmortizationTable({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="size-8 min-h-8"
+                size="icon-xs"
                 aria-label={td('reschedule')}
                 title={td('reschedule')}
                 onClick={() => onReschedule(row.original)}

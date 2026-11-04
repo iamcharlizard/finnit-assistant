@@ -32,6 +32,13 @@ import {
 import { PaginationUtil } from '../../common/utils/pagination.util';
 import { addDays, toLocalDateOnly } from '../../common/utils/local-date.util';
 import { TransactionSource, TransactionType } from '@finnit/database';
+import {
+  appliedEffect,
+  defaultEffect,
+  effectOf,
+  moveBalance,
+  withAmount,
+} from '../../common/utils/balance-effect.util';
 import { Prisma } from '@finnit/database';
 import { Attachment } from '../../common/types/models/attachment.model';
 import {
@@ -115,6 +122,7 @@ export class TransactionsService {
           categorySource,
           type: input.type,
           amount: input.amount,
+          balanceEffect: defaultEffect(input.type, input.amount),
           currency: input.currency,
           txnDate: toLocalDateOnly(input.txnDate),
           description: input.description,
@@ -124,19 +132,15 @@ export class TransactionsService {
         },
       });
 
-      // Update account balance if not pending
-      if (!transaction.isPending) {
-        const balanceChange =
-          input.type === 'income' ? input.amount : -input.amount;
-        await tx.account.update({
-          where: { id: input.accountId },
-          data: {
-            balanceCurrent: {
-              increment: balanceChange,
-            },
-          },
-        });
-      }
+      // The balance only reflects confirmed movements.
+      await moveBalance(
+        tx,
+        input.accountId,
+        appliedEffect(
+          defaultEffect(input.type, input.amount),
+          transaction.isPending,
+        ),
+      );
 
       await options.within?.(tx, transaction);
       return transaction;
@@ -309,31 +313,25 @@ export class TransactionsService {
     const updated = await this.prisma.$transaction(async (tx) => {
       // The balance only reflects confirmed transactions: undo the old effect
       // and apply the new one (amount and/or pending state may change).
-      const sign = existingTransaction.type === 'income' ? 1 : -1;
-      const oldEffect = existingTransaction.isPending
-        ? 0
-        : sign * Number(existingTransaction.amount);
+      // Its direction stays (an adjustment or the incoming side of a
+      // transfer keeps adding); only the amount may change.
+      const effect = effectOf(existingTransaction);
       const newEffect =
-        (input.isPending ?? existingTransaction.isPending)
-          ? 0
-          : sign * (input.amount ?? Number(existingTransaction.amount));
-      const balanceChange = newEffect - oldEffect;
-
-      if (balanceChange !== 0) {
-        await tx.account.update({
-          where: { id: existingTransaction.accountId },
-          data: {
-            balanceCurrent: {
-              increment: balanceChange,
-            },
-          },
-        });
-      }
+        input.amount !== undefined ? withAmount(effect, input.amount) : effect;
+      await moveBalance(
+        tx,
+        existingTransaction.accountId,
+        appliedEffect(
+          newEffect,
+          input.isPending ?? existingTransaction.isPending,
+        ) - appliedEffect(effect, existingTransaction.isPending),
+      );
 
       return tx.transaction.update({
         where: { id },
         data: {
           ...input,
+          balanceEffect: newEffect,
           ...(input.txnDate && { txnDate: toLocalDateOnly(input.txnDate) }),
           // A category chosen by the user replaces any pending suggestion.
           ...(input.categoryId && {
@@ -495,21 +493,11 @@ export class TransactionsService {
 
     await this.prisma.$transaction(async (tx) => {
       // Adjust account balance
-      if (!transaction.isPending) {
-        const balanceChange =
-          transaction.type === 'income'
-            ? -Number(transaction.amount)
-            : Number(transaction.amount);
-
-        await tx.account.update({
-          where: { id: transaction.accountId },
-          data: {
-            balanceCurrent: {
-              increment: balanceChange,
-            },
-          },
-        });
-      }
+      await moveBalance(
+        tx,
+        transaction.accountId,
+        -appliedEffect(effectOf(transaction), transaction.isPending),
+      );
 
       // Delete transaction
       await tx.transaction.delete({
@@ -649,6 +637,7 @@ export class TransactionsService {
             categorySource,
             type: input.type,
             amount: input.amount,
+            balanceEffect: defaultEffect(input.type, input.amount),
             currency: input.currency,
             txnDate: toLocalDateOnly(input.txnDate),
             description: input.description,
@@ -658,19 +647,14 @@ export class TransactionsService {
           },
         });
 
-        // Update account balance if not pending
-        if (!transaction.isPending) {
-          const balanceChange =
-            input.type === 'income' ? input.amount : -input.amount;
-          await tx.account.update({
-            where: { id: input.accountId },
-            data: {
-              balanceCurrent: {
-                increment: balanceChange,
-              },
-            },
-          });
-        }
+        await moveBalance(
+          tx,
+          input.accountId,
+          appliedEffect(
+            defaultEffect(input.type, input.amount),
+            transaction.isPending,
+          ),
+        );
 
         results.push(transaction);
       }
@@ -746,24 +730,14 @@ export class TransactionsService {
 
     return await this.prisma.$transaction(async (tx) => {
       // Adjust account balance based on pending status change
+      // Confirming applies its effect; marking it pending takes it back.
       if (transaction.isPending !== isPending) {
-        const balanceChange =
-          transaction.type === 'income'
-            ? Number(transaction.amount)
-            : -Number(transaction.amount);
-
-        // If changing from pending to confirmed, add to balance
-        // If changing from confirmed to pending, subtract from balance
-        const adjustment = isPending ? -balanceChange : balanceChange;
-
-        await tx.account.update({
-          where: { id: transaction.accountId },
-          data: {
-            balanceCurrent: {
-              increment: adjustment,
-            },
-          },
-        });
+        const effect = effectOf(transaction);
+        await moveBalance(
+          tx,
+          transaction.accountId,
+          isPending ? -effect : effect,
+        );
       }
 
       const updatedTransaction = await tx.transaction.update({

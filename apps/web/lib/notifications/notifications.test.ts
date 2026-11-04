@@ -35,6 +35,12 @@ describe('notifications', () => {
     assert.equal(notificationHref(n({ type: 'budget' })), '/planning/budgets');
     assert.equal(notificationHref(n({ type: 'debt_due' })), '/planning/debts');
     assert.equal(notificationHref(n({ type: 'summary' })), null);
+    assert.equal(
+      notificationHref(
+        n({ type: 'balance_mismatch', relatedEntityId: 'acc-1:2026-11-03' }),
+      ),
+      '/accounts?account=acc-1',
+    );
   });
 
   it('unread means scheduled or sent', () => {

@@ -10,7 +10,12 @@ import {
 } from '@/lib/finance/dates';
 import type { Connection } from '@/lib/finance/types';
 
-export type NotificationType = 'budget' | 'debt_due' | 'recurring' | 'summary';
+export type NotificationType =
+  | 'budget'
+  | 'debt_due'
+  | 'recurring'
+  | 'summary'
+  | 'balance_mismatch';
 export type NotificationStatus = 'scheduled' | 'sent' | 'read' | 'dismissed';
 
 export interface ApiNotification {
@@ -57,7 +62,8 @@ export function isUnread(status: NotificationStatus): boolean {
 /**
  * Where a notification takes you, when it's about something with a screen:
  * a recurring payment's reminder opens its day in /recurring, budgets and
- * debts their planning screens. Summaries have nowhere to go.
+ * debts their planning screens, a balance that doesn't match the bank its
+ * account. Summaries have nowhere to go.
  */
 export function notificationHref(
   n: Pick<ApiNotification, 'type' | 'relatedEntityId' | 'relatedEntityType'>,
@@ -72,6 +78,13 @@ export function notificationHref(
       return '/planning/budgets';
     case 'debt_due':
       return '/planning/debts';
+    case 'balance_mismatch': {
+      // relatedEntityId is "<account id>:<day>".
+      const account = n.relatedEntityId?.split(':')[0];
+      return account
+        ? `/accounts?account=${encodeURIComponent(account)}`
+        : '/accounts';
+    }
     default:
       return null;
   }

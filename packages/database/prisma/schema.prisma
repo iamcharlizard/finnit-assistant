@@ -42,6 +42,7 @@ enum NotificationType {
   debt_due
   recurring
   summary
+  balance_mismatch
 }
 
 enum NotificationStatus {
@@ -313,16 +314,21 @@ model Account {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
-  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  creditCardTerms     CreditCardTerms?
-  transactions        Transaction[]
-  linkedAccounts      LinkedAccount[]
-  reconciliationItems ReconciliationItem[]
-  debtsLinked         Debt[]                @relation("debt_linked_account")
-  recurringExpenses   RecurringExpense[]
-  statementImports    StatementImport[]
-  importedLines       ImportedTransaction[] @relation("imported_account")
-  receiptSuggestions  ReceiptImport[]       @relation("receipt_suggested_account")
+  user                        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditCardTerms             CreditCardTerms?
+  transactions                Transaction[]
+  linkedAccounts              LinkedAccount[]
+  // Linked accounts: the one open adjustment that makes the recorded balance
+  // match the bank's ("Diferencia con el banco"); recalculated on each sync
+  // and removed when the missing movements are recorded.
+  bankDifferenceTransactionId String?               @unique
+  bankDifferenceTransaction   Transaction?          @relation("account_bank_difference", fields: [bankDifferenceTransactionId], references: [id], onDelete: SetNull)
+  reconciliationItems         ReconciliationItem[]
+  debtsLinked                 Debt[]                @relation("debt_linked_account")
+  recurringExpenses           RecurringExpense[]
+  statementImports            StatementImport[]
+  importedLines               ImportedTransaction[] @relation("imported_account")
+  receiptSuggestions          ReceiptImport[]       @relation("receipt_suggested_account")
 
   @@unique([userId, name])
   @@index([userId])
@@ -396,6 +402,10 @@ model Transaction {
   categoryId          String?
   type                TransactionType
   amount              Decimal           @db.Decimal(18, 2)
+  // What it adds (+) or takes (−) from its account's balance, signed; a
+  // pending movement keeps it but doesn't count until confirmed. Null only
+  // for old adjustments whose direction couldn't be worked out.
+  balanceEffect       Decimal?          @db.Decimal(18, 2)
   currency            String            @db.VarChar(3)
   txnDate             DateTime          @db.Date
   description         String?
@@ -431,6 +441,7 @@ model Transaction {
   debtPayment       DebtPayment?
   debtCharge        DebtCharge?
   debtDisbursement  Debt?                 @relation("debt_disbursement")
+  bankDifferenceOf  Account?              @relation("account_bank_difference")
   goalContributions GoalContribution[] // <-- ahora 1–N (fix)
   transactionTags   TransactionTag[]
   importedMatches   ImportedTransaction[] @relation("imported_matched")
@@ -906,6 +917,10 @@ model LinkedAccount {
   creditLimit       Decimal?  @db.Decimal(18, 2)
   availableCredit   Decimal?  @db.Decimal(18, 2)
   balanceUpdatedAt  DateTime?
+  // The bank's balance at the last reconciliation, and when: the next sync
+  // expects it plus the movements recorded since. Null = not reconciled yet.
+  reconciledBalance Decimal?  @db.Decimal(18, 2)
+  reconciledAt      DateTime?
 
   bankConnection BankConnection        @relation(fields: [bankConnectionId], references: [id], onDelete: Cascade)
   account        Account?              @relation(fields: [accountId], references: [id], onDelete: SetNull)

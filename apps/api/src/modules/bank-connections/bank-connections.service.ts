@@ -8,6 +8,8 @@ import {
   OccurrenceMatchSource,
   Prisma,
   TransactionSource,
+  TransactionType,
+  NotificationType,
   type BankConnection as BankConnectionRow,
   type ImportedTransaction as ImportedTransactionRow,
   type LinkedAccount as LinkedAccountRow,
@@ -21,6 +23,9 @@ import {
 import { ReconciliationService } from '../statements/reconciliation/reconciliation.service';
 import { LineMaterializerService } from '../statements/reconciliation/line-materializer.service';
 import { addDays, toDateOnly } from '../recurring-expenses/schedule.util';
+import { localToday } from '../../common/utils/local-date.util';
+import { NotificationsService } from '../notifications/notifications.service';
+import { mismatchTexts, reconcileBalance } from './balance-reconciliation';
 import {
   BankConnection,
   BankSyncResult,
@@ -89,6 +94,7 @@ export class BankConnectionsService {
     private readonly syncfy: SyncfyClient,
     private readonly reconciliation: ReconciliationService,
     private readonly materializer: LineMaterializerService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async connectSession(userId: string): Promise<BankConnectSession> {
@@ -219,9 +225,10 @@ export class BankConnectionsService {
       accountId = account.id;
     }
 
+    // A fresh start: the first sync takes the bank's balance as it is.
     await this.prisma.linkedAccount.update({
       where: { id: linked.id },
-      data: { accountId },
+      data: { accountId, reconciledBalance: null, reconciledAt: null },
     });
     return this.sync(linked.bankConnectionId, userId, {
       requestRefresh: false,
@@ -323,6 +330,7 @@ export class BankConnectionsService {
         );
         imported += result.imported;
         created += result.created;
+        await this.reconcileBalance(linked.id, connection.userId);
         for (const t of transactions) {
           if (t.dt_refresh) {
             const refreshed = new Date(t.dt_refresh * 1000);
@@ -481,7 +489,7 @@ export class BankConnectionsService {
           : null,
         balanceUpdatedAt: now,
       };
-      const linked = await this.prisma.linkedAccount.upsert({
+      await this.prisma.linkedAccount.upsert({
         where: { providerAccountId: account.id_account },
         create: {
           bankConnectionId: connection.id,
@@ -490,13 +498,132 @@ export class BankConnectionsService {
         },
         update: data,
       });
-      // The bank is the source of truth for the balance of a linked account.
-      if (linked.accountId && data.balance !== null) {
-        await this.prisma.account.update({
-          where: { id: linked.accountId },
-          data: { balanceCurrent: data.balance },
+    }
+  }
+
+  /**
+   * After importing, the linked account's balance becomes the bank's. What
+   * the recorded movements don't explain is kept as one open adjustment
+   * ("Diferencia con el banco"), and when it is still there on the next
+   * sync the user is told (a pending card charge, for instance, is only
+   * imported once it posts, so a single sync may differ for a while). The
+   * first sync after linking only takes the bank's balance as the start.
+   */
+  private async reconcileBalance(linkedAccountId: string, userId: string) {
+    const linked = await this.prisma.linkedAccount.findUnique({
+      where: { id: linkedAccountId },
+    });
+    if (!linked?.accountId || linked.balance === null) return;
+    const bankBalance = Number(linked.balance);
+    const now = new Date();
+
+    if (!linked.reconciledAt || linked.reconciledBalance === null) {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.account.update({
+          where: { id: linked.accountId! },
+          data: { balanceCurrent: bankBalance },
         });
+        await tx.linkedAccount.update({
+          where: { id: linked.id },
+          data: { reconciledBalance: bankBalance, reconciledAt: now },
+        });
+      });
+      return;
+    }
+
+    const account = await this.prisma.account.findUniqueOrThrow({
+      where: { id: linked.accountId },
+      include: { bankDifferenceTransaction: true },
+    });
+    const open = account.bankDifferenceTransaction;
+    const recorded = await this.prisma.transaction.aggregate({
+      where: {
+        accountId: account.id,
+        isPending: false,
+        createdAt: { gt: linked.reconciledAt },
+        ...(open && { id: { not: open.id } }),
+      },
+      _sum: { balanceEffect: true },
+    });
+    const openBefore = open ? Number(open.balanceEffect ?? 0) : 0;
+    const { openDifference } = reconcileBalance({
+      bankBalance,
+      reconciledBalance: Number(linked.reconciledBalance),
+      recordedSince: Number(recorded._sum.balanceEffect ?? 0),
+      openDifference: openBefore,
+    });
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { locale: true },
+    });
+    const label =
+      (account.metadata as { nickname?: string } | null)?.nickname?.trim() ||
+      account.name;
+    const texts = mismatchTexts(user?.locale ?? 'es', {
+      account: label,
+      difference: openDifference,
+      currency: account.currency,
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      let openId = open?.id ?? null;
+      if (open && openDifference === 0) {
+        await tx.account.update({
+          where: { id: account.id },
+          data: { bankDifferenceTransactionId: null },
+        });
+        await tx.transaction.delete({ where: { id: open.id } });
+        openId = null;
+      } else if (open && openDifference !== openBefore) {
+        await tx.transaction.update({
+          where: { id: open.id },
+          data: {
+            amount: Math.abs(openDifference),
+            balanceEffect: openDifference,
+          },
+        });
+      } else if (!open && openDifference !== 0) {
+        openId = (
+          await tx.transaction.create({
+            data: {
+              userId: account.userId,
+              accountId: account.id,
+              type: TransactionType.adjustment,
+              amount: Math.abs(openDifference),
+              balanceEffect: openDifference,
+              currency: account.currency,
+              txnDate: localToday(),
+              description: texts.adjustment,
+              merchantName: texts.adjustment,
+              source: TransactionSource.imported,
+            },
+          })
+        ).id;
       }
+      await tx.account.update({
+        where: { id: account.id },
+        data: {
+          balanceCurrent: bankBalance,
+          bankDifferenceTransactionId: openId,
+        },
+      });
+      await tx.linkedAccount.update({
+        where: { id: linked.id },
+        data: { reconciledBalance: bankBalance, reconciledAt: now },
+      });
+    });
+
+    // Still different after a second sync: worth telling.
+    if (openDifference !== 0 && openBefore !== 0) {
+      await this.notifications.notify({
+        userId: account.userId,
+        type: NotificationType.balance_mismatch,
+        title: texts.title,
+        message: texts.message,
+        relatedEntityType: 'account_balance_mismatch',
+        relatedEntityId: `${account.id}:${localToday().toISOString().slice(0, 10)}`,
+      });
     }
   }
 

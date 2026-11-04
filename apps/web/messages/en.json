@@ -356,6 +356,53 @@
     }
   },
   "accounts": {
+    "overview": {
+      "title": "All accounts",
+      "subtitle": "{count, plural, one {# account} other {# accounts}} in {currency}, archived left out",
+      "chip": "All accounts",
+      "availableOpening": "Available at the start of the day",
+      "availableClosing": "Available at the end of the day",
+      "debtOpening": "Card debt at the start",
+      "debtClosing": "Card debt at the end",
+      "movements": "{count, plural, =0 {No movements} one {# movement} other {# movements}}",
+      "chartTitle": "Available and debt at the end of each day",
+      "available": "Available",
+      "debt": "Card debt"
+    },
+    "actionsLabel": "Actions for {name}",
+    "focus": {
+      "expand": "Expand",
+      "collapse": "Show all",
+      "back": "Accounts and cards"
+    },
+    "balanceDay": {
+      "previous": "Previous day",
+      "next": "Next day",
+      "pick": "Pick a day",
+      "today": "Today",
+      "historical": "Historical",
+      "backToToday": "Back to today",
+      "noticeTitle": "You're looking at the historical balance for {date}",
+      "noticeBody": "This isn't the current balance: it's how the account stood that day according to the recorded movements. Recording a movement with an earlier date updates this history.",
+      "incomplete": "Before this date the history is incomplete (the account wasn't in Finnit or movements are missing), so these figures may not be exact.",
+      "incompleteShort": "Incomplete history",
+      "opening": "Balance at the start of the day",
+      "closing": "Balance at the end of the day",
+      "openingDebt": "Debt at the start of the day",
+      "closingDebt": "Debt at the end of the day",
+      "inflow": "Money in",
+      "outflow": "Money out",
+      "movements": "{count, plural, =0 {No movements} one {# movement} other {# movements}}",
+      "chartTitle": "Balance at the end of each day",
+      "chartTitleDebt": "Debt at the end of each day",
+      "chartHint": "Tap a day to see its balance and movements.",
+      "chartLabel": "Daily balance chart",
+      "completeFrom": "The shaded part is before {date}: the history there is incomplete.",
+      "table": "See as a table",
+      "tableDay": "Day",
+      "tableBalance": "Closing balance",
+      "tableDebt": "Closing debt"
+    },
     "balanceUpdate": {
       "action": "Update balance",
       "actionLabel": "Update the balance of {name}",
@@ -530,6 +577,7 @@
     },
     "stackLabel": "Your accounts and cards",
     "detail": {
+      "dayMovements": "Movements on {date}",
       "limit": "Credit limit",
       "noLimit": "No limit on file",
       "available": "Available: {amount}",
@@ -2312,6 +2360,7 @@
     "count": "{shown} of {total}",
     "allRead": "All your notifications are read",
     "types": {
+      "balance_mismatch": "Balance vs. bank",
       "budget": "Budget",
       "debt_due": "Debt",
       "recurring": "Recurring payment",

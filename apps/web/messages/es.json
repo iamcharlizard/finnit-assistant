@@ -356,6 +356,53 @@
     }
   },
   "accounts": {
+    "overview": {
+      "title": "Todas las cuentas",
+      "subtitle": "{count, plural, one {# cuenta} other {# cuentas}} en {currency}, sin archivadas",
+      "chip": "Todas las cuentas",
+      "availableOpening": "Disponible al iniciar el día",
+      "availableClosing": "Disponible al cerrar el día",
+      "debtOpening": "Deuda en tarjetas al iniciar",
+      "debtClosing": "Deuda en tarjetas al cerrar",
+      "movements": "{count, plural, =0 {Sin movimientos} one {# movimiento} other {# movimientos}}",
+      "chartTitle": "Disponible y deuda al cierre de cada día",
+      "available": "Disponible",
+      "debt": "Deuda en tarjetas"
+    },
+    "actionsLabel": "Acciones de {name}",
+    "focus": {
+      "expand": "Expandir",
+      "collapse": "Ver todas",
+      "back": "Cuentas y tarjetas"
+    },
+    "balanceDay": {
+      "previous": "Día anterior",
+      "next": "Día siguiente",
+      "pick": "Elegir día",
+      "today": "Hoy",
+      "historical": "Histórico",
+      "backToToday": "Volver a hoy",
+      "noticeTitle": "Estás viendo el saldo histórico del {date}",
+      "noticeBody": "No es el saldo actual: así quedó la cuenta ese día según los movimientos registrados. Si registras un movimiento con fecha anterior, este histórico se actualiza.",
+      "incomplete": "Antes de esta fecha el histórico está incompleto (la cuenta no estaba en Finnit o faltan movimientos), así que estas cifras pueden no ser exactas.",
+      "incompleteShort": "Histórico incompleto",
+      "opening": "Saldo al iniciar el día",
+      "closing": "Saldo al cerrar el día",
+      "openingDebt": "Deuda al iniciar el día",
+      "closingDebt": "Deuda al cerrar el día",
+      "inflow": "Entradas",
+      "outflow": "Salidas",
+      "movements": "{count, plural, =0 {Sin movimientos} one {# movimiento} other {# movimientos}}",
+      "chartTitle": "Saldo al cierre de cada día",
+      "chartTitleDebt": "Deuda al cierre de cada día",
+      "chartHint": "Toca un día para ver su saldo y sus movimientos.",
+      "chartLabel": "Gráfica del saldo diario",
+      "completeFrom": "La parte sombreada es antes del {date}: ahí el histórico está incompleto.",
+      "table": "Ver como tabla",
+      "tableDay": "Día",
+      "tableBalance": "Saldo al cierre",
+      "tableDebt": "Deuda al cierre"
+    },
     "balanceUpdate": {
       "action": "Actualizar saldo",
       "actionLabel": "Actualizar el saldo de {name}",
@@ -530,6 +577,7 @@
     },
     "stackLabel": "Tus cuentas y tarjetas",
     "detail": {
+      "dayMovements": "Movimientos del {date}",
       "limit": "Límite de crédito",
       "noLimit": "Sin límite registrado",
       "available": "Disponible: {amount}",
@@ -2312,6 +2360,7 @@
     "count": "{shown} de {total}",
     "allRead": "Todas tus notificaciones están leídas",
     "types": {
+      "balance_mismatch": "Saldo vs. banco",
       "budget": "Presupuesto",
       "debt_due": "Deuda",
       "recurring": "Pago recurrente",

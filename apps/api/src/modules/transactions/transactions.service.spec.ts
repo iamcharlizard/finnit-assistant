@@ -988,6 +988,7 @@ describe('TransactionsService', () => {
         categoryId: mockTransaction.categoryId,
         type: mockTransaction.type,
         amount: Number(mockTransaction.amount),
+        balanceEffect: null,
         currency: mockTransaction.currency,
         txnDate: mockTransaction.txnDate,
         description: mockTransaction.description,
@@ -1246,7 +1247,10 @@ describe('TransactionsService', () => {
 
       expect(mockTx.transaction.update).toHaveBeenCalledWith({
         where: { id: mockTransaction.id },
-        data: { txnDate: new Date('2026-10-13T00:00:00Z') },
+        data: {
+          txnDate: new Date('2026-10-13T00:00:00Z'),
+          balanceEffect: -100,
+        },
       });
       expect(mockTx.account.update).not.toHaveBeenCalled();
     });
@@ -1291,6 +1295,17 @@ describe('TransactionsService', () => {
 
     it('does not touch the balance when a pending amount changes', async () => {
       expect(await run({ isPending: true }, { amount: 50 })).toEqual([]);
+    });
+
+    it('keeps the direction of money in that is not income (adjustments, incoming transfers)', async () => {
+      const incoming = {
+        type: TransactionType.adjustment,
+        balanceEffect: 100,
+      };
+      expect(
+        await run({ ...incoming, isPending: true }, { isPending: false }),
+      ).toEqual([100]);
+      expect(await run(incoming, { amount: 150 })).toEqual([50]);
     });
 
     it('applies the amount when a pending expense is confirmed', async () => {

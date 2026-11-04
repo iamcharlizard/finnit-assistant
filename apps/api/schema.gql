@@ -124,6 +124,46 @@ type Account {
   userId: String!
 }
 
+"""An account's balance on one day"""
+type AccountBalanceDay {
+  """Balance when the day ended"""
+  closingBalance: Float!
+
+  """
+  False before the first day the history can be trusted (before the account was added or its imported history, or before an old adjustment of unknown direction)
+  """
+  complete: Boolean!
+
+  """The local day"""
+  date: DateTime!
+
+  """Money in that day"""
+  inflow: Float!
+
+  """Confirmed movements that day"""
+  movements: Int!
+
+  """Balance when the day started"""
+  openingBalance: Float!
+
+  """Money out that day (positive)"""
+  outflow: Float!
+}
+
+"""
+An account's balance day by day, worked out from its current balance and the effect of each movement
+"""
+type AccountBalanceHistory {
+  accountId: ID!
+
+  """First trusted day"""
+  completeFrom: DateTime!
+  currency: String!
+
+  """Newest day first"""
+  days: [AccountBalanceDay!]!
+}
+
 type AccountConnection {
   edges: [AccountEdge!]!
   pageInfo: PageInfo!
@@ -192,6 +232,39 @@ enum AccountType {
   debit
   ewallet
   savings
+}
+
+"""
+All the (not archived) accounts in one currency on one day: money available and card debt
+"""
+type AccountsBalanceDay {
+  """Same, when the day ended"""
+  availableClosing: Float!
+
+  """Cash, debit, savings and e-wallets when the day started"""
+  availableOpening: Float!
+
+  """False when any account's history isn't trusted"""
+  complete: Boolean!
+
+  """The local day"""
+  date: DateTime!
+
+  """Same, when the day ended"""
+  debtClosing: Float!
+
+  """Owed on credit cards when the day started (positive)"""
+  debtOpening: Float!
+  movements: Int!
+}
+
+type AccountsBalanceHistory {
+  """Accounts added up"""
+  accounts: Int!
+  currency: String
+
+  """Newest day first"""
+  days: [AccountsBalanceDay!]!
 }
 
 input AddDebtChargeInput {
@@ -1671,6 +1744,7 @@ enum NotificationStatus {
 
 """Notification type"""
 enum NotificationType {
+  balance_mismatch
   budget
   debt_due
   recurring
@@ -1707,7 +1781,36 @@ input PayoffStrategyInput {
 
 type Query {
   account(id: String!): Account!
+
+  """
+  The account's opening and closing balance on each day of a range (up to 366 days, newest first)
+  """
+  accountBalanceHistory(
+    accountId: String!
+
+    """First day (local date)"""
+    from: DateTime!
+
+    """Last day (local date); later than today means today"""
+    to: DateTime!
+  ): AccountBalanceHistory!
   accounts(after: String, archived: Boolean, before: String, first: Int, last: Int, type: AccountType): AccountConnection!
+
+  """
+  All the accounts together, day by day: money available and card debt (one currency, up to 366 days, newest first)
+  """
+  accountsBalanceHistory(
+    """
+    Accounts in this currency; default MXN when there is any, else the most used
+    """
+    currency: String
+
+    """First day (local date)"""
+    from: DateTime!
+
+    """Last day (local date); later than today means today"""
+    to: DateTime!
+  ): AccountsBalanceHistory!
 
   """Admin only"""
   adminUsers(
@@ -2305,6 +2408,11 @@ type Transaction {
   aliasId: ID
   amount: Float!
   attachments: [Attachment!]
+
+  """
+  What it adds (+) or takes (−) from its account balance; null for old adjustments of unknown direction
+  """
+  balanceEffect: Float
   category: Category
   categoryId: String
   categorySource: CategorySource

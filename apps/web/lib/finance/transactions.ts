@@ -38,11 +38,15 @@ export interface TransactionGroup<R extends TransactionRow = TransactionRow> {
 }
 
 /**
- * Money in or out of the account. Transfers are two "transfer" rows (the
- * API marks the outgoing one in its description); adjustments (card
- * payments, refunds, balance fixes) don't say which way they went.
+ * Money in or out of the account, from the movement's recorded effect on
+ * the balance. Without one (older data): income in, expense out, transfers
+ * by their side (the API marks the outgoing one in its description), and
+ * adjustments unknown unless negative.
  */
 export function direction(tx: ApiTransaction): 'in' | 'out' | 'unknown' {
+  // The recorded effect on the balance says it for every kind.
+  if (typeof tx.balanceEffect === 'number' && tx.balanceEffect !== 0)
+    return tx.balanceEffect > 0 ? 'in' : 'out';
   if (tx.type === 'income') return 'in';
   if (tx.type === 'expense') return 'out';
   // Balance updates are signed: negative took money out.
@@ -101,7 +105,7 @@ export function toTransactionRow(
   const time = timeOf(tx.txnDate);
   const dir = direction(tx);
   const sign = dir === 'unknown' ? 'never' : 'always';
-  const signed = dir === 'out' ? -Math.abs(tx.amount) : tx.amount;
+  const signed = dir === 'out' ? -Math.abs(tx.amount) : Math.abs(tx.amount);
 
   return {
     id: tx.id,

@@ -15,7 +15,8 @@ const GAP = 16;
 /**
  * Every account as a stack of cards, wallet style: the others show only
  * their top edge, and the active one sits whole at the bottom. Choosing a
- * card slides it down and the previous one back into its place.
+ * card slides it down and the previous one back into its place; choosing
+ * the active one again lets it go (all accounts together).
  */
 export function AccountCardStack({
   accounts,
@@ -25,7 +26,8 @@ export function AccountCardStack({
   onSelect,
 }: {
   accounts: ReadonlyArray<AccountSummary>;
-  activeId: string;
+  /** None chosen (all accounts together): the stack just closes. */
+  activeId: string | null;
   holderName: string;
   /** Accessible name of the list. */
   label: string;
@@ -33,12 +35,16 @@ export function AccountCardStack({
 }) {
   const others = accounts.filter((a) => a.id !== activeId);
   const activeTop = others.length * PEEK + (others.length > 0 ? GAP : 0);
+  // Without an active card the last one shows whole, right under the rest.
+  const height = activeId
+    ? activeTop + CARD_HEIGHT
+    : Math.max(0, others.length - 1) * PEEK + CARD_HEIGHT;
 
   return (
     <ul
       aria-label={label}
       className="relative mx-auto w-full max-w-[360px] motion-safe:transition-[height] motion-safe:duration-500 @3xl:mx-0"
-      style={{ height: activeTop + CARD_HEIGHT }}
+      style={{ height }}
     >
       {accounts.map((account) => {
         const active = account.id === activeId;

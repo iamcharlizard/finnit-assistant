@@ -41,8 +41,13 @@ export type TransactionType = 'income' | 'expense' | 'transfer' | 'adjustment';
 export interface ApiTransaction {
   id: string;
   type: TransactionType;
-  /** Always positive; `type` gives the direction. */
+  /** Always positive; `balanceEffect` (or `type`) gives the direction. */
   amount: number;
+  /**
+   * What it added (+) or took (−) from the account balance. Null (or
+   * missing in older data) for adjustments of unknown direction.
+   */
+  balanceEffect?: number | null;
   currency: string;
   txnDate: string;
   description: string | null;
@@ -70,7 +75,7 @@ export interface ApiTransaction {
 }
 
 export const TRANSACTION_FIELDS =
-  'id type amount currency txnDate description merchantName displayName isPrivate aliasId hasOwnAlias isPending source transferDirection accountId account { id name type metadata { nickname } } category { id name parentId }';
+  'id type amount balanceEffect currency txnDate description merchantName displayName isPrivate aliasId hasOwnAlias isPending source transferDirection accountId account { id name type metadata { nickname } } category { id name parentId }';
 
 export type CategorySource = 'manual' | 'rule' | 'ai' | 'bank';
 

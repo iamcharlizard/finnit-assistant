@@ -6,7 +6,19 @@ import {
   NotificationsArgs,
 } from './dto/notification.dto';
 import { PaginationUtil } from '../../common/utils/pagination.util';
-import { NotificationStatus, Prisma } from '@finnit/database';
+import { NotificationStatus, NotificationType, Prisma } from '@finnit/database';
+
+/** A notification about something, sent once per `relatedEntityId`. */
+export interface NotifyInput {
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  /** What it is about (e.g. "account"). */
+  relatedEntityType: string;
+  /** Which one, and when it applies (e.g. "<account id>:<day>"). */
+  relatedEntityId: string;
+}
 
 /** Not read yet: waiting to be sent or sent. */
 const UNREAD_STATUSES: NotificationStatus[] = [
@@ -17,6 +29,29 @@ const UNREAD_STATUSES: NotificationStatus[] = [
 @Injectable()
 export class NotificationsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Creates the notification unless one about the same thing already exists
+   * (same `relatedEntityType` and `relatedEntityId`). True when created.
+   */
+  async notify(
+    input: NotifyInput,
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<boolean> {
+    const existing = await client.notification.findFirst({
+      where: {
+        userId: input.userId,
+        relatedEntityType: input.relatedEntityType,
+        relatedEntityId: input.relatedEntityId,
+      },
+      select: { id: true },
+    });
+    if (existing) return false;
+    await client.notification.create({
+      data: { ...input, status: NotificationStatus.sent, sentAt: new Date() },
+    });
+    return true;
+  }
 
   /**
    * Newest first, keyset-paginated on (createdAt, id) through the cursor row,

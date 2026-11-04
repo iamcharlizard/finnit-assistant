@@ -13,12 +13,13 @@ export default async function AccountsPage({
   searchParams,
 }: PageProps<'/accounts'>) {
   // ?card= is the old /cards link.
-  const { account, card, archived, add } = await searchParams;
+  const { account, card, archived, add, day } = await searchParams;
   return (
     <AccountsScreen
       data={await loadAccounts({
         requested: account ?? card,
         showArchived: archived === '1',
+        day,
       })}
       openWizard={add === '1'}
     />

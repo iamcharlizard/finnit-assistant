@@ -1,4 +1,11 @@
-import { ObjectType, Field, ID, Int, registerEnumType } from '@nestjs/graphql';
+import {
+  ObjectType,
+  Field,
+  Float,
+  ID,
+  Int,
+  registerEnumType,
+} from '@nestjs/graphql';
 import { CategorySource } from '@finnit/database';
 import { Account } from './account.model';
 import { Category } from './category.model';
@@ -27,6 +34,13 @@ export class Transaction {
 
   @Field()
   amount: number;
+
+  @Field(() => Float, {
+    nullable: true,
+    description:
+      'What it adds (+) or takes (−) from its account balance; null for old adjustments of unknown direction',
+  })
+  balanceEffect?: number | null;
 
   @Field()
   currency: string;

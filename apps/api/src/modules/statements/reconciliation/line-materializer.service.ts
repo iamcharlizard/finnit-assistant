@@ -85,6 +85,8 @@ export class LineMaterializerService {
               : null,
             type,
             amount,
+            // Recorded even when the balance comes from the bank.
+            balanceEffect: isDebit ? -amount : amount,
             currency: line.currency,
             txnDate: line.date,
             description: line.description,

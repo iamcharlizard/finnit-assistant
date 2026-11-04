@@ -7,6 +7,10 @@ import {
   UpdateAccountInput,
   AdjustBalanceInput,
   SetAccountBalanceInput,
+  AccountBalanceHistory,
+  AccountBalanceHistoryArgs,
+  AccountsBalanceHistory,
+  AccountsBalanceHistoryArgs,
   AccountsArgs,
   CreditCardTermsInput,
 } from './dto/account.dto';
@@ -34,6 +38,28 @@ export class AccountsResolver {
     @Args('id') id: string,
   ): Promise<Account> {
     return this.accountsService.findById(id, user.id);
+  }
+
+  @Query(() => AccountBalanceHistory, {
+    description:
+      "The account's opening and closing balance on each day of a range (up to 366 days, newest first)",
+  })
+  async accountBalanceHistory(
+    @CurrentUser() user: User,
+    @Args() args: AccountBalanceHistoryArgs,
+  ): Promise<AccountBalanceHistory> {
+    return this.accountsService.balanceHistory(user.id, args);
+  }
+
+  @Query(() => AccountsBalanceHistory, {
+    description:
+      'All the accounts together, day by day: money available and card debt (one currency, up to 366 days, newest first)',
+  })
+  async accountsBalanceHistory(
+    @CurrentUser() user: User,
+    @Args() args: AccountsBalanceHistoryArgs,
+  ): Promise<AccountsBalanceHistory> {
+    return this.accountsService.allBalanceHistory(user.id, args);
   }
 
   @Mutation(() => Account)

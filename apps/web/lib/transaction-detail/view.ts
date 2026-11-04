@@ -178,7 +178,7 @@ export function toTransactionDetailView(
         ? original
         : null,
     amount: formatMoney(
-      dir === 'out' ? -Math.abs(tx.amount) : tx.amount,
+      dir === 'out' ? -Math.abs(tx.amount) : Math.abs(tx.amount),
       tx.currency,
       locale,
       {

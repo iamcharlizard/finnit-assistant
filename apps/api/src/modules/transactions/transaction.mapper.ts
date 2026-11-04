@@ -159,6 +159,11 @@ export function mapTransaction(
     categoryId: transaction.categoryId || undefined,
     type: transaction.type,
     amount: Number(transaction.amount),
+    balanceEffect:
+      transaction.balanceEffect === null ||
+      transaction.balanceEffect === undefined
+        ? null
+        : Number(transaction.balanceEffect),
     currency: transaction.currency,
     txnDate: transaction.txnDate,
     description: shown.description || undefined,

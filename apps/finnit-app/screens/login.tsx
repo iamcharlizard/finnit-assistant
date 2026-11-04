@@ -11,6 +11,11 @@ import { HeadlineLg, BodyMd, LabelSm } from '../components/ui/typography';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { router } from 'expo-router';
+import { Image } from 'expo-image';
+
+// Brand logo (symbol + lettering); @2x/@3x picked by density.
+const LOGO_LIGHT = require('../assets/images/brand/finnit-logo-light.png');
+const LOGO_DARK = require('../assets/images/brand/finnit-logo-dark.png');
 
 type LoginFormState =
   | { status: 'idle' }
@@ -175,25 +180,12 @@ export function LoginScreen() {
           {/* Brand identity */}
           <Animated.View entering={FadeInDown.duration(450).delay(0)}>
             <TwView className="items-center mb-10">
-              <TwView
-                className="w-16 h-16 rounded-2xl items-center justify-center mb-6"
-                style={{
-                  backgroundColor: T.accent,
-                  boxShadow: isDark ? '0 0 30px rgba(0, 245, 255, 0.45)' : '0 4px 20px rgba(108, 114, 203, 0.35)',
-                }}
-                accessibilityElementsHidden
-              >
-                {process.env.EXPO_OS === 'ios' ? (
-                  <SymbolView
-                    name="wallet.pass.fill"
-                    tintColor={T.accentText}
-                    resizeMode="scaleAspectFit"
-                    style={{ width: 36, height: 36 }}
-                  />
-                ) : (
-                  <MaterialIcons name="account-balance-wallet" size={36} color={T.accentText} />
-                )}
-              </TwView>
+              <Image
+                source={isDark ? LOGO_DARK : LOGO_LIGHT}
+                accessibilityLabel="Finnit"
+                contentFit="contain"
+                style={{ width: 177, height: 56, marginBottom: 32 }}
+              />
 
               <HeadlineLg className="text-center" style={{ color: T.accent }}>
                 Bienvenido de nuevo

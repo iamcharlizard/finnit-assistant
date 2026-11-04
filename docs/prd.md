@@ -278,6 +278,7 @@ Detailed, verified status per feature and platform: [features.md](./features.md)
 - **Web screens**: transaction detail (edit, attachments, alias, reveal original), notifications panel and page, statement upload and review, budgets, debts (month-by-month payoff simulation), goals and the what-if simulator.
 - **Receipts (OCR)**: internal OCR service (RapidOCR), receipt upload with CFDI QR / OCR rules / AI-text fallback, review and confirm or attach to an existing movement; scanned statements read with OCR.
 - **i18n**: categories stored in English with es/en translations (Google Cloud Translation, AI fallback); user language preference.
+- **Web appearance**: four themes (Finnit, Glass, Suave, Mono) in light and dark, glass header with greeting, floating sidebar that collapses to icons with animation.
 - **Fixes**: transaction dates stored as the local (Mexico City) day; opening balances as adjustments; consistent cursor pagination; credit card terms mutation; goals fully exposed; duplicate check (`similarTransactions`).
 - **Accounts**: multi-account support (cash, debit, credit, savings, e-wallet), balance adjustments, credit card terms.
 - **Transactions**: CRUD, merchant-based category suggestion, filtering, attachment records (URL only).

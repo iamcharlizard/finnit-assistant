@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Landmark,
   PiggyBank,
+  Scale,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -22,6 +23,7 @@ const ICONS: Record<NotificationType, LucideIcon> = {
   budget: PiggyBank,
   debt_due: Landmark,
   summary: Bell,
+  balance_mismatch: Scale,
 };
 
 /** A notification; unread ones are highlighted. Clicking marks it read and opens what it's about. */

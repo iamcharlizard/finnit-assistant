@@ -102,8 +102,7 @@ export function LoanLentTable({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="size-8 min-h-8"
+                size="icon-xs"
                 disabled={busy === id}
                 aria-label={td('editCharge')}
                 onClick={() => onEdit(id)}
@@ -113,8 +112,7 @@ export function LoanLentTable({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="size-8 min-h-8"
+                size="icon-xs"
                 disabled={busy === id}
                 aria-label={td('deleteCharge')}
                 onClick={() => onDelete(id)}

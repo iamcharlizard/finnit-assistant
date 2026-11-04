@@ -1,4 +1,9 @@
-import { dayKeyOf, isDayKey, type DayKey } from '@/lib/finance/dates';
+import {
+  dayKeyOf,
+  daysBetween,
+  isDayKey,
+  type DayKey,
+} from '@/lib/finance/dates';
 import { parseAmount } from '@/lib/new-entry/form';
 import { MAX_AMOUNT, parseRate } from './form';
 import { MAX_ANNUAL_RATE, MAX_INSTALLMENTS } from './loan-form';
@@ -32,6 +37,11 @@ export interface ChargeForm {
   destination: DebtDestination;
   depositAccountId: string;
   depositCountsAsIncome: boolean;
+  /**
+   * Deposited money: add it to the account's balance. Off for money already
+   * spent (e.g. registered months later): only the debt is recorded.
+   */
+  depositAddsToBalance: boolean;
   /** What this money was for (informative); '' = not said. */
   purposeCategoryId: string;
   /** Personal loans: how it was lent ('' = not said). */
@@ -80,6 +90,7 @@ export function newChargeForm(
     destination: purchase ? 'purchase' : 'deposit',
     depositAccountId: '',
     depositCountsAsIncome: false,
+    depositAddsToBalance: true,
     purposeCategoryId: '',
     lendingMethod: '',
     firstPaymentDate: '',
@@ -110,6 +121,7 @@ export function chargeFormOf(charge: ApiDebtCharge): ChargeForm {
     destination: charge.destination,
     depositAccountId: charge.depositAccountId ?? '',
     depositCountsAsIncome: charge.depositCountsAsIncome ?? false,
+    depositAddsToBalance: charge.depositAddsToBalance,
     purposeCategoryId: charge.purposeCategoryId ?? '',
     lendingMethod: charge.lendingMethod ?? '',
     firstPaymentDate: charge.firstPaymentDate
@@ -216,7 +228,11 @@ export function validateChargeForm(
   )
     errors.firstPaymentDate = 'firstPaymentBeforeDate';
 
-  if (form.destination === 'deposit' && !form.depositAccountId)
+  if (
+    form.destination === 'deposit' &&
+    form.depositAddsToBalance &&
+    !form.depositAccountId
+  )
     errors.depositAccountId = 'depositAccountRequired';
   return errors;
 }
@@ -256,9 +272,24 @@ export function buildChargeInput(
       : form.totalToRepay.trim()
         ? { totalToRepay: parseAmount(form.totalToRepay) }
         : {}),
-    ...(form.destination === 'deposit' && {
-      depositAccountId: form.depositAccountId,
-      depositCountsAsIncome: form.depositCountsAsIncome,
-    }),
+    ...(form.destination === 'deposit' &&
+      (form.depositAddsToBalance
+        ? {
+            depositAccountId: form.depositAccountId,
+            depositCountsAsIncome: form.depositCountsAsIncome,
+          }
+        : { depositAddsToBalance: false })),
   };
+}
+
+/** Borrowed money older than this is assumed spent by default. */
+export const RECENT_DEPOSIT_DAYS = 31;
+
+/**
+ * Whether money borrowed on `date` starts added to the account's balance:
+ * yes when recent (or the date is unknown), no when it is older than
+ * RECENT_DEPOSIT_DAYS, since it was most likely spent already.
+ */
+export function addsToBalanceByDefault(date: string, today: DayKey): boolean {
+  return !isDayKey(date) || daysBetween(date, today) <= RECENT_DEPOSIT_DAYS;
 }

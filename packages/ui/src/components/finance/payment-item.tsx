@@ -78,7 +78,8 @@ function PaymentItem({
         <span className="block truncate text-sm font-bold text-on-background">
           {title}
         </span>
-        <span className="mt-1 flex items-center gap-1.5">
+        {/* In a narrow column the date drops under the badge whole. */}
+        <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
           <span
             className={cn(
               'rounded-full px-1.5 py-0.5 text-[8px] font-bold tracking-wide',
@@ -87,12 +88,19 @@ function PaymentItem({
           >
             {config.label}
           </span>
-          <span className="text-[11px] text-on-surface-variant">
+          <span className="text-[11px] whitespace-nowrap text-on-surface-variant">
             {timeLabel}
           </span>
         </span>
       </span>
-      <span className={cn('text-sm font-bold', config.amount)}>{amount}</span>
+      <span
+        className={cn(
+          'shrink-0 text-sm font-bold whitespace-nowrap',
+          config.amount,
+        )}
+      >
+        {amount}
+      </span>
     </button>
   );
 }

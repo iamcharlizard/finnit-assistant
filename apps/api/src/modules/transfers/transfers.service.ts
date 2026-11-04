@@ -76,6 +76,7 @@ export class TransfersService {
           accountId: input.fromAccountId,
           type: TransactionType.transfer,
           amount: input.amount,
+          balanceEffect: -input.amount,
           currency: fromAccount.currency,
           txnDate,
           description,
@@ -90,6 +91,7 @@ export class TransfersService {
           accountId: input.toAccountId,
           type: TransactionType.transfer,
           amount: input.amount,
+          balanceEffect: input.amount,
           currency: toAccount.currency,
           txnDate,
           description,
@@ -217,6 +219,7 @@ export class TransfersService {
         description: string | null;
         merchantName: string | null;
         isPending: boolean;
+        inProcess?: boolean;
         isRecurringInstance: boolean;
         source: string;
         externalId: string | null;
@@ -251,6 +254,7 @@ export class TransfersService {
         description: string | null;
         merchantName: string | null;
         isPending: boolean;
+        inProcess?: boolean;
         isRecurringInstance: boolean;
         source: string;
         externalId: string | null;
@@ -292,6 +296,7 @@ export class TransfersService {
         description: t.fromTxn.description ?? undefined,
         merchantName: t.fromTxn.merchantName ?? undefined,
         isPending: t.fromTxn.isPending,
+        inProcess: t.fromTxn.inProcess ?? false,
         isRecurringInstance: t.fromTxn.isRecurringInstance,
         source: t.fromTxn.source,
         externalId: t.fromTxn.externalId ?? undefined,
@@ -325,6 +330,7 @@ export class TransfersService {
         description: t.toTxn.description ?? undefined,
         merchantName: t.toTxn.merchantName ?? undefined,
         isPending: t.toTxn.isPending,
+        inProcess: t.toTxn.inProcess ?? false,
         isRecurringInstance: t.toTxn.isRecurringInstance,
         source: t.toTxn.source,
         externalId: t.toTxn.externalId ?? undefined,

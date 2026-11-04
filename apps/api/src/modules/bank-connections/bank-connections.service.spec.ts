@@ -17,6 +17,7 @@ import {
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import { BankConnectionsService } from './bank-connections.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   SyncfyClient,
   SyncfyCredential,
@@ -71,6 +72,8 @@ const linkedRow = (overrides: Record<string, unknown> = {}) => ({
   creditLimit: null,
   availableCredit: null,
   balanceUpdatedAt: null,
+  reconciledBalance: null,
+  reconciledAt: null,
   ...overrides,
 });
 
@@ -79,6 +82,7 @@ describe('BankConnectionsService', () => {
   let syncfy: DeepMockProxy<SyncfyClient>;
   let reconciliation: DeepMockProxy<ReconciliationService>;
   let materializer: DeepMockProxy<LineMaterializerService>;
+  let notifications: DeepMockProxy<NotificationsService>;
   let service: BankConnectionsService;
 
   beforeEach(() => {
@@ -94,12 +98,15 @@ describe('BankConnectionsService', () => {
     materializer.materialize.mockResolvedValue({
       created: 0,
       balanceChange: 0,
+      settledChange: 0,
     });
+    notifications = mockDeep<NotificationsService>();
     service = new BankConnectionsService(
       prisma,
       syncfy,
       reconciliation,
       materializer,
+      notifications,
     );
   });
 
@@ -241,6 +248,14 @@ describe('BankConnectionsService', () => {
         },
       ]);
       prisma.linkedAccount.upsert.mockResolvedValue(linkedRow());
+      // Linked to a Finnit account and never reconciled: the first sync
+      // takes the bank's balance as the start.
+      prisma.linkedAccount.findMany.mockResolvedValue([linkedRow()] as never);
+      prisma.linkedAccount.findUnique.mockResolvedValue(
+        linkedRow({ balance: -48924.91 }),
+      );
+      syncfy.listTransactions.mockResolvedValue([]);
+      prisma.importedTransaction.findMany.mockResolvedValue([]);
 
       await service.sync('conn-1', userId, { requestRefresh: false });
 
@@ -296,6 +311,7 @@ describe('BankConnectionsService', () => {
       materializer.materialize.mockResolvedValue({
         created: 1,
         balanceChange: -448,
+        settledChange: 0,
       });
 
       const result = await service.sync('conn-1', userId, {
@@ -507,6 +523,141 @@ describe('BankConnectionsService', () => {
       await expect(
         service.linkProviderUser('me@finnit.app', 'sy-test'),
       ).rejects.toThrow(ConflictError);
+    });
+  });
+
+  describe('balance reconciliation', () => {
+    const since = new Date('2026-11-02T13:00:00Z');
+    const arrange = ({
+      bank,
+      recorded,
+      open,
+    }: {
+      bank: number;
+      recorded: number;
+      open: { id: string; balanceEffect: number } | null;
+    }) => {
+      prisma.linkedAccount.findUnique.mockResolvedValue(
+        linkedRow({
+          balance: bank,
+          reconciledBalance: 1000,
+          reconciledAt: since,
+        }),
+      );
+      prisma.account.findUniqueOrThrow.mockResolvedValue({
+        id: 'card-1',
+        userId,
+        name: 'BancaNet MiCuenta',
+        metadata: { nickname: 'Mi Cuenta' },
+        currency: 'MXN',
+        bankDifferenceTransaction: open,
+      } as never);
+      prisma.transaction.aggregate.mockResolvedValue({
+        _sum: { balanceEffect: recorded },
+      } as never);
+      prisma.user.findUnique.mockResolvedValue({ locale: 'es' } as never);
+      prisma.transaction.create.mockResolvedValue({ id: 'diff' } as never);
+    };
+    const reconcile = () =>
+      (
+        service as unknown as {
+          reconcileBalance: (id: string, user: string) => Promise<void>;
+        }
+      ).reconcileBalance('linked-card', userId);
+
+    it('keeps what the movements do not explain as one adjustment, without telling yet', async () => {
+      arrange({ bank: 650, recorded: -200, open: null });
+
+      await reconcile();
+
+      expect(prisma.transaction.aggregate).toHaveBeenCalledWith({
+        where: {
+          accountId: 'card-1',
+          isPending: false,
+          createdAt: { gt: since },
+        },
+        _sum: { balanceEffect: true },
+      });
+      expect(prisma.transaction.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          type: 'adjustment',
+          amount: 150,
+          balanceEffect: -150,
+          description: 'Diferencia con el banco',
+        }),
+      });
+      expect(prisma.account.update).toHaveBeenLastCalledWith({
+        where: { id: 'card-1' },
+        data: { balanceCurrent: 650, bankDifferenceTransactionId: 'diff' },
+      });
+      expect(prisma.linkedAccount.update).toHaveBeenCalledWith({
+        where: { id: 'linked-card' },
+        data: { reconciledBalance: 650, reconciledAt: expect.any(Date) },
+      });
+      expect(notifications.notify).not.toHaveBeenCalled();
+    });
+
+    it('tells the user when the difference is still there on the next sync', async () => {
+      arrange({
+        bank: 650,
+        recorded: 0,
+        open: { id: 'diff', balanceEffect: -150 },
+      });
+      // Reconciled at 1,000 with 150 open: 150 less again.
+      prisma.linkedAccount.findUnique.mockResolvedValue(
+        linkedRow({
+          balance: 500,
+          reconciledBalance: 650,
+          reconciledAt: since,
+        }),
+      );
+
+      await reconcile();
+
+      expect(prisma.transaction.aggregate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: { not: 'diff' } }),
+        }),
+      );
+      expect(prisma.transaction.update).toHaveBeenCalledWith({
+        where: { id: 'diff' },
+        data: { amount: 300, balanceEffect: -300 },
+      });
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId,
+          type: 'balance_mismatch',
+          title: 'Mi Cuenta: el saldo no coincide con el banco',
+          relatedEntityType: 'account_balance_mismatch',
+          relatedEntityId: expect.stringMatching(/^card-1:\d{4}-\d{2}-\d{2}$/),
+        }),
+      );
+    });
+
+    it('removes the adjustment once the missing movement is recorded', async () => {
+      arrange({
+        bank: 650,
+        recorded: -150,
+        open: { id: 'diff', balanceEffect: -150 },
+      });
+      prisma.linkedAccount.findUnique.mockResolvedValue(
+        linkedRow({
+          balance: 650,
+          reconciledBalance: 650,
+          reconciledAt: since,
+        }),
+      );
+
+      await reconcile();
+
+      expect(prisma.transaction.delete).toHaveBeenCalledWith({
+        where: { id: 'diff' },
+      });
+      expect(prisma.account.update).toHaveBeenLastCalledWith({
+        where: { id: 'card-1' },
+        data: { balanceCurrent: 650, bankDifferenceTransactionId: null },
+      });
+      expect(notifications.notify).not.toHaveBeenCalled();
     });
   });
 });

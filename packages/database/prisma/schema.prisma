@@ -42,6 +42,7 @@ enum NotificationType {
   debt_due
   recurring
   summary
+  balance_mismatch
 }
 
 enum NotificationStatus {
@@ -194,6 +195,7 @@ enum AiFeatureKey {
   recurring_classification
   receipt_parsing
   translation
+  screenshot_parsing
 }
 
 /// Where a category name translation came from.
@@ -298,6 +300,7 @@ model User {
   merchantAliases           MerchantAlias[]
   merchantRules             MerchantRule[]
   receiptImports            ReceiptImport[]
+  screenshotImports         ScreenshotImport[]
   merchantTaxIds            MerchantTaxId[]
 }
 
@@ -313,16 +316,22 @@ model Account {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
-  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  creditCardTerms     CreditCardTerms?
-  transactions        Transaction[]
-  linkedAccounts      LinkedAccount[]
-  reconciliationItems ReconciliationItem[]
-  debtsLinked         Debt[]                @relation("debt_linked_account")
-  recurringExpenses   RecurringExpense[]
-  statementImports    StatementImport[]
-  importedLines       ImportedTransaction[] @relation("imported_account")
-  receiptSuggestions  ReceiptImport[]       @relation("receipt_suggested_account")
+  user                        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditCardTerms             CreditCardTerms?
+  transactions                Transaction[]
+  linkedAccounts              LinkedAccount[]
+  // Linked accounts: the one open adjustment that makes the recorded balance
+  // match the bank's ("Diferencia con el banco"); recalculated on each sync
+  // and removed when the missing movements are recorded.
+  bankDifferenceTransactionId String?               @unique
+  bankDifferenceTransaction   Transaction?          @relation("account_bank_difference", fields: [bankDifferenceTransactionId], references: [id], onDelete: SetNull)
+  reconciliationItems         ReconciliationItem[]
+  debtsLinked                 Debt[]                @relation("debt_linked_account")
+  recurringExpenses           RecurringExpense[]
+  statementImports            StatementImport[]
+  importedLines               ImportedTransaction[] @relation("imported_account")
+  receiptSuggestions          ReceiptImport[]       @relation("receipt_suggested_account")
+  screenshotImports           ScreenshotImport[]    @relation("screenshot_account")
 
   @@unique([userId, name])
   @@index([userId])
@@ -396,11 +405,19 @@ model Transaction {
   categoryId          String?
   type                TransactionType
   amount              Decimal           @db.Decimal(18, 2)
+  // What it adds (+) or takes (−) from its account's balance, signed; a
+  // pending movement keeps it but doesn't count until confirmed. Null only
+  // for old adjustments whose direction couldn't be worked out.
+  balanceEffect       Decimal?          @db.Decimal(18, 2)
   currency            String            @db.VarChar(3)
   txnDate             DateTime          @db.Date
   description         String?
   merchantName        String?
   isPending           Boolean           @default(false)
+  // "En proceso": the bank shows it but hasn't applied it yet. Unlike
+  // isPending it counts in the balance and totals; it is only marked, and
+  // clears when the bank's applied movement is linked to it (or by hand).
+  inProcess           Boolean           @default(false)
   isRecurringInstance Boolean           @default(false)
   source              TransactionSource
   externalId          String?           @unique
@@ -431,6 +448,7 @@ model Transaction {
   debtPayment       DebtPayment?
   debtCharge        DebtCharge?
   debtDisbursement  Debt?                 @relation("debt_disbursement")
+  bankDifferenceOf  Account?              @relation("account_bank_difference")
   goalContributions GoalContribution[] // <-- ahora 1–N (fix)
   transactionTags   TransactionTag[]
   importedMatches   ImportedTransaction[] @relation("imported_matched")
@@ -734,6 +752,9 @@ model Debt {
   // included; part of each installment, not interest.
   periodicFee               Decimal?               @db.Decimal(18, 2)
   destination               DebtChargeDestination?
+  // destination = deposit: whether the money was added to an account's
+  // balance. False = already spent (e.g. an old loan): only the debt counts.
+  depositAddsToBalance      Boolean                @default(true)
   // The deposit of the borrowed money into an account (destination = deposit).
   disbursementTransactionId String?                @unique
   // What the borrowed money was for (informative: the expense is the payments).
@@ -777,29 +798,31 @@ model Contact {
 /// Money added to a debt after it was created: another personal loan, or a
 /// purchase financed with Kueski / Didi (with its own interest and term).
 model DebtCharge {
-  id                 String                @id @default(uuid())
-  debtId             String
-  date               DateTime              @db.Date
-  description        String?
-  principal          Decimal               @db.Decimal(18, 2)
-  totalToRepay       Decimal               @db.Decimal(18, 2)
-  installments       Int?                  @db.SmallInt
+  id                   String                @id @default(uuid())
+  debtId               String
+  date                 DateTime              @db.Date
+  description          String?
+  principal            Decimal               @db.Decimal(18, 2)
+  totalToRepay         Decimal               @db.Decimal(18, 2)
+  installments         Int?                  @db.SmallInt
   // Installments paid before it was registered (historical payments).
-  installmentsPaid   Int                   @default(0) @db.SmallInt
+  installmentsPaid     Int                   @default(0) @db.SmallInt
   // First due date of its installments; null = the first after `date`.
-  firstPaymentDate   DateTime?             @db.Date
+  firstPaymentDate     DateTime?             @db.Date
   // How its interest was given (null = no installments); the rate and VAT
   // when given by rate.
-  interestMode       LoanInterestMode?
-  interestRateAnnual Decimal?              @db.Decimal(9, 4)
-  includesVat        Boolean               @default(false)
-  destination        DebtChargeDestination
-  transactionId      String?               @unique // deposit into an account
+  interestMode         LoanInterestMode?
+  interestRateAnnual   Decimal?              @db.Decimal(9, 4)
+  includesVat          Boolean               @default(false)
+  destination          DebtChargeDestination
+  // destination = deposit: added to an account's balance (false = spent).
+  depositAddsToBalance Boolean               @default(true)
+  transactionId        String?               @unique // deposit into an account
   // What this money was for (informative: the expense is the payments).
-  purposeCategoryId  String?
+  purposeCategoryId    String?
   // Personal loans: how it was lent (cash, transfer, their card…).
-  lendingMethod      LendingMethod?
-  createdAt          DateTime              @default(now())
+  lendingMethod        LendingMethod?
+  createdAt            DateTime              @default(now())
 
   debt            Debt          @relation(fields: [debtId], references: [id], onDelete: Cascade)
   transaction     Transaction?  @relation(fields: [transactionId], references: [id], onDelete: SetNull)
@@ -901,6 +924,10 @@ model LinkedAccount {
   creditLimit       Decimal?  @db.Decimal(18, 2)
   availableCredit   Decimal?  @db.Decimal(18, 2)
   balanceUpdatedAt  DateTime?
+  // The bank's balance at the last reconciliation, and when: the next sync
+  // expects it plus the movements recorded since. Null = not reconciled yet.
+  reconciledBalance Decimal?  @db.Decimal(18, 2)
+  reconciledAt      DateTime?
 
   bankConnection BankConnection        @relation(fields: [bankConnectionId], references: [id], onDelete: Cascade)
   account        Account?              @relation(fields: [accountId], references: [id], onDelete: SetNull)
@@ -933,16 +960,22 @@ model ImportedTransaction {
   raw                  Json?
   matchedTransactionId String?
   matchedOccurrenceId  String?
+  // Read from a screenshot of the bank's app.
+  screenshotImportId   String?
+  // The bank showed it "en proceso" (not applied yet).
+  inProcess            Boolean            @default(false)
   importedAt           DateTime           @default(now())
 
   account            Account              @relation("imported_account", fields: [accountId], references: [id], onDelete: Cascade)
   linkedAccount      LinkedAccount?       @relation(fields: [linkedAccountId], references: [id], onDelete: Cascade)
   statementImport    StatementImport?     @relation(fields: [statementImportId], references: [id], onDelete: Cascade)
+  screenshotImport   ScreenshotImport?    @relation(fields: [screenshotImportId], references: [id], onDelete: Cascade)
   matchedTransaction Transaction?         @relation("imported_matched", fields: [matchedTransactionId], references: [id], onDelete: SetNull)
   matchedOccurrence  RecurringOccurrence? @relation(fields: [matchedOccurrenceId], references: [id], onDelete: SetNull)
 
   @@index([linkedAccountId, date])
   @@index([statementImportId])
+  @@index([screenshotImportId])
   @@index([accountId, date])
 }
 
@@ -1071,6 +1104,40 @@ model ReceiptImport {
   @@index([suggestedAccountId])
   @@index([suggestedCategoryId])
   @@index([matchedTransactionId])
+}
+
+/// A screenshot of a bank app's movement list: the account it shows and
+/// its movements (stored as ImportedTransaction lines once the account is
+/// known), waiting for the user to review them.
+model ScreenshotImport {
+  id            String        @id @default(uuid())
+  userId        String
+  status        ReceiptStatus @default(uploaded)
+  fileKey       String        @unique // users/<userId>/screenshots/<id>.<ext>
+  fileName      String?
+  fileHash      String // sha256 of the uploaded file
+  mimeType      String
+  fileSize      Int
+  route         ReceiptRoute?
+  // What the screenshot says about the account ("Clásica Banamex **482").
+  accountHint   String?
+  last4         String?       @db.VarChar(4)
+  // Detected, then chosen by the user; its lines are for this account.
+  accountId     String?
+  ocrText       String?       @db.Text
+  // The movements as read (with what needs checking), before an account.
+  rawExtraction Json?
+  errorMessage  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account Account?              @relation("screenshot_account", fields: [accountId], references: [id], onDelete: SetNull)
+  lines   ImportedTransaction[]
+
+  @@unique([userId, fileHash])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([accountId])
 }
 
 /// Merchant tax ID (RFC) → name → category. userId null = global entry

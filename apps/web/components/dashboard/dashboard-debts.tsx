@@ -49,9 +49,16 @@ export function DashboardDebts({
           </Link>
         }
       />
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-3 rounded-card border border-outline bg-surface p-4">
-          <dl className="grid gap-4 sm:grid-cols-3">
+      {/*
+        One column on phones. From @2xl: summary and "por tipo" stacked on
+        the left, the projection on the right filling their height (no
+        half-empty card); its three figures stack until the column has room
+        for them side by side (@5xl). From @7xl (dashboard in four columns):
+        all three cards in a row, figures stacked.
+      */}
+      <div className="grid gap-3 @2xl:grid-cols-2 @7xl:grid-cols-3">
+        <div className="flex flex-col gap-3 rounded-card border border-outline bg-surface p-4 @2xl:col-start-1 @7xl:col-start-auto">
+          <dl className="grid gap-4 sm:grid-cols-3 @2xl:grid-cols-1 @5xl:grid-cols-3 @7xl:grid-cols-1">
             <div className="flex flex-col gap-0.5">
               <dt className="text-xs text-on-surface-variant">
                 {ti('current')}
@@ -95,13 +102,15 @@ export function DashboardDebts({
             {ti('currentVsTotal', { percent: view.paidPercent })}
           </p>
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <DebtTypeBars bars={view.types} />
-          <BalanceProjectionChart
-            points={view.projection}
-            paidOffLabel={view.paidOffLabel}
-          />
-        </div>
+        <DebtTypeBars
+          bars={view.types}
+          className="@2xl:col-start-1 @7xl:col-start-auto"
+        />
+        <BalanceProjectionChart
+          points={view.projection}
+          paidOffLabel={view.paidOffLabel}
+          className="@2xl:col-start-2 @2xl:row-span-2 @2xl:row-start-1 @7xl:col-start-auto @7xl:row-span-1"
+        />
       </div>
     </section>
   );

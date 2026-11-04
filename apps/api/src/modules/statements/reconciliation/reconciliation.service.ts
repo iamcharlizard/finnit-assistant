@@ -58,7 +58,12 @@ export class ReconciliationService {
     userId: string,
     accountId: string,
     rows: ImportedTransactionRow[],
-    scope: 'statement' | 'bank',
+    /**
+     * statement / bank: a transaction is claimed once per kind of source.
+     * screenshot: any transaction may match (an overlapping screenshot, a
+     * bank or statement movement), so nothing is registered twice.
+     */
+    scope: 'statement' | 'bank' | 'screenshot',
   ): Promise<void> {
     if (rows.length === 0) return;
     const sorted = [...rows].sort(
@@ -82,14 +87,16 @@ export class ReconciliationService {
           userId,
           accountId,
           txnDate: { gte: from, lte: to },
-          importedMatches: {
-            none: {
-              id: { notIn: lineIds },
-              ...(scope === 'statement'
-                ? { statementImportId: { not: null } }
-                : { linkedAccountId: { not: null } }),
+          ...(scope !== 'screenshot' && {
+            importedMatches: {
+              none: {
+                id: { notIn: lineIds },
+                ...(scope === 'statement'
+                  ? { statementImportId: { not: null } }
+                  : { linkedAccountId: { not: null } }),
+              },
             },
-          },
+          }),
         },
       }),
       this.prisma.recurringOccurrence.findMany({
@@ -115,6 +122,7 @@ export class ReconciliationService {
         txnDate: t.txnDate,
         merchantName: t.merchantName,
         description: t.description,
+        inProcess: t.inProcess,
       })),
     );
     const occurrenceMatches = matchOccurrences(

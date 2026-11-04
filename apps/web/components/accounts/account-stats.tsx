@@ -70,7 +70,7 @@ export function AccountStats({ detail }: { detail: AccountDetail }) {
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-3 sm:grid-cols-2 @4xl:grid-cols-3">
       <AccountStat
         icon={Gauge}
         label={t('limit')}

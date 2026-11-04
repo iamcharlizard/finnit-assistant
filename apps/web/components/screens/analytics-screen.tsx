@@ -34,7 +34,7 @@ export function AnalyticsScreen({ view }: { view: AnalyticsView }) {
     <div className="flex flex-col gap-6">
       <MonthSwitcher {...view.month} />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 @2xl:grid-cols-2 @3xl:grid-cols-3">
         <AnalyticsHeroCard
           label={t('analytics.monthSpending')}
           amount={view.spending.amount}
@@ -43,7 +43,7 @@ export function AnalyticsScreen({ view }: { view: AnalyticsView }) {
           sparkBars={view.spending.bars}
           trendDownLabel={t('ui.trend.down')}
           trendUpLabel={t('ui.trend.up')}
-          className="md:col-span-2 lg:col-span-1"
+          className="@2xl:col-span-2 @3xl:col-span-1"
         />
         {view.savings ? (
           <FinancialHealthChart
@@ -65,7 +65,7 @@ export function AnalyticsScreen({ view }: { view: AnalyticsView }) {
         <IncomeExpenseTrend months={view.trend} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 @3xl:grid-cols-2">
         <section className="min-w-0">
           <SectionHeading title={t('analytics.byCategory')} />
           <CategoryBreakdown categories={view.categories} />

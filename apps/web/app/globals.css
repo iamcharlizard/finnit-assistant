@@ -1,1 +1,54 @@
 @import '@finnit/ui/globals.css';
+
+/*
+ * The sidebar (shown from lg; below, the bottom bar takes over) looks
+ * collapsed when the user collapsed it: `data-pref="collapsed"`, from the
+ * `finnit-sidebar` cookie. A CSS variant, so the server renders it right.
+ */
+@custom-variant rail-collapsed {
+  &:where([data-pref='collapsed'], [data-pref='collapsed'] *) {
+    @slot;
+  }
+}
+
+/*
+ * Sidebar collapse/expand as a view transition
+ * (components/navigation/layout-transition.ts): `vt-layout` is on <html>
+ * while it runs. Named boxes (sidebar, header, dashboard blocks) move and
+ * resize from their old place to the new one; the rest crossfades.
+ */
+
+/* The sidebar's CSS width animation would leave the "after" snapshot on
+   its first frame; the view transition animates it instead. */
+html.vt-layout [data-pref],
+html.vt-layout [data-pref] * {
+  transition: none !important;
+}
+
+html.vt-layout::view-transition-group(*) {
+  animation-duration: 500ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Same corners as the cards, so the clipped content keeps their shape. */
+  overflow: clip;
+  border-radius: var(--radius-card);
+}
+
+/* The header keeps its pill shape while it moves. */
+html.vt-layout::view-transition-group(app-header) {
+  border-radius: 9999px;
+}
+
+html.vt-layout::view-transition-group(root) {
+  overflow: visible;
+  border-radius: 0;
+}
+
+/* Keep each snapshot at its own size, pinned to the top left, instead of
+   stretching it to the box: text never looks squashed while a card changes
+   width; old and new just crossfade inside the moving box. */
+html.vt-layout::view-transition-old(*),
+html.vt-layout::view-transition-new(*) {
+  width: auto;
+  height: auto;
+  animation-duration: 500ms;
+}

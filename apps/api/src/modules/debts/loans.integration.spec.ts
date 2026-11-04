@@ -1256,4 +1256,81 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
     });
     expect(back.originalDueDate).toBeNull();
   });
+
+  it('money already spent: no deposit, and an existing deposit can be taken off the balance', async () => {
+    const before = await balance();
+
+    // An old loan: only the debt is recorded.
+    const old = await loans.create(userId, {
+      name: 'Préstamo viejo',
+      kind: DebtKind.loan,
+      loanType: LoanType.institutional,
+      lenderName: 'Banco',
+      principal: 10_000,
+      interestMode: LoanInterestMode.total_amount,
+      totalToRepay: 12_000,
+      paymentFrequency: RecurringFrequency.monthly,
+      installmentsTotal: 12,
+      startDate: d('2025-12-26'),
+      firstPaymentDate: d('2026-01-26'),
+      destination: DebtChargeDestination.deposit,
+      depositAddsToBalance: false,
+    });
+    expect(old.destination).toBe(DebtChargeDestination.deposit);
+    expect(old.disbursementTransactionId).toBeUndefined();
+    expect(old.depositAddsToBalance).toBe(false);
+    expect(await balance()).toBe(before);
+
+    // Registered with a deposit, then marked as spent: the deposit goes.
+    const spent = await loans.create(userId, {
+      name: 'Préstamo gastado',
+      kind: DebtKind.loan,
+      loanType: LoanType.institutional,
+      lenderName: 'Banco',
+      principal: 5_000,
+      interestMode: LoanInterestMode.total_amount,
+      totalToRepay: 6_000,
+      paymentFrequency: RecurringFrequency.monthly,
+      installmentsTotal: 6,
+      startDate: d('2025-12-26'),
+      firstPaymentDate: d('2026-01-26'),
+      destination: DebtChargeDestination.deposit,
+      depositAccountId: debitId,
+    });
+    expect(await balance()).toBe(before + 5_000);
+    expect(spent.depositAddsToBalance).toBe(true);
+    const depositId = spent.disbursementTransactionId!;
+    const edited = await loans.update(userId, spent.id, {
+      depositAddsToBalance: false,
+    });
+    expect(edited.disbursementTransactionId).toBeUndefined();
+    expect(edited.depositAddsToBalance).toBe(false);
+    expect(await balance()).toBe(before);
+    expect(
+      await prisma.transaction.findUnique({ where: { id: depositId } }),
+    ).toBeNull();
+
+    // A personal loan's later amount, also already spent.
+    const personal = await loans.create(userId, {
+      name: 'Prima',
+      kind: DebtKind.loan,
+      loanType: LoanType.personal,
+      lenderName: 'Prima',
+      principal: 0,
+    });
+    const withCharge = await loans.addCharge(userId, {
+      debtId: personal.id,
+      date: d('2026-01-10'),
+      principal: 2_000,
+      destination: DebtChargeDestination.deposit,
+      depositAddsToBalance: false,
+    });
+    expect(withCharge.charges[0].transactionId).toBeUndefined();
+    expect(withCharge.charges[0].depositAddsToBalance).toBe(false);
+    expect(await balance()).toBe(before);
+
+    for (const debt of [old, edited, withCharge]) {
+      await debts.delete(debt.id, userId);
+    }
+  });
 });

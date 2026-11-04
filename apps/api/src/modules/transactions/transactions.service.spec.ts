@@ -820,6 +820,20 @@ describe('TransactionsService', () => {
       },
     );
 
+    it('does not delete balance adjustments (their direction is unknown)', async () => {
+      prismaService.transaction.findFirst.mockResolvedValue({
+        ...mockTransaction,
+        ...noLinks,
+        source: TransactionSource.manual,
+        type: TransactionType.adjustment,
+      } as any);
+
+      await expect(
+        service.delete(mockTransaction.id, mockUserId),
+      ).rejects.toThrow('update the balance instead');
+      expect(prismaService.$transaction).not.toHaveBeenCalled();
+    });
+
     it('should successfully delete manual transaction with balance adjustment', async () => {
       // Arrange
       const manualTransaction = {
@@ -974,11 +988,13 @@ describe('TransactionsService', () => {
         categoryId: mockTransaction.categoryId,
         type: mockTransaction.type,
         amount: Number(mockTransaction.amount),
+        balanceEffect: null,
         currency: mockTransaction.currency,
         txnDate: mockTransaction.txnDate,
         description: mockTransaction.description,
         merchantName: mockTransaction.merchantName,
         isPending: mockTransaction.isPending,
+        inProcess: false,
         isRecurringInstance: mockTransaction.isRecurringInstance,
         source: mockTransaction.source,
         externalId: undefined, // null is normalized to undefined
@@ -1232,7 +1248,10 @@ describe('TransactionsService', () => {
 
       expect(mockTx.transaction.update).toHaveBeenCalledWith({
         where: { id: mockTransaction.id },
-        data: { txnDate: new Date('2026-10-13T00:00:00Z') },
+        data: {
+          txnDate: new Date('2026-10-13T00:00:00Z'),
+          balanceEffect: -100,
+        },
       });
       expect(mockTx.account.update).not.toHaveBeenCalled();
     });
@@ -1277,6 +1296,17 @@ describe('TransactionsService', () => {
 
     it('does not touch the balance when a pending amount changes', async () => {
       expect(await run({ isPending: true }, { amount: 50 })).toEqual([]);
+    });
+
+    it('keeps the direction of money in that is not income (adjustments, incoming transfers)', async () => {
+      const incoming = {
+        type: TransactionType.adjustment,
+        balanceEffect: 100,
+      };
+      expect(
+        await run({ ...incoming, isPending: true }, { isPending: false }),
+      ).toEqual([100]);
+      expect(await run(incoming, { amount: 150 })).toEqual([50]);
     });
 
     it('applies the amount when a pending expense is confirmed', async () => {

@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import {
+  appliedEffect,
+  effectOf,
+  moveBalance,
+  withAmount,
+} from '../../../common/utils/balance-effect.util';
+import {
   CategorySource,
   ImportedLineKind,
   ImportedLineStatus,
@@ -42,9 +48,15 @@ export class LineMaterializerService {
     tx: Prisma.TransactionClient,
     lines: ImportedTransactionRow[],
     options: MaterializeOptions,
-  ): Promise<{ created: number; balanceChange: number }> {
+  ): Promise<{
+    created: number;
+    balanceChange: number;
+    /** What settling "en proceso" movements changed in their effects. */
+    settledChange: number;
+  }> {
     let created = 0;
     let balanceChange = 0;
+    let settledChange = 0;
     const createdIds: string[] = [];
     const pendingLines = lines.filter(
       (line) => line.status === ImportedLineStatus.pending,
@@ -85,12 +97,15 @@ export class LineMaterializerService {
               : null,
             type,
             amount,
+            // Recorded even when the balance comes from the bank.
+            balanceEffect: isDebit ? -amount : amount,
             currency: line.currency,
             txnDate: line.date,
             description: line.description,
             merchantName: line.merchant ?? line.description,
             source: options.source,
             externalId: options.externalId?.(line),
+            inProcess: line.inProcess,
           },
         });
         transactionId = transaction.id;
@@ -104,6 +119,21 @@ export class LineMaterializerService {
             matchedTransactionId: transaction.id,
           },
         });
+      }
+
+      // A posted line settles the "en proceso" movement it matched: the
+      // bank's amount and date win and the mark goes.
+      if (
+        line.status === ImportedLineStatus.matched &&
+        transactionId &&
+        !line.inProcess
+      ) {
+        settledChange += await this.settleInProcess(
+          tx,
+          transactionId,
+          line,
+          options,
+        );
       }
 
       if (
@@ -133,7 +163,44 @@ export class LineMaterializerService {
         data: { balanceCurrent: { increment: balanceChange } },
       });
     }
-    return { created, balanceChange };
+    return { created, balanceChange, settledChange };
+  }
+
+  /** Returns how much the movement's effect on the balance changed. */
+  private async settleInProcess(
+    tx: Prisma.TransactionClient,
+    transactionId: string,
+    line: ImportedTransactionRow,
+    options: MaterializeOptions,
+  ): Promise<number> {
+    const movement = await tx.transaction.findUnique({
+      where: { id: transactionId },
+      select: {
+        accountId: true,
+        type: true,
+        amount: true,
+        balanceEffect: true,
+        isPending: true,
+        inProcess: true,
+      },
+    });
+    if (!movement?.inProcess) return 0;
+    const before = effectOf(movement);
+    const after = withAmount(before, Number(line.amount));
+    await tx.transaction.update({
+      where: { id: transactionId },
+      data: {
+        inProcess: false,
+        amount: Number(line.amount),
+        balanceEffect: after,
+        txnDate: line.date,
+      },
+    });
+    const change = appliedEffect(after - before, movement.isPending);
+    if (options.adjustBalance) {
+      await moveBalance(tx, movement.accountId, change);
+    }
+    return change;
   }
 
   /**

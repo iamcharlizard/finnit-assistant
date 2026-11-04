@@ -14,9 +14,14 @@ export type FileRoute =
   | { kind: 'download'; upstreamPath: string };
 
 /** Kinds of stored file that can be downloaded by id. */
-const DOWNLOADS = ['statements', 'attachments', 'receipts'] as const;
+const DOWNLOADS = [
+  'statements',
+  'attachments',
+  'receipts',
+  'screenshots',
+] as const;
 /** Upload endpoints without an id in the path. */
-const UPLOADS = ['statements', 'receipts'] as const;
+const UPLOADS = ['statements', 'receipts', 'screenshots'] as const;
 
 export function isUuid(value: unknown): value is string {
   return typeof value === 'string' && UUID.test(value);
@@ -24,9 +29,9 @@ export function isUuid(value: unknown): value is string {
 
 /**
  * The API endpoint for a method and the path after /api/files/, or null.
- * - POST statements | receipts
+ * - POST statements | receipts | screenshots
  * - POST transactions/{uuid}/attachments
- * - GET  statements|attachments|receipts/{uuid}/file
+ * - GET  statements|attachments|receipts|screenshots/{uuid}/file
  */
 export function matchFileRoute(
   method: string,

@@ -61,6 +61,8 @@ export interface UpdateTransactionPayload {
   categoryId?: string;
   merchantName?: string;
   description?: string;
+  /** false: the bank already applied it ("Marcar como aplicado"). */
+  inProcess?: boolean;
 }
 
 /**

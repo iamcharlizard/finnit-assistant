@@ -63,8 +63,7 @@ export function LoanPaymentsTable({
             <Button
               type="button"
               variant="ghost"
-              size="icon"
-              className="size-8 min-h-8"
+              size="icon-xs"
               disabled={busy === row.original.id}
               aria-label={td('deletePayment')}
               onClick={() => onDelete(row.original.id)}

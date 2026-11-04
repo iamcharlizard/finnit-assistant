@@ -155,9 +155,9 @@ export function AdminUsersScreen() {
             users={list.users}
             actionsFor={actionsFor}
             onAction={handleAction}
-            className="hidden rounded-card border border-glass-border bg-glass p-2 lg:block"
+            className="hidden rounded-card border border-glass-border bg-glass p-2 @3xl:block"
           />
-          <div className="flex flex-col gap-3 lg:hidden">
+          <div className="flex flex-col gap-3 @3xl:hidden">
             {list.users.map((user) => (
               <UserCard
                 key={user.id}

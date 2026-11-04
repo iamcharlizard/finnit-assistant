@@ -22,14 +22,16 @@ export function ReceiptReadFailed({
   onOtherPhoto,
   onKeepWaiting,
   onClose,
+  namespace = 'receipts',
 }: {
   reason: ReadFailure;
   onManual: () => void;
   onOtherPhoto: () => void;
   onKeepWaiting: () => void;
   onClose: () => void;
+  namespace?: 'receipts' | 'screenshots';
 }) {
-  const t = useTranslations('receipts');
+  const t = useTranslations(namespace);
   return (
     <div className="flex flex-col gap-4">
       <p

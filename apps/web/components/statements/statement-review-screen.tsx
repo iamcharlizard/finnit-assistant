@@ -272,7 +272,7 @@ export function StatementReviewScreen({ data }: { data: StatementReviewData }) {
       ) : null}
 
       {!working && view.status !== 'failed' ? (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start">
+        <div className="grid gap-5 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] @3xl:items-start">
           <div className="flex flex-col gap-5">
             <StatementCheckCard check={view.check} />
             <StatementFactsCard facts={view.facts} />

@@ -7,6 +7,11 @@ import {
   TransactionType,
 } from '@finnit/database';
 import {
+  appliedEffect,
+  effectOf,
+  moveBalance,
+} from '../../common/utils/balance-effect.util';
+import {
   addDays,
   dueDatesAfter,
   toDateOnly,
@@ -155,6 +160,10 @@ export async function createMovement(tx: Client, input: MovementInput) {
   });
   if (!account) return null;
 
+  const moneyIn =
+    input.type === TransactionType.income ||
+    input.type === TransactionType.adjustment;
+  const effect = moneyIn ? input.amount : -input.amount;
   const transaction = await tx.transaction.create({
     data: {
       userId: input.userId,
@@ -162,6 +171,7 @@ export async function createMovement(tx: Client, input: MovementInput) {
       categoryId: input.categoryId ?? null,
       type: input.type,
       amount: input.amount,
+      balanceEffect: effect,
       currency: account.currency,
       txnDate: toDateOnly(input.date),
       description: input.description,
@@ -169,15 +179,7 @@ export async function createMovement(tx: Client, input: MovementInput) {
       source: TransactionSource.manual,
     },
   });
-  const moneyIn =
-    input.type === TransactionType.income ||
-    input.type === TransactionType.adjustment;
-  await tx.account.update({
-    where: { id: account.id },
-    data: {
-      balanceCurrent: { increment: moneyIn ? input.amount : -input.amount },
-    },
-  });
+  await moveBalance(tx, account.id, effect);
   return transaction;
 }
 
@@ -241,12 +243,11 @@ export async function deleteDeposit(tx: Client, transactionId: string) {
     where: { id: transactionId },
   });
   if (!transaction) return;
-  if (!transaction.isPending) {
-    await tx.account.update({
-      where: { id: transaction.accountId },
-      data: { balanceCurrent: { decrement: Number(transaction.amount) } },
-    });
-  }
+  await moveBalance(
+    tx,
+    transaction.accountId,
+    -appliedEffect(effectOf(transaction), transaction.isPending),
+  );
   await tx.transaction.delete({ where: { id: transactionId } });
 }
 

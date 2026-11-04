@@ -32,6 +32,8 @@ export function TransactionSummary({ view }: { view: TransactionDetailView }) {
         <Badge variant="muted">{view.typeLabel}</Badge>
         {view.pending ? (
           <Badge variant="highlight">{t('finance.pending')}</Badge>
+        ) : view.inProcess ? (
+          <Badge variant="highlight">{t('finance.inProcess')}</Badge>
         ) : null}
         {view.isPrivate ? (
           <Badge variant="outline">

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowRight, AtSign, Eye, EyeOff, Lock, Wallet } from 'lucide-react';
+import { ArrowRight, AtSign, Eye, EyeOff, Lock } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import { Checkbox } from '@finnit/ui/components/ui/checkbox';
@@ -12,6 +12,7 @@ import { InputWithIcon } from '@finnit/ui/components/ui/input-with-icon';
 import { BodyMd, HeadlineLg } from '@finnit/ui/components/ui/typography';
 
 import { signIn, type SignInState } from '@/app/login/actions';
+import { BrandLogo } from '@/components/brand/finnit-brand';
 import type { GoogleLoginError } from '@/lib/auth/google';
 
 export function LoginForm({
@@ -41,9 +42,7 @@ export function LoginForm({
   return (
     <div className="relative w-full max-w-[440px]">
       <div className="mb-10 flex flex-col items-center">
-        <span className="mb-6 flex size-16 items-center justify-center rounded-2xl bg-accent-neon text-white shadow-[0_4px_20px_rgba(108,114,203,0.35)] dark:text-[#00363a] dark:shadow-[0_0_30px_rgba(0,245,255,0.45)]">
-          <Wallet aria-hidden className="size-9" />
-        </span>
+        <BrandLogo className="mb-8 h-14 w-auto" priority />
         <HeadlineLg as="h1" className="text-center text-accent-neon">
           {t('welcome')}
         </HeadlineLg>

@@ -64,13 +64,15 @@ export const canEditAnything = (rules: EditRules) =>
   Object.values(rules).some(Boolean);
 
 /** Why the movement can't be deleted here, or null when it can. */
-export type DeleteBlock = 'imported' | 'transfer' | null;
+export type DeleteBlock = 'imported' | 'transfer' | 'adjustment' | null;
 
 export function deleteBlock(
   tx: Pick<TransactionDetail, 'source' | 'type'>,
 ): DeleteBlock {
   if (tx.source !== 'manual') return 'imported';
   if (tx.type === 'transfer') return 'transfer';
+  // The balance is fixed again instead (older ones have no direction).
+  if (tx.type === 'adjustment') return 'adjustment';
   return null;
 }
 
@@ -140,6 +142,8 @@ export interface TransactionDetailView {
   categoryLabel: string | null;
   sourceKind: SourceKind;
   pending: boolean;
+  /** "En proceso": counted, the bank hasn't applied it yet. */
+  inProcess: boolean;
   /** The other side of a transfer, linked. */
   counterpart: { href: string; label: string } | null;
   /** The recurring payment it paid, linked. */
@@ -176,7 +180,7 @@ export function toTransactionDetailView(
         ? original
         : null,
     amount: formatMoney(
-      dir === 'out' ? -tx.amount : tx.amount,
+      dir === 'out' ? -Math.abs(tx.amount) : Math.abs(tx.amount),
       tx.currency,
       locale,
       {
@@ -194,6 +198,7 @@ export function toTransactionDetailView(
         : null,
     sourceKind: sourceKind(tx.source),
     pending: tx.isPending,
+    inProcess: Boolean(tx.inProcess),
     counterpart: counterpart
       ? {
           href: `/transactions/${counterpart.transactionId}`,

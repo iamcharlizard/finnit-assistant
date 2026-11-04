@@ -94,7 +94,7 @@ export function ExpenseList({
               className="py-8"
             />
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid gap-3 sm:grid-cols-2 @4xl:grid-cols-3">
               {shown.map((item) => (
                 <ExpenseCard
                   key={item.id}

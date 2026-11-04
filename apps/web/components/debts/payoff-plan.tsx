@@ -82,7 +82,7 @@ export function PayoffPlan({
             />
             {plan.verdict}
           </p>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 @2xl:grid-cols-2">
             <StrategyColumn
               plan={plan.avalanche}
               recommended={plan.better === 'avalanche'}

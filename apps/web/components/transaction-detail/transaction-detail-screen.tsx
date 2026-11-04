@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, PencilLine, Tag, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCheck, PencilLine, Tag, Trash2 } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import { toast } from '@finnit/ui/components/ui/toaster';
@@ -17,6 +17,7 @@ import { useLocalizer } from '@/lib/i18n/client';
 import {
   deleteTransaction,
   transactionErrorMessage,
+  updateTransaction,
 } from '@/lib/transaction-detail/api';
 import type { TransactionDetailData } from '@/lib/transaction-detail/load';
 import { canEditAnything } from '@/lib/transaction-detail/view';
@@ -39,6 +40,21 @@ export function TransactionDetailScreen({
   const [dialog, setDialog] = React.useState<'edit' | 'alias' | null>(null);
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
   const [deleting, setDeleting] = React.useState(false);
+  const [applying, setApplying] = React.useState(false);
+
+  /** "Marcar como aplicado": the bank already applied it. */
+  function markApplied() {
+    setApplying(true);
+    updateTransaction(view.id, { inProcess: false }, gql)
+      .then(() => {
+        toast.success(tt('markedApplied'));
+        router.refresh();
+      })
+      .catch((error: unknown) => {
+        toast.error(transactionErrorMessage(error, t));
+      })
+      .finally(() => setApplying(false));
+  }
 
   const back = () => {
     if (window.history.length > 1) router.back();
@@ -85,6 +101,11 @@ export function TransactionDetailScreen({
         <Button variant="outline" onClick={() => setDialog('alias')}>
           <Tag aria-hidden /> {tt('rename')}
         </Button>
+        {view.inProcess ? (
+          <Button variant="outline" onClick={markApplied} disabled={applying}>
+            <CheckCheck aria-hidden /> {tt('markApplied')}
+          </Button>
+        ) : null}
         {view.deleteBlock === null ? (
           <Button variant="destructive" onClick={askDelete} disabled={deleting}>
             <Trash2 aria-hidden /> {tt('delete')}
@@ -97,7 +118,7 @@ export function TransactionDetailScreen({
         </p>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 @3xl:grid-cols-2">
         <TransactionFacts
           view={view}
           merchant={data.form.merchantName}

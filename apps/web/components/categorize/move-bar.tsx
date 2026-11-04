@@ -36,7 +36,7 @@ export function MoveBar({
     <div
       role="region"
       aria-label={t('actionsLabel')}
-      className="sticky bottom-24 z-20 mt-4 flex flex-col gap-3 rounded-card border border-outline bg-surface/95 p-3 shadow-lg backdrop-blur-xl sm:flex-row sm:flex-wrap sm:items-center lg:bottom-4"
+      className="sticky bottom-32 z-20 mt-4 flex flex-col gap-3 rounded-card border border-outline bg-surface/95 p-3 shadow-lg backdrop-blur-xl sm:flex-row sm:flex-wrap sm:items-center lg:bottom-4"
     >
       <div className="flex items-center justify-between gap-2 sm:justify-start">
         <p

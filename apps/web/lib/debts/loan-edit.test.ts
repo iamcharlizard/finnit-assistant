@@ -24,6 +24,8 @@ const yoTePresto = {
   purposeCategoryId: null,
   loanType: 'institutional' as const,
   interestMode: 'rate' as const,
+  destination: 'deposit' as const,
+  depositAddsToBalance: true,
 };
 
 describe('loan edit form', () => {

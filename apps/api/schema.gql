@@ -27,6 +27,11 @@ input AcceptSuggestionAsLoanInput {
   depositAccountId: String
 
   """
+  destination = deposit: add the money to the account balance (default true). False for money already spent, e.g. an old loan: only the debt is recorded, without a movement
+  """
+  depositAddsToBalance: Boolean
+
+  """
   Count the deposit as income (default: a balance adjustment outside totals)
   """
   depositCountsAsIncome: Boolean
@@ -119,6 +124,46 @@ type Account {
   userId: String!
 }
 
+"""An account's balance on one day"""
+type AccountBalanceDay {
+  """Balance when the day ended"""
+  closingBalance: Float!
+
+  """
+  False before the first day the history can be trusted (before the account was added or its imported history, or before an old adjustment of unknown direction)
+  """
+  complete: Boolean!
+
+  """The local day"""
+  date: DateTime!
+
+  """Money in that day"""
+  inflow: Float!
+
+  """Confirmed movements that day"""
+  movements: Int!
+
+  """Balance when the day started"""
+  openingBalance: Float!
+
+  """Money out that day (positive)"""
+  outflow: Float!
+}
+
+"""
+An account's balance day by day, worked out from its current balance and the effect of each movement
+"""
+type AccountBalanceHistory {
+  accountId: ID!
+
+  """First trusted day"""
+  completeFrom: DateTime!
+  currency: String!
+
+  """Newest day first"""
+  days: [AccountBalanceDay!]!
+}
+
 type AccountConnection {
   edges: [AccountEdge!]!
   pageInfo: PageInfo!
@@ -189,10 +234,48 @@ enum AccountType {
   savings
 }
 
+"""
+All the (not archived) accounts in one currency on one day: money available and card debt
+"""
+type AccountsBalanceDay {
+  """Same, when the day ended"""
+  availableClosing: Float!
+
+  """Cash, debit, savings and e-wallets when the day started"""
+  availableOpening: Float!
+
+  """False when any account's history isn't trusted"""
+  complete: Boolean!
+
+  """The local day"""
+  date: DateTime!
+
+  """Same, when the day ended"""
+  debtClosing: Float!
+
+  """Owed on credit cards when the day started (positive)"""
+  debtOpening: Float!
+  movements: Int!
+}
+
+type AccountsBalanceHistory {
+  """Accounts added up"""
+  accounts: Int!
+  currency: String
+
+  """Newest day first"""
+  days: [AccountsBalanceDay!]!
+}
+
 input AddDebtChargeInput {
   date: DateTime!
   debtId: String!
   depositAccountId: String
+
+  """
+  destination = deposit: add the money to the account balance (default true). False for money already spent, e.g. an old loan: only the debt is recorded, without a movement
+  """
+  depositAddsToBalance: Boolean
   depositCountsAsIncome: Boolean
   description: String
   destination: DebtChargeDestination!
@@ -283,6 +366,7 @@ type AiFeature {
 enum AiFeatureKey {
   receipt_parsing
   recurring_classification
+  screenshot_parsing
 
   """Read card statements (PDF) without a local parser"""
   statement_parsing
@@ -663,6 +747,11 @@ input CreateDebtInput {
   depositAccountId: String
 
   """
+  destination = deposit: add the money to the account balance (default true). False for money already spent, e.g. an old loan: only the debt is recorded, without a movement
+  """
+  depositAddsToBalance: Boolean
+
+  """
   Count the deposit as income (default: a balance adjustment outside totals)
   """
   depositCountsAsIncome: Boolean
@@ -859,6 +948,11 @@ type Debt {
   createdAt: DateTime!
 
   """
+  destination = deposit: the money was added to an account balance (false = already spent, only the debt was recorded)
+  """
+  depositAddsToBalance: Boolean!
+
+  """
   Loans: what the first amount was (first purchase, what it was lent for)
   """
   description: String
@@ -934,6 +1028,11 @@ type DebtCharge {
 
   """Deposited money: the account that received it"""
   depositAccountId: String
+
+  """
+  destination = deposit: added to an account balance (false = already spent)
+  """
+  depositAddsToBalance: Boolean!
 
   """Deposited money: whether it counts as income"""
   depositCountsAsIncome: Boolean
@@ -1421,6 +1520,11 @@ type Mutation {
   confirmReceiptImport(id: ID!, input: ConfirmReceiptImportInput!): ReceiptImport!
 
   """
+  Creates the included movements (the ones already registered are linked, not created)
+  """
+  confirmScreenshotImport(id: ID!): ScreenshotImport!
+
+  """
   Creates the pending movements as transactions and marks matched recurring payments as paid
   """
   confirmStatementImport(id: ID!): StatementImport!
@@ -1488,6 +1592,9 @@ type Mutation {
 
   """Discards the draft and deletes the photo"""
   discardReceiptImport(id: ID!): Boolean!
+
+  """Discards the screenshot and deletes the image"""
+  discardScreenshotImport(id: ID!): Boolean!
   dismissRecurringSuggestion(fingerprint: ID!): Boolean!
 
   """Admin only"""
@@ -1541,8 +1648,16 @@ type Mutation {
   rescheduleLoanPayment(dueDate: DateTime!, occurrenceId: ID!): Debt!
   resetPassword(input: ResetPasswordInput!): Boolean!
 
+  """
+  Sets the account's balance to the real one; the difference is an adjustment
+  """
+  setAccountBalance(input: SetAccountBalanceInput!): Account!
+
   """Sets the billing terms of one of the user's credit accounts"""
   setCreditCardTerms(accountId: ID!, input: CreditCardTermsInput!): Account!
+
+  """The account the screenshot is about; its lines start over"""
+  setScreenshotAccount(accountId: String!, id: ID!): ScreenshotImport!
 
   """
   One-off display name and/or privacy for one movement (no alias rule). displayName null or "" clears it
@@ -1599,6 +1714,7 @@ type Mutation {
   updateMyPreferences(input: UpdateMyPreferencesInput!): User!
   updateReceiptImport(id: ID!, input: UpdateReceiptImportInput!): ReceiptImport!
   updateRecurringExpense(id: ID!, input: UpdateRecurringExpenseInput!): RecurringExpense!
+  updateScreenshotLine(input: UpdateScreenshotLineInput!, lineId: ID!): ScreenshotImport!
   updateStatementLine(id: ID!, input: UpdateStatementLineInput!): StatementLine!
   updateTransaction(id: String!, input: UpdateTransactionInput!): Transaction!
 
@@ -1641,6 +1757,7 @@ enum NotificationStatus {
 
 """Notification type"""
 enum NotificationType {
+  balance_mismatch
   budget
   debt_due
   recurring
@@ -1677,7 +1794,36 @@ input PayoffStrategyInput {
 
 type Query {
   account(id: String!): Account!
+
+  """
+  The account's opening and closing balance on each day of a range (up to 366 days, newest first)
+  """
+  accountBalanceHistory(
+    accountId: String!
+
+    """First day (local date)"""
+    from: DateTime!
+
+    """Last day (local date); later than today means today"""
+    to: DateTime!
+  ): AccountBalanceHistory!
   accounts(after: String, archived: Boolean, before: String, first: Int, last: Int, type: AccountType): AccountConnection!
+
+  """
+  All the accounts together, day by day: money available and card debt (one currency, up to 366 days, newest first)
+  """
+  accountsBalanceHistory(
+    """
+    Accounts in this currency; default MXN when there is any, else the most used
+    """
+    currency: String
+
+    """First day (local date)"""
+    from: DateTime!
+
+    """Last day (local date); later than today means today"""
+    to: DateTime!
+  ): AccountsBalanceHistory!
 
   """Admin only"""
   adminUsers(
@@ -1813,6 +1959,9 @@ type Query {
   """
   recurringSuggestions(accountId: ID): [RecurringSuggestion!]!
   rootCategories: [Category!]!
+
+  """Poll it after uploading (POST /screenshots) to follow the status"""
+  screenshotImport(id: ID!): ScreenshotImport!
 
   """
   Possible duplicates of a transaction about to be created: same account, amount within 0.01, within 3 days; newest first, at most 5
@@ -2101,6 +2250,80 @@ input ResetPasswordInput {
   token: String!
 }
 
+"""A screenshot of a bank app with movements"""
+type ScreenshotImport {
+  account: Account
+
+  """
+  "Clásica Banamex **482"
+  """
+  accountHint: String
+  createdAt: DateTime!
+  errorMessage: String
+  id: ID!
+  last4: String
+
+  """Empty until there is an account"""
+  lines: [ScreenshotLine!]!
+
+  """Movements read (also before choosing the account)"""
+  movementsRead: Float!
+  route: ReceiptRoute
+  status: ReceiptStatus!
+}
+
+"""A movement read from a screenshot"""
+type ScreenshotLine {
+  """0 when it could not be read"""
+  amount: Float!
+
+  """Suggested or chosen category"""
+  categoryId: String
+  date: DateTime!
+
+  """in: money into the account; out: a purchase"""
+  direction: String!
+  id: ID!
+
+  """"En proceso": shown by the bank, not applied yet"""
+  inProcess: Boolean!
+  matchedTransaction: ScreenshotLineMatch
+  merchant: String
+
+  """Fields to check: date, merchant, amount"""
+  review: [String!]!
+
+  """
+  pending: will be created; matched: already registered (not created); ignored: left out
+  """
+  status: StatementLineStatus!
+}
+
+"""An existing movement a screenshot line looks like"""
+type ScreenshotLineMatch {
+  amount: Float!
+  date: DateTime!
+  id: ID!
+  name: String
+}
+
+"""
+Sets an account's balance to what the bank shows. The difference is recorded as an adjustment (not income or spending)
+"""
+input SetAccountBalanceInput {
+  accountId: String!
+
+  """
+  The real balance now. Credit cards: negative is what is owed (e.g. -1500)
+  """
+  balance: Float!
+
+  """
+  Default: "Balance update"
+  """
+  description: String
+}
+
 input SetUserPasswordInput {
   password: String!
 }
@@ -2258,6 +2481,11 @@ type Transaction {
   aliasId: ID
   amount: Float!
   attachments: [Attachment!]
+
+  """
+  What it adds (+) or takes (−) from its account balance; null for old adjustments of unknown direction
+  """
+  balanceEffect: Float
   category: Category
   categoryId: String
   categorySource: CategorySource
@@ -2274,6 +2502,11 @@ type Transaction {
   """A one-off display name is set on this movement"""
   hasOwnAlias: Boolean!
   id: String!
+
+  """
+  "En proceso": the bank shows it but hasn't applied it yet. It counts in the balance; it clears when the applied movement arrives
+  """
+  inProcess: Boolean!
   isPending: Boolean!
 
   """
@@ -2448,6 +2681,11 @@ input UpdateCategoryInput {
 input UpdateDebtChargeInput {
   date: DateTime!
   depositAccountId: String
+
+  """
+  destination = deposit: add the money to the account balance (default true). False for money already spent, e.g. an old loan: only the debt is recorded, without a movement
+  """
+  depositAddsToBalance: Boolean
   depositCountsAsIncome: Boolean
   description: String
   destination: DebtChargeDestination!
@@ -2507,6 +2745,11 @@ input UpdateGoalInput {
 Edits a loan; omitted fields stay. Changing the amount, the number of payments or the fees recomputes its terms and reprices its open scheduled payments
 """
 input UpdateLoanInput {
+  """
+  False removes the deposit of the loan money from its account (and takes it off the balance): the money was already spent. True leaves it as it is
+  """
+  depositAddsToBalance: Boolean
+
   """What the first amount was; "" or null clears it"""
   description: String
 
@@ -2579,6 +2822,22 @@ input UpdateRecurringExpenseInput {
   trackingMode: RecurringTrackingMode
 }
 
+input UpdateScreenshotLineInput {
+  amount: Float
+
+  """"" clears it"""
+  categoryId: String
+  date: DateTime
+  direction: String
+  inProcess: Boolean
+
+  """
+  false leaves it out; true creates it (even when it looks already registered)
+  """
+  include: Boolean
+  merchant: String
+}
+
 input UpdateStatementLineInput {
   categoryId: String
 
@@ -2596,6 +2855,9 @@ input UpdateTransactionInput {
   amount: Float
   categoryId: String
   description: String
+
+  """false: the bank already applied it ("Marcar como aplicado")"""
+  inProcess: Boolean
   isPending: Boolean
   merchantName: String
   txnDate: DateTime

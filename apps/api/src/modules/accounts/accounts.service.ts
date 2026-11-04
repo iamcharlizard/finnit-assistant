@@ -4,6 +4,12 @@ import {
   CreateAccountInput,
   UpdateAccountInput,
   AdjustBalanceInput,
+  SetAccountBalanceInput,
+  AccountBalanceHistoryArgs,
+  AccountBalanceHistory,
+  AccountsBalanceHistoryArgs,
+  AccountsBalanceHistory,
+  BALANCE_HISTORY_MAX_DAYS,
   AccountConnection,
   AccountsArgs,
   CreditCardTermsInput,
@@ -15,7 +21,25 @@ import {
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import { KeysetPage } from '../../common/utils/keyset-pagination.util';
-import { localToday } from '../../common/utils/local-date.util';
+import {
+  localToday,
+  toLocalDateOnly,
+} from '../../common/utils/local-date.util';
+import { effectOf } from '../../common/utils/balance-effect.util';
+import {
+  addDayKeys,
+  combineBalances,
+  dailyBalances,
+  dayKeyOf,
+  mainCurrency,
+  daysInRange,
+  firstCompleteDay,
+  type DayKey,
+  type DayMovements,
+} from './balance-history';
+
+/** A local day ('YYYY-MM-DD') as the date-only value Prisma stores. */
+const dateOf = (day: DayKey) => new Date(`${day}T00:00:00.000Z`);
 import {
   AccountType,
   TransactionType,
@@ -33,6 +57,9 @@ import {
 
 /** Description of the adjustment that records an account's opening balance. */
 export const OPENING_BALANCE_DESCRIPTION = 'Initial balance';
+
+/** Default description of the adjustment that sets an account's balance. */
+export const BALANCE_UPDATE_DESCRIPTION = 'Balance update';
 
 @Injectable()
 export class AccountsService {
@@ -63,6 +90,7 @@ export class AccountsService {
               accountId: account.id,
               type: TransactionType.adjustment,
               amount: Math.abs(input.initialBalance),
+              balanceEffect: input.initialBalance,
               currency: input.currency,
               txnDate: localToday(),
               description: OPENING_BALANCE_DESCRIPTION,
@@ -183,6 +211,7 @@ export class AccountsService {
           accountId: account.id,
           type: TransactionType.adjustment,
           amount: Math.abs(input.amount),
+          balanceEffect: input.amount,
           currency: account.currency,
           txnDate: localToday(),
           description: input.description,
@@ -202,6 +231,221 @@ export class AccountsService {
 
       return this.mapAccount(updatedAccount);
     });
+  }
+
+  /**
+   * Sets the balance to what the bank shows. The difference is an
+   * adjustment dated today with the signed difference as its balance effect,
+   * so it never counts as income or spending. No change, no movement.
+   */
+  async setBalance(
+    userId: string,
+    input: SetAccountBalanceInput,
+  ): Promise<Account> {
+    return this.prisma.$transaction(async (tx) => {
+      const account = await tx.account.findFirst({
+        where: { id: input.accountId, userId },
+      });
+      if (!account) throw new NotFoundError('Account not found');
+
+      const balance = Math.round(input.balance * 100) / 100;
+      const difference =
+        Math.round((balance - Number(account.balanceCurrent)) * 100) / 100;
+      if (difference === 0) return this.mapAccount(account);
+
+      await tx.transaction.create({
+        data: {
+          userId,
+          accountId: account.id,
+          type: TransactionType.adjustment,
+          amount: Math.abs(difference),
+          balanceEffect: difference,
+          currency: account.currency,
+          txnDate: localToday(),
+          description: input.description?.trim() || BALANCE_UPDATE_DESCRIPTION,
+          source: TransactionSource.manual,
+        },
+      });
+      const updated = await tx.account.update({
+        where: { id: account.id },
+        data: { balanceCurrent: { increment: difference } },
+      });
+      return this.mapAccount(updated);
+    });
+  }
+
+  /**
+   * The account's balance on each day from `from` to `to` (today at most),
+   * newest first: its current balance minus the effect of every confirmed
+   * movement dated after each day.
+   */
+  async balanceHistory(
+    userId: string,
+    args: AccountBalanceHistoryArgs,
+  ): Promise<AccountBalanceHistory> {
+    const account = await this.prisma.account.findFirst({
+      where: { id: args.accountId, userId },
+      select: {
+        id: true,
+        currency: true,
+        balanceCurrent: true,
+        createdAt: true,
+        _count: { select: { linkedAccounts: true, transactions: true } },
+      },
+    });
+    if (!account) throw new NotFoundError('Account not found');
+
+    const range = this.rangeDays(args.from, args.to);
+    const to = range[0];
+    const from = range.at(-1)!;
+
+    const confirmedFrom = {
+      accountId: account.id,
+      isPending: false,
+      txnDate: { gte: dateOf(from) },
+    };
+    const [ins, outs, unknown, oldestImported, lastUnknown] = await Promise.all(
+      [
+        this.prisma.transaction.groupBy({
+          by: ['txnDate'],
+          where: { ...confirmedFrom, balanceEffect: { gt: 0 } },
+          _sum: { balanceEffect: true },
+          _count: { _all: true },
+        }),
+        this.prisma.transaction.groupBy({
+          by: ['txnDate'],
+          where: { ...confirmedFrom, balanceEffect: { lt: 0 } },
+          _sum: { balanceEffect: true },
+          _count: { _all: true },
+        }),
+        // Old adjustments without a recorded direction count as before.
+        this.prisma.transaction.findMany({
+          where: { ...confirmedFrom, balanceEffect: null },
+          select: {
+            txnDate: true,
+            type: true,
+            amount: true,
+            balanceEffect: true,
+          },
+        }),
+        account._count.linkedAccounts > 0
+          ? this.prisma.transaction.aggregate({
+              where: {
+                accountId: account.id,
+                source: { not: TransactionSource.manual },
+              },
+              _min: { txnDate: true },
+            })
+          : null,
+        this.prisma.transaction.aggregate({
+          where: { accountId: account.id, balanceEffect: null },
+          _max: { txnDate: true },
+        }),
+      ],
+    );
+
+    const byDay = new Map<DayKey, DayMovements>();
+    const add = (date: Date, effect: number, count: number) => {
+      const day = dayKeyOf(date);
+      const moves = byDay.get(day) ?? { inflow: 0, outflow: 0, count: 0 };
+      if (effect > 0) moves.inflow += effect;
+      else moves.outflow += effect;
+      moves.count += count;
+      byDay.set(day, moves);
+    };
+    for (const row of [...ins, ...outs]) {
+      add(row.txnDate, Number(row._sum.balanceEffect ?? 0), row._count._all);
+    }
+    for (const row of unknown) add(row.txnDate, effectOf(row), 1);
+
+    const oldest = oldestImported?._min.txnDate;
+    const completeFrom = firstCompleteDay({
+      hasMovements: account._count.transactions > 0,
+      createdOn: dayKeyOf(toLocalDateOnly(account.createdAt)),
+      oldestImported: oldest ? dayKeyOf(oldest) : null,
+      lastUnknownEffect: lastUnknown._max.txnDate
+        ? dayKeyOf(lastUnknown._max.txnDate)
+        : null,
+    });
+
+    const days = dailyBalances({
+      current: Number(account.balanceCurrent),
+      byDay,
+      from,
+      to,
+      completeFrom,
+    });
+    return {
+      accountId: account.id,
+      currency: account.currency,
+      completeFrom: dateOf(completeFrom),
+      days: days.map((day) => ({ ...day, date: dateOf(day.date) })),
+    };
+  }
+
+  /**
+   * Every (not archived) account in one currency, day by day: money
+   * available and card debt, from each account's own history.
+   */
+  async allBalanceHistory(
+    userId: string,
+    args: AccountsBalanceHistoryArgs,
+  ): Promise<AccountsBalanceHistory> {
+    const accounts = await this.prisma.account.findMany({
+      where: { userId, archived: false },
+      select: { id: true, type: true, currency: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    const currency = mainCurrency(
+      accounts.map((a) => a.currency),
+      args.currency,
+    );
+    const included = accounts.filter((a) => a.currency === currency);
+    const histories = await Promise.all(
+      included.map(async (account) => ({
+        isCredit: account.type === AccountType.credit,
+        history: await this.balanceHistory(userId, {
+          accountId: account.id,
+          from: args.from,
+          to: args.to,
+        }),
+      })),
+    );
+
+    // With no accounts there are still days (all zero).
+    const dates = histories[0]
+      ? histories[0].history.days.map((d) => dayKeyOf(d.date))
+      : this.rangeDays(args.from, args.to);
+    const days = combineBalances(
+      histories.map(({ isCredit, history }) => ({
+        isCredit,
+        days: history.days.map((d) => ({ ...d, date: dayKeyOf(d.date) })),
+      })),
+      dates,
+    );
+    return {
+      currency: currency ?? undefined,
+      accounts: included.length,
+      days: days.map((day) => ({ ...day, date: dateOf(day.date) })),
+    };
+  }
+
+  /** The days of a range (today at most), newest first; validated. */
+  private rangeDays(fromDate: Date, toDate: Date): DayKey[] {
+    const today = dayKeyOf(localToday());
+    const from = dayKeyOf(toLocalDateOnly(fromDate));
+    const requestedTo = dayKeyOf(toLocalDateOnly(toDate));
+    const to = requestedTo > today ? today : requestedTo;
+    const span = daysInRange(from, to);
+    if (span === 0) {
+      throw new ValidationError('The first day must not be after the last');
+    }
+    if (span > BALANCE_HISTORY_MAX_DAYS) {
+      throw new ValidationError(
+        `At most ${BALANCE_HISTORY_MAX_DAYS} days at a time`,
+      );
+    }
+    return Array.from({ length: span }, (_, i) => addDayKeys(to, -i));
   }
 
   async delete(id: string, userId: string): Promise<boolean> {

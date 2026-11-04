@@ -33,7 +33,11 @@ export function TransactionFacts({
     { label: t('fields.source'), value: t(`sources.${view.sourceKind}`) },
     {
       label: t('fields.status'),
-      value: view.pending ? tf('pending') : tf('completed'),
+      value: view.pending
+        ? tf('pending')
+        : view.inProcess
+          ? tf('inProcess')
+          : tf('completed'),
     },
     ...(view.counterpart
       ? [

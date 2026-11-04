@@ -51,7 +51,9 @@
       "dashboard": "Inicio",
       "history": "Movimientos",
       "cards": "Cuentas"
-    }
+    },
+    "collapse": "Contraer menú",
+    "expand": "Expandir menú"
   },
   "pageTitles": {
     "app": "Finnit",
@@ -251,6 +253,8 @@
     "completed": "Completado",
     "private": "Privado",
     "withPending": "{time} · Pendiente",
+    "withInProcess": "{time} · En proceso",
+    "inProcess": "En proceso",
     "inCurrency": "{amount} en {currency}",
     "accountTypes": {
       "cash": "Efectivo",
@@ -311,7 +315,8 @@
       "monthly": "Pagas al mes",
       "load": "{percent}% de tu ingreso · {level}",
       "noIncome": "Registra tus ingresos para ver qué parte se va en deudas."
-    }
+    },
+    "greeting": "Hola, {name}"
   },
   "history": {
     "title": "Historial",
@@ -353,6 +358,70 @@
     }
   },
   "accounts": {
+    "overview": {
+      "title": "Todas las cuentas",
+      "subtitle": "{count, plural, one {# cuenta} other {# cuentas}} en {currency}, sin archivadas",
+      "chip": "Todas las cuentas",
+      "availableOpening": "Disponible al iniciar el día",
+      "availableClosing": "Disponible al cerrar el día",
+      "debtOpening": "Deuda en tarjetas al iniciar",
+      "debtClosing": "Deuda en tarjetas al cerrar",
+      "movements": "{count, plural, =0 {Sin movimientos} one {# movimiento} other {# movimientos}}",
+      "chartTitle": "Disponible y deuda al cierre de cada día",
+      "available": "Disponible",
+      "debt": "Deuda en tarjetas"
+    },
+    "actionsLabel": "Acciones de {name}",
+    "focus": {
+      "expand": "Expandir",
+      "collapse": "Ver todas",
+      "back": "Cuentas y tarjetas"
+    },
+    "balanceDay": {
+      "previous": "Día anterior",
+      "next": "Día siguiente",
+      "pick": "Elegir día",
+      "today": "Hoy",
+      "historical": "Histórico",
+      "backToToday": "Volver a hoy",
+      "noticeTitle": "Estás viendo el saldo histórico del {date}",
+      "noticeBody": "No es el saldo actual: así quedó la cuenta ese día según los movimientos registrados. Si registras un movimiento con fecha anterior, este histórico se actualiza.",
+      "incomplete": "Antes de esta fecha el histórico está incompleto (la cuenta no estaba en Finnit o faltan movimientos), así que estas cifras pueden no ser exactas.",
+      "incompleteShort": "Histórico incompleto",
+      "opening": "Saldo al iniciar el día",
+      "closing": "Saldo al cerrar el día",
+      "openingDebt": "Deuda al iniciar el día",
+      "closingDebt": "Deuda al cerrar el día",
+      "inflow": "Entradas",
+      "outflow": "Salidas",
+      "movements": "{count, plural, =0 {Sin movimientos} one {# movimiento} other {# movimientos}}",
+      "chartTitle": "Saldo al cierre de cada día",
+      "chartTitleDebt": "Deuda al cierre de cada día",
+      "chartHint": "Toca un día para ver su saldo y sus movimientos.",
+      "chartLabel": "Gráfica del saldo diario",
+      "completeFrom": "La parte sombreada es antes del {date}: ahí el histórico está incompleto.",
+      "table": "Ver como tabla",
+      "tableDay": "Día",
+      "tableBalance": "Saldo al cierre",
+      "tableDebt": "Deuda al cierre"
+    },
+    "balanceUpdate": {
+      "action": "Actualizar saldo",
+      "actionLabel": "Actualizar el saldo de {name}",
+      "title": "Actualizar saldo",
+      "description": "Escribe el saldo que ves en tu banco. La diferencia se guarda como un ajuste: no cuenta como ingreso ni como gasto.",
+      "balance": "Saldo actual",
+      "owed": "Lo que debes hoy",
+      "current": "Saldo registrado: {amount}",
+      "difference": "Ajuste: {amount}",
+      "noChange": "El saldo ya es ese.",
+      "required": "Escribe el saldo",
+      "note": "Nota (opcional)",
+      "notePlaceholder": "Actualización de saldo",
+      "linkedHint": "Esta cuenta está conectada a tu banco: en la próxima sincronización el saldo se reemplaza por el del banco.",
+      "save": "Guardar saldo",
+      "error": "No se pudo actualizar el saldo. Inténtalo de nuevo."
+    },
     "title": "Cuentas y tarjetas",
     "count": "{count, plural, one {# cuenta} other {# cuentas}}",
     "add": "Agregar cuenta",
@@ -510,6 +579,7 @@
     },
     "stackLabel": "Tus cuentas y tarjetas",
     "detail": {
+      "dayMovements": "Movimientos del {date}",
       "limit": "Límite de crédito",
       "noLimit": "Sin límite registrado",
       "available": "Disponible: {amount}",
@@ -1176,6 +1246,8 @@
       "accountPlaceholder": "Elige una cuenta",
       "countsAsIncome": "Contarlo como ingreso",
       "countsAsIncomeHint": "Normalmente un préstamo no es un ingreso: es dinero que vas a devolver.",
+      "addsToBalance": "Sumarlo al saldo de la cuenta",
+      "addsToBalanceHint": "Apágalo si ese dinero ya lo gastaste (por ejemplo, un préstamo de hace meses): solo se registra la deuda.",
       "paymentAccount": "Cuenta con la que pagas (opcional)",
       "paymentAccountHint": "Con una tarjeta o cuenta conectada, buscamos los pagos en tus movimientos.",
       "category": "Categoría de los pagos",
@@ -1375,6 +1447,7 @@
       "edit": "Editar",
       "editTitle": "Editar préstamo",
       "editHint": "Si cambias el monto, el número de pagos o la comisión por pago, recalculamos el pago y los pagos pendientes. Los pagos ya hechos no cambian.",
+      "removeDepositHint": "Apágalo si ese dinero ya no está en la cuenta: se quita el depósito y el saldo baja en esa cantidad. La deuda no cambia.",
       "cancel": "Cancelar",
       "save": "Guardar cambios",
       "saving": "Guardando…",
@@ -1615,7 +1688,9 @@
     "aliases": "Alias de movimientos",
     "aliasesDescription": "Renombra movimientos o hazlos privados",
     "categorize": "Clasificar movimientos",
-    "categorizeDescription": "Asigna categorías a varios a la vez"
+    "categorizeDescription": "Asigna categorías a varios a la vez",
+    "theme": "Tema",
+    "colorMode": "Modo de color"
   },
   "banks": {
     "title": "Bancos conectados",
@@ -1947,6 +2022,27 @@
       "lastPage": "Última página",
       "sortBy": "Ordenar por {column}",
       "empty": "Sin registros."
+    },
+    "mode": {
+      "label": "Modo de color",
+      "light": "Claro",
+      "dark": "Oscuro"
+    },
+    "theme": {
+      "label": "Tema",
+      "change": "Cambiar tema",
+      "names": {
+        "finnit": "Finnit",
+        "glass": "Glass",
+        "suave": "Suave",
+        "mono": "Mono"
+      },
+      "descriptions": {
+        "finnit": "Los colores de siempre",
+        "glass": "Vidrio esmerilado sobre un fondo de color",
+        "suave": "Grises suaves con relieve",
+        "mono": "Solo grises; el dinero conserva su color"
+      }
     }
   },
   "categorize": {
@@ -2140,6 +2236,8 @@
     }
   },
   "transaction": {
+    "markApplied": "Marcar como aplicado",
+    "markedApplied": "Marcado como aplicado por el banco",
     "back": "Volver",
     "viewDetail": "Ver detalle",
     "types": {
@@ -2216,6 +2314,7 @@
     "deleteTitle": "¿Eliminar este movimiento?",
     "deleteDescription": "Se quitará de tus movimientos y el saldo de {account} se ajustará. No se puede deshacer.",
     "deleteBlocked": {
+      "adjustment": "Los ajustes de saldo no se pueden eliminar: corrige el saldo con «Actualizar saldo» en la cuenta.",
       "imported": "Los movimientos del banco o de estados de cuenta no se pueden eliminar.",
       "transfer": "Las transferencias no se pueden eliminar desde aquí."
     },
@@ -2265,6 +2364,7 @@
     "count": "{shown} de {total}",
     "allRead": "Todas tus notificaciones están leídas",
     "types": {
+      "balance_mismatch": "Saldo vs. banco",
       "budget": "Presupuesto",
       "debt_due": "Deuda",
       "recurring": "Pago recurrente",
@@ -2672,6 +2772,93 @@
       "percentRange": "Entre -100 % y 1000 %.",
       "nameTooLong": "Máximo 60 caracteres.",
       "monthInvalid": "Elige un mes del periodo."
+    }
+  },
+  "screenshots": {
+    "import": "Importar captura",
+    "importHint": "Sube una captura de los movimientos de tu banco",
+    "picker": {
+      "title": "Elige la captura de pantalla de tus movimientos",
+      "hint": "JPG, PNG, WEBP o HEIC, hasta 10 MB",
+      "dragActive": "Suelta la captura aquí",
+      "remove": "Quitar {name}",
+      "tooLarge": "{name} pesa más de {max}.",
+      "wrongType": "{name} no es una imagen.",
+      "tips": "Toma la captura en la lista de movimientos de la app de tu banco, con el nombre de la cuenta visible arriba."
+    },
+    "errors": {
+      "uploadNetwork": "No pudimos subir la captura. Revisa tu conexión.",
+      "uploadTooLarge": "La captura pesa más de 10 MB.",
+      "uploadInvalid": "Solo se aceptan imágenes JPG, PNG, WEBP o HEIC.",
+      "uploadFailed": "No pudimos subir la captura. Intenta de nuevo.",
+      "discardFailed": "No pudimos descartar la captura. Intenta de nuevo.",
+      "saveFailed": "No pudimos guardar los movimientos. Intenta de nuevo.",
+      "lineFailed": "No pudimos guardar el cambio. Intenta de nuevo.",
+      "accountFailed": "No pudimos cambiar la cuenta. Intenta de nuevo."
+    },
+    "failed": {
+      "readFailed": "No encontramos movimientos en esta captura. Prueba con otra o captúralos a mano.",
+      "timeout": "Está tardando más de lo normal. Puedes seguir esperando o capturarlos a mano.",
+      "discarded": "Ya habías descartado esta captura. Usa otra o captura los movimientos a mano.",
+      "alreadyConfirmed": "Los movimientos de esta captura ya están guardados."
+    },
+    "actions": {
+      "manual": "Capturar a mano",
+      "otherPhoto": "Usar otra captura",
+      "keepWaiting": "Seguir esperando",
+      "close": "Cerrar"
+    },
+    "reading": "Leyendo tu captura…",
+    "readingHint": "Esto toma unos segundos.",
+    "cancel": "Cancelar",
+    "uploading": "Subiendo la captura…",
+    "progress": "{percent}%",
+    "titles": {
+      "capture": "Importar captura",
+      "reading": "Leyendo tu captura…",
+      "failed": "No pudimos leer la captura",
+      "review": "Revisa los movimientos"
+    },
+    "review": {
+      "account": "Cuenta",
+      "accountPlaceholder": "Elige la cuenta",
+      "detected": "En la captura: {hint}",
+      "noAccount": "No encontramos la cuenta «{hint}». Elígela para ver qué movimientos ya tienes.",
+      "noHint": "Elige la cuenta de estos movimientos.",
+      "read": "{count, plural, one {# movimiento leído} other {# movimientos leídos}}",
+      "toCheck": "{count, plural, one {# para revisar} other {# para revisar}}",
+      "registered": "Ya registrado: {name} · {date}",
+      "includeAnyway": "Registrar de todos modos",
+      "include": "Registrar {merchant}",
+      "inProcess": "En proceso",
+      "check": "Revisar",
+      "save": "{count, plural, =0 {Nada que guardar} one {Guardar # movimiento} other {Guardar # movimientos}}",
+      "total": "Total: {amount}",
+      "blocked": "Completa el monto de los movimientos marcados o quítalos.",
+      "discard": "Descartar captura",
+      "edit": "Editar {merchant}",
+      "done": "Guardar cambios",
+      "cancelEdit": "Cancelar",
+      "merchant": "Comercio o concepto",
+      "date": "Fecha",
+      "amount": "Monto",
+      "directionOut": "Gasto o cargo",
+      "directionIn": "Ingreso o abono",
+      "inProcessLabel": "En proceso",
+      "inProcessHint": "El banco todavía no lo aplica. Cuenta en tu saldo y se marca hasta que llegue aplicado.",
+      "category": "Categoría",
+      "categoryPlaceholder": "Sin categoría",
+      "noName": "Sin nombre",
+      "errors": {
+        "amountRequired": "Escribe el monto",
+        "dateInvalid": "Elige una fecha que no sea futura",
+        "merchantRequired": "Escribe el comercio o concepto"
+      }
+    },
+    "toasts": {
+      "saved": "{count, plural, one {# movimiento guardado} other {# movimientos guardados}}",
+      "savedNone": "Todo ya estaba registrado",
+      "discarded": "Captura descartada"
     }
   },
   "receipts": {

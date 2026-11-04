@@ -3,6 +3,8 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 
+import { cn } from '@finnit/ui/lib/utils';
+
 import type { ProjectionPoint } from '@/lib/debts/insights-view';
 import { ChartTable } from './chart-table';
 import { ChartTooltip } from './chart-tooltip';
@@ -18,9 +20,11 @@ const PAD = 8;
 export function BalanceProjectionChart({
   points,
   paidOffLabel,
+  className,
 }: {
   points: ProjectionPoint[];
   paidOffLabel: string | null;
+  className?: string;
 }) {
   const t = useTranslations('debts.insights');
   const [active, setActive] = React.useState<number | null>(null);
@@ -49,7 +53,12 @@ export function BalanceProjectionChart({
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-card border border-outline bg-surface p-4">
+    <section
+      className={cn(
+        'flex flex-col gap-3 rounded-card border border-outline bg-surface p-4',
+        className,
+      )}
+    >
       <div className="flex flex-col gap-0.5">
         <h3 className="text-sm font-bold text-on-background">
           {t('projectionTitle')}
@@ -62,7 +71,7 @@ export function BalanceProjectionChart({
       </div>
 
       <div
-        className="relative h-40 touch-none"
+        className="relative min-h-40 flex-1 touch-none"
         role="img"
         aria-label={t('projectionLabel', {
           from: points[0]!.amount,

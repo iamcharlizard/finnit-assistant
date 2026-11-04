@@ -28,7 +28,8 @@ import { Switch } from '@finnit/ui/components/ui/switch';
 import { signOut } from '@/app/login/actions';
 import { useSessionUser } from '@/components/session-provider';
 import { LanguageSelect } from '@/components/settings/language-select';
-import { ThemeSwitch } from '@/components/theme-switch';
+import { ModeSegmented } from '@/components/mode-segmented';
+import { ThemeSelect } from '@/components/settings/theme-select';
 
 export function SettingsScreen() {
   const user = useSessionUser();
@@ -172,8 +173,9 @@ export function SettingsScreen() {
         iconColor="var(--highlight)"
       >
         <LanguageSelect />
-        <SettingRow label={t('darkMode')} icon={Moon} controlId="dark-mode">
-          <ThemeSwitch id="dark-mode" />
+        <ThemeSelect />
+        <SettingRow label={t('colorMode')} icon={Moon} controlId="color-mode">
+          <ModeSegmented id="color-mode" />
         </SettingRow>
         <SettingRow label={t('font')} icon={Type}>
           <span className="text-[13px] font-medium text-highlight">Ubuntu</span>

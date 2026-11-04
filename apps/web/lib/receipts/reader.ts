@@ -1,4 +1,10 @@
 import type { ReceiptImport, ReceiptStatus } from './graphql';
+
+/** What the reader follows: a receipt, or any import read the same way. */
+export interface ReadableImport {
+  id: string;
+  status: ReceiptStatus;
+}
 import {
   receiptUploadErrorKey,
   type ReceiptUploadErrorKey,
@@ -26,7 +32,7 @@ export type ReaderFailure =
   /** The same photo was already registered. */
   | 'alreadyConfirmed';
 
-export type ReaderState =
+export type ReaderState<T extends ReadableImport = ReceiptImport> =
   | { phase: 'idle' }
   | { phase: 'uploading'; progress: number }
   | {
@@ -36,15 +42,15 @@ export type ReaderState =
       /** Ask right away (the upload already answered with a final status). */
       immediate: boolean;
     }
-  | { phase: 'ready'; receipt: ReceiptImport }
+  | { phase: 'ready'; receipt: T }
   | { phase: 'failed'; reason: ReaderFailure; receiptId: string | null };
 
-export type ReaderEvent =
+export type ReaderEvent<T extends ReadableImport = ReceiptImport> =
   | { type: 'start' }
   | { type: 'progress'; percent: number }
   | { type: 'uploaded'; receipt: UploadedReceipt; now: number }
   | { type: 'uploadFailed'; status: number }
-  | { type: 'polled'; receipt: ReceiptImport; now: number }
+  | { type: 'polled'; receipt: T; now: number }
   | { type: 'pollFailed'; now: number }
   /** After a timeout: keep asking for another minute. */
   | { type: 'keepWaiting'; now: number }
@@ -57,7 +63,9 @@ export function isReading(status: ReceiptStatus): boolean {
 }
 
 /** Where a status leaves the reader (null: still reading). */
-export function outcomeOf(receipt: ReceiptImport): ReaderState | null {
+export function outcomeOf<T extends ReadableImport>(
+  receipt: T,
+): ReaderState<T> | null {
   switch (receipt.status) {
     case 'uploaded':
     case 'processing':
@@ -78,10 +86,10 @@ export function outcomeOf(receipt: ReceiptImport): ReaderState | null {
   }
 }
 
-export function readerReducer(
-  state: ReaderState,
-  event: ReaderEvent,
-): ReaderState {
+export function readerReducer<T extends ReadableImport = ReceiptImport>(
+  state: ReaderState<T>,
+  event: ReaderEvent<NoInfer<T>>,
+): ReaderState<T> {
   switch (event.type) {
     case 'start':
       return { phase: 'uploading', progress: 0 };
@@ -129,14 +137,14 @@ export function readerReducer(
         immediate: true,
       };
     case 'reset':
-      return READER_IDLE;
+      return READER_IDLE as ReaderState<never>;
   }
 }
 
-function timedOut(
-  state: Extract<ReaderState, { phase: 'reading' }>,
+function timedOut<T extends ReadableImport>(
+  state: Extract<ReaderState<T>, { phase: 'reading' }>,
   now: number,
-): ReaderState {
+): ReaderState<T> {
   if (now - state.startedAt < RECEIPT_POLL_MAX_MS) {
     return state.immediate ? { ...state, immediate: false } : state;
   }
@@ -144,7 +152,9 @@ function timedOut(
 }
 
 /** The import a failure leaves behind, which "Capturar a mano" discards. */
-export function leftoverReceiptId(state: ReaderState): string | null {
+export function leftoverReceiptId<T extends ReadableImport>(
+  state: ReaderState<T>,
+): string | null {
   if (state.phase === 'failed') {
     // Already confirmed or discarded imports are kept as they are.
     return state.reason === 'readFailed' || state.reason === 'timeout'

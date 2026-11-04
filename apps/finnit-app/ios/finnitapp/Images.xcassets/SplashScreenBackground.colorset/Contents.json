@@ -4,9 +4,27 @@
       "color": {
         "components": {
           "alpha": "1.000",
-          "blue": "0.360784313725490",
-          "green": "0.129411764705882",
-          "red": "0.149019607843137"
+          "blue": "0.980392156862745",
+          "green": "0.976470588235294",
+          "red": "0.972549019607843"
+        },
+        "color-space": "srgb"
+      },
+      "idiom": "universal"
+    },
+    {
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ],
+      "color": {
+        "components": {
+          "alpha": "1.000",
+          "blue": "0.101960784313725",
+          "green": "0.074509803921569",
+          "red": "0.070588235294118"
         },
         "color-space": "srgb"
       },

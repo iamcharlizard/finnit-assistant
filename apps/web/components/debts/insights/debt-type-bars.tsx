@@ -2,16 +2,29 @@
 
 import { useTranslations } from 'next-intl';
 
+import { cn } from '@finnit/ui/lib/utils';
+
 import type { TypeBar } from '@/lib/debts/insights-view';
 
 /**
  * What is owed now by kind of debt, as horizontal bars. Every bar carries
  * its name and amount (some colors are light on the light surface).
  */
-export function DebtTypeBars({ bars }: { bars: TypeBar[] }) {
+export function DebtTypeBars({
+  bars,
+  className,
+}: {
+  bars: TypeBar[];
+  className?: string;
+}) {
   const t = useTranslations('debts.insights');
   return (
-    <section className="flex flex-col gap-3 rounded-card border border-outline bg-surface p-4">
+    <section
+      className={cn(
+        'flex flex-col gap-3 rounded-card border border-outline bg-surface p-4',
+        className,
+      )}
+    >
       <h3 className="text-sm font-bold text-on-background">
         {t('byTypeTitle')}
       </h3>

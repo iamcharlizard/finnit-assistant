@@ -24,7 +24,8 @@ export interface TransactionRow {
   /** Signed: "-$80.00", "+$1,200.00"; adjustments have no sign. */
   amount: string;
   variant: 'income' | 'expense' | 'neutral';
-  status: 'completed' | 'pending';
+  /** pending: not counted yet; inProcess: counted, the bank hasn't applied it. */
+  status: 'completed' | 'pending' | 'inProcess';
   iconKey: IconKey;
   day: DayKey;
   /** Private alias: show a lock next to the title. */
@@ -38,13 +39,19 @@ export interface TransactionGroup<R extends TransactionRow = TransactionRow> {
 }
 
 /**
- * Money in or out of the account. Transfers are two "transfer" rows (the
- * API marks the outgoing one in its description); adjustments (card
- * payments, refunds, balance fixes) don't say which way they went.
+ * Money in or out of the account, from the movement's recorded effect on
+ * the balance. Without one (older data): income in, expense out, transfers
+ * by their side (the API marks the outgoing one in its description), and
+ * adjustments unknown unless negative.
  */
 export function direction(tx: ApiTransaction): 'in' | 'out' | 'unknown' {
+  // The recorded effect on the balance says it for every kind.
+  if (typeof tx.balanceEffect === 'number' && tx.balanceEffect !== 0)
+    return tx.balanceEffect > 0 ? 'in' : 'out';
   if (tx.type === 'income') return 'in';
   if (tx.type === 'expense') return 'out';
+  // Balance updates are signed: negative took money out.
+  if (tx.type === 'adjustment' && tx.amount < 0) return 'out';
   if (tx.type === 'transfer') {
     if (tx.transferDirection) return tx.transferDirection;
     // Transfers created before the API exposed the side carry it as a suffix.
@@ -99,7 +106,7 @@ export function toTransactionRow(
   const time = timeOf(tx.txnDate);
   const dir = direction(tx);
   const sign = dir === 'unknown' ? 'never' : 'always';
-  const signed = dir === 'out' ? -tx.amount : tx.amount;
+  const signed = dir === 'out' ? -Math.abs(tx.amount) : Math.abs(tx.amount);
 
   return {
     id: tx.id,
@@ -114,7 +121,7 @@ export function toTransactionRow(
       .join(' · '),
     amount: formatMoney(signed, tx.currency, locale, { sign }),
     variant: dir === 'in' ? 'income' : dir === 'out' ? 'expense' : 'neutral',
-    status: tx.isPending ? 'pending' : 'completed',
+    status: tx.isPending ? 'pending' : tx.inProcess ? 'inProcess' : 'completed',
     iconKey:
       tx.type === 'transfer'
         ? 'transfer'

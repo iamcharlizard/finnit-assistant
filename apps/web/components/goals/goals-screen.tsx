@@ -190,7 +190,7 @@ export function GoalsScreen({ view }: { view: GoalsScreenView }) {
           <div
             aria-busy={pending}
             className={cn(
-              'grid gap-4 transition-opacity sm:grid-cols-2 xl:grid-cols-3',
+              'grid gap-4 transition-opacity sm:grid-cols-2 @4xl:grid-cols-3',
               pending && 'opacity-70',
             )}
           >

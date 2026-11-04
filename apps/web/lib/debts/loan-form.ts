@@ -80,6 +80,11 @@ export interface LoanForm {
   destination: DebtDestination;
   depositAccountId: string;
   depositCountsAsIncome: boolean;
+  /**
+   * Add the borrowed money to the account's balance. Off for money already
+   * spent (an old loan): only the debt is recorded.
+   */
+  depositAddsToBalance: boolean;
   paymentAccountId: string;
   categoryId: string;
   /** What the money was for (informative); '' = not said. */
@@ -150,6 +155,7 @@ export function newLoanForm(loanType: LoanType = 'institutional'): LoanForm {
     destination: loanType === 'purchase_financing' ? 'purchase' : 'deposit',
     depositAccountId: '',
     depositCountsAsIncome: false,
+    depositAddsToBalance: true,
     paymentAccountId: '',
     categoryId: '',
     purposeCategoryId: '',
@@ -279,6 +285,7 @@ export function depositMismatch(
   if (
     form.loanType !== 'institutional' ||
     form.destination !== 'deposit' ||
+    !form.depositAddsToBalance ||
     !form.editDeposit
   )
     return null;
@@ -457,6 +464,7 @@ export function validateLoanForm(
 
   if (
     form.destination === 'deposit' &&
+    form.depositAddsToBalance &&
     !startsEmpty(form) &&
     !form.depositAccountId
   )
@@ -503,6 +511,8 @@ export function buildLoanInput(form: LoanForm): Input {
   set('categoryId', form.categoryId);
   set('purposeCategoryId', form.purposeCategoryId);
   if (startsEmpty(form)) delete input.destination;
+  else if (form.destination === 'deposit' && !form.depositAddsToBalance)
+    input.depositAddsToBalance = false;
   else if (form.destination === 'deposit') {
     input.depositAccountId = form.depositAccountId;
     input.depositCountsAsIncome = form.depositCountsAsIncome;

@@ -51,7 +51,9 @@
       "dashboard": "Home",
       "history": "Transactions",
       "cards": "Accounts"
-    }
+    },
+    "collapse": "Collapse menu",
+    "expand": "Expand menu"
   },
   "pageTitles": {
     "app": "Finnit",
@@ -251,6 +253,8 @@
     "completed": "Completed",
     "private": "Private",
     "withPending": "{time} · Pending",
+    "withInProcess": "{time} · In process",
+    "inProcess": "In process",
     "inCurrency": "{amount} in {currency}",
     "accountTypes": {
       "cash": "Cash",
@@ -311,7 +315,8 @@
       "monthly": "Monthly payments",
       "load": "{percent}% of your income · {level}",
       "noIncome": "Record your income to see how much goes to debts."
-    }
+    },
+    "greeting": "Hi, {name}"
   },
   "history": {
     "title": "History",
@@ -353,6 +358,70 @@
     }
   },
   "accounts": {
+    "overview": {
+      "title": "All accounts",
+      "subtitle": "{count, plural, one {# account} other {# accounts}} in {currency}, archived left out",
+      "chip": "All accounts",
+      "availableOpening": "Available at the start of the day",
+      "availableClosing": "Available at the end of the day",
+      "debtOpening": "Card debt at the start",
+      "debtClosing": "Card debt at the end",
+      "movements": "{count, plural, =0 {No movements} one {# movement} other {# movements}}",
+      "chartTitle": "Available and debt at the end of each day",
+      "available": "Available",
+      "debt": "Card debt"
+    },
+    "actionsLabel": "Actions for {name}",
+    "focus": {
+      "expand": "Expand",
+      "collapse": "Show all",
+      "back": "Accounts and cards"
+    },
+    "balanceDay": {
+      "previous": "Previous day",
+      "next": "Next day",
+      "pick": "Pick a day",
+      "today": "Today",
+      "historical": "Historical",
+      "backToToday": "Back to today",
+      "noticeTitle": "You're looking at the historical balance for {date}",
+      "noticeBody": "This isn't the current balance: it's how the account stood that day according to the recorded movements. Recording a movement with an earlier date updates this history.",
+      "incomplete": "Before this date the history is incomplete (the account wasn't in Finnit or movements are missing), so these figures may not be exact.",
+      "incompleteShort": "Incomplete history",
+      "opening": "Balance at the start of the day",
+      "closing": "Balance at the end of the day",
+      "openingDebt": "Debt at the start of the day",
+      "closingDebt": "Debt at the end of the day",
+      "inflow": "Money in",
+      "outflow": "Money out",
+      "movements": "{count, plural, =0 {No movements} one {# movement} other {# movements}}",
+      "chartTitle": "Balance at the end of each day",
+      "chartTitleDebt": "Debt at the end of each day",
+      "chartHint": "Tap a day to see its balance and movements.",
+      "chartLabel": "Daily balance chart",
+      "completeFrom": "The shaded part is before {date}: the history there is incomplete.",
+      "table": "See as a table",
+      "tableDay": "Day",
+      "tableBalance": "Closing balance",
+      "tableDebt": "Closing debt"
+    },
+    "balanceUpdate": {
+      "action": "Update balance",
+      "actionLabel": "Update the balance of {name}",
+      "title": "Update balance",
+      "description": "Type the balance your bank shows. The difference is saved as an adjustment: it doesn't count as income or spending.",
+      "balance": "Current balance",
+      "owed": "What you owe today",
+      "current": "Recorded balance: {amount}",
+      "difference": "Adjustment: {amount}",
+      "noChange": "The balance is already that.",
+      "required": "Type the balance",
+      "note": "Note (optional)",
+      "notePlaceholder": "Balance update",
+      "linkedHint": "This account is connected to your bank: the next sync replaces the balance with the bank's.",
+      "save": "Save balance",
+      "error": "Couldn't update the balance. Try again."
+    },
     "title": "Accounts & cards",
     "count": "{count, plural, one {# account} other {# accounts}}",
     "add": "Add account",
@@ -510,6 +579,7 @@
     },
     "stackLabel": "Your accounts and cards",
     "detail": {
+      "dayMovements": "Movements on {date}",
       "limit": "Credit limit",
       "noLimit": "No limit on file",
       "available": "Available: {amount}",
@@ -1176,6 +1246,8 @@
       "accountPlaceholder": "Choose an account",
       "countsAsIncome": "Count it as income",
       "countsAsIncomeHint": "A loan usually isn't income: it's money you'll pay back.",
+      "addsToBalance": "Add it to the account balance",
+      "addsToBalanceHint": "Turn it off if you already spent that money (e.g. a loan from months ago): only the debt is recorded.",
       "paymentAccount": "Account you pay from (optional)",
       "paymentAccountHint": "With a connected card or account, we look for the payments in your movements.",
       "category": "Category of the payments",
@@ -1375,6 +1447,7 @@
       "edit": "Edit",
       "editTitle": "Edit loan",
       "editHint": "If you change the amount, the number of payments or the fee per payment, we recompute the payment and the open payments. Payments already made do not change.",
+      "removeDepositHint": "Turn it off if that money is no longer in the account: the deposit is removed and the balance goes down by that amount. The debt doesn't change.",
       "cancel": "Cancel",
       "save": "Save changes",
       "saving": "Saving…",
@@ -1615,7 +1688,9 @@
     "aliases": "Transaction aliases",
     "aliasesDescription": "Rename transactions or make them private",
     "categorize": "Categorize transactions",
-    "categorizeDescription": "Give many a category at once"
+    "categorizeDescription": "Give many a category at once",
+    "theme": "Theme",
+    "colorMode": "Color mode"
   },
   "banks": {
     "title": "Connected banks",
@@ -1947,6 +2022,27 @@
       "lastPage": "Last page",
       "sortBy": "Sort by {column}",
       "empty": "No records."
+    },
+    "mode": {
+      "label": "Color mode",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "theme": {
+      "label": "Theme",
+      "change": "Change theme",
+      "names": {
+        "finnit": "Finnit",
+        "glass": "Glass",
+        "suave": "Soft",
+        "mono": "Mono"
+      },
+      "descriptions": {
+        "finnit": "The usual colors",
+        "glass": "Frosted glass over a colored backdrop",
+        "suave": "Soft greys with depth",
+        "mono": "Greys only; money keeps its color"
+      }
     }
   },
   "categorize": {
@@ -2140,6 +2236,8 @@
     }
   },
   "transaction": {
+    "markApplied": "Mark as applied",
+    "markedApplied": "Marked as applied by the bank",
     "back": "Back",
     "viewDetail": "View details",
     "types": {
@@ -2216,6 +2314,7 @@
     "deleteTitle": "Delete this movement?",
     "deleteDescription": "It will be removed from your movements and the balance of {account} will be adjusted. This can't be undone.",
     "deleteBlocked": {
+      "adjustment": "Balance adjustments can't be deleted: fix the balance with “Update balance” on the account.",
       "imported": "Movements from the bank or card statements can't be deleted.",
       "transfer": "Transfers can't be deleted from here."
     },
@@ -2265,6 +2364,7 @@
     "count": "{shown} of {total}",
     "allRead": "All your notifications are read",
     "types": {
+      "balance_mismatch": "Balance vs. bank",
       "budget": "Budget",
       "debt_due": "Debt",
       "recurring": "Recurring payment",
@@ -2672,6 +2772,93 @@
       "percentRange": "Between -100% and 1000%.",
       "nameTooLong": "60 characters max.",
       "monthInvalid": "Pick a month in the period."
+    }
+  },
+  "screenshots": {
+    "import": "Import screenshot",
+    "importHint": "Upload a screenshot of your bank's movements",
+    "picker": {
+      "title": "Choose the screenshot of your movements",
+      "hint": "JPG, PNG, WEBP or HEIC, up to 10 MB",
+      "dragActive": "Drop the screenshot here",
+      "remove": "Remove {name}",
+      "tooLarge": "{name} is larger than {max}.",
+      "wrongType": "{name} isn't an image.",
+      "tips": "Take it on your bank app's movement list, with the account name visible at the top."
+    },
+    "errors": {
+      "uploadNetwork": "We couldn't upload the screenshot. Check your connection.",
+      "uploadTooLarge": "The screenshot is larger than 10 MB.",
+      "uploadInvalid": "Only JPG, PNG, WEBP or HEIC images are accepted.",
+      "uploadFailed": "We couldn't upload the screenshot. Try again.",
+      "discardFailed": "We couldn't discard the screenshot. Try again.",
+      "saveFailed": "We couldn't save the movements. Try again.",
+      "lineFailed": "We couldn't save the change. Try again.",
+      "accountFailed": "We couldn't change the account. Try again."
+    },
+    "failed": {
+      "readFailed": "We found no movements in this screenshot. Try another one or enter them by hand.",
+      "timeout": "This is taking longer than usual. You can keep waiting or enter them by hand.",
+      "discarded": "You discarded this screenshot before. Use another one or enter the movements by hand.",
+      "alreadyConfirmed": "The movements of this screenshot are already saved."
+    },
+    "actions": {
+      "manual": "Enter by hand",
+      "otherPhoto": "Use another screenshot",
+      "keepWaiting": "Keep waiting",
+      "close": "Close"
+    },
+    "reading": "Reading your screenshot…",
+    "readingHint": "This takes a few seconds.",
+    "cancel": "Cancel",
+    "uploading": "Uploading the screenshot…",
+    "progress": "{percent}%",
+    "titles": {
+      "capture": "Import screenshot",
+      "reading": "Reading your screenshot…",
+      "failed": "We couldn't read the screenshot",
+      "review": "Review the movements"
+    },
+    "review": {
+      "account": "Account",
+      "accountPlaceholder": "Choose the account",
+      "detected": "In the screenshot: {hint}",
+      "noAccount": "We couldn't find the account “{hint}”. Choose it to see which movements you already have.",
+      "noHint": "Choose the account of these movements.",
+      "read": "{count, plural, one {# movement read} other {# movements read}}",
+      "toCheck": "{count, plural, one {# to check} other {# to check}}",
+      "registered": "Already registered: {name} · {date}",
+      "includeAnyway": "Save it anyway",
+      "include": "Save {merchant}",
+      "inProcess": "In process",
+      "check": "Check",
+      "save": "{count, plural, =0 {Nothing to save} one {Save # movement} other {Save # movements}}",
+      "total": "Total: {amount}",
+      "blocked": "Fill in the amount of the flagged movements or leave them out.",
+      "discard": "Discard screenshot",
+      "edit": "Edit {merchant}",
+      "done": "Save changes",
+      "cancelEdit": "Cancel",
+      "merchant": "Merchant or concept",
+      "date": "Date",
+      "amount": "Amount",
+      "directionOut": "Expense or charge",
+      "directionIn": "Income or payment",
+      "inProcessLabel": "In process",
+      "inProcessHint": "The bank hasn't applied it yet. It counts in your balance and stays marked until it arrives applied.",
+      "category": "Category",
+      "categoryPlaceholder": "No category",
+      "noName": "No name",
+      "errors": {
+        "amountRequired": "Type the amount",
+        "dateInvalid": "Choose a date that isn't in the future",
+        "merchantRequired": "Type the merchant or concept"
+      }
+    },
+    "toasts": {
+      "saved": "{count, plural, one {# movement saved} other {# movements saved}}",
+      "savedNone": "Everything was already registered",
+      "discarded": "Screenshot discarded"
     }
   },
   "receipts": {

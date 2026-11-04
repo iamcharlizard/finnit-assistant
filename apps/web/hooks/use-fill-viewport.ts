@@ -5,14 +5,15 @@ import * as React from 'react';
 /**
  * Caps an element's height to the space left between its top and the bottom
  * of the window (minus `bottomGap`), so a scrolling list fills the screen
- * without making the page scroll. Only from `minWidth`, where the layout has
- * room for it; below, the element keeps its CSS max height. It never goes
- * under `minHeight`: on a short window the page scrolls instead.
+ * without making the page scroll. Only when the content column (the nearest
+ * `@container`) is at least `minWidth` wide, matching the screens' `@3xl:`
+ * layouts; below, the element keeps its CSS max height. It never goes under
+ * `minHeight`: on a short window the page scrolls instead.
  */
 export function useFillViewport<T extends HTMLElement>({
   bottomGap,
   minHeight,
-  minWidth = 1024,
+  minWidth = 768,
 }: {
   bottomGap: number;
   minHeight: number;
@@ -23,10 +24,12 @@ export function useFillViewport<T extends HTMLElement>({
   React.useEffect(() => {
     const element = ref.current;
     if (!element) return;
-    const wide = window.matchMedia(`(min-width: ${minWidth}px)`);
+    // The column changes width with the window and with the sidebar.
+    const column = element.closest<HTMLElement>('.\\@container');
 
     const fit = () => {
-      if (!wide.matches) {
+      const width = column?.clientWidth ?? window.innerWidth;
+      if (width < minWidth) {
         element.style.maxHeight = '';
         return;
       }
@@ -42,12 +45,11 @@ export function useFillViewport<T extends HTMLElement>({
     if (element.parentElement?.parentElement) {
       observer.observe(element.parentElement.parentElement);
     }
+    if (column) observer.observe(column);
     window.addEventListener('resize', fit);
-    wide.addEventListener('change', fit);
     return () => {
       observer.disconnect();
       window.removeEventListener('resize', fit);
-      wide.removeEventListener('change', fit);
     };
   }, [bottomGap, minHeight, minWidth]);
 

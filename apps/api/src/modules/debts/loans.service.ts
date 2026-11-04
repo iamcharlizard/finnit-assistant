@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import {
+  appliedEffect,
+  moveBalance,
+} from '../../common/utils/balance-effect.util';
+import {
   DebtChargeDestination,
   DebtKind,
   LoanInterestMode,
@@ -255,10 +259,11 @@ export class LoansService {
         ? (input.destination ??
           (isPurchase ? DebtChargeDestination.purchase : undefined))
         : undefined;
-    if (
+    // Money already spent (e.g. an old loan) is only recorded as debt.
+    const deposits =
       destination === DebtChargeDestination.deposit &&
-      !input.depositAccountId
-    ) {
+      input.depositAddsToBalance !== false;
+    if (deposits && !input.depositAccountId) {
       throw new ValidationError('Choose the account that received the money');
     }
 
@@ -325,11 +330,13 @@ export class LoansService {
           openingFee: openingFee > 0 ? openingFee : null,
           periodicFee: periodicFee > 0 ? periodicFee : null,
           destination,
+          depositAddsToBalance:
+            destination !== DebtChargeDestination.deposit || deposits,
           purposeCategoryId,
         },
       });
 
-      if (destination === DebtChargeDestination.deposit) {
+      if (deposits) {
         // The opening fee never reaches the account (not an expense).
         const deposit = await this.deposit(tx, userId, {
           accountId: input.depositAccountId!,
@@ -538,16 +545,15 @@ export class LoansService {
     const scheduleName = await this.chargeScheduleName(userId, debt, input);
 
     await this.prisma.$transaction(async (tx) => {
-      const deposit =
-        input.destination === DebtChargeDestination.deposit
-          ? await this.deposit(tx, userId, {
-              accountId: input.depositAccountId!,
-              amount: input.principal,
-              date: charge.date,
-              description: input.description?.trim() || debt.name,
-              countsAsIncome: input.depositCountsAsIncome ?? false,
-            })
-          : null;
+      const deposit = addsToBalance(input)
+        ? await this.deposit(tx, userId, {
+            accountId: input.depositAccountId!,
+            amount: input.principal,
+            date: charge.date,
+            description: input.description?.trim() || debt.name,
+            countsAsIncome: input.depositCountsAsIncome ?? false,
+          })
+        : null;
       const created = await tx.debtCharge.create({
         data: { ...charge, debtId: debt.id, transactionId: deposit?.id },
       });
@@ -606,7 +612,7 @@ export class LoansService {
 
     await this.prisma.$transaction(async (tx) => {
       const old = existing.transaction;
-      const wantsDeposit = input.destination === DebtChargeDestination.deposit;
+      const wantsDeposit = addsToBalance(input);
       const sameDeposit =
         old &&
         wantsDeposit &&
@@ -680,10 +686,7 @@ export class LoansService {
         'This loan has a fixed payment: add the amount without its own payments',
       );
     }
-    if (
-      input.destination === DebtChargeDestination.deposit &&
-      !input.depositAccountId
-    ) {
+    if (addsToBalance(input) && !input.depositAccountId) {
       throw new ValidationError('Choose the account that received the money');
     }
     const installmentsPaid = input.installmentsPaid ?? 0;
@@ -744,6 +747,9 @@ export class LoansService {
       includesVat:
         interestMode === LoanInterestMode.rate && (input.includesVat ?? false),
       destination: input.destination,
+      depositAddsToBalance:
+        input.destination !== DebtChargeDestination.deposit ||
+        addsToBalance(input),
       purposeCategoryId: await this.purposeCategoryId(
         userId,
         input.purposeCategoryId,
@@ -1184,24 +1190,37 @@ export class LoansService {
     }
 
     await this.prisma.$transaction(async (tx) => {
+      // Money already spent: the deposit leaves its account.
+      const removeDeposit =
+        input.depositAddsToBalance === false && debt.disbursementTransaction;
+      if (removeDeposit) {
+        await tx.debt.update({
+          where: { id },
+          data: {
+            disbursementTransactionId: null,
+            depositAddsToBalance: false,
+          },
+        });
+        await deleteDeposit(tx, removeDeposit.id);
+      }
       // The deposit is what reached the account: principal − opening fee.
-      const deposit = debt.disbursementTransaction;
+      const deposit = removeDeposit ? null : debt.disbursementTransaction;
       const depositDelta = cents(
         principal -
           openingFee -
           (Number(debt.principal) - Number(debt.openingFee ?? 0)),
       );
       if (deposit && depositDelta !== 0) {
+        const amount = cents(Number(deposit.amount) + depositDelta);
         await tx.transaction.update({
           where: { id: deposit.id },
-          data: { amount: cents(Number(deposit.amount) + depositDelta) },
+          data: { amount, balanceEffect: amount },
         });
-        if (!deposit.isPending) {
-          await tx.account.update({
-            where: { id: deposit.accountId },
-            data: { balanceCurrent: { increment: depositDelta } },
-          });
-        }
+        await moveBalance(
+          tx,
+          deposit.accountId,
+          appliedEffect(depositDelta, deposit.isPending),
+        );
       }
 
       await tx.debt.update({
@@ -1438,4 +1457,15 @@ export class LoansService {
     if (!movement) throw new NotFoundError('Deposit account not found');
     return movement;
   }
+}
+
+/** A charge whose money goes into an account (and raises its balance). */
+function addsToBalance(input: {
+  destination: DebtChargeDestination;
+  depositAddsToBalance?: boolean;
+}): boolean {
+  return (
+    input.destination === DebtChargeDestination.deposit &&
+    input.depositAddsToBalance !== false
+  );
 }

@@ -43,7 +43,9 @@ export function CategorizeRow({
           time={
             row.status === 'pending'
               ? t('finance.withPending', { time: row.time })
-              : row.time
+              : row.status === 'inProcess'
+                ? t('finance.withInProcess', { time: row.time })
+                : row.time
           }
           amount={row.amount}
           icon={CATEGORY_ICONS[row.iconKey]}

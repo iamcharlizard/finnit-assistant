@@ -33,7 +33,7 @@ export function MsiPlans({ rows }: { rows: MsiRow[] }) {
         </Link>
       </div>
       <p className="px-1 text-xs text-on-surface-variant">{t('hint')}</p>
-      <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid gap-3 @2xl:grid-cols-2 @4xl:grid-cols-3">
         {rows.map((row) => (
           <li
             key={row.id}

@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 
 import { Sheet, SheetContent } from '@finnit/ui/components/ui/sheet';
 
-import { NewEntryFlow } from './new-entry-flow';
+import { NewEntryFlow, type NewEntryAction } from './new-entry-flow';
 
 /**
  * "Nuevo movimiento" from the "+" buttons: a bottom sheet on phones, a
@@ -15,9 +15,12 @@ import { NewEntryFlow } from './new-entry-flow';
 export function NewEntrySheet({
   open,
   onOpenChange,
+  initialAction,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Open on a kind's form or the receipt scanner instead of the kind step. */
+  initialAction?: NewEntryAction;
 }) {
   const t = useTranslations();
   const [locked, setLocked] = React.useState(false);
@@ -41,7 +44,11 @@ export function NewEntrySheet({
         showCloseButton={!locked}
         className="mx-auto w-full max-w-lg px-4 pt-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:bottom-6 lg:max-h-[calc(100dvh-3rem)] lg:rounded-card lg:border"
       >
-        <NewEntryFlow onDone={close} onLockChange={setLocked} />
+        <NewEntryFlow
+          onDone={close}
+          onLockChange={setLocked}
+          initialAction={initialAction}
+        />
       </SheetContent>
     </Sheet>
   );

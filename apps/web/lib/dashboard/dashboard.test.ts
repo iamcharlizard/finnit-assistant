@@ -50,6 +50,7 @@ describe('buildDashboardView', () => {
   it('is empty for a brand-new user, with zero (not invented) totals', () => {
     const view = buildDashboardView(empty, options, es);
     assert.ok(view.isEmpty);
+    assert.equal(view.todayLabel, 'Miércoles, 14 de octubre');
     assert.equal(view.balance, null);
     assert.equal(view.month.income, '$0.00');
     assert.equal(view.debts, null);
@@ -101,6 +102,7 @@ describe('buildDashboardView', () => {
     );
     assert.deepEqual(en.balance?.otherCurrencies, ['US$50.00 in USD']);
     assert.equal(en.month.label, 'October 2026');
+    assert.equal(en.todayLabel, 'Wednesday, October 14');
   });
 
   it('shows the debts only when there is a loan or debt (card MSI alone is not)', () => {

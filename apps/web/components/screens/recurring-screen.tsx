@@ -358,7 +358,7 @@ export function RecurringScreen({
               'grid gap-6 transition-opacity',
               // A week needs the full width for its seven columns of payments.
               data.view !== 'week' &&
-                'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]',
+                '@3xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]',
               pending && 'opacity-60',
             )}
           >

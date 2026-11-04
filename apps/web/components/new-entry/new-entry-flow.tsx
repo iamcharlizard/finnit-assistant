@@ -89,6 +89,9 @@ type Step =
 
 type Busy = null | 'checking' | 'saving';
 
+/** Where "Nuevo movimiento" can start besides the kind step. */
+export type NewEntryAction = EntryKind | 'receipt';
+
 /**
  * Fire and forget: an import nobody will review (failed, cancelled). Waits
  * for the read to end if needed; on failure it only shows up again as
@@ -118,10 +121,13 @@ function discardQuietly(receiptId: string) {
 export function NewEntryFlow({
   onDone,
   onLockChange,
+  initialAction,
 }: {
   onDone: () => void;
   /** True while closing would interrupt a save or an upload. */
   onLockChange: (locked: boolean) => void;
+  /** Skip the kind step (the mobile "+" menu): open a form or the scanner. */
+  initialAction?: NewEntryAction;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -202,6 +208,16 @@ export function NewEntryFlow({
         reader.state.phase === 'uploading',
     );
   }, [busy, attachment.state.status, reader.state.phase, onLockChange]);
+
+  // Started from a shortcut: once the accounts are loaded, go straight to
+  // that step (adjusting state during render, so there's no extra paint of
+  // the kind step). "Atrás" still leads to the kind step.
+  const [initialApplied, setInitialApplied] = React.useState(!initialAction);
+  if (!initialApplied && data.status === 'ready') {
+    setInitialApplied(true);
+    if (initialAction === 'receipt') startCapture('kind');
+    else if (initialAction) pickKind(initialAction);
+  }
 
   const finish = (title: string, description?: string) => {
     toast.success(title, description ? { description } : undefined);

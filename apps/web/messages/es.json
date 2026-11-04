@@ -51,7 +51,9 @@
       "dashboard": "Inicio",
       "history": "Movimientos",
       "cards": "Cuentas"
-    }
+    },
+    "collapse": "Contraer menú",
+    "expand": "Expandir menú"
   },
   "pageTitles": {
     "app": "Finnit",
@@ -311,7 +313,8 @@
       "monthly": "Pagas al mes",
       "load": "{percent}% de tu ingreso · {level}",
       "noIncome": "Registra tus ingresos para ver qué parte se va en deudas."
-    }
+    },
+    "greeting": "Hola, {name}"
   },
   "history": {
     "title": "Historial",
@@ -1615,7 +1618,9 @@
     "aliases": "Alias de movimientos",
     "aliasesDescription": "Renombra movimientos o hazlos privados",
     "categorize": "Clasificar movimientos",
-    "categorizeDescription": "Asigna categorías a varios a la vez"
+    "categorizeDescription": "Asigna categorías a varios a la vez",
+    "theme": "Tema",
+    "colorMode": "Modo de color"
   },
   "banks": {
     "title": "Bancos conectados",
@@ -1947,6 +1952,27 @@
       "lastPage": "Última página",
       "sortBy": "Ordenar por {column}",
       "empty": "Sin registros."
+    },
+    "mode": {
+      "label": "Modo de color",
+      "light": "Claro",
+      "dark": "Oscuro"
+    },
+    "theme": {
+      "label": "Tema",
+      "change": "Cambiar tema",
+      "names": {
+        "finnit": "Finnit",
+        "glass": "Glass",
+        "suave": "Suave",
+        "mono": "Mono"
+      },
+      "descriptions": {
+        "finnit": "Los colores de siempre",
+        "glass": "Vidrio esmerilado sobre un fondo de color",
+        "suave": "Grises suaves con relieve",
+        "mono": "Solo grises; el dinero conserva su color"
+      }
     }
   },
   "categorize": {

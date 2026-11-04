@@ -37,7 +37,7 @@ export function AccountCardStack({
   return (
     <ul
       aria-label={label}
-      className="relative mx-auto w-full max-w-[360px] motion-safe:transition-[height] motion-safe:duration-500 lg:mx-0"
+      className="relative mx-auto w-full max-w-[360px] motion-safe:transition-[height] motion-safe:duration-500 @3xl:mx-0"
       style={{ height: activeTop + CARD_HEIGHT }}
     >
       {accounts.map((account) => {

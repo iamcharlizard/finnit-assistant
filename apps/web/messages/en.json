@@ -51,7 +51,9 @@
       "dashboard": "Home",
       "history": "Transactions",
       "cards": "Accounts"
-    }
+    },
+    "collapse": "Collapse menu",
+    "expand": "Expand menu"
   },
   "pageTitles": {
     "app": "Finnit",
@@ -311,7 +313,8 @@
       "monthly": "Monthly payments",
       "load": "{percent}% of your income · {level}",
       "noIncome": "Record your income to see how much goes to debts."
-    }
+    },
+    "greeting": "Hi, {name}"
   },
   "history": {
     "title": "History",
@@ -1615,7 +1618,9 @@
     "aliases": "Transaction aliases",
     "aliasesDescription": "Rename transactions or make them private",
     "categorize": "Categorize transactions",
-    "categorizeDescription": "Give many a category at once"
+    "categorizeDescription": "Give many a category at once",
+    "theme": "Theme",
+    "colorMode": "Color mode"
   },
   "banks": {
     "title": "Connected banks",
@@ -1947,6 +1952,27 @@
       "lastPage": "Last page",
       "sortBy": "Sort by {column}",
       "empty": "No records."
+    },
+    "mode": {
+      "label": "Color mode",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "theme": {
+      "label": "Theme",
+      "change": "Change theme",
+      "names": {
+        "finnit": "Finnit",
+        "glass": "Glass",
+        "suave": "Soft",
+        "mono": "Mono"
+      },
+      "descriptions": {
+        "finnit": "The usual colors",
+        "glass": "Frosted glass over a colored backdrop",
+        "suave": "Soft greys with depth",
+        "mono": "Greys only; money keeps its color"
+      }
     }
   },
   "categorize": {

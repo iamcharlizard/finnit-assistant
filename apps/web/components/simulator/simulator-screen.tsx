@@ -194,7 +194,7 @@ export function SimulatorScreen({ data }: { data: SimulatorData }) {
         hasData={data.hasData}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <div className="grid gap-6 @3xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className="flex min-w-0 flex-col gap-4">
           <MonthsControl
             months={controls.months}
@@ -239,7 +239,7 @@ export function SimulatorScreen({ data }: { data: SimulatorData }) {
 
         <section
           aria-labelledby="simulator-results"
-          className="order-first flex min-w-0 flex-col gap-4 lg:order-last lg:self-start"
+          className="order-first flex min-w-0 flex-col gap-4 @3xl:order-last @3xl:self-start"
         >
           <h2 id="simulator-results" className="sr-only">
             {t('simulator.results.title')}

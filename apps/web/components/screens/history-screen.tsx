@@ -24,8 +24,8 @@ export function HistoryScreen({
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t('title')} subtitle={t('subtitle')} />
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="min-w-0 lg:col-span-2">
+      <div className="grid gap-6 @3xl:grid-cols-3">
+        <div className="min-w-0 @3xl:col-span-2">
           <HistoryFilters
             filters={filters}
             accounts={data.accounts}

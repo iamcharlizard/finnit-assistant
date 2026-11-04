@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { Bell } from 'lucide-react';
 
-import { useScrolled } from '../../lib/use-scrolled';
 import { cn } from '../../lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
@@ -50,21 +49,20 @@ function TopAppBar({
   profileLabel = 'User profile',
   className,
 }: TopAppBarProps) {
-  const scrolled = useScrolled();
-
   /*
-   * Floating bar: it sticks a little below the top, always outlined, and once
-   * the page scrolls turns into glass (translucent background + blur). The
-   * negative margins offset the padding, so the title lines up with the page.
+   * Floating glass pill: it sticks a little below the top with a translucent
+   * background and blur (strength and colors come from the theme tokens).
+   * The negative margins offset the padding, so the title lines up with the
+   * page.
    */
   return (
     <>
       <header
         className={cn(
-          'sticky top-3 z-30 -mx-3 flex items-center justify-between rounded-card border border-glass-border px-3 py-2.5 sm:-mx-5 sm:px-5 sm:py-3',
-          'transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300',
-          scrolled &&
-            'bg-glass shadow-[0_8px_32px_rgba(0,0,0,0.08)] backdrop-blur-xl backdrop-saturate-150 dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]',
+          // A pill: fully round ends. The right padding equals the vertical one, so
+          // the round bell and avatar sit concentric with the end; the title gets
+          // a little more room from the curve.
+          'glass sticky top-3 z-30 -mx-3 flex items-center justify-between gap-3 rounded-full border border-glass-border bg-glass py-2.5 pr-2.5 pl-5 shadow-elevation sm:-mx-5 sm:py-3 sm:pr-3 sm:pl-6',
           className,
         )}
       >

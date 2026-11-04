@@ -86,7 +86,7 @@ export function StatementsScreen({
     <div className="flex flex-col gap-6">
       <PageHeader title={t('title')} subtitle={t('subtitle')} />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:items-start">
+      <div className="grid gap-6 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] @3xl:items-start">
         <StatementUploadCard
           cards={data.cards}
           initialAccountId={initialAccountId}

@@ -299,6 +299,19 @@ export function fullDate(key: DayKey, locale: Locale): string {
     : `${day} de ${name} de ${year}`;
 }
 
+/** "Miércoles, 14 de octubre" / "Wednesday, October 14": a heading for today. */
+export function weekdayDate(key: DayKey, locale: Locale): string {
+  const { month, day } = parseDayKey(key);
+  // Names are Sunday-first, like getUTCDay().
+  const weekday = capitalize(
+    NAMES[locale].weekdays[keyToUtc(key).getUTCDay()]!,
+  );
+  const name = monthNameOf(month, locale);
+  return locale === 'en'
+    ? `${weekday}, ${name} ${day}`
+    : `${weekday}, ${day} de ${name}`;
+}
+
 /** "14 oct" / "Oct 14" */
 export function shortDate(key: DayKey, locale: Locale): string {
   const { month, day } = parseDayKey(key);

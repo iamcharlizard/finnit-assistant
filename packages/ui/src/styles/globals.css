@@ -44,6 +44,12 @@
   --glass-border: rgba(0, 0, 0, 0.07);
   --track: rgba(0, 0, 0, 0.06);
 
+  /* Surfaces and app background, overridden per theme (see "Themes" below). */
+  --app-bg-image: none;
+  --glass-blur: blur(24px) saturate(150%);
+  --elevation: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --elevation-inset: inset 0 0 0 1px var(--outline);
+
   /* shadcn/ui semantic variables */
   --foreground: var(--on-background);
   --card: var(--surface);
@@ -92,6 +98,7 @@
   --glass: rgba(23, 24, 31, 0.85);
   --glass-border: rgba(255, 255, 255, 0.08);
   --track: rgba(255, 255, 255, 0.06);
+  --elevation: 0 4px 24px rgba(0, 0, 0, 0.3);
 
   /* White on #6c72cb is 4.28:1; near-black passes AA. */
   --primary-foreground: #0b0c1a;
@@ -99,6 +106,157 @@
   --muted: #22232b;
   --accent: #262730;
   --ring: var(--accent-neon);
+}
+
+/*
+ * Themes. The palette is the `data-theme` attribute on <html> (set by the
+ * server from the `finnit-theme` cookie); light/dark stays on the `.dark`
+ * class. `finnit` uses the tokens above. Each theme only changes surfaces,
+ * text, borders and the accent: income/expense and --chart-* keep their
+ * validated values in every theme. `:not(.dark)` / `.dark` make each block
+ * more specific than :root and .dark, so order doesn't matter.
+ */
+
+/* Glass: frosted, translucent surfaces over soft blobs of the brand colors. */
+[data-theme='glass']:not(.dark) {
+  --background: #e8ebf3;
+  --app-bg-image:
+    radial-gradient(
+      50% 55% at 8% 10%,
+      rgba(0, 245, 255, 0.32) 0%,
+      rgba(0, 245, 255, 0) 70%
+    ),
+    radial-gradient(
+      45% 55% at 92% 16%,
+      rgba(108, 114, 203, 0.38) 0%,
+      rgba(108, 114, 203, 0) 70%
+    ),
+    radial-gradient(
+      65% 55% at 55% 100%,
+      rgba(0, 105, 110, 0.26) 0%,
+      rgba(0, 105, 110, 0) 70%
+    );
+  --surface: rgba(255, 255, 255, 0.62);
+  --on-surface-variant: #4c5260;
+  --outline: rgba(26, 27, 34, 0.12);
+  --glass: rgba(255, 255, 255, 0.5);
+  --glass-border: rgba(255, 255, 255, 0.75);
+  --track: rgba(26, 27, 34, 0.08);
+  --elevation: 0 8px 32px rgba(40, 44, 90, 0.12);
+  --popover: #f6f7fb;
+  --muted: rgba(255, 255, 255, 0.5);
+  --accent: rgba(255, 255, 255, 0.65);
+}
+
+[data-theme='glass'].dark {
+  --background: #0e1018;
+  --app-bg-image:
+    radial-gradient(
+      50% 55% at 8% 10%,
+      rgba(0, 245, 255, 0.14) 0%,
+      rgba(0, 245, 255, 0) 70%
+    ),
+    radial-gradient(
+      45% 55% at 92% 16%,
+      rgba(108, 114, 203, 0.3) 0%,
+      rgba(108, 114, 203, 0) 70%
+    ),
+    radial-gradient(
+      65% 55% at 55% 100%,
+      rgba(0, 105, 110, 0.3) 0%,
+      rgba(0, 105, 110, 0) 70%
+    );
+  --surface: rgba(255, 255, 255, 0.06);
+  --on-surface-variant: #b4b7c4;
+  --outline: rgba(255, 255, 255, 0.12);
+  --glass: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --elevation: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --popover: #1b1d29;
+  --muted: rgba(255, 255, 255, 0.06);
+  --accent: rgba(255, 255, 255, 0.1);
+}
+
+/* Suave: soft neumorphic greys, raised surfaces and a violet accent. */
+[data-theme='suave']:not(.dark) {
+  --background: #e3e5ea;
+  --surface: #eceef2;
+  --on-surface-variant: #525866;
+  --outline: rgba(26, 27, 34, 0.09);
+  --primary: #5b61c2;
+  --primary-foreground: #ffffff;
+  --brand-ink: #4f55b6;
+  --glass: rgba(236, 238, 242, 0.92);
+  --glass-border: rgba(255, 255, 255, 0.8);
+  --track: rgba(26, 27, 34, 0.08);
+  --elevation:
+    8px 8px 20px rgba(30, 32, 46, 0.12),
+    -6px -6px 16px rgba(255, 255, 255, 0.75);
+  --elevation-inset:
+    inset 3px 3px 7px rgba(30, 32, 46, 0.1),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.75);
+  --popover: #eceef2;
+  --muted: #e6e8ec;
+  --accent: #dfe2e8;
+}
+
+[data-theme='suave'].dark {
+  --background: #16171d;
+  --surface: #20212a;
+  --outline: rgba(255, 255, 255, 0.07);
+  --glass: rgba(32, 33, 42, 0.92);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --elevation: 0 10px 26px rgba(0, 0, 0, 0.38);
+  --elevation-inset: inset 0 2px 5px rgba(0, 0, 0, 0.35);
+  --popover: #20212a;
+  --muted: #1c1d25;
+  --accent: #2a2b35;
+}
+
+/* Mono: greys only; money and charts keep their colors. */
+[data-theme='mono']:not(.dark) {
+  --background: #ebebeb;
+  --surface: #ffffff;
+  --on-background: #111111;
+  --on-surface-variant: #555555;
+  --outline: #e0e0e0;
+  --primary: #111111;
+  --primary-foreground: #ffffff;
+  --accent-neon: #111111;
+  --secondary-foreground: #ffffff;
+  --brand: #111111;
+  --brand-ink: #111111;
+  --violet-ink: #111111;
+  --highlight: #333333;
+  --glass: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --elevation: 0 2px 12px rgba(0, 0, 0, 0.05);
+  --muted: #f3f3f3;
+  --accent: #efefef;
+  --ring: #111111;
+}
+
+[data-theme='mono'].dark {
+  --background: #0e0e0e;
+  --surface: #1a1a1a;
+  --on-background: #f2f2f2;
+  --on-surface-variant: #a6a6a6;
+  --outline: #2a2a2a;
+  --primary: #f2f2f2;
+  --primary-foreground: #111111;
+  --accent-neon: #f2f2f2;
+  --secondary-foreground: #111111;
+  --brand: #f2f2f2;
+  --brand-foreground: #111111;
+  --brand-ink: #f2f2f2;
+  --violet-ink: #f2f2f2;
+  --highlight: #d0d0d0;
+  --glass: rgba(26, 26, 26, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --elevation: 0 8px 22px rgba(0, 0, 0, 0.4);
+  --muted: #1f1f1f;
+  --accent: #262626;
+  --ring: #f2f2f2;
 }
 
 @theme inline {
@@ -120,6 +278,7 @@
   --color-glass: var(--glass);
   --color-glass-border: var(--glass-border);
   --color-track: var(--track);
+  --shadow-elevation: var(--elevation);
 
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -172,11 +331,26 @@
    */
 }
 
+/* Frosted glass: blurs what is behind (header, sidebar, bottom bar). */
+@utility glass {
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+/* Sunken surface (inputs, wells); an outline unless the theme is Suave. */
+@utility shadow-well {
+  box-shadow: var(--elevation-inset);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-on-background font-sans antialiased;
+    /* Only Glass draws an image (soft blobs); `none` elsewhere. */
+    background-image: var(--app-bg-image);
+    background-attachment: fixed;
+    background-size: cover;
   }
 }

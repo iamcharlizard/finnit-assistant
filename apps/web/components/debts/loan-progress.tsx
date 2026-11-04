@@ -35,7 +35,7 @@ export function LoanProgress({
   const t = useTranslations('debts.detail.summary');
 
   return (
-    <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+    <div className="grid gap-3 @2xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <section
         aria-labelledby="loan-paid-share"
         className="flex flex-col gap-4 rounded-card border border-outline bg-surface p-4"

@@ -152,8 +152,8 @@ export function AccountsScreen({
     <div className="flex flex-col gap-6">
       {header}
 
-      <div className="grid gap-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
-        <div className="lg:sticky lg:top-28">
+      <div className="grid gap-8 @3xl:grid-cols-[360px_minmax(0,1fr)] @3xl:items-start">
+        <div className="@3xl:sticky @3xl:top-28">
           <AccountCardStack
             accounts={accounts}
             activeId={activeId ?? selected.id}

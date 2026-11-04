@@ -15,7 +15,7 @@ import { UserActionsMenu } from './user-actions-menu';
 import { UserRoleBadge } from './user-role-badge';
 import { UserStatusBadge } from './user-status-badge';
 
-/** Wide screens (lg): one row per user, sortable by name and last sign-in. */
+/** Wide content (@3xl): one row per user, sortable by name and last sign-in. */
 export function UsersTable({
   users,
   actionsFor,

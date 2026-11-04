@@ -253,6 +253,14 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 | Interfaz en español e inglés | ✅ | ⏳ | ✅ | Web con `next-intl`; selector en Ajustes (`updateMyPreferences`, `User.locale`). |
 | Categorías traducidas | ✅ | ⏳ | ✅ | `CategoryTranslation` (en/es); las del usuario se traducen con Google Cloud Translation (respaldo con IA). |
 
+### Apariencia *(nuevo)*
+
+| Funcionalidad | API | Móvil | Web | Notas |
+|---|---|---|---|---|
+| Temas Finnit, Glass, Suave y Mono (claro y oscuro) | — | ⏳ | ✅ | `data-theme` en `<html>` desde la cookie `finnit-theme` (sin parpadeo); el modo claro/oscuro sigue con `next-themes`. Selector en el header (paleta) y en Ajustes → Apariencia. Se guarda por navegador, no en la cuenta. |
+| Header de vidrio con saludo | — | ⏳ | ✅ | Barra flotante siempre en vidrio; el inicio muestra "Hola, {nombre}" y la fecha. |
+| Menú lateral colapsable | — | — | ✅ | Rail flotante de vidrio que pasa de 256 px a solo íconos (con tooltips) con animación; ⌘B / Ctrl+B; estado en la cookie `finnit-sidebar`. |
+
 ## Plataforma
 
 | Funcionalidad | Estado | Notas |

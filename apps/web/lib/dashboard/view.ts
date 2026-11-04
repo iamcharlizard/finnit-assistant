@@ -1,6 +1,11 @@
 import type { Localizer } from '@/lib/i18n/translator';
 import { summarizeBalances } from '@/lib/finance/accounts';
-import { monthLabel, type DayKey, type MonthRef } from '@/lib/finance/dates';
+import {
+  monthLabel,
+  weekdayDate,
+  type DayKey,
+  type MonthRef,
+} from '@/lib/finance/dates';
 import { formatMoney } from '@/lib/finance/money';
 import { toPaymentRow, type PaymentRow } from '@/lib/finance/payments';
 import type { ApiDebtInsights } from '@/lib/debts/types';
@@ -21,6 +26,8 @@ export interface DashboardData {
 export interface DashboardView {
   /** No accounts and no movements yet: show the welcome. */
   isEmpty: boolean;
+  /** Today under the greeting, e.g. "Miércoles, 14 de octubre". */
+  todayLabel: string;
   balance: {
     available: string;
     /** Owed on credit cards; null without credit cards. */
@@ -58,6 +65,7 @@ export function buildDashboardView(
 
   return {
     isEmpty: accounts.length === 0 && data.transactionCount === 0,
+    todayLabel: weekdayDate(today, locale),
     balance: main
       ? {
           available: formatMoney(main.available, main.currency, locale),

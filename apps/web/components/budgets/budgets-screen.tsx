@@ -159,7 +159,7 @@ export function BudgetsScreen({ view }: { view: BudgetsView }) {
               </Button>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+            <div className="grid gap-6 @3xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
               <div className="flex min-w-0 flex-col gap-4">
                 <BudgetOverview totals={budget.totals} />
                 <AlertsList alerts={budget.alerts} />

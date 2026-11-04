@@ -69,7 +69,7 @@ export function SuggestionsSection({
       ) : null}
 
       {cards.length > 0 ? (
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid gap-3 sm:grid-cols-2 @4xl:grid-cols-3">
           {cards.map(({ suggestion, card }, index) => (
             <SuggestionCard
               key={card.fingerprint}

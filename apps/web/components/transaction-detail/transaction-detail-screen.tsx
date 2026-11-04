@@ -97,7 +97,7 @@ export function TransactionDetailScreen({
         </p>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 @3xl:grid-cols-2">
         <TransactionFacts
           view={view}
           merchant={data.form.merchantName}

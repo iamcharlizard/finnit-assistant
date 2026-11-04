@@ -84,7 +84,7 @@ export function DebtList({
 
   return (
     <>
-      <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid gap-3 @2xl:grid-cols-2 @4xl:grid-cols-3">
         {items.map((item) => (
           <DebtCard
             key={item.id}

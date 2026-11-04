@@ -117,7 +117,7 @@ export function DebtInsights({
           </p>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 @3xl:grid-cols-2">
           <DebtTypeBars bars={view.types} />
           <DebtLoadCard view={view} />
           <PaidByMonthChart

@@ -22,7 +22,7 @@ import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
 import { budgetCategoryOptions } from '@finnit/core/budgets/options';
 import type { BudgetCategory } from '@finnit/core/budgets/types';
-import { debtErrorMessage, registerDebtPayment } from '@/lib/debts/api';
+import { debtErrorMessage, registerDebtPayment } from '@finnit/core/debts/api';
 import {
   buildPaymentMovement,
   hasErrors,

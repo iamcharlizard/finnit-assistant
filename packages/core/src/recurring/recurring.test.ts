@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
 import type { ApiAccount } from '@finnit/core/finance/types';
-import { GraphqlRequestError } from '@/lib/graphql/client';
+import { GraphqlRequestError } from '@finnit/core/graphql/request';
 import { testLocalizer } from '@finnit/core/i18n/testing';
 import {
   ACCEPT_SUGGESTION_MUTATION,

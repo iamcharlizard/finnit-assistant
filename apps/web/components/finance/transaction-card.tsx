@@ -12,7 +12,7 @@ import { CATEGORY_ICONS } from '@/lib/finance/category-icons';
 import type { TransactionRow } from '@finnit/core/finance/transactions';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { SET_ALIAS_MUTATION } from '@/lib/transaction-detail/api';
+import { SET_ALIAS_MUTATION } from '@finnit/core/transaction-detail/api';
 
 /** Sets (or, with "", removes) a movement's own name; nothing else changes. */
 export async function saveOwnName(id: string, name: string): Promise<void> {

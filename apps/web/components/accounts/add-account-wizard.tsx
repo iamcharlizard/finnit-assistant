@@ -14,7 +14,7 @@ import {
 } from '@finnit/ui/components/ui/dialog';
 import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 
-import { accountErrorMessage, createManualAccount } from '@/lib/accounts/api';
+import { accountErrorMessage, createManualAccount } from '@finnit/core/accounts/api';
 import {
   WIZARD_STEPS,
   bankNameOf,

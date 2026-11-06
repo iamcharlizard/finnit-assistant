@@ -1,6 +1,6 @@
-import type { GqlRunner } from '@/lib/accounts/api';
+import type { GqlRunner } from '@finnit/core/graphql/request';
 import type { DayKey } from '@finnit/core/finance/dates';
-import { requestErrorMessage } from '@/lib/graphql/client';
+import { requestErrorMessage } from '@finnit/core/graphql/request';
 import type { Translate } from '@finnit/core/i18n/translator';
 import {
   buildCreateDebtInput,

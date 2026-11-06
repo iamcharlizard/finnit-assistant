@@ -35,7 +35,7 @@ import { SwitchField } from '@/components/finance/switch-field';
 import { SelectField } from '@/components/recurring/select-field';
 import { budgetCategoryOptions } from '@finnit/core/budgets/options';
 import type { BudgetCategory } from '@finnit/core/budgets/types';
-import { debtErrorMessage, loadLoanDraft, saveLoan } from '@/lib/debts/api';
+import { debtErrorMessage, loadLoanDraft, saveLoan } from '@finnit/core/debts/api';
 import { hasErrors, NAME_MAX } from '@finnit/core/debts/form';
 import {
   DESCRIPTION_MAX,

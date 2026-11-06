@@ -34,7 +34,7 @@ import {
   updateLine,
   type LineChange,
   type ReprocessParser,
-} from '@/lib/statements/api';
+} from '@finnit/core/statements/api';
 import type { StatementReviewData } from '@/lib/statements/load';
 import type { ApiStatementDetail } from '@finnit/core/statements/types';
 import {

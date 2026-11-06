@@ -22,7 +22,7 @@ import { NumberInput } from '@finnit/ui/components/ui/number-input';
 import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
 import { SelectField } from '@/components/recurring/select-field';
-import { debtErrorMessage, saveDebt, type DebtTarget } from '@/lib/debts/api';
+import { debtErrorMessage, saveDebt, type DebtTarget } from '@finnit/core/debts/api';
 import {
   NAME_MAX,
   formOfDebt,

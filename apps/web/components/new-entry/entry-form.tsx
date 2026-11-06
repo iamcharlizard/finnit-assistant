@@ -15,7 +15,7 @@ import { Textarea } from '@finnit/ui/components/ui/textarea';
 import { useCategorySuggestion } from '@/hooks/use-category-suggestion';
 import { MAX_UPLOAD_BYTES } from '@/lib/files/routes';
 import { todayKey } from '@finnit/core/finance/dates';
-import { ATTACHMENT_ACCEPT } from '@/lib/new-entry/errors';
+import { ATTACHMENT_ACCEPT } from '@finnit/core/new-entry/errors';
 import {
   applySuggestedCategory,
   currencyOf,

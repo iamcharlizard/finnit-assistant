@@ -1,5 +1,5 @@
-import type { GqlRunner } from '@/lib/accounts/api';
-import { requestErrorMessage } from '@/lib/graphql/client';
+import type { GqlRunner } from '@finnit/core/graphql/request';
+import { requestErrorMessage } from '@finnit/core/graphql/request';
 import type { Translate } from '@finnit/core/i18n/translator';
 import {
   buildAcceptInput,

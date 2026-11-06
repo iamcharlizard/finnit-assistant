@@ -1,9 +1,9 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { GraphqlRequestError } from '@/lib/graphql/client';
+import { GraphqlRequestError } from '@finnit/core/graphql/request';
 import { testLocalizer } from '@finnit/core/i18n/testing';
-import { candidateArgs, statementErrorMessage } from './api';
+import { candidateArgs, statementErrorMessage } from '@finnit/core/statements/api';
 import { POLL_MAX_MS, pollDecision } from '@finnit/core/statements/poll';
 import type {
   ApiStatementDetail,

@@ -13,7 +13,7 @@ import {
   categorizeErrorMessage,
   reviewSuggestions,
   suggestCategories,
-} from '@/lib/categorize/api';
+} from '@finnit/core/categorize/api';
 import type { CategorizeFilters } from '@finnit/core/categorize/filters';
 import {
   SUGGEST_MAX,
@@ -41,7 +41,7 @@ import { AiNotice } from './ai-notice';
 import { CategorizeRow } from './categorize-row';
 import { EmptyList } from './empty-list';
 import { MoveBar } from './move-bar';
-import { renameTransaction } from '@/lib/categorize/api';
+import { renameTransaction } from '@finnit/core/categorize/api';
 import { SelectAllToggle } from './select-all-toggle';
 
 type Busy = 'move' | 'suggest' | 'accept' | 'reject' | `row:${string}` | null;

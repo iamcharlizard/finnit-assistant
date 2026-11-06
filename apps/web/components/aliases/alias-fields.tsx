@@ -19,7 +19,7 @@ import {
   regexErrorOf,
   saveAlias,
   suggestAliasPattern,
-} from '@/lib/aliases/api';
+} from '@finnit/core/aliases/api';
 import {
   DISPLAY_NAME_MAX,
   PATTERN_MAX,

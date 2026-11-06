@@ -9,7 +9,7 @@ import { DatePicker } from '@finnit/ui/components/ui/date-picker';
 import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
 import { todayKey } from '@finnit/core/finance/dates';
-import { addContribution, goalErrorMessage } from '@/lib/goals/api';
+import { addContribution, goalErrorMessage } from '@finnit/core/goals/api';
 import {
   hasErrors,
   newContributionForm,

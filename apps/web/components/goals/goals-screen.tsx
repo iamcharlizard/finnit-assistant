@@ -19,7 +19,7 @@ import {
   goalErrorMessage,
   hasContributionsError,
   removeContribution,
-} from '@/lib/goals/api';
+} from '@finnit/core/goals/api';
 import type {
   ContributionItem,
   GoalCardView,

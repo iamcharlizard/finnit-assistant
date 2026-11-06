@@ -17,7 +17,7 @@ import { SwitchField } from '@/components/finance/switch-field';
 import { LendingMethodField } from './lending-method-field';
 import { budgetCategoryOptions } from '@finnit/core/budgets/options';
 import type { BudgetCategory } from '@finnit/core/budgets/types';
-import { debtErrorMessage, updateLoan } from '@/lib/debts/api';
+import { debtErrorMessage, updateLoan } from '@finnit/core/debts/api';
 import type { DetailFact } from '@finnit/core/debts/detail-view';
 import { hasErrors } from '@finnit/core/debts/form';
 import { DESCRIPTION_MAX, hasDescription } from '@finnit/core/debts/loan-form';

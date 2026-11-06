@@ -8,7 +8,8 @@
     "done": "Done",
     "loadMore": "Load more",
     "connectBank": "Connect bank",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "back": "Back"
   },
   "metadata": {
     "description": "Your personal finance assistant."
@@ -278,6 +279,11 @@
       "missed": "Overdue · {date}",
       "reminder": "Reminder · {when}",
       "approx": "≈ {amount}"
+    },
+    "paymentStatus": {
+      "pending": "Pending",
+      "scheduled": "Scheduled",
+      "paid": "Paid"
     }
   },
   "monthSwitcher": {

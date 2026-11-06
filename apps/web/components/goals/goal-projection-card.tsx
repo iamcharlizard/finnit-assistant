@@ -8,7 +8,7 @@ import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 import { cn } from '@finnit/ui/lib/utils';
 
 import { useGoalProjection } from '@/hooks/use-goal-projection';
-import { goalErrorMessage } from '@/lib/goals/api';
+import { goalErrorMessage } from '@finnit/core/goals/api';
 import { parseMonthlyContribution } from '@finnit/core/goals/form';
 import type { ApiGoal, ApiGoalProjection } from '@finnit/core/goals/types';
 import { buildProjectionView, type GoalDetailView } from '@finnit/core/goals/view';

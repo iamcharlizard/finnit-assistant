@@ -3,7 +3,7 @@
 import * as React from 'react';
 
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
-import { fetchProjection } from '@/lib/goals/api';
+import { fetchProjection } from '@finnit/core/goals/api';
 import type { ApiGoalProjection } from '@finnit/core/goals/types';
 import { gql } from '@/lib/graphql/client';
 

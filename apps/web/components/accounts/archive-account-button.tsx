@@ -16,7 +16,7 @@ import {
 } from '@finnit/ui/components/ui/alert-dialog';
 import { Button } from '@finnit/ui/components/ui/button';
 
-import { accountErrorMessage, setAccountArchived } from '@/lib/accounts/api';
+import { accountErrorMessage, setAccountArchived } from '@finnit/core/accounts/api';
 import { gql } from '@/lib/graphql/client';
 
 /** Archive (after asking) or bring back an account. */

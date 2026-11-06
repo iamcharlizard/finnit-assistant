@@ -22,7 +22,7 @@ import {
   findCandidates,
   statementErrorMessage,
   type LinkCandidate,
-} from '@/lib/statements/api';
+} from '@finnit/core/statements/api';
 import type { StatementLineView } from '@finnit/core/statements/view';
 
 /**

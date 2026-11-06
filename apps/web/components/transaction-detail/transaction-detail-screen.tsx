@@ -23,7 +23,7 @@ import {
   deleteTransaction,
   transactionErrorMessage,
   updateTransaction,
-} from '@/lib/transaction-detail/api';
+} from '@finnit/core/transaction-detail/api';
 import type { TransactionDetailData } from '@/lib/transaction-detail/load';
 import { UNDO_TRANSFER_CONVERSION_MUTATION } from '@finnit/core/transfers/convert';
 import { ConvertTransferDialog } from '@/components/transfers/convert-transfer-dialog';

@@ -34,7 +34,7 @@ import {
   recurringErrorMessage,
   saveRecurring,
   type SaveTarget,
-} from '@/lib/recurring/api';
+} from '@finnit/core/recurring/api';
 import {
   NAME_MAX,
   NOTES_MAX,

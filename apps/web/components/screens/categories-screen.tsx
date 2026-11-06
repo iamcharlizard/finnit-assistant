@@ -37,7 +37,7 @@ import {
   SHOW_CATEGORY_MUTATION,
   categoryErrorMessage,
   type CategoryForm,
-} from '@/lib/categories/api';
+} from '@finnit/core/categories/api';
 import type { CategoriesData } from '@/lib/categories/load';
 import {
   CATEGORY_KINDS,

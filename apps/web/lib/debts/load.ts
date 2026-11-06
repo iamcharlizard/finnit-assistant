@@ -12,7 +12,7 @@ import {
   type Connection,
 } from '@finnit/core/finance/types';
 import type { BudgetCategory } from '@finnit/core/budgets/types';
-import { loadPayoffComparison } from './api';
+import { loadPayoffComparison } from '@finnit/core/debts/api';
 import { buildPayoffComparison, type PayoffComparison } from '@finnit/core/debts/payoff';
 import { buildLoanDetailView, type LoanDetailView } from '@finnit/core/debts/detail-view';
 import {

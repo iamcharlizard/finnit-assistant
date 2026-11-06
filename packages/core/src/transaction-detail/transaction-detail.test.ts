@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
 import { testLocalizer } from '@finnit/core/i18n/testing';
-import { GraphqlRequestError } from '@/lib/graphql/client';
+import { GraphqlRequestError } from '@finnit/core/graphql/request';
 import { transactionErrorMessage } from './api';
 import { buildUpdateInput, detailFormOf, validateDetailForm } from '@finnit/core/transaction-detail/form';
 import type { TransactionDetail } from '@finnit/core/transaction-detail/types';

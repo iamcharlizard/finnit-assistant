@@ -27,7 +27,7 @@ import {
   validateCategoryForm,
   type CategoryForm,
   type CategoryFormError,
-} from '@/lib/categories/api';
+} from '@finnit/core/categories/api';
 import {
   CATEGORY_KINDS,
   CATEGORY_NAME_MAX,

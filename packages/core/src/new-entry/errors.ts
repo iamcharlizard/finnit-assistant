@@ -1,4 +1,4 @@
-import { GraphqlRequestError, NETWORK_ERROR } from '@/lib/graphql/client';
+import { GraphqlRequestError, NETWORK_ERROR } from '@finnit/core/graphql/request';
 
 /**
  * Friendly messages (keys under `newEntry.errors`) for what can go wrong

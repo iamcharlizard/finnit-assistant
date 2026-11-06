@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import { fetchPage } from '@/lib/categorize/api';
+import { fetchPage } from '@finnit/core/categorize/api';
 import type { CategorizeFilters } from '@finnit/core/categorize/filters';
 import type {
   CategorizePageData,

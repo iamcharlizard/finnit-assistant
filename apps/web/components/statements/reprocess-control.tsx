@@ -7,7 +7,7 @@ import { RefreshCw } from 'lucide-react';
 import { Button } from '@finnit/ui/components/ui/button';
 
 import { SelectField } from '@/components/recurring/select-field';
-import { REPROCESS_PARSERS, type ReprocessParser } from '@/lib/statements/api';
+import { REPROCESS_PARSERS, type ReprocessParser } from '@finnit/core/statements/api';
 
 /** "Reprocesar" with the parser to read with: automático, Banamex or IA. */
 export function ReprocessControl({

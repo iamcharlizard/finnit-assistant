@@ -1,5 +1,5 @@
 import type { Translate } from '@finnit/core/i18n/translator';
-import { requestErrorMessage } from '@/lib/graphql/client';
+import { requestErrorMessage } from '@finnit/core/graphql/request';
 import {
   buildCreateAccountInput,
   buildCreditTermsInput,
@@ -20,11 +20,9 @@ export const SET_CREDIT_CARD_TERMS_MUTATION = `mutation SetCreditCardTerms($acco
 
 export const REMOVE_CREDIT_CARD_TERMS_MUTATION = `mutation RemoveCreditCardTerms($accountId: ID!) { removeCreditCardTerms(accountId: $accountId) { id } }`;
 
-/** Runs a GraphQL document (the real one is `gql` from lib/graphql/client). */
-export type GqlRunner = <T>(
-  query: string,
-  variables?: Record<string, unknown>,
-) => Promise<T>;
+import type { GqlRunner } from '@finnit/core/graphql/request';
+
+export type { GqlRunner };
 
 /** The API answers a repeated account name with Prisma's unique error. */
 export function isDuplicateNameError(error: unknown): boolean {

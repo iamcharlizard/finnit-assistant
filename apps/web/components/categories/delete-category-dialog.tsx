@@ -21,7 +21,7 @@ import {
   DELETE_CATEGORY_MUTATION,
   categoryErrorMessage,
   categoryReferences,
-} from '@/lib/categories/api';
+} from '@finnit/core/categories/api';
 import type { SettingsCategory } from '@finnit/core/categories/types';
 import {
   isInUse,

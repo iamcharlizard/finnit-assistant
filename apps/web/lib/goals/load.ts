@@ -3,7 +3,7 @@ import 'server-only';
 import { serverGraphql } from '@/lib/api/server-graphql';
 import { todayKey } from '@finnit/core/finance/dates';
 import { getLocalizer } from '@/lib/i18n/server';
-import { projectionsQuery } from './api';
+import { projectionsQuery } from '@finnit/core/goals/api';
 import {
   GOAL_FIELDS,
   RECOMMENDATION_FIELDS,

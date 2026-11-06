@@ -9,7 +9,7 @@ import {
   type ConfirmRequest,
 } from '@/components/admin/confirm-dialog';
 import type { BudgetCategory } from '@finnit/core/budgets/types';
-import { debtErrorMessage, deleteDebt } from '@/lib/debts/api';
+import { debtErrorMessage, deleteDebt } from '@finnit/core/debts/api';
 import type { ApiDebt } from '@finnit/core/debts/types';
 import type { DebtItem } from '@finnit/core/debts/view';
 import type { DayKey } from '@finnit/core/finance/dates';

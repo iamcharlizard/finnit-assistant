@@ -25,7 +25,7 @@ import {
   goalErrorMessage,
   saveGoal,
   type GoalSaveTarget,
-} from '@/lib/goals/api';
+} from '@finnit/core/goals/api';
 import {
   NAME_MAX,
   formOfGoal,

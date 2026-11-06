@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import type { GqlRunner } from '@/lib/accounts/api';
+import type { GqlRunner } from '../accounts/api';
 import type { ApiAccount } from '@finnit/core/finance/types';
 import { testLocalizer } from '@finnit/core/i18n/testing';
 import {

@@ -15,6 +15,10 @@ import {
 } from '@finnit/core/finance/types';
 import { SUGGESTION_MONTHS } from '@finnit/core/budgets/suggestions';
 import {
+  DASHBOARD_BUDGET_QUERY,
+  type DashboardBudgetResult,
+} from '@finnit/core/dashboard/request';
+import {
   BUDGET_CATEGORY_FIELDS,
   BUDGET_FIELDS,
   BUDGET_SUMMARY_FIELDS,
@@ -101,13 +105,7 @@ export async function loadBudgets(selected: MonthRef): Promise<BudgetsView> {
 export async function loadBudgetCard(): Promise<BudgetCardView | null> {
   const month = currentMonth();
   const [data, l] = await Promise.all([
-    serverGraphql<{ budgets: ApiBudget[]; monthlyReport: ApiMonthlyReport }>(
-      `query DashboardBudget($year: Int!, $month: Int!) {
-  budgets { ${BUDGET_FIELDS} }
-  monthlyReport(year: $year, month: $month) { totalExpenses }
-}`,
-      { ...month },
-    ),
+    serverGraphql<DashboardBudgetResult>(DASHBOARD_BUDGET_QUERY, { ...month }),
     getLocalizer(),
   ]);
   const budget = budgetOf(data.budgets, month);

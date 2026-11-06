@@ -27,7 +27,7 @@ import {
   deleteDebtCharge,
   deleteHistoricalPayment,
   loadLoanCandidates,
-} from '@/lib/debts/api';
+} from '@finnit/core/debts/api';
 import {
   buildCandidateRows,
   type CandidateRow,

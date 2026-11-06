@@ -1,6 +1,6 @@
-import type { GqlRunner } from '@/lib/accounts/api';
+import type { GqlRunner } from '@finnit/core/graphql/request';
 import type { Connection } from '@finnit/core/finance/types';
-import { requestErrorMessage } from '@/lib/graphql/client';
+import { requestErrorMessage } from '@finnit/core/graphql/request';
 import type { Translate } from '@finnit/core/i18n/translator';
 import { pageVariables, type CategorizeFilters } from '@finnit/core/categorize/filters';
 import { renameInput, type RenameForm } from '@finnit/core/categorize/rename';

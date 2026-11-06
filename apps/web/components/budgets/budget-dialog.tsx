@@ -22,7 +22,7 @@ import {
   budgetErrorMessage,
   saveBudget,
   type BudgetTarget,
-} from '@/lib/budgets/api';
+} from '@finnit/core/budgets/api';
 import {
   capsSum,
   hasBudgetErrors,

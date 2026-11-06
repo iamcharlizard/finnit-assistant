@@ -3,7 +3,7 @@
 import * as React from 'react';
 
 import { gql } from '@/lib/graphql/client';
-import { fetchStatement } from '@/lib/statements/api';
+import { fetchStatement } from '@finnit/core/statements/api';
 import { POLL_INTERVAL_MS, pollDecision } from '@finnit/core/statements/poll';
 import type { ApiStatementDetail } from '@finnit/core/statements/types';
 import { isWorking } from '@finnit/core/statements/view';

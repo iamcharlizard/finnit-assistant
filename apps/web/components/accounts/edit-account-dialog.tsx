@@ -20,7 +20,7 @@ import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 import { Label } from '@finnit/ui/components/ui/label';
 import { Switch } from '@finnit/ui/components/ui/switch';
 
-import { accountErrorMessage, saveAccountChanges } from '@/lib/accounts/api';
+import { accountErrorMessage, saveAccountChanges } from '@finnit/core/accounts/api';
 import { bankChoiceOf } from '@finnit/core/accounts/banks';
 import {
   NICKNAME_MAX_LENGTH,

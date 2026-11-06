@@ -11,7 +11,7 @@ import {
   type ApiTransferSuggestion,
   type TransferSuggestionView,
 } from '@finnit/core/transfers/suggestions';
-import { CATEGORIZE_CONNECTION, toPageData } from './api';
+import { CATEGORIZE_CONNECTION, toPageData } from '@finnit/core/categorize/api';
 import { pageVariables, type CategorizeFilters } from '@finnit/core/categorize/filters';
 import type {
   CategorizeCategory,

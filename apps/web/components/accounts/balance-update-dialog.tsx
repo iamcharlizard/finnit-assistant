@@ -22,7 +22,7 @@ import {
   balanceDifference,
   balanceFromTyped,
   setAccountBalance,
-} from '@/lib/accounts/api';
+} from '@finnit/core/accounts/api';
 import type { AccountSummary } from '@finnit/core/accounts/view';
 import { formatMoney } from '@finnit/core/finance/money';
 import { gql } from '@/lib/graphql/client';

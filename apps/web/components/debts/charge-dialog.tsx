@@ -34,7 +34,7 @@ import {
   addDebtCharge,
   debtErrorMessage,
   updateDebtCharge,
-} from '@/lib/debts/api';
+} from '@finnit/core/debts/api';
 import {
   asksFirstPayment,
   asksPaidInstallments,

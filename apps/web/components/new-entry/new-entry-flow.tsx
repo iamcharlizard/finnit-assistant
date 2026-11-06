@@ -21,7 +21,7 @@ import {
   duplicateCheck,
   planForDuplicateAnswer,
 } from '@finnit/core/new-entry/duplicates';
-import { createErrorKey } from '@/lib/new-entry/errors';
+import { createErrorKey } from '@finnit/core/new-entry/errors';
 import {
   buildTransactionInput,
   buildTransferInput,

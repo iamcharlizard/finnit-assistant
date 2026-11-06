@@ -22,7 +22,7 @@ import {
   deleteAlias,
   deleteRule,
   setAliasActive,
-} from '@/lib/aliases/api';
+} from '@finnit/core/aliases/api';
 import type { AliasesData } from '@/lib/aliases/load';
 import type { ApiMerchantAlias, ApiMerchantRule } from '@finnit/core/aliases/types';
 import { gql } from '@/lib/graphql/client';

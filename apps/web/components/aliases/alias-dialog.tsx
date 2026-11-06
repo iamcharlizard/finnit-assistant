@@ -16,7 +16,7 @@ import {
 } from '@finnit/ui/components/ui/dialog';
 import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 
-import { aliasErrorMessage } from '@/lib/aliases/api';
+import { aliasErrorMessage } from '@finnit/core/aliases/api';
 import type { AliasForm } from '@finnit/core/aliases/form';
 import type { ApiMerchantAlias } from '@finnit/core/aliases/types';
 import type { CategorizeCategory } from '@finnit/core/categorize/types';

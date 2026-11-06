@@ -3,7 +3,7 @@
 import * as React from 'react';
 
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
-import { loadPayoffComparison } from '@/lib/debts/api';
+import { loadPayoffComparison } from '@finnit/core/debts/api';
 import {
   buildPayoffComparison,
   parseExtraPayment,

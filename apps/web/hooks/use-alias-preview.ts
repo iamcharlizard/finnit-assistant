@@ -3,7 +3,7 @@
 import * as React from 'react';
 
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
-import { previewAlias, regexErrorOf } from '@/lib/aliases/api';
+import { previewAlias, regexErrorOf } from '@finnit/core/aliases/api';
 import {
   PREVIEW_DEBOUNCE_MS,
   previewInput,

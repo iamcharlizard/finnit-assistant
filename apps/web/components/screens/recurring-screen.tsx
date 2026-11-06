@@ -58,7 +58,7 @@ import {
   runPaymentAction,
   setRecurringActive,
   type PaymentAction,
-} from '@/lib/recurring/api';
+} from '@finnit/core/recurring/api';
 import { inRange, recurringHref } from '@finnit/core/recurring/range';
 import {
   parseTabParam,

@@ -1,10 +1,10 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { GraphqlRequestError, NETWORK_ERROR } from '@/lib/graphql/client';
+import { GraphqlRequestError, NETWORK_ERROR } from '@finnit/core/graphql/request';
 import { testLocalizer } from '@finnit/core/i18n/testing';
 import { duplicateCheck, planForDuplicateAnswer } from '@finnit/core/new-entry/duplicates';
-import { createErrorKey, uploadErrorKey } from './errors';
+import { createErrorKey, uploadErrorKey } from '@finnit/core/new-entry/errors';
 import {
   applySuggestedCategory,
   buildTransactionInput,

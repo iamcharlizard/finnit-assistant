@@ -17,7 +17,7 @@ import {
 } from '@finnit/ui/components/ui/dialog';
 import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 
-import { debtErrorMessage, rescheduleLoanPayment } from '@/lib/debts/api';
+import { debtErrorMessage, rescheduleLoanPayment } from '@finnit/core/debts/api';
 import type { ScheduleRow } from '@finnit/core/debts/detail-view';
 import { isDayKey, type DayKey } from '@finnit/core/finance/dates';
 import { gql } from '@/lib/graphql/client';

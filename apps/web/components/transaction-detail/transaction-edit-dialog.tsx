@@ -37,7 +37,7 @@ import {
 } from '@/components/aliases/alias-fields';
 import { SwitchField } from '@/components/finance/switch-field';
 import { AmountField } from '@/components/new-entry/amount-field';
-import { aliasErrorMessage } from '@/lib/aliases/api';
+import { aliasErrorMessage } from '@finnit/core/aliases/api';
 import { aliasPatternGuess } from '@finnit/core/aliases/guess';
 import type { ApiMerchantAlias } from '@finnit/core/aliases/types';
 import {
@@ -60,7 +60,7 @@ import {
   suggestCategoryWithAi,
   transactionErrorMessage,
   updateTransaction,
-} from '@/lib/transaction-detail/api';
+} from '@finnit/core/transaction-detail/api';
 import { ownNameUpdate, shownSuggestion } from '@finnit/core/transaction-detail/edit';
 import {
   DESCRIPTION_MAX,

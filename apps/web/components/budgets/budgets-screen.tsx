@@ -19,7 +19,7 @@ import {
   copyBudget,
   deleteBudget,
   type BudgetTarget,
-} from '@/lib/budgets/api';
+} from '@finnit/core/budgets/api';
 import {
   emptyBudgetForm,
   formOfBudget,

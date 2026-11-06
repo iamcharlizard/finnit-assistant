@@ -1,4 +1,4 @@
-import type { GqlRunner } from '@/lib/accounts/api';
+import type { GqlRunner } from '@finnit/core/graphql/request';
 
 /** A person the user deals with (who lent them money, for now). */
 export interface ApiContact {

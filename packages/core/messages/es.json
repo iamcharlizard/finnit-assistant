@@ -8,7 +8,8 @@
     "done": "Listo",
     "loadMore": "Cargar más",
     "connectBank": "Conectar banco",
-    "comingSoon": "Próximamente"
+    "comingSoon": "Próximamente",
+    "back": "Regresar"
   },
   "metadata": {
     "description": "Tu asistente de finanzas personales."
@@ -278,6 +279,11 @@
       "missed": "Vencido · {date}",
       "reminder": "Recordatorio · {when}",
       "approx": "≈ {amount}"
+    },
+    "paymentStatus": {
+      "pending": "Pendiente",
+      "scheduled": "Programado",
+      "paid": "Pagado"
     }
   },
   "monthSwitcher": {

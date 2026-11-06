@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import { uploadErrorKey, type UploadErrorKey } from '@/lib/new-entry/errors';
+import { uploadErrorKey, type UploadErrorKey } from '@finnit/core/new-entry/errors';
 import {
   AttachmentUploadError,
   uploadAttachment,

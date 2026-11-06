@@ -12,6 +12,7 @@ import 'react-native-reanimated';
 
 import { useAppTheme, ThemeRoot } from '@finnit/ui-native/theme/theme-root';
 import { MoneyFormatProvider } from '@finnit/ui-native/components/ui/money-input';
+import { Toaster } from '@finnit/ui-native/components/ui/toaster';
 
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -46,6 +47,7 @@ function ThemedApp() {
         {/* Legacy isDark context for the screens not migrated yet. */}
         <ThemeProvider>
           <Navigation />
+          <Toaster />
         </ThemeProvider>
       </MoneyFormatProvider>
     </ThemeRoot>

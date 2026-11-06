@@ -10,11 +10,13 @@ interface CheckboxProps {
   onCheckedChange: (checked: boolean) => void;
   label: string;
   disabled?: boolean;
+  /** Only for screen readers (e.g. a row's select box). */
+  hideLabel?: boolean;
   className?: string;
 }
 
 /** A checkbox with its label; the whole row is the touch target. */
-function Checkbox({ checked, onCheckedChange, label, disabled, className }: CheckboxProps) {
+function Checkbox({ checked, onCheckedChange, label, disabled, hideLabel, className }: CheckboxProps) {
   return (
     <TwPressable
       accessibilityRole="checkbox"
@@ -32,7 +34,7 @@ function Checkbox({ checked, onCheckedChange, label, disabled, className }: Chec
       >
         {checked ? <Icon icon={Check} size={12} strokeWidth={3} color="--secondary-foreground" /> : null}
       </TwView>
-      <Text className="text-sm text-on-surface-variant">{label}</Text>
+      {hideLabel ? null : <Text className="text-sm text-on-surface-variant">{label}</Text>}
     </TwPressable>
   );
 }

@@ -49,6 +49,20 @@ export function useElevation(kind: 'raised' | 'inset' = 'raised'): { boxShadow: 
   return { boxShadow: tokens[kind === 'inset' ? '--elevation-inset' : '--elevation'] ?? 'none' };
 }
 
+/** `var(--chart-1)` → the token's value; any other color as is. */
+export function resolveColor(value: string, tokens: TokenMap): string {
+  return value.replace(/var\((--[\w-]+)\)/g, (match, name: `--${string}`) => tokens[name] ?? match);
+}
+
+/**
+ * Colors from @finnit/core's view builders come as CSS (`var(--chart-1)`,
+ * the web's syntax); this resolves them for React Native props.
+ */
+export function useColor(): (value: string) => string {
+  const { tokens } = useAppTheme();
+  return React.useCallback((value: string) => resolveColor(value, tokens), [tokens]);
+}
+
 interface ThemeRootProps {
   /** The palette for the whole app (EXPO_PUBLIC_FINNIT_THEME, or an admin's preview). */
   theme: AppTheme;

@@ -1,6 +1,6 @@
 import { CalendarClock, CreditCard } from 'lucide-react';
 
-import type { CardDateItem } from '@/lib/recurring/view';
+import type { CardDateItem } from '@finnit/core/recurring/view';
 
 /** A credit card's cut-off or payment-due date in the payments list. */
 export function CardDateRow({

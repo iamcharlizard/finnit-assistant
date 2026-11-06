@@ -7,7 +7,7 @@ import { Button } from '@finnit/ui/components/ui/button';
 import { cn } from '@finnit/ui/lib/utils';
 
 import type { PaymentAction } from '@/lib/recurring/api';
-import type { PaymentItem } from '@/lib/recurring/view';
+import type { PaymentItem } from '@finnit/core/recurring/view';
 import { KindIcon } from './kind-icon';
 import { PaymentStatusBadge } from './payment-status-badge';
 

@@ -1,0 +1,29 @@
+{
+  "name": "@finnit/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./messages/*": "./messages/*",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit",
+    "test": "tsx --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "use-intl": "^4.14.9"
+  },
+  "devDependencies": {
+    "@finnit/eslint-config": "workspace:*",
+    "@finnit/typescript-config": "workspace:*",
+    "@types/node": "^25.9.1",
+    "@types/react": "19.3.0",
+    "eslint": "^10.4.0",
+    "react": "19.3.0",
+    "tsx": "^4.22.3",
+    "typescript": "5.9.3"
+  }
+}

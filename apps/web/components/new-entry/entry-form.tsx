@@ -14,17 +14,17 @@ import { Textarea } from '@finnit/ui/components/ui/textarea';
 
 import { useCategorySuggestion } from '@/hooks/use-category-suggestion';
 import { MAX_UPLOAD_BYTES } from '@/lib/files/routes';
-import { todayKey } from '@/lib/finance/dates';
+import { todayKey } from '@finnit/core/finance/dates';
 import { ATTACHMENT_ACCEPT } from '@/lib/new-entry/errors';
 import {
   applySuggestedCategory,
   currencyOf,
   type EntryDraft,
   type EntryErrors,
-} from '@/lib/new-entry/form';
-import type { EntryAccount, EntryCategory } from '@/lib/new-entry/graphql';
-import { accountOptions, categoryOptions } from '@/lib/new-entry/options';
-import type { CheckField } from '@/lib/receipts/prefill';
+} from '@finnit/core/new-entry/form';
+import type { EntryAccount, EntryCategory } from '@finnit/core/new-entry/graphql';
+import { accountOptions, categoryOptions } from '@finnit/core/new-entry/options';
+import type { CheckField } from '@finnit/core/receipts/prefill';
 import { AmountField } from './amount-field';
 
 /** Fields to double-check after a receipt was read (amber outline). */

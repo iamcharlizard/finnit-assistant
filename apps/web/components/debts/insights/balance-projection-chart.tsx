@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { ProjectionPoint } from '@/lib/debts/insights-view';
+import type { ProjectionPoint } from '@finnit/core/debts/insights-view';
 import { ChartTable } from './chart-table';
 import { ChartTooltip } from './chart-tooltip';
 

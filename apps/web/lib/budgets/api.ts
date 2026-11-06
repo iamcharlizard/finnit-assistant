@@ -1,12 +1,12 @@
 import type { GqlRunner } from '@/lib/accounts/api';
-import type { MonthRef } from '@/lib/finance/dates';
+import type { MonthRef } from '@finnit/core/finance/dates';
 import { requestErrorMessage } from '@/lib/graphql/client';
-import type { Translate } from '@/lib/i18n/translator';
+import type { Translate } from '@finnit/core/i18n/translator';
 import {
   buildCreateBudgetInput,
   buildUpdateBudgetInput,
   type BudgetForm,
-} from './form';
+} from '@finnit/core/budgets/form';
 
 /** Budget mutations, run from client components through /api/graphql. */
 

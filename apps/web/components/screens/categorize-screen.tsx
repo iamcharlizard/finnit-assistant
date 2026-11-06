@@ -14,7 +14,7 @@ import { TransferSuggestionsPanel } from '@/components/transfers/transfer-sugges
 import {
   categorizeQuery,
   type CategorizeFilters as Filters,
-} from '@/lib/categorize/filters';
+} from '@finnit/core/categorize/filters';
 import type { CategorizeData } from '@/lib/categorize/load';
 
 /** "Clasificar movimientos": filters, then the selectable list. */

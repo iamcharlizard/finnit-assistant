@@ -6,8 +6,8 @@ import { QrCode, ScanText, Sparkles, TriangleAlert } from 'lucide-react';
 import { Badge } from '@finnit/ui/components/ui/badge';
 import { Button } from '@finnit/ui/components/ui/button';
 
-import type { ReceiptImport } from '@/lib/receipts/graphql';
-import { readSourceKey } from '@/lib/receipts/prefill';
+import type { ReceiptImport } from '@finnit/core/receipts/graphql';
+import { readSourceKey } from '@finnit/core/receipts/prefill';
 import { ReceiptThumbnail } from './receipt-thumbnail';
 
 const SOURCE_ICONS = { qr: QrCode, ocr: ScanText, ai: Sparkles } as const;

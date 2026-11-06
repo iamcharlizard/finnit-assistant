@@ -9,7 +9,7 @@ import { Button } from '@finnit/ui/components/ui/button';
 import { DataTable, type ColumnDef } from '@finnit/ui/components/ui/data-table';
 
 import { useTableLabels } from '@/components/use-table-labels';
-import type { PaymentRow } from '@/lib/debts/detail-view';
+import type { PaymentRow } from '@finnit/core/debts/detail-view';
 
 /**
  * Payments made on the loan, newest first: those made before registering it

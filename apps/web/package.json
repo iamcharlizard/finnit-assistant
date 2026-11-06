@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@finnit/bank-connect": "workspace:*",
+    "@finnit/core": "workspace:*",
     "@finnit/ui": "workspace:*",
     "@fontsource/ubuntu": "^5.3.0",
     "@vercel/analytics": "^2.0.1",

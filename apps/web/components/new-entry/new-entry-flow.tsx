@@ -14,13 +14,13 @@ import { useAttachmentUpload } from '@/hooks/use-attachment-upload';
 import { useNewEntryData } from '@/hooks/use-new-entry-data';
 import { usePendingReceipts } from '@/hooks/use-pending-receipts';
 import { useReceiptReader } from '@/hooks/use-receipt-reader';
-import { accountLabel } from '@/lib/finance/accounts';
-import { todayKey } from '@/lib/finance/dates';
+import { accountLabel } from '@finnit/core/finance/accounts';
+import { todayKey } from '@finnit/core/finance/dates';
 import { gql } from '@/lib/graphql/client';
 import {
   duplicateCheck,
   planForDuplicateAnswer,
-} from '@/lib/new-entry/duplicates';
+} from '@finnit/core/new-entry/duplicates';
 import { createErrorKey } from '@/lib/new-entry/errors';
 import {
   buildTransactionInput,
@@ -35,28 +35,28 @@ import {
   type EntryDraft,
   type EntryKind,
   type TransferDraft,
-} from '@/lib/new-entry/form';
+} from '@finnit/core/new-entry/form';
 import {
   CREATE_TRANSACTION_MUTATION,
   CREATE_TRANSFER_MUTATION,
   SIMILAR_TRANSACTIONS_QUERY,
   type SimilarTransaction,
-} from '@/lib/new-entry/graphql';
-import { isCardPayment, transferSources } from '@/lib/new-entry/options';
+} from '@finnit/core/new-entry/graphql';
+import { isCardPayment, transferSources } from '@finnit/core/new-entry/options';
 import {
   CONFIRM_RECEIPT_MUTATION,
   DISCARD_RECEIPT_MUTATION,
   RECEIPT_STATUS_QUERY,
   type ReceiptImport,
   type ReceiptStatus,
-} from '@/lib/receipts/graphql';
+} from '@finnit/core/receipts/graphql';
 import { discardWhenSettled } from '@/lib/receipts/discard';
 import {
   buildConfirmInput,
   prefillFromReceipt,
   receiptMatches,
   type CheckField,
-} from '@/lib/receipts/prefill';
+} from '@finnit/core/receipts/prefill';
 import { leftoverReceiptId } from '@/lib/receipts/reader';
 import { PendingReceipts } from '@/components/receipts/pending-receipts';
 import { ReceiptCapture } from '@/components/receipts/receipt-capture';

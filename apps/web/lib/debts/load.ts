@@ -5,16 +5,16 @@ import { notFound } from 'next/navigation';
 import { serverGraphql } from '@/lib/api/server-graphql';
 import { isUuid } from '@/lib/files/routes';
 import { getLocalizer } from '@/lib/i18n/server';
-import { todayKey } from '@/lib/finance/dates';
+import { todayKey } from '@finnit/core/finance/dates';
 import {
   ACCOUNT_FIELDS,
   type ApiAccount,
   type Connection,
-} from '@/lib/finance/types';
-import type { BudgetCategory } from '@/lib/budgets/types';
+} from '@finnit/core/finance/types';
+import type { BudgetCategory } from '@finnit/core/budgets/types';
 import { loadPayoffComparison } from './api';
-import { buildPayoffComparison, type PayoffComparison } from './payoff';
-import { buildLoanDetailView, type LoanDetailView } from './detail-view';
+import { buildPayoffComparison, type PayoffComparison } from '@finnit/core/debts/payoff';
+import { buildLoanDetailView, type LoanDetailView } from '@finnit/core/debts/detail-view';
 import {
   DEBT_DETAIL_FIELDS,
   DEBT_FIELDS,
@@ -24,8 +24,8 @@ import {
   type ApiDebt,
   type ApiDebtDetail,
   type ApiLoanScheduleItem,
-} from './types';
-import { buildDebtsView, type DebtsView } from './view';
+} from '@finnit/core/debts/types';
+import { buildDebtsView, type DebtsView } from '@finnit/core/debts/view';
 
 /** The API's page limit; far more debts than anyone has. */
 const DEBTS_PAGE = 100;

@@ -23,9 +23,9 @@ import {
 import { cn } from '@finnit/ui/lib/utils';
 
 import { useTransactionDrawer } from '@/components/transaction-detail/transaction-drawer';
-import type { PickerOption } from '@/lib/new-entry/options';
-import type { LineStatus } from '@/lib/statements/types';
-import type { StatementLineView } from '@/lib/statements/view';
+import type { PickerOption } from '@finnit/core/new-entry/options';
+import type { LineStatus } from '@finnit/core/statements/types';
+import type { StatementLineView } from '@finnit/core/statements/view';
 
 const STATUS_BADGE: Record<
   LineStatus,

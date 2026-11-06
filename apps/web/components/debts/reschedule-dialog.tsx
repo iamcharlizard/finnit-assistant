@@ -18,8 +18,8 @@ import {
 import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 
 import { debtErrorMessage, rescheduleLoanPayment } from '@/lib/debts/api';
-import type { ScheduleRow } from '@/lib/debts/detail-view';
-import { isDayKey, type DayKey } from '@/lib/finance/dates';
+import type { ScheduleRow } from '@finnit/core/debts/detail-view';
+import { isDayKey, type DayKey } from '@finnit/core/finance/dates';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 

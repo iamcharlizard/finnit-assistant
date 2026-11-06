@@ -9,8 +9,8 @@ import {
   isNavGroup,
   visibleSections,
 } from './sections';
-import { matchRoute, pageTitleKey } from './titles';
-import { openGroupsCookieValue, parseOpenGroups } from './sidebar';
+import { matchRoute, pageTitleKey } from '@finnit/core/nav/titles';
+import { openGroupsCookieValue, parseOpenGroups } from '@finnit/core/nav/sidebar';
 
 describe('nav sections', () => {
   it('hides empty sections and, for non-admins, Administración', () => {

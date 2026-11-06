@@ -21,7 +21,7 @@ import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { PinField } from '@/components/privacy/pin-field';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { PIN_MAX, PIN_MIN, isValidPin } from '@/lib/privacy/pin';
+import { PIN_MAX, PIN_MIN, isValidPin } from '@finnit/core/privacy/pin';
 
 const SET_PIN_MUTATION = `mutation SetPrivacyPin($input: SetPrivacyPinInput!) { setPrivacyPin(input: $input) }`;
 const RESET_PIN_MUTATION = `mutation ResetPrivacyPin($token: String!, $pin: String!) { resetPrivacyPin(token: $token, pin: $pin) }`;

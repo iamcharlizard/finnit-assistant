@@ -8,8 +8,8 @@ import {
   monthOf,
   startOfDayIso,
   todayKey,
-} from '@/lib/finance/dates';
-import { DEBT_INSIGHTS_FIELDS, type ApiDebtInsights } from '@/lib/debts/types';
+} from '@finnit/core/finance/dates';
+import { DEBT_INSIGHTS_FIELDS, type ApiDebtInsights } from '@finnit/core/debts/types';
 import {
   ACCOUNT_FIELDS,
   MONTHLY_REPORT_FIELDS,
@@ -18,8 +18,8 @@ import {
   type ApiMonthlyReport,
   type ApiUpcomingPayment,
   type Connection,
-} from '@/lib/finance/types';
-import { UPCOMING_DAYS, buildDashboardView, type DashboardView } from './view';
+} from '@finnit/core/finance/types';
+import { UPCOMING_DAYS, buildDashboardView, type DashboardView } from '@finnit/core/dashboard/view';
 
 const DASHBOARD_QUERY = `query Dashboard($year: Int!, $month: Int!, $from: DateTime!, $to: DateTime!) {
   accounts(first: 100, archived: false) { edges { node { ${ACCOUNT_FIELDS} } } }

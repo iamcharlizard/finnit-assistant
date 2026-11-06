@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ChevronRight, FileText, TriangleAlert } from 'lucide-react';
 
-import type { StatementListItem as Item } from '@/lib/statements/view';
+import type { StatementListItem as Item } from '@finnit/core/statements/view';
 import { StatementStatusBadge } from './statement-status-badge';
 
 /** One uploaded statement: card, period, status, balance and any mismatch. */

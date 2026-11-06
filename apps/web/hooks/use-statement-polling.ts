@@ -4,9 +4,9 @@ import * as React from 'react';
 
 import { gql } from '@/lib/graphql/client';
 import { fetchStatement } from '@/lib/statements/api';
-import { POLL_INTERVAL_MS, pollDecision } from '@/lib/statements/poll';
-import type { ApiStatementDetail } from '@/lib/statements/types';
-import { isWorking } from '@/lib/statements/view';
+import { POLL_INTERVAL_MS, pollDecision } from '@finnit/core/statements/poll';
+import type { ApiStatementDetail } from '@finnit/core/statements/types';
+import { isWorking } from '@finnit/core/statements/view';
 
 /**
  * While the statement is being extracted (uploaded/processing), asks for it

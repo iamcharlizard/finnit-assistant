@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
 import { GraphqlRequestError } from '@/lib/graphql/client';
-import { testLocalizer } from '@/lib/i18n/testing';
+import { testLocalizer } from '@finnit/core/i18n/testing';
 import {
   CREATE_ALIAS_MUTATION,
   UPDATE_ALIAS_MUTATION,
@@ -23,8 +23,8 @@ import {
   previewKey,
   validateAliasForm,
   withActive,
-} from './form';
-import type { ApiMerchantAlias } from './types';
+} from '@finnit/core/aliases/form';
+import type { ApiMerchantAlias } from '@finnit/core/aliases/types';
 
 const alias: ApiMerchantAlias = {
   id: 'al1',

@@ -48,7 +48,7 @@ import {
   monthNames,
   shortDate,
   weekdayNames,
-} from '@/lib/finance/dates';
+} from '@finnit/core/finance/dates';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import {
@@ -59,19 +59,19 @@ import {
   setRecurringActive,
   type PaymentAction,
 } from '@/lib/recurring/api';
-import { inRange, recurringHref } from '@/lib/recurring/range';
+import { inRange, recurringHref } from '@finnit/core/recurring/range';
 import {
   parseTabParam,
   withTabParam,
   type RecurringTab,
-} from '@/lib/recurring/tabs';
-import type { ApiRecurringSuggestion } from '@/lib/recurring/types';
-import { DEBTS_PATH } from '@/lib/debts/view';
+} from '@finnit/core/recurring/tabs';
+import type { ApiRecurringSuggestion } from '@finnit/core/recurring/types';
+import { DEBTS_PATH } from '@finnit/core/debts/view';
 import type {
   ExpenseItem,
   PaymentItem,
   RecurringScreenView,
-} from '@/lib/recurring/view';
+} from '@finnit/core/recurring/view';
 
 const TEAL = '#00696e';
 const GREEN = '#00a86b';

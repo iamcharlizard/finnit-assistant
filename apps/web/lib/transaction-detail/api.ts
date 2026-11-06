@@ -1,8 +1,8 @@
 import type { GqlRunner } from '@/lib/accounts/api';
 import { requestErrorMessage } from '@/lib/graphql/client';
-import type { Translate } from '@/lib/i18n/translator';
-import type { UpdateTransactionPayload } from './form';
-import type { SimilarCategory } from './types';
+import type { Translate } from '@finnit/core/i18n/translator';
+import type { UpdateTransactionPayload } from '@finnit/core/transaction-detail/form';
+import type { SimilarCategory } from '@finnit/core/transaction-detail/types';
 
 /** The detail's mutations, run from client components through /api/graphql. */
 

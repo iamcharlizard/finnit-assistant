@@ -3,7 +3,7 @@ import 'server-only';
 import { notFound } from 'next/navigation';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
-import type { Connection } from '@/lib/finance/types';
+import type { Connection } from '@finnit/core/finance/types';
 import { isUuid } from '@/lib/files/routes';
 import { getLocalizer } from '@/lib/i18n/server';
 import {
@@ -14,13 +14,13 @@ import {
   type ApiStatementImport,
   type StatementAccount,
   type StatementCategory,
-} from './types';
-import { STATEMENTS_PAGE_SIZE, type StatementsData } from './queries';
+} from '@finnit/core/statements/types';
+import { STATEMENTS_PAGE_SIZE, type StatementsData } from '@finnit/core/statements/queries';
 import {
   accountsById,
   toStatementListItem,
   uploadAccountOptions,
-} from './view';
+} from '@finnit/core/statements/view';
 
 export async function loadStatements(): Promise<StatementsData> {
   const [data, l] = await Promise.all([

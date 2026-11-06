@@ -12,18 +12,18 @@ import { cn } from '@finnit/ui/lib/utils';
 
 import { EmptyState } from '@/components/finance/empty-state';
 import { useTransactionPages } from '@/hooks/use-transaction-pages';
-import { monthName, type DayKey } from '@/lib/finance/dates';
-import { formatMoney } from '@/lib/finance/money';
-import { groupByDay } from '@/lib/finance/transactions';
-import type { ApiCategory } from '@/lib/finance/types';
+import { monthName, type DayKey } from '@finnit/core/finance/dates';
+import { formatMoney } from '@finnit/core/finance/money';
+import { groupByDay } from '@finnit/core/finance/transactions';
+import type { ApiCategory } from '@finnit/core/finance/types';
 import {
   hasFilters,
   historyHref,
   monthLinks,
   withPeriod,
   type HistoryFilters,
-} from '@/lib/history/filters';
-import { dayNet, type TransactionPage } from '@/lib/history/view';
+} from '@finnit/core/history/filters';
+import { dayNet, type TransactionPage } from '@finnit/core/history/view';
 import { HistoryRow } from './history-row';
 
 /** Transactions grouped by day, with "Cargar más" and the row actions. */

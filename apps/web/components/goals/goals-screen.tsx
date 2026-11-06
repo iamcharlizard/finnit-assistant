@@ -24,8 +24,8 @@ import type {
   ContributionItem,
   GoalCardView,
   GoalsScreenView,
-} from '@/lib/goals/view';
-import { goalsHref } from '@/lib/goals/view';
+} from '@finnit/core/goals/view';
+import { goalsHref } from '@finnit/core/goals/view';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import { GoalCard } from './goal-card';

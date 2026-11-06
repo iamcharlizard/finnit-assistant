@@ -22,14 +22,14 @@ import { Input } from '@finnit/ui/components/ui/input';
 import { SwitchField } from '@/components/finance/switch-field';
 import { cn } from '@finnit/ui/lib/utils';
 
-import { accountLabel } from '@/lib/finance/accounts';
-import { dayKeyOf, shortDate } from '@/lib/finance/dates';
-import { formatMoney } from '@/lib/finance/money';
-import { transactionTitle } from '@/lib/finance/transactions';
+import { accountLabel } from '@finnit/core/finance/accounts';
+import { dayKeyOf, shortDate } from '@finnit/core/finance/dates';
+import { formatMoney } from '@finnit/core/finance/money';
+import { transactionTitle } from '@finnit/core/finance/transactions';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import type { EntryAccount } from '@/lib/new-entry/graphql';
-import { accountOptions } from '@/lib/new-entry/options';
+import type { EntryAccount } from '@finnit/core/new-entry/graphql';
+import { accountOptions } from '@finnit/core/new-entry/options';
 import {
   CONVERT_DATA_QUERY,
   CONVERT_TO_TRANSFER_MUTATION,
@@ -40,9 +40,9 @@ import {
   initialConvertChoice,
   type ConvertData,
   type ConvertSource,
-} from '@/lib/transfers/convert';
-import type { ApiTransaction } from '@/lib/finance/types';
-import { RESOLVE_TRANSFER_SUGGESTION_MUTATION } from '@/lib/transfers/suggestions';
+} from '@finnit/core/transfers/convert';
+import type { ApiTransaction } from '@finnit/core/finance/types';
+import { RESOLVE_TRANSFER_SUGGESTION_MUTATION } from '@finnit/core/transfers/suggestions';
 
 /** Converting from a suggestion: it is resolved, and can be remembered. */
 export interface FromSuggestion {

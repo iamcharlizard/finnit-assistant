@@ -1,9 +1,9 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { indexCategories } from '@/lib/finance/categories';
+import { indexCategories } from '@finnit/core/finance/categories';
 import { GraphqlRequestError } from '@/lib/graphql/client';
-import { testLocalizer } from '@/lib/i18n/testing';
+import { testLocalizer } from '@finnit/core/i18n/testing';
 import {
   CATEGORIZE_MUTATION,
   SUGGEST_MUTATION,
@@ -21,14 +21,14 @@ import {
   periodLinks,
   toApiFilters,
   type CategorizeFilters,
-} from './filters';
+} from '@finnit/core/categorize/filters';
 import {
   nameSubjectOf,
   privateByRule,
   renameFormOf,
   renameInput,
   validateRename,
-} from './rename';
+} from '@finnit/core/categorize/rename';
 import {
   categorizeBatches,
   isAllSelected,
@@ -40,9 +40,9 @@ import {
   suggestionTargets,
   toggleAll,
   toggleSelection,
-} from './selection';
-import type { CategorizeTransaction } from './types';
-import { appendPage, mergeTransactions, toCategorizeRow } from './view';
+} from '@finnit/core/categorize/selection';
+import type { CategorizeTransaction } from '@finnit/core/categorize/types';
+import { appendPage, mergeTransactions, toCategorizeRow } from '@finnit/core/categorize/view';
 
 const TODAY = '2026-10-13';
 const es = testLocalizer('es');

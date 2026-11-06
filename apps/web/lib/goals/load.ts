@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
-import { todayKey } from '@/lib/finance/dates';
+import { todayKey } from '@finnit/core/finance/dates';
 import { getLocalizer } from '@/lib/i18n/server';
 import { projectionsQuery } from './api';
 import {
@@ -11,8 +11,8 @@ import {
   type ApiGoalContribution,
   type ApiGoalProjection,
   type ApiGoalRecommendations,
-} from './types';
-import { buildGoalsView, parseGoalParam, type GoalsScreenView } from './view';
+} from '@finnit/core/goals/types';
+import { buildGoalsView, parseGoalParam, type GoalsScreenView } from '@finnit/core/goals/view';
 
 const GOALS_QUERY = `query Goals {
   goals { ${GOAL_FIELDS} }

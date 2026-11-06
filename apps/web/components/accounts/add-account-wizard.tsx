@@ -28,8 +28,8 @@ import {
   type FormErrors,
   type ManualAccountForm,
   type WizardStep,
-} from '@/lib/accounts/form';
-import { cardPreview } from '@/lib/accounts/view';
+} from '@finnit/core/accounts/form';
+import { cardPreview } from '@finnit/core/accounts/view';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import { WizardDesignStep } from './wizard-design-step';

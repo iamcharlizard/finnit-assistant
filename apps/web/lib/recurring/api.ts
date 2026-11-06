@@ -1,16 +1,19 @@
 import type { GqlRunner } from '@/lib/accounts/api';
 import { requestErrorMessage } from '@/lib/graphql/client';
-import type { Translate } from '@/lib/i18n/translator';
+import type { Translate } from '@finnit/core/i18n/translator';
 import {
   buildAcceptInput,
   buildCreateInput,
   buildUpdateInput,
   type RecurringForm,
-} from './form';
+} from '@finnit/core/recurring/form';
 import {
   RECURRING_SUGGESTION_FIELDS,
   type ApiRecurringSuggestion,
-} from './types';
+  type PaymentAction,
+} from '@finnit/core/recurring/types';
+
+export type { PaymentAction };
 
 /** Recurring-payment mutations, run from client components through /api/graphql. */
 
@@ -32,7 +35,6 @@ export const ACCEPT_SUGGESTION_MUTATION = `mutation AcceptRecurringSuggestion($f
 
 export const DISMISS_SUGGESTION_MUTATION = `mutation DismissRecurringSuggestion($fingerprint: ID!) { dismissRecurringSuggestion(fingerprint: $fingerprint) }`;
 
-export type PaymentAction = 'pay' | 'skip' | 'reopen';
 
 const PAYMENT_MUTATIONS: Record<PaymentAction, string> = {
   pay: MARK_PAID_MUTATION,

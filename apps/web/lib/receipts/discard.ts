@@ -1,4 +1,4 @@
-import type { ReceiptStatus } from './graphql';
+import type { ReceiptStatus } from '@finnit/core/receipts/graphql';
 import { RECEIPT_POLL_INTERVAL_MS, isReading } from './reader';
 
 /**

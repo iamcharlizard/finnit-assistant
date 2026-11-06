@@ -3,10 +3,10 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { ChevronRight } from 'lucide-react';
 
-import { shortDate } from '@/lib/finance/dates';
-import { formatMoney } from '@/lib/finance/money';
-import type { ReceiptImport } from '@/lib/receipts/graphql';
-import { receiptDayKey } from '@/lib/receipts/prefill';
+import { shortDate } from '@finnit/core/finance/dates';
+import { formatMoney } from '@finnit/core/finance/money';
+import type { ReceiptImport } from '@finnit/core/receipts/graphql';
+import { receiptDayKey } from '@finnit/core/receipts/prefill';
 import { ReceiptThumbnail } from './receipt-thumbnail';
 
 /** "Tickets pendientes": receipts read but not confirmed, to pick up again. */

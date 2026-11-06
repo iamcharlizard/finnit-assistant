@@ -1,7 +1,7 @@
 import type { GqlRunner } from '@/lib/accounts/api';
-import type { DayKey } from '@/lib/finance/dates';
+import type { DayKey } from '@finnit/core/finance/dates';
 import { requestErrorMessage } from '@/lib/graphql/client';
-import type { Translate } from '@/lib/i18n/translator';
+import type { Translate } from '@finnit/core/i18n/translator';
 import {
   buildContributionInput,
   buildCreateGoalInput,
@@ -9,14 +9,14 @@ import {
   initialContribution,
   type ContributionForm,
   type GoalForm,
-} from './form';
+} from '@finnit/core/goals/form';
 import {
   CONTRIBUTION_FIELDS,
   PROJECTION_FIELDS,
   RECOMMENDATION_FIELDS,
   type ApiGoalContribution,
   type ApiGoalProjection,
-} from './types';
+} from '@finnit/core/goals/types';
 
 /** Goal queries and mutations, run from client components through /api/graphql. */
 

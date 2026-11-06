@@ -1,4 +1,4 @@
-import type { Translate } from '@/lib/i18n/translator';
+import type { Translate } from '@finnit/core/i18n/translator';
 
 /**
  * GraphQL from client components. Goes through this site's /api/graphql,

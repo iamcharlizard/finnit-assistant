@@ -15,8 +15,8 @@ import { Button } from '@finnit/ui/components/ui/button';
 import { Switch } from '@finnit/ui/components/ui/switch';
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { ApiMerchantAlias } from '@/lib/aliases/types';
-import { formatMoney } from '@/lib/finance/money';
+import type { ApiMerchantAlias } from '@finnit/core/aliases/types';
+import { formatMoney } from '@finnit/core/finance/money';
 import { useLocalizer } from '@/lib/i18n/client';
 
 /**

@@ -1,4 +1,4 @@
-import type { Translate } from '@/lib/i18n/translator';
+import type { Translate } from '@finnit/core/i18n/translator';
 
 /** Admin panel, AI: GraphQL documents, types and labels. */
 

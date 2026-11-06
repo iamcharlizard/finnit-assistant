@@ -1,6 +1,6 @@
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { IconKey } from '@/lib/finance/categories';
+import type { IconKey } from '@finnit/core/finance/categories';
 import { CATEGORY_ICONS } from '@/lib/finance/category-icons';
 
 /** A category's icon on a tile of its color. */

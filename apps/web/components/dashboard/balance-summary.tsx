@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 
 import { BalanceCard } from '@finnit/ui/components/finance/balance-card';
 
-import type { DashboardView } from '@/lib/dashboard/view';
+import type { DashboardView } from '@finnit/core/dashboard/view';
 
 /** Money available, card debt and the net of all accounts. */
 export function BalanceSummary({

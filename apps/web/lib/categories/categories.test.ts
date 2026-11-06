@@ -1,10 +1,10 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { categoryOptions } from '@/lib/new-entry/options';
+import { categoryOptions } from '@finnit/core/new-entry/options';
 import { categoryInput, validateCategoryForm } from './api';
-import type { SettingsCategory } from './types';
-import { categoryTree, isInUse, moveTargets, parentOptions } from './view';
+import type { SettingsCategory } from '@finnit/core/categories/types';
+import { categoryTree, isInUse, moveTargets, parentOptions } from '@finnit/core/categories/view';
 
 const cat = (
   id: string,

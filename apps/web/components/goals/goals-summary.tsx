@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import { Gauge, PiggyBank, Sparkles } from 'lucide-react';
 
 import { SummaryCard } from '@/components/recurring/summary-card';
-import type { GoalsSummary as Summary } from '@/lib/goals/view';
+import type { GoalsSummary as Summary } from '@finnit/core/goals/view';
 
 const TEAL = '#00696e';
 const GREEN = '#00a86b';

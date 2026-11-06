@@ -21,7 +21,7 @@ import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { unlockPrivacy } from '@/app/privacy-actions';
 import { PinField } from '@/components/privacy/pin-field';
 import { ForgotPinButton } from '@/components/privacy/forgot-pin-button';
-import { isValidPin } from '@/lib/privacy/pin';
+import { isValidPin } from '@finnit/core/privacy/pin';
 import { useLocalizer } from '@/lib/i18n/client';
 
 /**

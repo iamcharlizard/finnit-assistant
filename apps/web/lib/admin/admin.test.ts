@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { testLocalizer } from '@/lib/i18n/testing';
+import { testLocalizer } from '@finnit/core/i18n/testing';
 import { aiFeatureCopy, needsPdfModel } from './ai';
 import { adminErrorMessage } from './errors';
 import {

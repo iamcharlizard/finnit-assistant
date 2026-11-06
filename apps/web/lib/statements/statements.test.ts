@@ -2,14 +2,14 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
 import { GraphqlRequestError } from '@/lib/graphql/client';
-import { testLocalizer } from '@/lib/i18n/testing';
+import { testLocalizer } from '@finnit/core/i18n/testing';
 import { candidateArgs, statementErrorMessage } from './api';
-import { POLL_MAX_MS, pollDecision } from './poll';
+import { POLL_MAX_MS, pollDecision } from '@finnit/core/statements/poll';
 import type {
   ApiStatementDetail,
   ApiStatementLine,
   StatementAccount,
-} from './types';
+} from '@finnit/core/statements/types';
 import { apiErrorText, statementUploadErrorKey } from './upload';
 import {
   accountsById,
@@ -22,7 +22,7 @@ import {
   toStatementDetailView,
   toStatementListItem,
   uploadAccountOptions,
-} from './view';
+} from '@finnit/core/statements/view';
 
 const es = testLocalizer('es');
 const today = '2026-10-13';

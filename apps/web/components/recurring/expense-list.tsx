@@ -12,8 +12,8 @@ import {
   filterExpenses,
   kindFilterOptions,
   type StatusFilter,
-} from '@/lib/recurring/filters';
-import type { ExpenseItem } from '@/lib/recurring/view';
+} from '@finnit/core/recurring/filters';
+import type { ExpenseItem } from '@finnit/core/recurring/view';
 import { ExpenseCard } from './expense-card';
 
 const STATUS_FILTERS: StatusFilter[] = ['active', 'paused', 'all'];

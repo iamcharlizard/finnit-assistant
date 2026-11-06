@@ -1,8 +1,8 @@
 import type { GqlRunner } from '@/lib/accounts/api';
 import { requestErrorMessage } from '@/lib/graphql/client';
-import type { Translate } from '@/lib/i18n/translator';
-import type { CategoryReferences } from './view';
-import { CATEGORY_NAME_MAX, type CategoryKind } from './types';
+import type { Translate } from '@finnit/core/i18n/translator';
+import type { CategoryReferences } from '@finnit/core/categories/view';
+import { CATEGORY_NAME_MAX, type CategoryKind } from '@finnit/core/categories/types';
 
 /** Category settings GraphQL, run from client components through /api/graphql. */
 

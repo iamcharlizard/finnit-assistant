@@ -6,7 +6,7 @@ import { Link2 } from 'lucide-react';
 
 import { Card } from '@finnit/ui/components/ui/card';
 
-import type { TransactionDetailView } from '@/lib/transaction-detail/view';
+import type { TransactionDetailView } from '@finnit/core/transaction-detail/view';
 
 interface Fact {
   label: string;

@@ -11,9 +11,9 @@ import { GlassCard } from '@finnit/ui/components/ui/glass-card';
 import { BodyMd, TitleLg } from '@finnit/ui/components/ui/typography';
 
 import type { BankConnectionView } from '@/lib/bank-connect/connections';
-import { dayKeyOf, longDate, timeOf, todayKey } from '@/lib/finance/dates';
+import { dayKeyOf, longDate, timeOf, todayKey } from '@finnit/core/finance/dates';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
-import type { Locale } from '@/lib/i18n/locales';
+import type { Locale } from '@finnit/core/i18n/locales';
 
 /** "13 de octubre, 08:15" in Mexico City, the same on server and browser. */
 function syncedAt(iso: string, locale: Locale): string {

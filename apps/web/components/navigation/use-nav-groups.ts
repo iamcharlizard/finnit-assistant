@@ -2,9 +2,9 @@
 
 import * as React from 'react';
 
-import { NAV_GROUPS_COOKIE, openGroupsCookieValue } from '@/lib/nav/sidebar';
+import { NAV_GROUPS_COOKIE, openGroupsCookieValue } from '@finnit/core/nav/sidebar';
 import type { NavSectionKey } from '@/lib/nav/sections';
-import { preferenceCookie } from '@/lib/theme/app-theme';
+import { preferenceCookie } from '@finnit/core/theme/app-theme';
 
 /**
  * Which sidebar groups are open: the ones the user left open (cookie, read

@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { apiGraphql } from '@/lib/api/finnit-api';
 import { ACCESS_COOKIE } from '@/lib/auth/cookies';
 import { PRIVACY_COOKIE, unlockMaxAge } from '@/lib/privacy/cookie';
-import { isValidPin } from '@/lib/privacy/pin';
+import { isValidPin } from '@finnit/core/privacy/pin';
 
 export type UnlockResult =
   | { ok: true }

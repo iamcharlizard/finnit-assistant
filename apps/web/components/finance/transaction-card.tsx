@@ -7,9 +7,9 @@ import { TransactionCard as Card } from '@finnit/ui/components/finance/transacti
 import { toast } from '@finnit/ui/components/ui/toaster';
 
 import { useTransactionDrawer } from '@/components/transaction-detail/transaction-drawer';
-import { DISPLAY_NAME_MAX } from '@/lib/categorize/rename';
+import { DISPLAY_NAME_MAX } from '@finnit/core/categorize/rename';
 import { CATEGORY_ICONS } from '@/lib/finance/category-icons';
-import type { TransactionRow } from '@/lib/finance/transactions';
+import type { TransactionRow } from '@finnit/core/finance/transactions';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import { SET_ALIAS_MUTATION } from '@/lib/transaction-detail/api';

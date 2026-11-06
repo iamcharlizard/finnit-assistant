@@ -2,8 +2,8 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
 import type { GqlRunner } from '@/lib/accounts/api';
-import type { ApiAccount } from '@/lib/finance/types';
-import { testLocalizer } from '@/lib/i18n/testing';
+import type { ApiAccount } from '@finnit/core/finance/types';
+import { testLocalizer } from '@finnit/core/i18n/testing';
 import {
   CREATE_DEBT_PAYMENT_MUTATION,
   CREATE_TRANSFER_MUTATION,
@@ -24,10 +24,10 @@ import {
   paymentSources,
   validateDebtForm,
   validatePaymentForm,
-} from './form';
-import { buildPayoffComparison, parseExtraPayment } from './payoff';
-import type { ApiDebt, ApiPayoffProjection } from './types';
-import { buildDebtsView, summarizeDebts } from './view';
+} from '@finnit/core/debts/form';
+import { buildPayoffComparison, parseExtraPayment } from '@finnit/core/debts/payoff';
+import type { ApiDebt, ApiPayoffProjection } from '@finnit/core/debts/types';
+import { buildDebtsView, summarizeDebts } from '@finnit/core/debts/view';
 
 const es = testLocalizer('es');
 const en = testLocalizer('en');

@@ -1,8 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import type { ApiMonthlyReport } from '@/lib/finance/types';
-import { testLocalizer } from '@/lib/i18n/testing';
+import type { ApiMonthlyReport } from '@finnit/core/finance/types';
+import { testLocalizer } from '@finnit/core/i18n/testing';
 import { budgetErrorMessage } from './api';
 import {
   buildCreateBudgetInput,
@@ -14,18 +14,18 @@ import {
   totalBelowCaps,
   validateBudgetForm,
   type BudgetForm,
-} from './form';
-import { budgetCategoryOptions } from './options';
-import { capStatus, usedPercent } from './status';
-import { roundCap, suggestCaps } from './suggestions';
-import type { ApiBudget, ApiBudgetSummary, BudgetCategory } from './types';
+} from '@finnit/core/budgets/form';
+import { budgetCategoryOptions } from '@finnit/core/budgets/options';
+import { capStatus, usedPercent } from '@finnit/core/budgets/status';
+import { roundCap, suggestCaps } from '@finnit/core/budgets/suggestions';
+import type { ApiBudget, ApiBudgetSummary, BudgetCategory } from '@finnit/core/budgets/types';
 import {
   buildBudgetCard,
   buildBudgetsView,
   outsideCaps,
   templateFor,
   type BudgetsData,
-} from './view';
+} from '@finnit/core/budgets/view';
 
 const es = testLocalizer('es');
 const en = testLocalizer('en');

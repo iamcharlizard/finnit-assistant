@@ -6,7 +6,7 @@ import { CalendarRange } from 'lucide-react';
 
 import { cn } from '@finnit/ui/lib/utils';
 
-import { MAX_MONTHS, MIN_MONTHS } from '@/lib/simulator/scenario';
+import { MAX_MONTHS, MIN_MONTHS } from '@finnit/core/simulator/scenario';
 import { ControlSection } from './control-section';
 
 const PRESETS = [6, 12, 24, 36];

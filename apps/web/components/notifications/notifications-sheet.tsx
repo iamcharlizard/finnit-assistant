@@ -14,8 +14,8 @@ import {
 } from '@finnit/ui/components/ui/sheet';
 
 import { useNotificationActions } from '@/hooks/use-notification-actions';
-import { todayKey } from '@/lib/finance/dates';
-import type { Connection } from '@/lib/finance/types';
+import { todayKey } from '@finnit/core/finance/dates';
+import type { Connection } from '@finnit/core/finance/types';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import {
@@ -24,7 +24,7 @@ import {
   toNotificationItem,
   type ApiNotification,
   type NotificationItem,
-} from '@/lib/notifications/view';
+} from '@finnit/core/notifications/view';
 import { NotificationRow } from './notification-row';
 
 /**

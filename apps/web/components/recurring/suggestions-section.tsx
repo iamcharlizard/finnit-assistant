@@ -9,8 +9,8 @@ import { Button } from '@finnit/ui/components/ui/button';
 import { EmptyState } from '@/components/finance/empty-state';
 import type { SuggestionsState } from '@/hooks/use-recurring-suggestions';
 import { useLocalizer } from '@/lib/i18n/client';
-import { toSuggestionCard } from '@/lib/recurring/suggestions';
-import type { ApiRecurringSuggestion } from '@/lib/recurring/types';
+import { toSuggestionCard } from '@finnit/core/recurring/suggestions';
+import type { ApiRecurringSuggestion } from '@finnit/core/recurring/types';
 import { SuggestionCard } from './suggestion-card';
 import { SuggestionsSkeleton } from './suggestions-skeleton';
 

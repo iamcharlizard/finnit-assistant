@@ -9,9 +9,9 @@ import { cn } from '@finnit/ui/lib/utils';
 
 import { useGoalProjection } from '@/hooks/use-goal-projection';
 import { goalErrorMessage } from '@/lib/goals/api';
-import { parseMonthlyContribution } from '@/lib/goals/form';
-import type { ApiGoal, ApiGoalProjection } from '@/lib/goals/types';
-import { buildProjectionView, type GoalDetailView } from '@/lib/goals/view';
+import { parseMonthlyContribution } from '@finnit/core/goals/form';
+import type { ApiGoal, ApiGoalProjection } from '@finnit/core/goals/types';
+import { buildProjectionView, type GoalDetailView } from '@finnit/core/goals/view';
 import { useLocalizer } from '@/lib/i18n/client';
 import { GoalStatusBadge } from './goal-status-badge';
 

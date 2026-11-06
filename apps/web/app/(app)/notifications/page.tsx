@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { NotificationsScreen } from '@/components/notifications/notifications-screen';
 import { loadNotifications } from '@/lib/notifications/load';
-import { parseNotificationFilter } from '@/lib/notifications/view';
+import { parseNotificationFilter } from '@finnit/core/notifications/view';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();

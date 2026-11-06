@@ -5,7 +5,7 @@ import { Sparkles } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 
-import type { SuggestionItem } from '@/lib/budgets/view';
+import type { SuggestionItem } from '@finnit/core/budgets/view';
 import { CategoryTile } from './category-tile';
 
 /** Caps suggested from the last months' average spending. */

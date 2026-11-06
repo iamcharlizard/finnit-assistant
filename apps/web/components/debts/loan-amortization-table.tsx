@@ -9,7 +9,7 @@ import { Button } from '@finnit/ui/components/ui/button';
 import { DataTable, type ColumnDef } from '@finnit/ui/components/ui/data-table';
 
 import { useTableLabels } from '@/components/use-table-labels';
-import type { ScheduleRow, ScheduleRowStatus } from '@/lib/debts/detail-view';
+import type { ScheduleRow, ScheduleRowStatus } from '@finnit/core/debts/detail-view';
 
 const STATUS_BADGE: Record<
   ScheduleRowStatus,

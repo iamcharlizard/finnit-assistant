@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 
-import { SIDEBAR_COOKIE, sidebarCookieValue } from '@/lib/nav/sidebar';
-import { preferenceCookie } from '@/lib/theme/app-theme';
+import { SIDEBAR_COOKIE, sidebarCookieValue } from '@finnit/core/nav/sidebar';
+import { preferenceCookie } from '@finnit/core/theme/app-theme';
 
 /**
  * The user's choice for the sidebar from lg up (collapsed or expanded). It

@@ -4,8 +4,8 @@ import * as React from 'react';
 
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { gql } from '@/lib/graphql/client';
-import { merchantQuery } from '@/lib/new-entry/form';
-import { SUGGEST_CATEGORY_QUERY } from '@/lib/new-entry/graphql';
+import { merchantQuery } from '@finnit/core/new-entry/form';
+import { SUGGEST_CATEGORY_QUERY } from '@finnit/core/new-entry/graphql';
 
 const SUGGEST_DELAY_MS = 500;
 

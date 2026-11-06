@@ -1,4 +1,4 @@
-import type { Translate } from '@/lib/i18n/translator';
+import type { Translate } from '@finnit/core/i18n/translator';
 import { requestErrorMessage } from '@/lib/graphql/client';
 import {
   buildCreateAccountInput,
@@ -8,7 +8,7 @@ import {
   type ManualAccountForm,
   type MetadataPatch,
   type TermsChange,
-} from './form';
+} from '@finnit/core/accounts/form';
 
 /** Account mutations, run from client components through /api/graphql. */
 

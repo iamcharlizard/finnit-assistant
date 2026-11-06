@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 
-import type { CapItem } from '@/lib/budgets/view';
+import type { CapItem } from '@finnit/core/budgets/view';
 import { CategoryTile } from './category-tile';
 import { StatusText } from './status-text';
 import { UsageBar } from './usage-bar';

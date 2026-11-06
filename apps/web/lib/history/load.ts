@@ -2,13 +2,13 @@ import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
 import { getLocalizer } from '@/lib/i18n/server';
-import { indexCategories } from '@/lib/finance/categories';
+import { indexCategories } from '@finnit/core/finance/categories';
 import {
   monthLabel,
   monthOf,
   todayKey,
   type DayKey,
-} from '@/lib/finance/dates';
+} from '@finnit/core/finance/dates';
 import {
   ACCOUNT_FIELDS,
   CATEGORY_FIELDS,
@@ -18,13 +18,13 @@ import {
   type ApiMonthlyReport,
   type ApiTransaction,
   type Connection,
-} from '@/lib/finance/types';
+} from '@finnit/core/finance/types';
 import {
   HISTORY_PAGE_SIZE,
   shownMonth,
   toApiFilters,
   type HistoryFilters,
-} from './filters';
+} from '@finnit/core/history/filters';
 import {
   HISTORY_QUERY_FIELDS,
   accountOptions,
@@ -33,7 +33,7 @@ import {
   topCategoryRows,
   type Option,
   type TransactionPage,
-} from './view';
+} from '@finnit/core/history/view';
 
 export interface HistoryData {
   today: DayKey;

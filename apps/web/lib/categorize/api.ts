@@ -1,15 +1,15 @@
 import type { GqlRunner } from '@/lib/accounts/api';
-import type { Connection } from '@/lib/finance/types';
+import type { Connection } from '@finnit/core/finance/types';
 import { requestErrorMessage } from '@/lib/graphql/client';
-import type { Translate } from '@/lib/i18n/translator';
-import { pageVariables, type CategorizeFilters } from './filters';
-import { renameInput, type RenameForm } from './rename';
-import { categorizeBatches } from './selection';
+import type { Translate } from '@finnit/core/i18n/translator';
+import { pageVariables, type CategorizeFilters } from '@finnit/core/categorize/filters';
+import { renameInput, type RenameForm } from '@finnit/core/categorize/rename';
+import { categorizeBatches } from '@finnit/core/categorize/selection';
 import {
   CATEGORIZE_FIELDS,
   type CategorizePageData,
   type CategorizeTransaction,
-} from './types';
+} from '@finnit/core/categorize/types';
 
 /** "Clasificar movimientos" GraphQL, run from client components through /api/graphql. */
 

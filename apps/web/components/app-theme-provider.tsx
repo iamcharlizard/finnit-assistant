@@ -7,7 +7,7 @@ import {
   expiredPreferenceCookie,
   preferenceCookie,
   type AppTheme,
-} from '@/lib/theme/app-theme';
+} from '@finnit/core/theme/app-theme';
 
 interface AppThemeContextValue {
   /** The palette on screen. */

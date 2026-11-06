@@ -8,12 +8,12 @@ import {
   ConfirmDialog,
   type ConfirmRequest,
 } from '@/components/admin/confirm-dialog';
-import type { BudgetCategory } from '@/lib/budgets/types';
+import type { BudgetCategory } from '@finnit/core/budgets/types';
 import { debtErrorMessage, deleteDebt } from '@/lib/debts/api';
-import type { ApiDebt } from '@/lib/debts/types';
-import type { DebtItem } from '@/lib/debts/view';
-import type { DayKey } from '@/lib/finance/dates';
-import type { ApiAccount } from '@/lib/finance/types';
+import type { ApiDebt } from '@finnit/core/debts/types';
+import type { DebtItem } from '@finnit/core/debts/view';
+import type { DayKey } from '@finnit/core/finance/dates';
+import type { ApiAccount } from '@finnit/core/finance/types';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import { DebtCard } from './debt-card';

@@ -3,12 +3,12 @@
 import * as React from 'react';
 
 import { fetchPage } from '@/lib/categorize/api';
-import type { CategorizeFilters } from '@/lib/categorize/filters';
+import type { CategorizeFilters } from '@finnit/core/categorize/filters';
 import type {
   CategorizePageData,
   CategorizeTransaction,
-} from '@/lib/categorize/types';
-import { appendPage, mergeTransactions } from '@/lib/categorize/view';
+} from '@finnit/core/categorize/types';
+import { appendPage, mergeTransactions } from '@finnit/core/categorize/view';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 

@@ -1,12 +1,12 @@
 import type { GqlRunner } from '@/lib/accounts/api';
 import { requestErrorMessage } from '@/lib/graphql/client';
-import type { Translate } from '@/lib/i18n/translator';
+import type { Translate } from '@finnit/core/i18n/translator';
 import {
   STATEMENT_DETAIL_FIELDS,
   STATEMENT_LINE_FIELDS,
   type ApiStatementDetail,
   type ApiStatementLine,
-} from './types';
+} from '@finnit/core/statements/types';
 
 /** Statement queries and mutations from client components (/api/graphql). */
 

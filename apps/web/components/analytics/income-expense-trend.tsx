@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 
-import type { AnalyticsView } from '@/lib/analytics/view';
+import type { AnalyticsView } from '@finnit/core/analytics/view';
 
 /** Income vs expenses per month, as paired bars. */
 export function IncomeExpenseTrend({

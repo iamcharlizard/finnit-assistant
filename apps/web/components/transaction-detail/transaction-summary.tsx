@@ -11,7 +11,7 @@ import { cn } from '@finnit/ui/lib/utils';
 
 import { PrivacyUnlockDialog } from '@/components/privacy/privacy-unlock-dialog';
 import { useDetailHost } from './detail-host';
-import type { TransactionDetailView } from '@/lib/transaction-detail/view';
+import type { TransactionDetailView } from '@finnit/core/transaction-detail/view';
 
 const AMOUNT_COLOR = {
   income: 'text-income',

@@ -28,7 +28,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-import type { IconKey } from './categories';
+import type { IconKey } from '@finnit/core/finance/categories';
 
 /**
  * Icons by key. Screens get plain keys from the server (components can't be

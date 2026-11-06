@@ -6,9 +6,9 @@ import { useTranslations } from 'next-intl';
 import { Progress } from '@finnit/ui/components/ui/progress';
 
 import { SwitchField } from '@/components/finance/switch-field';
-import { buildDebtInsightsView } from '@/lib/debts/insights-view';
-import type { ApiDebtInsights } from '@/lib/debts/types';
-import type { DayKey } from '@/lib/finance/dates';
+import { buildDebtInsightsView } from '@finnit/core/debts/insights-view';
+import type { ApiDebtInsights } from '@finnit/core/debts/types';
+import type { DayKey } from '@finnit/core/finance/dates';
 import { useLocalizer } from '@/lib/i18n/client';
 import { BalanceProjectionChart } from './balance-projection-chart';
 import { DebtLoadCard } from './debt-load-card';

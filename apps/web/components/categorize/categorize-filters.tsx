@@ -20,10 +20,10 @@ import {
   periodLinks,
   type CategorizeFilters as Filters,
   type CategorizeShow,
-} from '@/lib/categorize/filters';
-import { monthLabel, monthOf, type DayKey } from '@/lib/finance/dates';
-import type { EntryAccount } from '@/lib/new-entry/graphql';
-import { accountOptions } from '@/lib/new-entry/options';
+} from '@finnit/core/categorize/filters';
+import { monthLabel, monthOf, type DayKey } from '@finnit/core/finance/dates';
+import type { EntryAccount } from '@finnit/core/new-entry/graphql';
+import { accountOptions } from '@finnit/core/new-entry/options';
 
 const ALL = 'all';
 

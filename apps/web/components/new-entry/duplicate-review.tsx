@@ -4,9 +4,9 @@ import { useLocale, useTranslations } from 'next-intl';
 
 import { Button } from '@finnit/ui/components/ui/button';
 
-import { dayKeyOf, shortDate } from '@/lib/finance/dates';
-import { formatMoney } from '@/lib/finance/money';
-import type { SimilarTransaction } from '@/lib/new-entry/graphql';
+import { dayKeyOf, shortDate } from '@finnit/core/finance/dates';
+import { formatMoney } from '@finnit/core/finance/money';
+import type { SimilarTransaction } from '@finnit/core/new-entry/graphql';
 
 /** "¿Ya está registrado?": look-alikes of the movement about to be created. */
 export function DuplicateReview({

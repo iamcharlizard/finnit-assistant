@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 
-import type { BudgetTotals } from '@/lib/budgets/view';
+import type { BudgetTotals } from '@finnit/core/budgets/view';
 import { StatusText } from './status-text';
 import { UsageBar } from './usage-bar';
 

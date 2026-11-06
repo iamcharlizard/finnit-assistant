@@ -2,7 +2,7 @@ import 'server-only';
 
 import { getLocale, getTranslations } from 'next-intl/server';
 
-import type { Localizer } from './translator';
+import type { Localizer } from '@finnit/core/i18n/translator';
 
 /** The request's locale and translator, for server components and loaders. */
 export async function getLocalizer(): Promise<Localizer> {

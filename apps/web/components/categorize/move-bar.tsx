@@ -8,7 +8,7 @@ import { Button } from '@finnit/ui/components/ui/button';
 import { Checkbox } from '@finnit/ui/components/ui/checkbox';
 import { Combobox } from '@finnit/ui/components/ui/combobox';
 
-import type { PickerOption } from '@/lib/new-entry/options';
+import type { PickerOption } from '@finnit/core/new-entry/options';
 
 /**
  * Sticky bar while movements are selected: "Mover a…" a category, with

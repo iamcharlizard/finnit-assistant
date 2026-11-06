@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { CapStatus } from '@/lib/budgets/status';
+import type { CapStatus } from '@finnit/core/budgets/status';
 
 const TONES: Record<CapStatus, string> = {
   ok: 'text-on-surface-variant',

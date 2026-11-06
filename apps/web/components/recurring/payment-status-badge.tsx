@@ -3,7 +3,7 @@ import { Bell, Check, CircleAlert, Clock, SkipForward } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
 
-import type { PaymentStatus } from '@/lib/recurring/view';
+import type { PaymentStatus } from '@finnit/core/recurring/view';
 
 /** Paid, skipped, overdue, missed, to pay or a reminder. */
 export function PaymentStatusBadge({

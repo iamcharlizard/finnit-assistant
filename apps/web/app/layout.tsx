@@ -11,12 +11,12 @@ import './globals.css';
 import { AppThemeProvider } from '@/components/app-theme-provider';
 import { ThemeProvider } from '@/components/theme-provider';
 import { SiteAnalytics } from '@/components/web-analytics/site-analytics';
-import { intlLocale } from '@/lib/i18n/locales';
+import { intlLocale } from '@finnit/core/i18n/locales';
 import {
   PREVIEW_THEME_COOKIE,
   resolveAppTheme,
   siteTheme,
-} from '@/lib/theme/app-theme';
+} from '@finnit/core/theme/app-theme';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();

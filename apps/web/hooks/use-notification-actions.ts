@@ -12,7 +12,7 @@ import {
   MARK_READ_MUTATION,
   markedRead,
   type NotificationItem,
-} from '@/lib/notifications/view';
+} from '@finnit/core/notifications/view';
 
 /**
  * Opening a notification (marks it read, then goes where it points) and

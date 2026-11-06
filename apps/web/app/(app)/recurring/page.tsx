@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 import { RecurringScreen } from '@/components/screens/recurring-screen';
-import { todayKey } from '@/lib/finance/dates';
+import { todayKey } from '@finnit/core/finance/dates';
 import { loadRecurring } from '@/lib/recurring/load';
-import { parseDateParam, parseViewParam } from '@/lib/recurring/range';
-import { parseTabParam } from '@/lib/recurring/tabs';
+import { parseDateParam, parseViewParam } from '@finnit/core/recurring/range';
+import { parseTabParam } from '@finnit/core/recurring/tabs';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();

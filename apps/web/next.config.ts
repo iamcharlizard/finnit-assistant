@@ -2,8 +2,8 @@ import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const nextConfig: NextConfig = {
-  // @finnit/ui ships TypeScript source, so Next compiles it.
-  transpilePackages: ['@finnit/ui'],
+  // @finnit/ui and @finnit/core ship TypeScript source, so Next compiles them.
+  transpilePackages: ['@finnit/ui', '@finnit/core'],
   experimental: {
     // proxy.ts runs before /api/files and Next buffers request bodies for it
     // (10 MB by default, truncating the rest). Uploads are up to 10 MB plus

@@ -5,7 +5,7 @@ import { Download, FileIcon, Trash2 } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 
-import type { AttachmentView } from '@/lib/transaction-detail/view';
+import type { AttachmentView } from '@finnit/core/transaction-detail/view';
 
 /** One attached file: download (through /api/files) and delete. */
 export function AttachmentItem({

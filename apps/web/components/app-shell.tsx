@@ -30,7 +30,7 @@ import {
   activeNavHref,
   visibleSections,
 } from '@/lib/nav/sections';
-import { pageTitleKey } from '@/lib/nav/titles';
+import { pageTitleKey } from '@finnit/core/nav/titles';
 
 export function AppShell({
   children,

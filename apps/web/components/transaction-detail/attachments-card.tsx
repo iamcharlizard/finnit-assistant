@@ -23,7 +23,7 @@ import {
   removeAttachment,
   transactionErrorMessage,
 } from '@/lib/transaction-detail/api';
-import type { AttachmentView } from '@/lib/transaction-detail/view';
+import type { AttachmentView } from '@finnit/core/transaction-detail/view';
 import { AttachmentItem } from './attachment-item';
 import { useDetailHost } from './detail-host';
 

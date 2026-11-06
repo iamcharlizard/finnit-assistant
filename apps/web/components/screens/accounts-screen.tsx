@@ -40,7 +40,7 @@ import { EmptyState } from '@/components/finance/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { useSessionUser } from '@/components/session-provider';
 import type { AccountsData } from '@/lib/accounts/load';
-import type { DayKey } from '@/lib/finance/dates';
+import type { DayKey } from '@finnit/core/finance/dates';
 
 export function accountsHref({
   account,

@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Combobox } from '@finnit/ui/components/ui/combobox';
 import { Input } from '@finnit/ui/components/ui/input';
 
-import { BANK_KEYWORDS, MEXICAN_BANKS, OTHER_BANK } from '@/lib/accounts/banks';
+import { BANK_KEYWORDS, MEXICAN_BANKS, OTHER_BANK } from '@finnit/core/accounts/banks';
 
 /** Bank of a manual account: a Mexican bank from the list, or "Otro" + name. */
 export function BankField({

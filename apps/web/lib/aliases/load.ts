@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
-import type { CategorizeCategory } from '@/lib/categorize/types';
+import type { CategorizeCategory } from '@finnit/core/categorize/types';
 import {
   endOfDayIso,
   firstDayOf,
@@ -9,15 +9,15 @@ import {
   monthOf,
   startOfDayIso,
   todayKey,
-} from '@/lib/finance/dates';
-import { accountLabel } from '@/lib/finance/accounts';
+} from '@finnit/core/finance/dates';
+import { accountLabel } from '@finnit/core/finance/accounts';
 import {
   ALIAS_SPENDING_FIELDS,
   MERCHANT_ALIAS_FIELDS,
   MERCHANT_RULE_FIELDS,
   type ApiMerchantAlias,
   type ApiMerchantRule,
-} from './types';
+} from '@finnit/core/aliases/types';
 
 export interface AliasesData {
   aliases: ApiMerchantAlias[];

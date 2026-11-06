@@ -1,11 +1,11 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { accountDesign, accountLabel } from '@/lib/finance/accounts';
-import { formatMoney } from '@/lib/finance/money';
-import { toTransactionRow } from '@/lib/finance/transactions';
-import type { ApiAccount, ApiTransaction } from '@/lib/finance/types';
-import { testLocalizer } from '@/lib/i18n/testing';
+import { accountDesign, accountLabel } from '@finnit/core/finance/accounts';
+import { formatMoney } from '@finnit/core/finance/money';
+import { toTransactionRow } from '@finnit/core/finance/transactions';
+import type { ApiAccount, ApiTransaction } from '@finnit/core/finance/types';
+import { testLocalizer } from '@finnit/core/i18n/testing';
 import {
   CREATE_ACCOUNT_MUTATION,
   REMOVE_CREDIT_CARD_TERMS_MUTATION,
@@ -17,7 +17,7 @@ import {
   saveAccountChanges,
   type GqlRunner,
 } from './api';
-import { OTHER_BANK, bankChoiceOf } from './banks';
+import { OTHER_BANK, bankChoiceOf } from '@finnit/core/accounts/banks';
 import {
   buildCreateAccountInput,
   buildCreditTermsInput,
@@ -35,8 +35,8 @@ import {
   validateWizardStep,
   type AccountEditValues,
   type ManualAccountForm,
-} from './form';
-import { buildAccountDetail, buildAccounts, pickAccount } from './view';
+} from '@finnit/core/accounts/form';
+import { buildAccountDetail, buildAccounts, pickAccount } from '@finnit/core/accounts/view';
 
 const es = testLocalizer('es');
 const en = testLocalizer('en');

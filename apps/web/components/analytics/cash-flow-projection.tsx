@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 
-import type { AnalyticsView } from '@/lib/analytics/view';
+import type { AnalyticsView } from '@finnit/core/analytics/view';
 
 const WIDTH = 400;
 const HEIGHT = 110;

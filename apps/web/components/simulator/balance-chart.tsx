@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 
 import { cn } from '@finnit/ui/lib/utils';
 
-import { chartGeometry, indexAt, labeledIndexes } from '@/lib/simulator/chart';
+import { chartGeometry, indexAt, labeledIndexes } from '@finnit/core/simulator/chart';
 
 const BASELINE_COLOR = 'var(--on-surface-variant)';
 const SCENARIO_COLOR = 'var(--tertiary)';

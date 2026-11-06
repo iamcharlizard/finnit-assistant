@@ -6,7 +6,7 @@ import { PieChart } from 'lucide-react';
 import { CategoryProgressItem } from '@finnit/ui/components/finance/category-progress-item';
 
 import { EmptyState } from '@/components/finance/empty-state';
-import type { AnalyticsView } from '@/lib/analytics/view';
+import type { AnalyticsView } from '@finnit/core/analytics/view';
 import { CATEGORY_ICONS } from '@/lib/finance/category-icons';
 
 /** The month's spending by category; bars are the share of the total. */

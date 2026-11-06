@@ -9,8 +9,8 @@ import {
   previewInput,
   previewKey,
   type AliasForm,
-} from '@/lib/aliases/form';
-import type { AliasPreview } from '@/lib/aliases/types';
+} from '@finnit/core/aliases/form';
+import type { AliasPreview } from '@finnit/core/aliases/types';
 import { gql } from '@/lib/graphql/client';
 
 export type AliasPreviewState =

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 
-import type { Localizer } from './translator';
+import type { Localizer } from '@finnit/core/i18n/translator';
 
 /** The page's locale and translator, for client components (stable object). */
 export function useLocalizer(): Localizer {

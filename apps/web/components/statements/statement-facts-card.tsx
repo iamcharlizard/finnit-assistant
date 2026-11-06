@@ -3,7 +3,7 @@ import { CalendarClock } from 'lucide-react';
 
 import { Card } from '@finnit/ui/components/ui/card';
 
-import type { StatementFact } from '@/lib/statements/view';
+import type { StatementFact } from '@finnit/core/statements/view';
 
 /** What the statement says: balances, payments and dates. */
 export function StatementFactsCard({ facts }: { facts: StatementFact[] }) {

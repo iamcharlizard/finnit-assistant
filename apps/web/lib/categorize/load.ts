@@ -1,23 +1,23 @@
 import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
-import { todayKey, type DayKey } from '@/lib/finance/dates';
-import type { Connection } from '@/lib/finance/types';
-import type { EntryAccount } from '@/lib/new-entry/graphql';
+import { todayKey, type DayKey } from '@finnit/core/finance/dates';
+import type { Connection } from '@finnit/core/finance/types';
+import type { EntryAccount } from '@finnit/core/new-entry/graphql';
 import { getLocalizer } from '@/lib/i18n/server';
 import {
   TRANSFER_SUGGESTIONS_FIELDS,
   toSuggestionView,
   type ApiTransferSuggestion,
   type TransferSuggestionView,
-} from '@/lib/transfers/suggestions';
+} from '@finnit/core/transfers/suggestions';
 import { CATEGORIZE_CONNECTION, toPageData } from './api';
-import { pageVariables, type CategorizeFilters } from './filters';
+import { pageVariables, type CategorizeFilters } from '@finnit/core/categorize/filters';
 import type {
   CategorizeCategory,
   CategorizePageData,
   CategorizeTransaction,
-} from './types';
+} from '@finnit/core/categorize/types';
 
 export interface CategorizeData {
   today: DayKey;

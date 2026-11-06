@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
 import { GraphqlRequestError } from '@/lib/graphql/client';
-import { testLocalizer } from '@/lib/i18n/testing';
+import { testLocalizer } from '@finnit/core/i18n/testing';
 import {
   ADD_CONTRIBUTION_MUTATION,
   CONTRIBUTIONS_QUERY,
@@ -26,19 +26,19 @@ import {
   parseMonthlyContribution,
   validateContributionForm,
   validateGoalForm,
-} from './form';
+} from '@finnit/core/goals/form';
 import {
   goalStatus,
   monthsUntil,
   neededMonthly,
   progressPercent,
-} from './status';
+} from '@finnit/core/goals/status';
 import type {
   ApiGoal,
   ApiGoalContribution,
   ApiGoalProjection,
   ApiGoalRecommendations,
-} from './types';
+} from '@finnit/core/goals/types';
 import {
   buildGoalCard,
   buildGoalDetail,
@@ -46,7 +46,7 @@ import {
   buildProjectionView,
   goalsHref,
   parseGoalParam,
-} from './view';
+} from '@finnit/core/goals/view';
 
 const es = testLocalizer('es');
 const en = testLocalizer('en');

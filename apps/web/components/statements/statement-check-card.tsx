@@ -4,7 +4,7 @@ import { CircleCheck, TriangleAlert } from 'lucide-react';
 import { Card } from '@finnit/ui/components/ui/card';
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { StatementDetailView } from '@/lib/statements/view';
+import type { StatementDetailView } from '@finnit/core/statements/view';
 
 /**
  * Previous balance + extracted lines vs the statement's balance. A

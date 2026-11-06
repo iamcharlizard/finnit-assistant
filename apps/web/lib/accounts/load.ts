@@ -2,7 +2,7 @@ import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
 import { getLocalizer } from '@/lib/i18n/server';
-import { indexCategories } from '@/lib/finance/categories';
+import { indexCategories } from '@finnit/core/finance/categories';
 import {
   endOfDayIso,
   lastDayOf,
@@ -10,18 +10,18 @@ import {
   startOfDayIso,
   todayKey,
   type DayKey,
-} from '@/lib/finance/dates';
+} from '@finnit/core/finance/dates';
 import {
   toTransactionRow,
   type TransactionRow,
-} from '@/lib/finance/transactions';
-import type { Localizer } from '@/lib/i18n/translator';
+} from '@finnit/core/finance/transactions';
+import type { Localizer } from '@finnit/core/i18n/translator';
 import {
   ALL_BALANCE_FIELDS,
   buildOverviewTimeline,
   type ApiAllBalanceHistory,
   type OverviewTimeline,
-} from './all-balance';
+} from '@finnit/core/accounts/all-balance';
 import {
   BALANCE_HISTORY_FIELDS,
   buildBalanceTimeline,
@@ -29,7 +29,7 @@ import {
   parseDayParam,
   type ApiBalanceHistory,
   type BalanceTimeline,
-} from './balance-history';
+} from '@finnit/core/accounts/balance-history';
 import {
   ACCOUNT_FIELDS,
   CATEGORY_FIELDS,
@@ -38,7 +38,7 @@ import {
   type ApiCategory,
   type ApiTransaction,
   type Connection,
-} from '@/lib/finance/types';
+} from '@finnit/core/finance/types';
 import {
   BANK_CONNECTIONS_FIELDS,
   PENDING_CHARGE_FIELDS,
@@ -49,7 +49,7 @@ import {
   type BankConnectionInfo,
   type CardMonthSummaryData,
   type PendingCharge,
-} from './view';
+} from '@finnit/core/accounts/view';
 
 /** All the accounts together (no account chosen). */
 export interface OverviewData {

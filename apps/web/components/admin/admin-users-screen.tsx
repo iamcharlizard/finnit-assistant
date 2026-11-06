@@ -20,7 +20,7 @@ import {
   type UserStatus,
 } from '@/lib/admin/users';
 import { gql } from '@/lib/graphql/client';
-import type { Translate } from '@/lib/i18n/translator';
+import type { Translate } from '@finnit/core/i18n/translator';
 import { ConfirmDialog, type ConfirmRequest } from './confirm-dialog';
 import { CreateUserDialog } from './create-user-dialog';
 import { SetPasswordDialog } from './set-password-dialog';

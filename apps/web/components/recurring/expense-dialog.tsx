@@ -25,11 +25,11 @@ import { Label } from '@finnit/ui/components/ui/label';
 import { Switch } from '@finnit/ui/components/ui/switch';
 import { Textarea } from '@finnit/ui/components/ui/textarea';
 
-import { todayKey } from '@/lib/finance/dates';
-import type { ApiAccount } from '@/lib/finance/types';
+import { todayKey } from '@finnit/core/finance/dates';
+import type { ApiAccount } from '@finnit/core/finance/types';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { accountOptions, categoryOptions } from '@/lib/new-entry/options';
+import { accountOptions, categoryOptions } from '@finnit/core/new-entry/options';
 import {
   recurringErrorMessage,
   saveRecurring,
@@ -47,7 +47,7 @@ import {
   type FormErrorCode,
   type FormErrors,
   type RecurringForm,
-} from '@/lib/recurring/form';
+} from '@finnit/core/recurring/form';
 import {
   CURRENCIES,
   RECURRING_FREQUENCIES,
@@ -55,7 +55,7 @@ import {
   type ApiRecurringCategory,
   type ApiRecurringExpense,
   type ApiRecurringSuggestion,
-} from '@/lib/recurring/types';
+} from '@finnit/core/recurring/types';
 import { SelectField } from './select-field';
 import { TrackingModeField } from './tracking-mode-field';
 

@@ -31,10 +31,10 @@ import {
   type BudgetForm,
   type BudgetFormErrors,
   type CapRow,
-} from '@/lib/budgets/form';
-import { budgetCategoryOptions } from '@/lib/budgets/options';
-import type { BudgetCategory } from '@/lib/budgets/types';
-import { formatMoney } from '@/lib/finance/money';
+} from '@finnit/core/budgets/form';
+import { budgetCategoryOptions } from '@finnit/core/budgets/options';
+import type { BudgetCategory } from '@finnit/core/budgets/types';
+import { formatMoney } from '@finnit/core/finance/money';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import { CapField } from './cap-field';

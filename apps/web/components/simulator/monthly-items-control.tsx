@@ -19,8 +19,8 @@ import {
   validateMonthlyDraft,
   type DraftErrors,
   type MonthlyDraft,
-} from '@/lib/simulator/form';
-import type { MonthlyItem, MonthlyItemKind } from '@/lib/simulator/scenario';
+} from '@finnit/core/simulator/form';
+import type { MonthlyItem, MonthlyItemKind } from '@finnit/core/simulator/scenario';
 import { ControlSection } from './control-section';
 import { ItemRow } from './item-row';
 

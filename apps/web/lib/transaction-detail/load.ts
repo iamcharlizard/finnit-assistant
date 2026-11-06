@@ -3,16 +3,16 @@ import 'server-only';
 import { notFound } from 'next/navigation';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
-import { todayKey, type DayKey } from '@/lib/finance/dates';
+import { todayKey, type DayKey } from '@finnit/core/finance/dates';
 import { isUuid } from '@/lib/files/routes';
 import { getLocalizer } from '@/lib/i18n/server';
-import { detailFormOf, type DetailForm } from './form';
+import { detailFormOf, type DetailForm } from '@finnit/core/transaction-detail/form';
 import {
   TRANSACTION_DETAIL_QUERY,
   type DetailCategory,
   type TransactionDetail,
-} from './types';
-import { toTransactionDetailView, type TransactionDetailView } from './view';
+} from '@finnit/core/transaction-detail/types';
+import { toTransactionDetailView, type TransactionDetailView } from '@finnit/core/transaction-detail/view';
 
 export interface TransactionDetailData {
   today: DayKey;

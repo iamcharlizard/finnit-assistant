@@ -1,9 +1,9 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import type { ApiAccount } from '@/lib/finance/types';
+import type { ApiAccount } from '@finnit/core/finance/types';
 import { GraphqlRequestError } from '@/lib/graphql/client';
-import { testLocalizer } from '@/lib/i18n/testing';
+import { testLocalizer } from '@finnit/core/i18n/testing';
 import {
   ACCEPT_SUGGESTION_MUTATION,
   CREATE_MUTATION,
@@ -11,8 +11,8 @@ import {
   recurringErrorMessage,
   saveRecurring,
 } from './api';
-import { filterExpenses, kindFilterOptions } from './filters';
-import { parseTabParam, withTabParam } from './tabs';
+import { filterExpenses, kindFilterOptions } from '@finnit/core/recurring/filters';
+import { parseTabParam, withTabParam } from '@finnit/core/recurring/tabs';
 import {
   buildAcceptInput,
   buildCreateInput,
@@ -22,7 +22,7 @@ import {
   newRecurringForm,
   validateRecurringForm,
   type RecurringForm,
-} from './form';
+} from '@finnit/core/recurring/form';
 import {
   parseDateParam,
   parseViewParam,
@@ -30,13 +30,13 @@ import {
   recurringHref,
   shiftDate,
   visibleRange,
-} from './range';
-import { confidencePercent, toSuggestionCard } from './suggestions';
+} from '@finnit/core/recurring/range';
+import { confidencePercent, toSuggestionCard } from '@finnit/core/recurring/suggestions';
 import type {
   ApiRecurringExpense,
   ApiRecurringPayment,
   ApiRecurringSuggestion,
-} from './types';
+} from '@finnit/core/recurring/types';
 import {
   buildRecurringView,
   cardDatesIn,
@@ -44,7 +44,7 @@ import {
   paymentStatus,
   toCalendarEvent,
   toPaymentItem,
-} from './view';
+} from '@finnit/core/recurring/view';
 
 const es = testLocalizer('es');
 const en = testLocalizer('en');

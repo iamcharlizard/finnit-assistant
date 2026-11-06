@@ -7,13 +7,13 @@ import {
   shiftMonth,
   todayKey,
   type MonthRef,
-} from '@/lib/finance/dates';
-import { DEFAULT_CURRENCY } from '@/lib/finance/money';
+} from '@finnit/core/finance/dates';
+import { DEFAULT_CURRENCY } from '@finnit/core/finance/money';
 import {
   MONTHLY_REPORT_FIELDS,
   type ApiMonthlyReport,
-} from '@/lib/finance/types';
-import { SUGGESTION_MONTHS } from './suggestions';
+} from '@finnit/core/finance/types';
+import { SUGGESTION_MONTHS } from '@finnit/core/budgets/suggestions';
 import {
   BUDGET_CATEGORY_FIELDS,
   BUDGET_FIELDS,
@@ -21,14 +21,14 @@ import {
   type ApiBudget,
   type ApiBudgetSummary,
   type BudgetCategory,
-} from './types';
+} from '@finnit/core/budgets/types';
 import {
   budgetOf,
   buildBudgetCard,
   buildBudgetsView,
   type BudgetCardView,
   type BudgetsView,
-} from './view';
+} from '@finnit/core/budgets/view';
 
 /** Current month (Mexico City). */
 export function currentMonth(): MonthRef {

@@ -8,7 +8,7 @@ import {
   type EntryAccount,
   type EntryCategory,
   type NewEntryData,
-} from '@/lib/new-entry/graphql';
+} from '@finnit/core/new-entry/graphql';
 
 export type NewEntryDataState =
   | { status: 'loading' }

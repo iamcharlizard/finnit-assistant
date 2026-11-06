@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import { gql } from '@/lib/graphql/client';
 import { loadSuggestions } from '@/lib/recurring/api';
-import type { ApiRecurringSuggestion } from '@/lib/recurring/types';
+import type { ApiRecurringSuggestion } from '@finnit/core/recurring/types';
 
 export type SuggestionsState =
   | { status: 'loading' }

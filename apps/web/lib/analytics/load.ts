@@ -2,19 +2,19 @@ import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
 import { getLocalizer } from '@/lib/i18n/server';
-import { monthOf, todayKey, type MonthRef } from '@/lib/finance/dates';
+import { monthOf, todayKey, type MonthRef } from '@finnit/core/finance/dates';
 import {
   CATEGORY_FIELDS,
   MONTHLY_REPORT_FIELDS,
   type ApiCategory,
   type ApiMonthlyReport,
-} from '@/lib/finance/types';
+} from '@finnit/core/finance/types';
 import {
   buildAnalyticsView,
   trendMonths,
   type AnalyticsView,
   type ProjectionPoint,
-} from './view';
+} from '@finnit/core/analytics/view';
 
 const PROJECTION_MONTHS = 6;
 

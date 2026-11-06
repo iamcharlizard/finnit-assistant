@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { PiggyBank } from 'lucide-react';
 
-import type { BudgetCardView } from '@/lib/budgets/view';
+import type { BudgetCardView } from '@finnit/core/budgets/view';
 import { StatusText } from './status-text';
 import { UsageBar } from './usage-bar';
 

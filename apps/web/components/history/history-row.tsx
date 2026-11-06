@@ -1,7 +1,7 @@
 'use client';
 
 import { TransactionListCard } from '@/components/finance/transaction-card';
-import type { HistoryRow as Row } from '@/lib/history/view';
+import type { HistoryRow as Row } from '@finnit/core/history/view';
 
 /**
  * A history movement: the card opens its detail (drawer or modal), where

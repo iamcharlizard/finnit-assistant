@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 
-import { previewColors, type DesignValue } from '@/lib/accounts/form';
-import type { CardPreview } from '@/lib/accounts/view';
+import { previewColors, type DesignValue } from '@finnit/core/accounts/form';
+import type { CardPreview } from '@finnit/core/accounts/view';
 import { AccountCardVisual } from './account-card-visual';
 import { DesignEditor } from './design-editor';
 

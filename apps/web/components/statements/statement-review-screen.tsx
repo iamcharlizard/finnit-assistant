@@ -22,10 +22,10 @@ import {
   type ConfirmRequest,
 } from '@/components/admin/confirm-dialog';
 import { useStatementPolling } from '@/hooks/use-statement-polling';
-import { todayKey } from '@/lib/finance/dates';
+import { todayKey } from '@finnit/core/finance/dates';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { categoryOptions } from '@/lib/new-entry/options';
+import { categoryOptions } from '@finnit/core/new-entry/options';
 import {
   confirmStatement,
   deleteStatement,
@@ -36,7 +36,7 @@ import {
   type ReprocessParser,
 } from '@/lib/statements/api';
 import type { StatementReviewData } from '@/lib/statements/load';
-import type { ApiStatementDetail } from '@/lib/statements/types';
+import type { ApiStatementDetail } from '@finnit/core/statements/types';
 import {
   accountsById,
   categoriesById,
@@ -44,7 +44,7 @@ import {
   lineCounts,
   toStatementDetailView,
   type StatementLineView,
-} from '@/lib/statements/view';
+} from '@finnit/core/statements/view';
 import { LinkTransactionDialog } from './link-transaction-dialog';
 import { ReprocessControl } from './reprocess-control';
 import { StatementCheckCard } from './statement-check-card';

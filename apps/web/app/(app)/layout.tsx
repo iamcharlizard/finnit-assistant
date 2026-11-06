@@ -6,13 +6,13 @@ import { MoneyFormatProvider } from '@finnit/ui/components/ui/money-input';
 import { AppShell } from '@/components/app-shell';
 import { SessionProvider } from '@/components/session-provider';
 import { getCurrentUser } from '@/lib/auth/session';
-import { MONEY_COUNTRY } from '@/lib/finance/money';
+import { MONEY_COUNTRY } from '@finnit/core/finance/money';
 import {
   NAV_GROUPS_COOKIE,
   SIDEBAR_COOKIE,
   parseOpenGroups,
   parseSidebarCollapsed,
-} from '@/lib/nav/sidebar';
+} from '@finnit/core/nav/sidebar';
 import { unreadNotificationCount } from '@/lib/notifications/unread';
 
 export default async function AppLayout({

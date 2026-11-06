@@ -6,7 +6,7 @@ import { CalendarClock, Check, Sparkles } from 'lucide-react';
 import { Badge } from '@finnit/ui/components/ui/badge';
 import { Button } from '@finnit/ui/components/ui/button';
 
-import type { CandidateRow } from '@/lib/debts/detail-view';
+import type { CandidateRow } from '@finnit/core/debts/detail-view';
 
 export type CandidatesState =
   | { status: 'loading' }

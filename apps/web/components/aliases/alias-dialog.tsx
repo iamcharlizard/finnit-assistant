@@ -17,9 +17,9 @@ import {
 import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 
 import { aliasErrorMessage } from '@/lib/aliases/api';
-import type { AliasForm } from '@/lib/aliases/form';
-import type { ApiMerchantAlias } from '@/lib/aliases/types';
-import type { CategorizeCategory } from '@/lib/categorize/types';
+import type { AliasForm } from '@finnit/core/aliases/form';
+import type { ApiMerchantAlias } from '@finnit/core/aliases/types';
+import type { CategorizeCategory } from '@finnit/core/categorize/types';
 import { useLocalizer } from '@/lib/i18n/client';
 import { AliasFields, AliasFormInvalid, useAliasEditor } from './alias-fields';
 

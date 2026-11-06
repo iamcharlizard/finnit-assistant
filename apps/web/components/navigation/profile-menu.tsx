@@ -35,7 +35,7 @@ import { UserAvatar } from '@/components/profile/user-avatar';
 import { useSessionUser } from '@/components/session-provider';
 import { ThemeSwatch } from '@/components/theme-picker';
 import { SETTINGS_HREF } from '@/lib/nav/sections';
-import { APP_THEMES, type AppTheme } from '@/lib/theme/app-theme';
+import { APP_THEMES, type AppTheme } from '@finnit/core/theme/app-theme';
 
 const MODES = [
   { value: 'light', icon: Sun },

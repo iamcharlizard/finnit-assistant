@@ -16,8 +16,8 @@ import {
   validateOneTimeDraft,
   type DraftErrors,
   type OneTimeDraft,
-} from '@/lib/simulator/form';
-import type { OneTimeItem } from '@/lib/simulator/scenario';
+} from '@finnit/core/simulator/form';
+import type { OneTimeItem } from '@finnit/core/simulator/scenario';
 import { ControlSection } from './control-section';
 import { ItemRow } from './item-row';
 

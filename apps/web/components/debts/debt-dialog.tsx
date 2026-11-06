@@ -32,12 +32,12 @@ import {
   type DebtErrorCode,
   type DebtForm,
   type DebtFormErrors,
-} from '@/lib/debts/form';
-import { DEBT_KINDS, type ApiDebt } from '@/lib/debts/types';
-import type { ApiAccount } from '@/lib/finance/types';
+} from '@finnit/core/debts/form';
+import { DEBT_KINDS, type ApiDebt } from '@finnit/core/debts/types';
+import type { ApiAccount } from '@finnit/core/finance/types';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { accountOptions } from '@/lib/new-entry/options';
+import { accountOptions } from '@finnit/core/new-entry/options';
 
 /**
  * Create or edit a debt. Mounted while open, so it starts from the debt's

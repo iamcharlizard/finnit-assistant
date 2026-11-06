@@ -1,10 +1,10 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { direction, toTransactionRow } from '@/lib/finance/transactions';
-import type { ApiTransaction } from '@/lib/finance/types';
-import { testLocalizer } from '@/lib/i18n/testing';
-import { deleteBlock } from '@/lib/transaction-detail/view';
+import { direction, toTransactionRow } from '@finnit/core/finance/transactions';
+import type { ApiTransaction } from '@finnit/core/finance/types';
+import { testLocalizer } from '@finnit/core/i18n/testing';
+import { deleteBlock } from '@finnit/core/transaction-detail/view';
 import {
   SET_ACCOUNT_BALANCE_MUTATION,
   balanceDifference,

@@ -1,7 +1,7 @@
 import type { GqlRunner } from '@/lib/accounts/api';
 import { requestErrorMessage } from '@/lib/graphql/client';
-import type { Translate } from '@/lib/i18n/translator';
-import { buildAliasInput, withActive, type AliasForm } from './form';
+import type { Translate } from '@finnit/core/i18n/translator';
+import { buildAliasInput, withActive, type AliasForm } from '@finnit/core/aliases/form';
 import {
   ALIAS_PREVIEW_FIELDS,
   MERCHANT_ALIAS_FIELDS,
@@ -9,7 +9,7 @@ import {
   type AliasPreview,
   type ApiMerchantAlias,
   type MerchantAliasInput,
-} from './types';
+} from '@finnit/core/aliases/types';
 
 /** Alias and learned-rule GraphQL, run from client components through /api/graphql. */
 

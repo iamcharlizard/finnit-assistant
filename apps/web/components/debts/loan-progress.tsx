@@ -7,7 +7,7 @@ import { DonutRing } from '@finnit/ui/components/finance/donut-ring';
 import { InfoHint } from '@finnit/ui/components/ui/info-hint';
 
 import { ChartTooltip } from '@/components/debts/insights/chart-tooltip';
-import type { LoanOutstanding, LoanPaidShare } from '@/lib/debts/detail-view';
+import type { LoanOutstanding, LoanPaidShare } from '@finnit/core/debts/detail-view';
 
 const PAID = 'var(--income)';
 const PENDING = 'var(--track)';

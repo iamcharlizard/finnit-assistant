@@ -12,7 +12,7 @@ import { CategoryBreakdown } from '@/components/analytics/category-breakdown';
 import { IncomeExpenseTrend } from '@/components/analytics/income-expense-trend';
 import { EmptyState } from '@/components/finance/empty-state';
 import { MonthSwitcher } from '@/components/finance/month-switcher';
-import type { AnalyticsView } from '@/lib/analytics/view';
+import type { AnalyticsView } from '@finnit/core/analytics/view';
 
 export function AnalyticsScreen({ view }: { view: AnalyticsView }) {
   const t = useTranslations();

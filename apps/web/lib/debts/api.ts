@@ -1,15 +1,15 @@
 import type { GqlRunner } from '@/lib/accounts/api';
-import type { DayKey } from '@/lib/finance/dates';
+import type { DayKey } from '@finnit/core/finance/dates';
 import { requestErrorMessage } from '@/lib/graphql/client';
-import type { Translate } from '@/lib/i18n/translator';
+import type { Translate } from '@finnit/core/i18n/translator';
 import {
   buildCreateDebtInput,
   buildUpdateDebtInput,
   type DebtForm,
   type PaymentMovement,
-} from './form';
-import { buildChargeInput, type ChargeForm } from './charge-form';
-import { buildLoanInput, type LoanForm } from './loan-form';
+} from '@finnit/core/debts/form';
+import { buildChargeInput, type ChargeForm } from '@finnit/core/debts/charge-form';
+import { buildLoanInput, type LoanForm } from '@finnit/core/debts/loan-form';
 import {
   LOAN_CANDIDATE_FIELDS,
   LOAN_DRAFT_FIELDS,
@@ -18,7 +18,7 @@ import {
   type ApiLoanPaymentCandidate,
   type ApiPayoffProjection,
   type PayoffStrategy,
-} from './types';
+} from '@finnit/core/debts/types';
 
 /** Debt mutations and the payoff plan, run from client components. */
 

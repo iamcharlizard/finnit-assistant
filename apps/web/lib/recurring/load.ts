@@ -2,21 +2,21 @@ import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
 import { getLocalizer } from '@/lib/i18n/server';
-import { endOfDayIso, startOfDayIso, todayKey } from '@/lib/finance/dates';
+import { endOfDayIso, startOfDayIso, todayKey } from '@finnit/core/finance/dates';
 import {
   ACCOUNT_FIELDS,
   type ApiAccount,
   type Connection,
-} from '@/lib/finance/types';
-import { visibleRange, type RecurringView } from './range';
+} from '@finnit/core/finance/types';
+import { visibleRange, type RecurringView } from '@finnit/core/recurring/range';
 import {
   RECURRING_EXPENSE_FIELDS,
   RECURRING_PAYMENT_FIELDS,
   type ApiRecurringCategory,
   type ApiRecurringExpense,
   type ApiRecurringPayment,
-} from './types';
-import { buildRecurringView, type RecurringScreenView } from './view';
+} from '@finnit/core/recurring/types';
+import { buildRecurringView, type RecurringScreenView } from '@finnit/core/recurring/view';
 
 /** Far more than anyone has; the list isn't paginated on screen. */
 const EXPENSES_PAGE = 200;

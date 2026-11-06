@@ -1,12 +1,12 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { testLocalizer } from '@/lib/i18n/testing';
+import { testLocalizer } from '@finnit/core/i18n/testing';
 import { GraphqlRequestError } from '@/lib/graphql/client';
 import { transactionErrorMessage } from './api';
-import { buildUpdateInput, detailFormOf, validateDetailForm } from './form';
-import type { TransactionDetail } from './types';
-import { ownNameUpdate, shownSuggestion } from './edit';
+import { buildUpdateInput, detailFormOf, validateDetailForm } from '@finnit/core/transaction-detail/form';
+import type { TransactionDetail } from '@finnit/core/transaction-detail/types';
+import { ownNameUpdate, shownSuggestion } from '@finnit/core/transaction-detail/edit';
 import {
   deleteBlock,
   editRules,
@@ -14,7 +14,7 @@ import {
   sourceKind,
   toAttachmentView,
   toTransactionDetailView,
-} from './view';
+} from '@finnit/core/transaction-detail/view';
 
 const tx = (over: Partial<TransactionDetail> = {}): TransactionDetail => ({
   id: 't-1',

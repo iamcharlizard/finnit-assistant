@@ -8,8 +8,8 @@ import {
   startOfDayIso,
   endOfDayIso,
   todayKey,
-} from '@/lib/finance/dates';
-import { SETTINGS_CATEGORY_FIELDS, type SettingsCategory } from './types';
+} from '@finnit/core/finance/dates';
+import { SETTINGS_CATEGORY_FIELDS, type SettingsCategory } from '@finnit/core/categories/types';
 
 export interface CategoriesData {
   categories: SettingsCategory[];

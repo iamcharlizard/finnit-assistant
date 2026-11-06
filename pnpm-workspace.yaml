@@ -16,3 +16,6 @@ allowBuilds:
   msgpackr-extract: true
   prisma: true
   unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - lucide-react-native@1.70.0

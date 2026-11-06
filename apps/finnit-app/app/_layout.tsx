@@ -11,9 +11,12 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { Provider } from 'urql';
 
+import { ThemeRoot } from '@finnit/ui-native/theme/theme-root';
+
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { graphqlClient } from '@/lib/graphql/client';
+import { APP_THEME } from '@/lib/theme/app-theme';
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -30,12 +33,14 @@ export default function RootLayout() {
     <Provider value={graphqlClient}>
       <AuthProvider>
         <ThemeProvider>
-          <Stack screenOptions={{ headerShown: false }}>
+          <ThemeRoot theme={APP_THEME}>
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="login" />
             <Stack.Screen name="(app)" options={{ animation: 'none' }} />
             <Stack.Screen name="+not-found" options={{ headerShown: true }} />
           </Stack>
+          </ThemeRoot>
           <StatusBar style="auto" />
         </ThemeProvider>
       </AuthProvider>

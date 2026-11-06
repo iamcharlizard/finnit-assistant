@@ -11,6 +11,7 @@ import { Button } from '@finnit/ui-native/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@finnit/ui-native/components/ui/card';
 import { GlassSurface } from '@finnit/ui-native/components/ui/glass-surface';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
+import { LogoSpinner } from '@finnit/ui-native/components/ui/logo-spinner';
 import { MoneyInput } from '@finnit/ui-native/components/ui/money-input';
 import { Progress } from '@finnit/ui-native/components/ui/progress';
 import { Segmented } from '@finnit/ui-native/components/ui/segmented';
@@ -66,6 +67,9 @@ export default function ThemePreview() {
                 onValueChange={setPeriod}
               />
               <Progress value={62} />
+              <TwView className="items-center">
+                <LogoSpinner size={40} />
+              </TwView>
               <GlassSurface className="h-16 flex-row items-center justify-around rounded-full">
                 <Text weight="medium">Inicio</Text>
                 <Text weight="medium" className="text-on-surface-variant">Movimientos</Text>

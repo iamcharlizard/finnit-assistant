@@ -1,4 +1,3 @@
-import type * as React from 'react';
 import { useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
 import { ArrowLeft } from 'lucide-react-native';
@@ -14,18 +13,14 @@ import { avatarSource } from '@/lib/profile/avatar';
 
 /**
  * A screen's heading in the floating top bar, like the web's PageHeader:
- * title, subtitle and actions, the notifications bell and the avatar
- * (profile menu). With `back`, a button before the title goes back.
+ * title, the notifications bell and the avatar (profile menu). `Screen`
+ * renders the subtitle and actions itself, in the scrolling content. With `back`, a button before the title goes back.
  */
 export function PageHeader({
   title,
-  subtitle,
-  actions,
   back,
 }: {
   title: string;
-  subtitle?: React.ReactNode;
-  actions?: React.ReactNode;
   back?: boolean;
 }) {
   const router = useRouter();
@@ -35,8 +30,6 @@ export function PageHeader({
   return (
     <TopAppBar
       title={title}
-      subtitle={subtitle}
-      actions={actions}
       leading={
         back ? (
           <TwPressable

@@ -4,9 +4,8 @@ import { serverGraphql } from '@/lib/api/server-graphql';
 import { todayKey } from '@finnit/core/finance/dates';
 import { getLocalizer } from '@/lib/i18n/server';
 import { projectionsQuery } from '@finnit/core/goals/api';
+import { GOALS_QUERY } from '@finnit/core/goals/request';
 import {
-  GOAL_FIELDS,
-  RECOMMENDATION_FIELDS,
   type ApiGoal,
   type ApiGoalContribution,
   type ApiGoalProjection,
@@ -14,10 +13,6 @@ import {
 } from '@finnit/core/goals/types';
 import { buildGoalsView, parseGoalParam, type GoalsScreenView } from '@finnit/core/goals/view';
 
-const GOALS_QUERY = `query Goals {
-  goals { ${GOAL_FIELDS} }
-  goalRecommendations { ${RECOMMENDATION_FIELDS} }
-}`;
 
 export async function loadGoals(
   goalParam: string | string[] | undefined,

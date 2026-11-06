@@ -56,7 +56,6 @@
     "app": "Finnit",
     "dashboard": "Home",
     "history": "Transactions",
-    "transaction": "Transaction",
     "categorize": "Categorize transactions",
     "recurring": "Recurring payments",
     "cards": "Accounts & cards",
@@ -2318,7 +2317,6 @@
   "transaction": {
     "markApplied": "Mark as applied",
     "markedApplied": "Marked as applied by the bank",
-    "back": "Back",
     "viewDetail": "View details",
     "types": {
       "income": "Income",
@@ -2337,7 +2335,8 @@
       "description": "Description",
       "original": "Original text",
       "transfer": "Transfer",
-      "recurring": "Recurring payment"
+      "recurring": "Recurring payment",
+      "notes": "Notes"
     },
     "sources": {
       "manual": "Added by hand",
@@ -2356,8 +2355,8 @@
     "edit": "Edit",
     "delete": "Delete",
     "editTitle": "Edit movement",
-    "editDescription": "Change this movement's details. The account balance updates on its own.",
-    "editImported": "It comes from the bank or a statement: its data stays as it is. Pick its category here; its name is in “Name and privacy”.",
+    "editDescription": "Change this movement's data, name and notes. The account balance adjusts by itself.",
+    "editImported": "It comes from your bank or a statement: its amount, date and text stay as they are. Here you change its name, category and your notes.",
     "editTransfer": "A transfer's amount and date don't change; if they're wrong, delete it from the other account and create it again.",
     "form": {
       "amount": "Amount",
@@ -2369,8 +2368,17 @@
       "noResults": "No results",
       "merchant": "Merchant",
       "merchantPlaceholder": "E.g. Oxxo",
-      "description": "Notes",
-      "descriptionPlaceholder": "Notes about the movement",
+      "description": "Description",
+      "descriptionPlaceholder": "What it was, if there is no merchant",
+      "notes": "Notes",
+      "notesPlaceholder": "Anything you want to remember about this movement",
+      "suggested": "Suggested: {category}",
+      "suggestedApply": "Use the suggested category {category}",
+      "suggestedBy": {
+        "rule": "from your merchant rule",
+        "automatic_name": "from its automatic name",
+        "history": "{count, plural, one {like # similar movement} other {like # similar movements}}"
+      },
       "save": "Save",
       "saving": "Saving…"
     },
@@ -2425,8 +2433,6 @@
       "notFound": "This movement no longer exists."
     },
     "name": {
-      "title": "Movement name",
-      "description": "Only changes how it shows. The bank text is never changed.",
       "bankText": "Bank text",
       "bankTextHidden": "Hidden in lists; see it in the detail.",
       "automatic": "Automatic name",
@@ -2442,10 +2448,9 @@
       "privateByProtectedRule": "It's private and PIN-protected by the automatic name “{name}”.",
       "makeRule": "Use an automatic name for similar ones",
       "makeRuleHint": "Gives the same name to this and every movement with a similar bank text, past and future.",
-      "save": "Save",
-      "saving": "Saving…"
+      "ruleDropsOwn": "On save, this movement uses the automatic name and its own name goes.",
+      "ruleCategory": "The automatic name uses the category you pick below for this movement."
     },
-    "nameAction": "Name and privacy",
     "originalLocked": "Its automatic name is protected by a PIN.",
     "unlockOriginal": "Enter your PIN to see this movement's bank text.",
     "facts": {
@@ -2456,8 +2461,7 @@
     "nameInput": "Name of this movement (empty: the original)",
     "drawer": {
       "title": "Movement details",
-      "description": "The movement's data, name, category and files.",
-      "openPage": "Open as a full page",
+      "description": "The movement's data, name, category, notes and files.",
       "notFound": "This movement no longer exists.",
       "failed": "We couldn't load the movement. Try again."
     }

@@ -53,6 +53,7 @@ type TransactionRow = Prisma.TransactionGetPayload<Record<string, never>> & {
 export interface PresentationInput {
   merchantName: string | null;
   description: string | null;
+  notes?: string | null;
   aliasName: string | null;
   isPrivate: boolean;
   alias?: PresentationAlias | null;
@@ -77,6 +78,7 @@ export interface Presentation {
   originalDescription: string | null;
   merchantName: string | null;
   description: string | null;
+  notes: string | null;
 }
 
 /**
@@ -119,6 +121,8 @@ export function presentTransaction(
     originalDescription: hide ? null : original,
     merchantName: hide ? null : row.merchantName,
     description: hide ? null : row.description,
+    // Notes may say what a private movement is: hidden like the bank text.
+    notes: hide ? null : (row.notes ?? null),
   };
 }
 
@@ -235,6 +239,7 @@ export function mapTransaction(
     txnDate: transaction.txnDate,
     description: shown.description || undefined,
     merchantName: shown.merchantName || undefined,
+    notes: shown.notes,
     isPending: transaction.isPending,
     inProcess: transaction.inProcess ?? false,
     isRecurringInstance: transaction.isRecurringInstance,

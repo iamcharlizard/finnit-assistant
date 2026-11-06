@@ -2206,6 +2206,11 @@ type Query {
   screenshotImport(id: ID!): ScreenshotImport!
 
   """
+  The category the user's own patterns suggest for a movement (merchant rules, automatic names, the same merchant's past movements); never AI. Null when there is none
+  """
+  similarCategory(transactionId: ID!): SimilarCategory
+
+  """
   Possible duplicates of a transaction about to be created: same account, amount within 0.01, within 3 days; newest first, at most 5
   """
   similarTransactions(
@@ -2622,6 +2627,26 @@ input SignInWithGoogleInput {
   nonce: String
 }
 
+"""
+The category the user's own patterns suggest for a movement (rules, automatic names, past movements of the same merchant); never AI
+"""
+type SimilarCategory {
+  categoryId: ID!
+
+  """
+  Similar movements with that category (history only; 0 for rules and automatic names)
+  """
+  count: Int!
+  source: SimilarCategorySource!
+}
+
+"""Where a category suggested from the user’s own patterns comes from"""
+enum SimilarCategorySource {
+  automatic_name
+  history
+  rule
+}
+
 type StatementImport {
   accountId: String!
 
@@ -2807,6 +2832,9 @@ type Transaction {
   isPrivate: Boolean!
   isRecurringInstance: Boolean!
   merchantName: String
+
+  """The user's notes; null for private movements except in transaction(id)"""
+  notes: String
 
   """
   merchantName ?? description, never modified. Null for private movements except in transaction(id)
@@ -3242,6 +3270,9 @@ input UpdateTransactionInput {
   inProcess: Boolean
   isPending: Boolean
   merchantName: String
+
+  """Notes on any movement (also from the bank); "" clears them"""
+  notes: String
   txnDate: DateTime
 }
 

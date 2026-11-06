@@ -993,6 +993,7 @@ describe('TransactionsService', () => {
         txnDate: mockTransaction.txnDate,
         description: mockTransaction.description,
         merchantName: mockTransaction.merchantName,
+        notes: null,
         isPending: mockTransaction.isPending,
         inProcess: false,
         isRecurringInstance: mockTransaction.isRecurringInstance,
@@ -1617,7 +1618,21 @@ describe('TransactionsService', () => {
           categoryId: 'cat-2',
           ...input,
         }),
-      ).rejects.toThrow('only the category can change');
+      ).rejects.toThrow('only the category and notes can change');
+    });
+
+    it('imported movements take notes; blank notes are cleared', async () => {
+      const mockTx = arrange({ source: TransactionSource.imported });
+      await service.update(mockTransaction.id, mockUserId, {
+        notes: '  Cena con Ana  ',
+      });
+      expect(dataOf(mockTx.transaction.update)).toMatchObject({
+        notes: 'Cena con Ana',
+      });
+
+      const again = arrange({ source: TransactionSource.imported });
+      await service.update(mockTransaction.id, mockUserId, { notes: '   ' });
+      expect(dataOf(again.transaction.update)).toMatchObject({ notes: null });
     });
 
     it('rejects a new amount on either side of a transfer', async () => {

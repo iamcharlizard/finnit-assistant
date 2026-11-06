@@ -80,6 +80,13 @@ export class Transaction {
   @Field({ nullable: true })
   merchantName?: string;
 
+  @Field(() => String, {
+    nullable: true,
+    description:
+      "The user's notes; null for private movements except in transaction(id)",
+  })
+  notes?: string | null;
+
   @Field()
   txnDate: Date;
 

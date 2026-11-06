@@ -6,6 +6,7 @@ import { User } from '../../common/types/models/user.model';
 import { Transaction } from '../../common/types/models/transaction.model';
 import { CategorizationService } from './categorization.service';
 import { MerchantRule } from './dto/merchant-rule.dto';
+import { SimilarCategory } from './dto/similar-category.dto';
 import { MerchantRulesService } from './merchant-rules.service';
 
 @Resolver()
@@ -52,6 +53,18 @@ export class CategorizationResolver {
       categoryId,
       createRule ?? true,
     );
+  }
+
+  @Query(() => SimilarCategory, {
+    nullable: true,
+    description:
+      "The category the user's own patterns suggest for a movement (merchant rules, automatic names, the same merchant's past movements); never AI. Null when there is none",
+  })
+  async similarCategory(
+    @CurrentUser() user: User,
+    @Args('transactionId', { type: () => ID }) transactionId: string,
+  ): Promise<SimilarCategory | null> {
+    return this.categorization.similarCategory(user.id, transactionId);
   }
 
   @Mutation(() => [Transaction], {

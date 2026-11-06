@@ -35,6 +35,7 @@ export function TransactionListCard({
   showStatus = false,
   editable = true,
   onRenamed,
+  onDetailChange,
   rename,
   selectable,
   selected,
@@ -53,6 +54,8 @@ export function TransactionListCard({
   editable?: boolean;
   /** After the own name changed (reload the list). */
   onRenamed?: () => void;
+  /** After the movement changed in its detail (for lists kept on the client). */
+  onDetailChange?: () => void;
   /** Saves the own name some other way (e.g. merging the updated row). */
   rename?: (name: string) => Promise<void>;
   selectable?: boolean;
@@ -93,7 +96,7 @@ export function TransactionListCard({
       }
       isPrivate={row.isPrivate}
       privateLabel={t('finance.private')}
-      onOpen={() => drawer.open(row.id)}
+      onOpen={() => drawer.open(row.id, { onChange: onDetailChange })}
       openLabel={t('transaction.openDetail', { name: row.title })}
       selectable={selectable}
       selected={selected}

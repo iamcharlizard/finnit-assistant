@@ -100,7 +100,6 @@ describe('page titles', () => {
 
   it('picks the specific route before the dynamic one', () => {
     assert.equal(pageTitleKey('/transactions/categorize'), 'categorize');
-    assert.equal(pageTitleKey('/transactions/123'), 'transaction');
     assert.equal(pageTitleKey('/settings/banks/connect'), 'connectBank');
     assert.equal(pageTitleKey('/settings/aliases'), 'aliases');
     assert.equal(pageTitleKey('/admin/users'), 'admin');

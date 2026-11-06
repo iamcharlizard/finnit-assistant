@@ -481,4 +481,103 @@ describe('CategorizationService', () => {
       expect(prisma.transaction.updateMany).not.toHaveBeenCalled();
     });
   });
+
+  describe('similarCategory', () => {
+    const movement = (overrides: Record<string, unknown> = {}) =>
+      ({
+        id: 't-1',
+        type: TransactionType.expense,
+        merchantName: 'OXXO GAS SUC 123',
+        description: null,
+        alias: null,
+        ...overrides,
+      }) as never;
+    const sample = (categoryId: string, merchantName = 'OXXO GAS SUC 123') =>
+      ({
+        type: TransactionType.expense,
+        merchantName,
+        description: null,
+        categoryId,
+      }) as never;
+
+    it("throws for a movement that is not the user's", async () => {
+      prisma.transaction.findFirst.mockResolvedValue(null);
+      await expect(service.similarCategory(userId, 't-x')).rejects.toThrow(
+        NotFoundError,
+      );
+    });
+
+    it('is null for transfers and adjustments', async () => {
+      prisma.transaction.findFirst.mockResolvedValue(
+        movement({ type: TransactionType.transfer }),
+      );
+      expect(await service.similarCategory(userId, 't-1')).toBeNull();
+      expect(rules.categoryFor).not.toHaveBeenCalled();
+    });
+
+    it('prefers a learned merchant rule', async () => {
+      prisma.transaction.findFirst.mockResolvedValue(movement());
+      rules.categoryFor.mockResolvedValue('food');
+      expect(await service.similarCategory(userId, 't-1')).toEqual({
+        categoryId: 'food',
+        source: 'rule',
+        count: 0,
+      });
+      expect(prisma.transaction.findMany).not.toHaveBeenCalled();
+    });
+
+    it("then the automatic name's category (only when the rule is on)", async () => {
+      rules.categoryFor.mockResolvedValue(null);
+      prisma.transaction.findFirst.mockResolvedValue(
+        movement({ alias: { categoryId: 'gifts', active: true } }),
+      );
+      expect(await service.similarCategory(userId, 't-1')).toMatchObject({
+        categoryId: 'gifts',
+        source: 'automatic_name',
+      });
+
+      prisma.transaction.findFirst.mockResolvedValue(
+        movement({ alias: { categoryId: 'gifts', active: false } }),
+      );
+      prisma.transaction.findMany.mockResolvedValue([]);
+      expect(await service.similarCategory(userId, 't-1')).toBeNull();
+    });
+
+    it("then the same merchant's clear favourite, leaving the movement out", async () => {
+      rules.categoryFor.mockResolvedValue(null);
+      prisma.transaction.findFirst.mockResolvedValue(movement());
+      prisma.transaction.findMany.mockResolvedValue([
+        sample('food'),
+        sample('food'),
+        sample('food'),
+        sample('gifts'),
+        // Another merchant sharing the word doesn't count.
+        sample('gifts', 'OXXO TIENDA'),
+        sample('gifts', 'OXXO TIENDA'),
+      ]);
+      expect(await service.similarCategory(userId, 't-1')).toEqual({
+        categoryId: 'food',
+        source: 'history',
+        count: 3,
+      });
+      const where = prisma.transaction.findMany.mock.calls[0][0]?.where;
+      expect(where).toMatchObject({
+        userId,
+        id: { not: 't-1' },
+        type: TransactionType.expense,
+        categoryId: { not: null },
+      });
+      expect(JSON.stringify(where)).toContain('"contains":"OXXO"');
+    });
+
+    it('is null without a clear favourite (a tie)', async () => {
+      rules.categoryFor.mockResolvedValue(null);
+      prisma.transaction.findFirst.mockResolvedValue(movement());
+      prisma.transaction.findMany.mockResolvedValue([
+        sample('food'),
+        sample('gifts'),
+      ]);
+      expect(await service.similarCategory(userId, 't-1')).toBeNull();
+    });
+  });
 });

@@ -173,7 +173,7 @@ describe('statements: review', () => {
       categories,
       es,
     );
-    assert.equal(view.matchedTransactionHref, '/transactions/t-9');
+    assert.equal(view.matchedTransactionId, 't-9');
     assert.deepEqual(view.recurring, {
       href: '/recurring?date=2026-10-05',
       label: 'Netflix',

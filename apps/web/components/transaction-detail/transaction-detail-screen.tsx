@@ -3,11 +3,9 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import {
-  ArrowLeft,
   ArrowLeftRight,
   CheckCheck,
   PencilLine,
-  Tag,
   Trash2,
   Undo2,
 } from 'lucide-react';
@@ -25,20 +23,17 @@ import {
   deleteTransaction,
   transactionErrorMessage,
   updateTransaction,
-  SET_ALIAS_MUTATION,
 } from '@/lib/transaction-detail/api';
 import type { TransactionDetailData } from '@/lib/transaction-detail/load';
-import { canEditAnything } from '@/lib/transaction-detail/view';
 import { UNDO_TRANSFER_CONVERSION_MUTATION } from '@/lib/transfers/convert';
 import { ConvertTransferDialog } from '@/components/transfers/convert-transfer-dialog';
 import { AttachmentsCard } from './attachments-card';
-import { TransactionNameDialog } from './transaction-name-dialog';
 import { useDetailHost } from './detail-host';
-import { EditTransactionDialog } from './edit-transaction-dialog';
+import { TransactionEditDialog } from './transaction-edit-dialog';
 import { TransactionFacts } from './transaction-facts';
 import { TransactionSummary } from './transaction-summary';
 
-/** /transactions/[id]: one movement, its edits, alias, files and deletion. */
+/** One movement (in the drawer or modal): its data, edits, files and deletion. */
 export function TransactionDetailScreen({
   data,
 }: {
@@ -49,9 +44,7 @@ export function TransactionDetailScreen({
   const tt = useTranslations('transaction');
   const tx = useTranslations('transfers');
   const { view } = data;
-  const [dialog, setDialog] = React.useState<
-    'edit' | 'convert' | 'name' | null
-  >(null);
+  const [dialog, setDialog] = React.useState<'edit' | 'convert' | null>(null);
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
   const [deleting, setDeleting] = React.useState(false);
   const [applying, setApplying] = React.useState(false);
@@ -92,8 +85,6 @@ export function TransactionDetailScreen({
     });
   }
 
-  const back = () => host.close();
-
   function askDelete() {
     setConfirm({
       title: tt('deleteTitle'),
@@ -118,22 +109,11 @@ export function TransactionDetailScreen({
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
-      {host.mode === 'page' ? (
-        <Button variant="ghost" size="sm" className="self-start" onClick={back}>
-          <ArrowLeft aria-hidden /> {tt('back')}
-        </Button>
-      ) : null}
-
       <TransactionSummary view={view} />
 
       <div className="flex flex-wrap gap-2">
-        {canEditAnything(view.rules) ? (
-          <Button variant="outline" onClick={() => setDialog('edit')}>
-            <PencilLine aria-hidden /> {tt('edit')}
-          </Button>
-        ) : null}
-        <Button variant="outline" onClick={() => setDialog('name')}>
-          <Tag aria-hidden /> {tt('nameAction')}
+        <Button variant="outline" onClick={() => setDialog('edit')}>
+          <PencilLine aria-hidden /> {tt('edit')}
         </Button>
         {view.convertSource ? (
           <Button variant="outline" onClick={() => setDialog('convert')}>
@@ -171,6 +151,7 @@ export function TransactionDetailScreen({
           view={view}
           merchant={data.form.merchantName}
           description={data.form.description}
+          onOpenTransaction={host.show}
         />
         <AttachmentsCard
           transactionId={view.id}
@@ -179,45 +160,23 @@ export function TransactionDetailScreen({
       </div>
 
       {dialog === 'edit' ? (
-        <EditTransactionDialog
+        <TransactionEditDialog
           transactionId={view.id}
           initial={data.form}
           rules={view.rules}
+          subject={view.name}
           currency={data.currency}
           categories={data.categories}
           categoryKind={data.categoryKind}
           isTransfer={view.counterpart !== null}
           onClose={() => setDialog(null)}
-          onSaved={(changed) => {
+          onSaved={({ changed, rule }) => {
             setDialog(null);
             if (!changed) {
               toast(tt('toasts.noChanges'));
               return;
             }
-            toast.success(tt('toasts.saved'));
-            host.refresh();
-          }}
-        />
-      ) : null}
-      {dialog === 'name' ? (
-        <TransactionNameDialog
-          subject={view.name}
-          categories={data.categories}
-          submit={async (input) => {
-            await gql(SET_ALIAS_MUTATION, { id: view.id, input });
-          }}
-          onClose={() => setDialog(null)}
-          onSaved={(saved) => {
-            setDialog(null);
-            toast.success(
-              tt(
-                saved.kind === 'rule'
-                  ? 'toasts.ruleCreated'
-                  : saved.removed
-                    ? 'toasts.nameRemoved'
-                    : 'toasts.renamed',
-              ),
-            );
+            toast.success(tt(rule ? 'toasts.ruleCreated' : 'toasts.saved'));
             host.refresh();
           }}
         />

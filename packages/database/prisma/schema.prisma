@@ -496,6 +496,8 @@ model Transaction {
   txnDate             DateTime          @db.Date
   description         String?
   merchantName        String?
+  // The user's own notes (any source); hidden with the bank text when private.
+  notes               String?
   isPending           Boolean           @default(false)
   // "En proceso": the bank shows it but hasn't applied it yet. Unlike
   // isPending it counts in the balance and totals; it is only marked, and

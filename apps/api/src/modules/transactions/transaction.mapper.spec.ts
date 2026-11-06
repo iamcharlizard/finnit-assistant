@@ -63,13 +63,21 @@ describe('presentTransaction', () => {
       originalDescription: null,
       merchantName: null,
       description: null,
+      notes: null,
     });
   });
 
   it('a one-off private mark hides it too, and the detail reveals it', () => {
-    const row = { ...base, aliasName: 'Sorpresa', isPrivate: true };
+    const row = {
+      ...base,
+      aliasName: 'Sorpresa',
+      isPrivate: true,
+      notes: 'Regalo de Ana',
+    };
     expect(presentTransaction(row).originalDescription).toBeNull();
+    expect(presentTransaction(row).notes).toBeNull();
     const revealed = presentTransaction(row, true);
+    expect(revealed.notes).toBe('Regalo de Ana');
     expect(revealed.isPrivate).toBe(true);
     expect(revealed.originalDescription).toBe('PAYPAL *FARMACIA 123');
     expect(revealed.merchantName).toBe('PAYPAL *FARMACIA 123');

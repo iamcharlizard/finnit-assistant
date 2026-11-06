@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { Link2 } from 'lucide-react';
 
 import { Card } from '@finnit/ui/components/ui/card';
 
@@ -11,17 +12,24 @@ interface Fact {
   label: string;
   value: string;
   href?: string;
+  /** Opens another movement's detail. */
+  transactionId?: string;
 }
 
-/** Account, category, source, status, links to the transfer's other side and the recurring payment. */
+/**
+ * Account, category, source, status, the transfer's other side (opens its
+ * detail here), the recurring payment and the notes.
+ */
 export function TransactionFacts({
   view,
   merchant,
   description,
+  onOpenTransaction,
 }: {
   view: TransactionDetailView;
   merchant: string;
   description: string;
+  onOpenTransaction: (id: string) => void;
 }) {
   const t = useTranslations('transaction');
   const tf = useTranslations('finance');
@@ -44,7 +52,7 @@ export function TransactionFacts({
           {
             label: t('fields.transfer'),
             value: view.counterpart.label,
-            href: view.counterpart.href,
+            transactionId: view.counterpart.transactionId,
           },
         ]
       : []),
@@ -71,6 +79,7 @@ export function TransactionFacts({
     ...(!view.isPrivate && view.original && view.original !== merchant
       ? [{ label: t('fields.original'), value: view.original }]
       : []),
+    ...(view.notes ? [{ label: t('fields.notes'), value: view.notes }] : []),
   ];
 
   return (
@@ -85,8 +94,17 @@ export function TransactionFacts({
             className="flex flex-col gap-0.5 py-2.5 sm:flex-row sm:justify-between sm:gap-4"
           >
             <dt className="shrink-0 text-on-surface-variant">{fact.label}</dt>
-            <dd className="min-w-0 font-medium break-words text-on-background sm:text-right">
-              {fact.href ? (
+            <dd className="min-w-0 font-medium break-words whitespace-pre-line text-on-background sm:text-right">
+              {fact.transactionId ? (
+                <button
+                  type="button"
+                  onClick={() => onOpenTransaction(fact.transactionId!)}
+                  className="inline-flex items-center gap-1 text-left text-brand-ink underline-offset-4 hover:underline"
+                >
+                  <Link2 aria-hidden className="size-3.5 shrink-0" />
+                  {fact.value}
+                </button>
+              ) : fact.href ? (
                 <Link
                   href={fact.href}
                   className="text-brand-ink underline-offset-4 hover:underline"

@@ -1,2 +1,2 @@
-import { CardsScreen } from '@/screens/cards';
-export default CardsScreen;
+import { AccountsScreen } from '@/screens/accounts';
+export default AccountsScreen;

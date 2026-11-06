@@ -19,7 +19,7 @@ export default function AppLayout() {
         name="new-entry"
         options={{
           presentation: 'formSheet',
-          sheetAllowedDetents: [0.6, 1],
+          sheetAllowedDetents: [0.92],
           sheetGrabberVisible: true,
           sheetCornerRadius: 28,
           contentStyle: { backgroundColor: 'transparent' },

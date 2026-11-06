@@ -1,8 +1,2 @@
-import { useTranslations } from 'use-intl';
-
-import { ScreenPlaceholder } from '@/components/shell/screen-placeholder';
-
-export default function NewEntry() {
-  const t = useTranslations('nav');
-  return <ScreenPlaceholder title={t('newTransaction')} />;
-}
+import { NewEntryScreen } from '@/screens/new-entry';
+export default NewEntryScreen;

@@ -6,23 +6,28 @@ import { Text } from './text';
 
 interface FieldProps {
   label?: string;
+  /** Next to the label (right side), e.g. a link. */
+  labelAction?: React.ReactNode;
   error?: string;
   className?: string;
   children: React.ReactNode;
 }
 
 /** Label above, error below: the frame @finnit/ui's inputs draw around themselves. */
-function Field({ label, error, className, children }: FieldProps) {
+function Field({ label, labelAction, error, className, children }: FieldProps) {
   if (!label && !error) return <>{children}</>;
   return (
     <TwView className={cn('gap-1', className)}>
       {label ? (
-        <Text
-          weight="medium"
-          className="text-label-sm uppercase tracking-widest text-on-surface-variant"
-        >
-          {label}
-        </Text>
+        <TwView className="flex-row items-center justify-between px-1">
+          <Text
+            weight="medium"
+            className="text-label-sm uppercase tracking-widest text-on-surface-variant"
+          >
+            {label}
+          </Text>
+          {labelAction}
+        </TwView>
       ) : null}
       {children}
       {error ? (

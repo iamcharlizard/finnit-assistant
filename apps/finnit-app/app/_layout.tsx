@@ -6,17 +6,17 @@ import {
   Ubuntu_500Medium,
   Ubuntu_700Bold,
 } from '@expo-google-fonts/ubuntu';
-import { Stack } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavigationTheme } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import { Provider } from 'urql';
 
-import { ThemeRoot } from '@finnit/ui-native/theme/theme-root';
+import { useAppTheme, ThemeRoot } from '@finnit/ui-native/theme/theme-root';
+import { MoneyFormatProvider } from '@finnit/ui-native/components/ui/money-input';
 
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { graphqlClient } from '@/lib/graphql/client';
-import { APP_THEME } from '@/lib/theme/app-theme';
+import { I18nProvider } from '@/lib/i18n/i18n-provider';
+import { AppearanceProvider, useAppearance } from '@/lib/theme/appearance';
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -25,25 +25,60 @@ export default function RootLayout() {
     'Ubuntu Bold': Ubuntu_700Bold,
   });
 
-  if (!loaded) {
-    return null;
-  }
+  if (!loaded) return null;
 
   return (
-    <Provider value={graphqlClient}>
+    <I18nProvider>
       <AuthProvider>
-        <ThemeProvider>
-          <ThemeRoot theme={APP_THEME}>
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="login" />
-            <Stack.Screen name="(app)" options={{ animation: 'none' }} />
-            <Stack.Screen name="+not-found" options={{ headerShown: true }} />
-          </Stack>
-          </ThemeRoot>
-          <StatusBar style="auto" />
-        </ThemeProvider>
+        <AppearanceProvider>
+          <ThemedApp />
+        </AppearanceProvider>
       </AuthProvider>
-    </Provider>
+    </I18nProvider>
+  );
+}
+
+function ThemedApp() {
+  const { theme } = useAppearance();
+  return (
+    <ThemeRoot theme={theme}>
+      <MoneyFormatProvider country="MX">
+        {/* Legacy isDark context for the screens not migrated yet. */}
+        <ThemeProvider>
+          <Navigation />
+        </ThemeProvider>
+      </MoneyFormatProvider>
+    </ThemeRoot>
+  );
+}
+
+/**
+ * Navigation paints nothing: ThemeRoot draws the app background (Glass's
+ * blobs included) behind every screen.
+ */
+function Navigation() {
+  const { scheme, tokens } = useAppTheme();
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const navigationTheme = {
+    ...base,
+    colors: {
+      ...base.colors,
+      background: 'transparent',
+      card: tokens['--surface']!,
+      text: tokens['--on-background']!,
+      border: tokens['--outline']!,
+      primary: tokens['--accent-neon']!,
+    },
+  };
+  return (
+    <NavigationTheme value={navigationTheme}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="(app)" options={{ animation: 'none' }} />
+        <Stack.Screen name="+not-found" options={{ headerShown: true }} />
+      </Stack>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+    </NavigationTheme>
   );
 }

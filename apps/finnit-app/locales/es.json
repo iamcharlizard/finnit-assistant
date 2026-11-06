@@ -1,0 +1,7 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Finnit",
+    "NSCameraUsageDescription": "Finnit usa la cámara para fotografiar tus tickets y registrarlos como gastos.",
+    "NSPhotoLibraryUsageDescription": "Finnit abre tus fotos para que elijas un ticket o una captura de tu banco."
+  }
+}

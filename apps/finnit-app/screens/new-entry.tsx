@@ -33,6 +33,8 @@ import {
   type SimilarTransaction,
 } from '@finnit/core/new-entry/graphql';
 import { isCardPayment } from '@finnit/core/new-entry/options';
+import { CONFIRM_RECEIPT_MUTATION, type ReceiptImport } from '@finnit/core/receipts/graphql';
+import { buildConfirmInput, prefillFromReceipt, type CheckField } from '@finnit/core/receipts/prefill';
 import { TwPressable, TwScrollView, TwView } from '@finnit/ui-native/lib/tw';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
@@ -40,13 +42,15 @@ import { Text } from '@finnit/ui-native/components/ui/text';
 import { toast } from '@finnit/ui-native/components/ui/toaster';
 
 import { DuplicateReview } from '@/components/new-entry/duplicate-review';
+import { ReceiptCapture } from '@/components/receipts/receipt-capture';
+import { useReceiptReader } from '@/lib/receipts/use-receipt-reader';
 import { EntryForm } from '@/components/new-entry/entry-form';
 import { EntryKindPicker } from '@/components/new-entry/entry-kind-picker';
 import { TransferForm } from '@/components/new-entry/transfer-form';
 import { useGql } from '@/lib/graphql/runner';
 import { emitTransactionsChanged } from '@/lib/transactions/events';
 
-type Step = { name: 'kind' } | { name: 'entry' } | { name: 'transfer' } | { name: 'duplicates'; matches: SimilarTransaction[] };
+type Step = { name: 'kind' } | { name: 'entry' } | { name: 'transfer' } | { name: 'receipt' } | { name: 'duplicates'; matches: SimilarTransaction[] };
 type Busy = 'checking' | 'saving' | null;
 
 /**
@@ -73,10 +77,34 @@ export function NewEntryScreen() {
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState<Busy>(null);
   const [pending, setPending] = React.useState<CreateTransactionPayload | null>(null);
+  const [receipt, setReceipt] = React.useState<ReceiptImport | null>(null);
+  const [check, setCheck] = React.useState<CheckField[]>([]);
+  const reader = useReceiptReader();
   const today = todayKey();
+
+  // A read receipt: the expense form, filled from it, with fields to double-check.
+  React.useEffect(() => {
+    if (reader.state.phase !== 'ready') return;
+    const read = reader.state.receipt;
+    const prefill = prefillFromReceipt(
+      { ...emptyEntryDraft('expense', todayKey()), accountId: onlyAccount },
+      read,
+      accounts,
+      categories,
+      todayKey(),
+    );
+    setEntry(prefill.draft);
+    setCheck(prefill.check);
+    setReceipt(read);
+    setEntryTried(false);
+    setStep({ name: 'entry' });
+    reader.reset();
+  }, [reader.state, reader, accounts, categories, onlyAccount]);
 
   function pickKind(kind: EntryKind) {
     setSubmitError(null);
+    setReceipt(null);
+    setCheck([]);
     if (kind === 'transfer') {
       setTransfer(emptyTransferDraft(todayKey()));
       setTransferTried(false);
@@ -93,6 +121,7 @@ export function NewEntryScreen() {
   if (!initialApplied && data) {
     setInitialApplied(true);
     if (action === 'expense' || action === 'income' || action === 'transfer') pickKind(action);
+    else if (action === 'receipt') setStep({ name: 'receipt' });
   }
 
   const finish = (message: string) => {
@@ -114,12 +143,31 @@ export function NewEntryScreen() {
     }
   }
 
+  async function confirmReceipt() {
+    if (!receipt) return;
+    setBusy('saving');
+    setSubmitError(null);
+    try {
+      await gql(CONFIRM_RECEIPT_MUTATION, { id: receipt.id, input: buildConfirmInput(entry) });
+      setBusy(null);
+      toast.success(t('receipts.toasts.created'));
+      finish(t('newEntry.toasts.expense'));
+    } catch (error) {
+      setBusy(null);
+      setSubmitError(t(`newEntry.errors.${createErrorKey(error)}`));
+    }
+  }
+
   async function submitEntry() {
     const errors = validateEntry(entry, todayKey());
     setEntryTried(true);
     setSubmitError(null);
     const account = accounts.find((a) => a.id === entry.accountId);
     if (hasErrors(errors) || !account) return;
+    if (receipt) {
+      await confirmReceipt();
+      return;
+    }
     const payload = buildTransactionInput(entry, account);
     setPending(payload);
     setBusy('checking');
@@ -183,7 +231,9 @@ export function NewEntryScreen() {
           : t('newEntry.titles.transfer')
         : step.name === 'duplicates'
           ? t('newEntry.titles.duplicates')
-          : t('newEntry.title');
+          : step.name === 'receipt'
+            ? t('receipts.titles.capture')
+            : t('newEntry.title');
   const busyLabel = busy === 'checking' ? t('newEntry.checking') : t('newEntry.saving');
 
   let body: React.ReactNode;
@@ -203,12 +253,28 @@ export function NewEntryScreen() {
         }}
       />
     );
-  else if (action === 'receipt' || action === 'screenshot')
+  else if (action === 'screenshot' && step.name === 'kind')
     body = <Text className="py-6 text-center text-on-surface-variant">{t('common.comingSoon')}</Text>;
+  else if (step.name === 'receipt')
+    body = (
+      <ReceiptCapture
+        state={reader.state}
+        onPick={(file) => void reader.read(file)}
+        onCancel={() => {
+          reader.reset();
+          setStep({ name: 'kind' });
+        }}
+        onManual={() => {
+          reader.reset();
+          pickKind('expense');
+        }}
+      />
+    );
   else if (step.name === 'kind') body = <EntryKindPicker onPick={pickKind} />;
   else if (step.name === 'entry')
     body = (
       <EntryForm
+        check={check}
         draft={entry}
         onChange={setEntry}
         accounts={accounts}

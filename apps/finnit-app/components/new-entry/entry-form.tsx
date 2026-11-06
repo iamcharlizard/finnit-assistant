@@ -6,6 +6,7 @@ import { todayKey } from '@finnit/core/finance/dates';
 import { applySuggestedCategory, currencyOf, merchantQuery, type EntryDraft, type EntryErrors } from '@finnit/core/new-entry/form';
 import { SUGGEST_CATEGORY_QUERY, type EntryAccount, type EntryCategory } from '@finnit/core/new-entry/graphql';
 import { accountOptions, categoryOptions } from '@finnit/core/new-entry/options';
+import type { CheckField } from '@finnit/core/receipts/prefill';
 import { TwView } from '@finnit/ui-native/lib/tw';
 import { Button } from '@finnit/ui-native/components/ui/button';
 import { DatePicker } from '@finnit/ui-native/components/ui/date-picker';
@@ -52,7 +53,10 @@ export function EntryForm({
   busyLabel,
   submitError,
   onSubmit,
+  check = [],
 }: {
+  /** Fields to double-check after a receipt was read (amber outline). */
+  check?: readonly CheckField[];
   draft: EntryDraft;
   onChange: (draft: EntryDraft) => void;
   accounts: EntryAccount[];
@@ -65,6 +69,8 @@ export function EntryForm({
 }) {
   const t = useTranslations('newEntry');
   const tc = useTranslations('common');
+  const tr = useTranslations('receipts');
+  const marked = (field: CheckField) => (check.includes(field) ? 'border-amber-500' : undefined);
   const { locale } = useLocale();
   const today = todayKey();
   const accountItems = React.useMemo(() => accountOptions(accounts).map(({ value, label }) => ({ value, label })), [accounts]);
@@ -88,12 +94,16 @@ export function EntryForm({
 
   return (
     <TwView className="gap-4">
+      {check.length > 0 ? (
+        <Text className="rounded-xl bg-[rgba(245,158,11,0.1)] p-3 text-xs">{tr('checkFields')}</Text>
+      ) : null}
       <AmountField
         value={draft.amount}
         onChange={(amount) => set({ amount })}
         currency={currencyOf(accounts, draft.accountId)}
         error={errors.amount && t(`validation.${errors.amount}`)}
-        autoFocus
+        autoFocus={check.length === 0}
+        className={marked('amount')}
       />
       <Select
         label={t('fields.account')}
@@ -106,6 +116,7 @@ export function EntryForm({
         emptyLabel={t('fields.accountEmpty')}
         error={errors.accountId && t(`validation.${errors.accountId}`)}
         closeLabel={tc('close')}
+        className={marked('accountId')}
       />
       <DatePicker
         label={t('fields.date')}
@@ -116,6 +127,7 @@ export function EntryForm({
         placeholder={t('fields.datePlaceholder')}
         error={errors.date && t(`validation.${errors.date}`)}
         closeLabel={tc('close')}
+        className={marked('date')}
       />
       <Input
         label={isExpense ? t('fields.merchantExpense') : t('fields.merchantIncome')}
@@ -124,6 +136,7 @@ export function EntryForm({
         onChangeText={(merchant) => set({ merchant })}
         maxLength={120}
         autoCorrect={false}
+        className={marked('merchant')}
       />
       <TwView className="gap-1">
         <Select

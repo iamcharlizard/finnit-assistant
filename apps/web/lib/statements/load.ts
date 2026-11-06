@@ -7,15 +7,13 @@ import type { Connection } from '@finnit/core/finance/types';
 import { isUuid } from '@/lib/files/routes';
 import { getLocalizer } from '@/lib/i18n/server';
 import {
-  STATEMENT_ACCOUNT_FIELDS,
-  STATEMENT_DETAIL_FIELDS,
-  STATEMENT_IMPORT_FIELDS,
   type ApiStatementDetail,
   type ApiStatementImport,
   type StatementAccount,
   type StatementCategory,
 } from '@finnit/core/statements/types';
 import { STATEMENTS_PAGE_SIZE, type StatementsData } from '@finnit/core/statements/queries';
+import { STATEMENTS_QUERY, STATEMENT_REVIEW_QUERY } from '@finnit/core/statements/request';
 import {
   accountsById,
   toStatementListItem,
@@ -28,14 +26,7 @@ export async function loadStatements(): Promise<StatementsData> {
       statementImports: Connection<ApiStatementImport>;
       accounts: Connection<StatementAccount>;
     }>(
-      `query Statements($first: Int!) {
-        statementImports(first: $first) {
-          totalCount
-          edges { node { ${STATEMENT_IMPORT_FIELDS} } }
-          pageInfo { endCursor hasNextPage }
-        }
-        accounts(first: 100) { edges { node { ${STATEMENT_ACCOUNT_FIELDS} } } }
-      }`,
+      STATEMENTS_QUERY,
       { first: STATEMENTS_PAGE_SIZE },
     ),
     getLocalizer(),
@@ -68,11 +59,7 @@ export async function loadStatement(id: string): Promise<StatementReviewData> {
     accounts: Connection<StatementAccount>;
     categories: StatementCategory[];
   }>(
-    `query StatementReview($id: ID!) {
-      statementImport(id: $id) { ${STATEMENT_DETAIL_FIELDS} }
-      accounts(first: 100) { edges { node { ${STATEMENT_ACCOUNT_FIELDS} } } }
-      categories { id name parentId key kind icon }
-    }`,
+    STATEMENT_REVIEW_QUERY,
     { id },
   ).catch((error: unknown) => {
     if (error instanceof Error && /not found/i.test(error.message)) notFound();

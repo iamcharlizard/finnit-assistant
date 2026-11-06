@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.karlhub.finnitapp"
+      "bundleIdentifier": "com.karlhub.finnitapp",
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "es",
+        "CFBundleAllowMixedLocalizations": true
+      }
     },
     "android": {
       "package": "com.karlhub.finnitapp",
@@ -43,11 +47,23 @@
       "expo-secure-store",
       "expo-status-bar",
       "expo-web-browser",
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Finnit abre tus fotos para que elijas un ticket o una captura de tu banco.",
+          "cameraPermission": "Finnit usa la cámara para fotografiar tus tickets y registrarlos como gastos.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "locales": {
+      "es": "./locales/es.json",
+      "en": "./locales/en.json"
     }
   }
 }

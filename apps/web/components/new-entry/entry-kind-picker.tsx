@@ -8,7 +8,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-import type { EntryKind } from '@/lib/new-entry/form';
+import type { EntryKind } from '@finnit/core/new-entry/form';
 
 const KINDS: ReadonlyArray<{
   kind: EntryKind;

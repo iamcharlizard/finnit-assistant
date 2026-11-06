@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { TypeBar } from '@/lib/debts/insights-view';
+import type { TypeBar } from '@finnit/core/debts/insights-view';
 
 /**
  * What is owed now by kind of debt, as horizontal bars. Every bar carries

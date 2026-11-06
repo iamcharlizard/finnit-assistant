@@ -2,9 +2,9 @@
 
 import { PaymentItem } from '@finnit/ui/components/finance/payment-item';
 
-import { ICON_COLORS } from '@/lib/finance/categories';
+import { ICON_COLORS } from '@finnit/core/finance/categories';
 import { CATEGORY_ICONS } from '@/lib/finance/category-icons';
-import type { PaymentRow as PaymentRowData } from '@/lib/finance/payments';
+import type { PaymentRow as PaymentRowData } from '@finnit/core/finance/payments';
 
 /** A recurring payment due on a day (dashboard, calendar). */
 export function PaymentRow({ row }: { row: PaymentRowData }) {

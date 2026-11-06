@@ -19,7 +19,7 @@ import {
   hasBank,
   type Currency,
   type ManualAccountForm,
-} from '@/lib/accounts/form';
+} from '@finnit/core/accounts/form';
 import { BankField } from './bank-field';
 
 /** Step 2: bank, nickname, last 4 digits and currency. */

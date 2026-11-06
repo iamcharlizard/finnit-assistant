@@ -14,15 +14,41 @@ import { ProgressStep } from './progress-step';
 import { TwofaStep } from './twofa-step';
 import { WidgetFallbackStep } from './widget-fallback-step';
 
-/** "Conectar banco": renders the current step of the shared BankConnectFlow. */
+/** "Conectar banco" page: the steps on a card. */
 export function ConnectBankFlow() {
+  return (
+    <GlassCard className="mx-auto w-full max-w-2xl rounded-card p-6 sm:p-8">
+      <ConnectBankSteps />
+    </GlassCard>
+  );
+}
+
+/**
+ * The current step of the shared BankConnectFlow. On a page by default; in
+ * a dialog, `onCancel` / `onClose` replace the links back to the banks page.
+ * Unmounting cancels a connection in progress.
+ */
+export function ConnectBankSteps({
+  onCancel,
+  onClose,
+}: {
+  /** "Cancelar" before starting (e.g. back to the account choice). */
+  onCancel?: () => void;
+  /** "Cerrar" after an error, or "Listo" once connected. */
+  onClose?: () => void;
+} = {}) {
   const { flow, step } = useBankConnectFlow();
   const t = useTranslations('bankConnect');
 
   let content: React.ReactNode;
   switch (step.name) {
     case 'consent':
-      content = <ConsentStep onAccept={() => void flow.acceptConsent()} />;
+      content = (
+        <ConsentStep
+          onAccept={() => void flow.acceptConsent()}
+          onCancel={onCancel}
+        />
+      );
       break;
     case 'loading':
       content = <ProgressStep message={step.message} />;
@@ -89,7 +115,9 @@ export function ConnectBankFlow() {
       );
       break;
     case 'done':
-      content = <DoneStep bank={step.bank} linked={step.linked} />;
+      content = (
+        <DoneStep bank={step.bank} linked={step.linked} onClose={onClose} />
+      );
       break;
     case 'error':
       content = (
@@ -97,14 +125,11 @@ export function ConnectBankFlow() {
           message={step.message}
           canRetry={step.canRetry}
           onRetry={() => flow.back()}
+          onClose={onClose}
         />
       );
       break;
   }
 
-  return (
-    <GlassCard className="mx-auto w-full max-w-2xl rounded-card p-6 sm:p-8">
-      {content}
-    </GlassCard>
-  );
+  return content;
 }

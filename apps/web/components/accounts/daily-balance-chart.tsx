@@ -7,15 +7,15 @@ import { Card } from '@finnit/ui/components/ui/card';
 import { cn } from '@finnit/ui/lib/utils';
 
 import { ChartTable } from '@/components/debts/insights/chart-table';
-import type { ChartDay } from '@/lib/accounts/balance-history';
-import type { DayKey } from '@/lib/finance/dates';
-import { formatMoney } from '@/lib/finance/money';
+import type { ChartDay } from '@finnit/core/accounts/balance-history';
+import type { DayKey } from '@finnit/core/finance/dates';
+import { formatMoney } from '@finnit/core/finance/money';
 import {
   chartGeometry,
   compactAmount,
   indexAt,
   labeledIndexes,
-} from '@/lib/simulator/chart';
+} from '@finnit/core/simulator/chart';
 
 export interface ChartSeries {
   key: string;

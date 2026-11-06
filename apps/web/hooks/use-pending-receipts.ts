@@ -7,8 +7,8 @@ import {
   RECEIPT_IMPORTS_QUERY,
   type ReceiptImport,
   type ReceiptImportsData,
-} from '@/lib/receipts/graphql';
-import { pendingReceipts } from '@/lib/receipts/prefill';
+} from '@finnit/core/receipts/graphql';
+import { pendingReceipts } from '@finnit/core/receipts/prefill';
 
 /**
  * Receipts read and waiting for review ("Tickets pendientes"), fetched while

@@ -40,7 +40,7 @@ import { EmptyState } from '@/components/finance/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { useSessionUser } from '@/components/session-provider';
 import type { AccountsData } from '@/lib/accounts/load';
-import type { DayKey } from '@/lib/finance/dates';
+import type { DayKey } from '@finnit/core/finance/dates';
 
 export function accountsHref({
   account,
@@ -74,18 +74,23 @@ export function accountsHref({
  */
 export function AccountsScreen({
   data,
-  openWizard = false,
+  openWizard = null,
   focused = false,
 }: {
   data: AccountsData;
-  /** Opened from "Agrégala manualmente" (/accounts?add=1). */
-  openWizard?: boolean;
+  /**
+   * Opened from a link: "Agrégala manualmente" (/accounts?add=1) or
+   * "Conectar banco" (/accounts?add=bank).
+   */
+  openWizard?: 'manual' | 'bank' | null;
   focused?: boolean;
 }) {
   const user = useSessionUser();
   const t = useTranslations();
   const router = useRouter();
-  const [wizardOpen, setWizardOpen] = React.useState(openWizard);
+  const [wizardStart, setWizardStart] = React.useState<
+    'choose' | 'manual' | 'bank' | null
+  >(openWizard ?? null);
   const [editing, setEditing] = React.useState(false);
   const [updatingBalance, setUpdatingBalance] = React.useState(false);
   const { accounts, detail, timeline, showArchived, archivedCount } = data;
@@ -148,7 +153,9 @@ export function AccountsScreen({
   );
 
   function closeWizard() {
-    setWizardOpen(false);
+    setWizardStart(null);
+    // A bank connected inside it brings new accounts.
+    router.refresh();
     // Drop ?add=1 so a refresh doesn't open it again.
     if (openWizard) {
       router.replace(
@@ -173,7 +180,7 @@ export function AccountsScreen({
               onChange={(archived) => navigate(selected?.id, archived)}
             />
           ) : null}
-          <Button variant="secondary" onClick={() => setWizardOpen(true)}>
+          <Button variant="secondary" onClick={() => setWizardStart('choose')}>
             <Plus aria-hidden /> {t('accounts.add')}
           </Button>
         </>
@@ -181,13 +188,14 @@ export function AccountsScreen({
     />
   );
 
-  const wizard = wizardOpen ? (
+  const wizard = wizardStart ? (
     <AddAccountWizard
       existingNames={data.existingNames}
       holderName={user.name}
+      start={wizardStart}
       onClose={closeWizard}
       onCreated={(id) => {
-        setWizardOpen(false);
+        setWizardStart(null);
         router.push(accountsHref({ account: id, archived: showArchived }), {
           scroll: false,
         });
@@ -229,7 +237,7 @@ export function AccountsScreen({
           title={t('accounts.emptyTitle')}
           description={t('accounts.emptyDescription')}
           action={{
-            href: '/settings/banks/connect',
+            onClick: () => setWizardStart('bank'),
             label: t('common.connectBank'),
           }}
         />
@@ -352,6 +360,7 @@ export function AccountsScreen({
                 <AccountStatusBadge
                   linked={selected.linked}
                   archived={selected.archived}
+                  defaultCash={selected.defaultCash}
                 />
               </div>
               {subtitle && !focused ? (
@@ -386,6 +395,7 @@ export function AccountsScreen({
                 <AccountStatusBadge
                   linked={selected.linked}
                   archived={selected.archived}
+                  defaultCash={selected.defaultCash}
                 />
               </span>
             ) : null}

@@ -8,7 +8,7 @@ import { Button } from '@finnit/ui/components/ui/button';
 import { DataTable, type ColumnDef } from '@finnit/ui/components/ui/data-table';
 
 import { useTableLabels } from '@/components/use-table-labels';
-import type { LentRow } from '@/lib/debts/detail-view';
+import type { LentRow } from '@finnit/core/debts/detail-view';
 
 /**
  * Every amount of the loan: the first one and each added later (another

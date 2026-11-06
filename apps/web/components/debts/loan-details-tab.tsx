@@ -15,12 +15,12 @@ import { toast } from '@finnit/ui/components/ui/toaster';
 import { ContactCombobox } from '@/components/contacts/contact-combobox';
 import { SwitchField } from '@/components/finance/switch-field';
 import { LendingMethodField } from './lending-method-field';
-import { budgetCategoryOptions } from '@/lib/budgets/options';
-import type { BudgetCategory } from '@/lib/budgets/types';
-import { debtErrorMessage, updateLoan } from '@/lib/debts/api';
-import type { DetailFact } from '@/lib/debts/detail-view';
-import { hasErrors } from '@/lib/debts/form';
-import { DESCRIPTION_MAX, hasDescription } from '@/lib/debts/loan-form';
+import { budgetCategoryOptions } from '@finnit/core/budgets/options';
+import type { BudgetCategory } from '@finnit/core/budgets/types';
+import { debtErrorMessage, updateLoan } from '@finnit/core/debts/api';
+import type { DetailFact } from '@finnit/core/debts/detail-view';
+import { hasErrors } from '@finnit/core/debts/form';
+import { DESCRIPTION_MAX, hasDescription } from '@finnit/core/debts/loan-form';
 import {
   buildLoanUpdate,
   loanEditFields,
@@ -29,9 +29,9 @@ import {
   type LoanEditErrorCode,
   type LoanEditErrors,
   type LoanEditForm,
-} from '@/lib/debts/loan-edit';
-import type { ApiDebtDetail } from '@/lib/debts/types';
-import type { DayKey } from '@/lib/finance/dates';
+} from '@finnit/core/debts/loan-edit';
+import type { ApiDebtDetail } from '@finnit/core/debts/types';
+import type { DayKey } from '@finnit/core/finance/dates';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 

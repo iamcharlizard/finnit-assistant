@@ -11,7 +11,7 @@ import {
   SheetTitle,
 } from '@finnit/ui/components/ui/sheet';
 
-import type { ContributionItem, GoalDetailView } from '@/lib/goals/view';
+import type { ContributionItem, GoalDetailView } from '@finnit/core/goals/view';
 import { ContributionForm } from './contribution-form';
 import { ContributionList } from './contribution-list';
 import { GoalProjectionCard } from './goal-projection-card';

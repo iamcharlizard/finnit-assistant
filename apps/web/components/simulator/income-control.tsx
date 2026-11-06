@@ -10,7 +10,7 @@ import {
   ToggleGroupItem,
 } from '@finnit/ui/components/ui/toggle-group';
 
-import type { IncomeMode } from '@/lib/simulator/scenario';
+import type { IncomeMode } from '@finnit/core/simulator/scenario';
 import { ControlSection } from './control-section';
 
 /** Monthly income in the scenario: a new amount or a change in percent. */

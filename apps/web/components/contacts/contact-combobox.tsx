@@ -10,7 +10,7 @@ import {
   createContact,
   loadContacts,
   type ApiContact,
-} from '@/lib/contacts/api';
+} from '@finnit/core/contacts/api';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 

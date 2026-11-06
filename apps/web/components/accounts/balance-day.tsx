@@ -18,8 +18,8 @@ import { DatePicker } from '@finnit/ui/components/ui/date-picker';
 import type {
   BalanceTimeline,
   DayTimeline,
-} from '@/lib/accounts/balance-history';
-import type { DayKey } from '@/lib/finance/dates';
+} from '@finnit/core/accounts/balance-history';
+import type { DayKey } from '@finnit/core/finance/dates';
 import { AccountStat } from './account-stat';
 
 /**

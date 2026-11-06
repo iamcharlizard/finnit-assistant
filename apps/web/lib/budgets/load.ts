@@ -2,44 +2,31 @@ import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
 import { getLocalizer } from '@/lib/i18n/server';
+import { monthOf, todayKey, type MonthRef } from '@finnit/core/finance/dates';
+import { DEFAULT_CURRENCY } from '@finnit/core/finance/money';
 import {
-  monthOf,
-  shiftMonth,
-  todayKey,
-  type MonthRef,
-} from '@/lib/finance/dates';
-import { DEFAULT_CURRENCY } from '@/lib/finance/money';
+  BUDGET_SUMMARY_QUERY,
+  budgetsData,
+  budgetsQuery,
+  type BudgetsResult,
+} from '@finnit/core/budgets/request';
 import {
-  MONTHLY_REPORT_FIELDS,
-  type ApiMonthlyReport,
-} from '@/lib/finance/types';
-import { SUGGESTION_MONTHS } from './suggestions';
-import {
-  BUDGET_CATEGORY_FIELDS,
-  BUDGET_FIELDS,
-  BUDGET_SUMMARY_FIELDS,
-  type ApiBudget,
-  type ApiBudgetSummary,
-  type BudgetCategory,
-} from './types';
+  DASHBOARD_BUDGET_QUERY,
+  type DashboardBudgetResult,
+} from '@finnit/core/dashboard/request';
+import type { ApiBudgetSummary } from '@finnit/core/budgets/types';
 import {
   budgetOf,
   buildBudgetCard,
   buildBudgetsView,
   type BudgetCardView,
   type BudgetsView,
-} from './view';
+} from '@finnit/core/budgets/view';
 
 /** Current month (Mexico City). */
 export function currentMonth(): MonthRef {
   return monthOf(todayKey());
 }
-
-/** The selected month and the ones before it, newest first. */
-const reportMonths = (selected: MonthRef) =>
-  Array.from({ length: SUGGESTION_MONTHS + 1 }, (_, i) =>
-    shiftMonth(selected, -i),
-  );
 
 /**
  * Budgets, categories and monthly reports (the month and the previous
@@ -47,47 +34,20 @@ const reportMonths = (selected: MonthRef) =>
  * its usage (budgetSummary fails for a month without one).
  */
 export async function loadBudgets(selected: MonthRef): Promise<BudgetsView> {
-  const months = reportMonths(selected);
-  // Aliased reports, one per month; the numbers are validated MonthRefs.
-  const reports = months
-    .map(
-      (m, i) =>
-        `r${i}: monthlyReport(year: ${m.year}, month: ${m.month}) { ${MONTHLY_REPORT_FIELDS} }`,
-    )
-    .join('\n  ');
   const [data, l] = await Promise.all([
-    serverGraphql<
-      Record<string, ApiMonthlyReport> & {
-        budgets: ApiBudget[];
-        categories: BudgetCategory[];
-      }
-    >(`query Budgets {
-  budgets { ${BUDGET_FIELDS} }
-  categories(includeHidden: true) { ${BUDGET_CATEGORY_FIELDS} }
-  ${reports}
-}`),
+    serverGraphql<BudgetsResult>(budgetsQuery(selected)),
     getLocalizer(),
   ]);
-
   const summary = budgetOf(data.budgets, selected)
     ? (
         await serverGraphql<{ budgetSummary: ApiBudgetSummary }>(
-          `query BudgetSummary($year: Float!, $month: Float!) { budgetSummary(year: $year, month: $month) { ${BUDGET_SUMMARY_FIELDS} } }`,
+          BUDGET_SUMMARY_QUERY,
           { year: selected.year, month: selected.month },
         )
       ).budgetSummary
     : null;
-
   return buildBudgetsView(
-    {
-      budgets: data.budgets,
-      categories: data.categories,
-      summary,
-      report: data.r0 as ApiMonthlyReport,
-      previousReports: months
-        .slice(1)
-        .map((_, i) => data[`r${i + 1}`] as ApiMonthlyReport),
-    },
+    budgetsData(data, selected, summary),
     { selected, current: currentMonth(), currency: DEFAULT_CURRENCY },
     l,
   );
@@ -101,13 +61,7 @@ export async function loadBudgets(selected: MonthRef): Promise<BudgetsView> {
 export async function loadBudgetCard(): Promise<BudgetCardView | null> {
   const month = currentMonth();
   const [data, l] = await Promise.all([
-    serverGraphql<{ budgets: ApiBudget[]; monthlyReport: ApiMonthlyReport }>(
-      `query DashboardBudget($year: Int!, $month: Int!) {
-  budgets { ${BUDGET_FIELDS} }
-  monthlyReport(year: $year, month: $month) { totalExpenses }
-}`,
-      { ...month },
-    ),
+    serverGraphql<DashboardBudgetResult>(DASHBOARD_BUDGET_QUERY, { ...month }),
     getLocalizer(),
   ]);
   const budget = budgetOf(data.budgets, month);

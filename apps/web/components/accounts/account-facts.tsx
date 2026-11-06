@@ -3,7 +3,7 @@ import { FileText } from 'lucide-react';
 
 import { Card } from '@finnit/ui/components/ui/card';
 
-import type { AccountDetail } from '@/lib/accounts/view';
+import type { AccountDetail } from '@finnit/core/accounts/view';
 
 /** The month's statement amounts and the interest rate; nothing without them. */
 export function AccountFacts({ facts }: { facts: AccountDetail['facts'] }) {

@@ -1,6 +1,13 @@
-import React, { createContext, useContext, useState } from 'react';
-import { useColorScheme } from 'nativewind';
+import { createContext, useContext, type ReactNode } from 'react';
+import { useColorScheme } from 'react-native';
 
+import { useAppearance } from '@/lib/theme/appearance';
+
+/**
+ * LEGACY: light/dark for the screens not migrated to @finnit/ui-native yet
+ * (they pick colors with `isDark`). New code uses `dark:` classes and
+ * useAppearance() to change the preference.
+ */
 type ColorScheme = 'light' | 'dark';
 
 interface ThemeContextValue {
@@ -17,23 +24,19 @@ const ThemeContext = createContext<ThemeContextValue>({
   setTheme: () => {},
 });
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const { colorScheme: systemColorScheme } = useColorScheme();
-  const [override, setOverride] = useState<ColorScheme | null>(null);
-
-  const colorScheme: ColorScheme = override ?? (systemColorScheme === 'dark' ? 'dark' : 'light');
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const colorScheme: ColorScheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const { setAppearance } = useAppearance();
   const isDark = colorScheme === 'dark';
-
-  function toggleTheme() {
-    setOverride(isDark ? 'light' : 'dark');
-  }
-
-  function setTheme(scheme: ColorScheme) {
-    setOverride(scheme);
-  }
-
   return (
-    <ThemeContext.Provider value={{ colorScheme, isDark, toggleTheme, setTheme }}>
+    <ThemeContext.Provider
+      value={{
+        colorScheme,
+        isDark,
+        toggleTheme: () => setAppearance(isDark ? 'light' : 'dark'),
+        setTheme: setAppearance,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );

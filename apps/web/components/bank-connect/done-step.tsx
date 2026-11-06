@@ -9,9 +9,12 @@ import { BodyMd, TitleLg } from '@finnit/ui/components/ui/typography';
 export function DoneStep({
   bank,
   linked,
+  onClose,
 }: {
   bank: ConnectedBank;
   linked: number;
+  /** Inside a dialog: "Listo" closes it instead of linking to the banks page. */
+  onClose?: () => void;
 }) {
   const t = useTranslations('bankConnect.done');
   return (
@@ -26,9 +29,15 @@ export function DoneStep({
         {linked ? t('linked', { count: linked }) : t('noneLinked')}
       </BodyMd>
       <div className="flex flex-col gap-3 sm:flex-row">
-        <Button variant="outline" asChild>
-          <Link href="/settings/banks">{t('connectedBanks')}</Link>
-        </Button>
+        {onClose ? (
+          <Button variant="outline" onClick={onClose}>
+            {t('seeAccounts')}
+          </Button>
+        ) : (
+          <Button variant="outline" asChild>
+            <Link href="/settings/banks">{t('connectedBanks')}</Link>
+          </Button>
+        )}
         <Button variant="secondary" asChild>
           <Link href="/history">{t('seeMovements')}</Link>
         </Button>

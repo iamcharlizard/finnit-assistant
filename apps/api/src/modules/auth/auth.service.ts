@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ensureDefaultCashAccount } from '../accounts/default-cash';
 import { JwtService } from '@nestjs/jwt';
 import type { User as UserRow } from '@finnit/database';
 import { PrismaService } from '../../services/prisma.service';
@@ -257,6 +258,8 @@ export class AuthService {
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
     });
+    // Users created before it existed, or by a script.
+    await ensureDefaultCashAccount(this.prisma, user.id, user.locale);
     return { ...this.generateTokens(user), user: toUserModel(user) };
   }
 

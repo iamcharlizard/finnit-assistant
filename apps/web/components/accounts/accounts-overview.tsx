@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { CreditCard, Wallet } from 'lucide-react';
 
 import type { OverviewData } from '@/lib/accounts/load';
-import type { DayKey } from '@/lib/finance/dates';
+import type { DayKey } from '@finnit/core/finance/dates';
 import { AccountMovements } from './account-movements';
 import { AccountStat } from './account-stat';
 import { BalanceDayNav, HistoricalNotice } from './balance-day';

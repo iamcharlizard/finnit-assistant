@@ -1,6 +1,6 @@
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { AppTheme } from '@/lib/theme/app-theme';
+import type { AppTheme } from '@finnit/core/theme/app-theme';
 
 /**
  * A small preview of each theme: its background and the surface on top.

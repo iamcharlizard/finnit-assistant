@@ -2,23 +2,23 @@
 
 import * as React from 'react';
 
-import { indexCategories } from '@/lib/finance/categories';
+import { indexCategories } from '@finnit/core/finance/categories';
 import type {
   ApiCategory,
   ApiTransaction,
   Connection,
-} from '@/lib/finance/types';
+} from '@finnit/core/finance/types';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import {
   HISTORY_PAGE_SIZE,
   toApiFilters,
   type HistoryFilters,
-} from '@/lib/history/filters';
+} from '@finnit/core/history/filters';
 import {
   TRANSACTIONS_PAGE_QUERY,
   toTransactionPage,
   type TransactionPage,
-} from '@/lib/history/view';
+} from '@finnit/core/history/view';
 import { useLocalizer } from '@/lib/i18n/client';
 
 /**

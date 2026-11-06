@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 
 import { BankPaymentCard } from '@finnit/ui/components/finance/bank-payment-card';
 
-import type { AccountSummary } from '@/lib/accounts/view';
+import type { AccountSummary } from '@finnit/core/accounts/view';
 
 type CardFields = Pick<
   AccountSummary,

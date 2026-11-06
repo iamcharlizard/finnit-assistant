@@ -3,12 +3,12 @@ import { getTranslations } from 'next-intl/server';
 
 import { BudgetsScreen } from '@/components/budgets/budgets-screen';
 import { currentMonth, loadBudgets } from '@/lib/budgets/load';
-import { MAX_MONTHS_AHEAD } from '@/lib/budgets/view';
+import { MAX_MONTHS_AHEAD } from '@finnit/core/budgets/view';
 import {
   formatMonthParam,
   parseMonthParam,
   shiftMonth,
-} from '@/lib/finance/dates';
+} from '@finnit/core/finance/dates';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();

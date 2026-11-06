@@ -10,7 +10,7 @@ import { Card } from '@finnit/ui/components/ui/card';
 import { EmptyState } from '@/components/finance/empty-state';
 import { TransactionRow } from '@/components/finance/transaction-row';
 import { useFillViewport } from '@/hooks/use-fill-viewport';
-import type { TransactionRow as TransactionRowData } from '@/lib/finance/transactions';
+import type { TransactionRow as TransactionRowData } from '@finnit/core/finance/transactions';
 
 /** Space under the list: the page's bottom padding (lg:pb-10) and the card's border. */
 const BOTTOM_GAP = 41;

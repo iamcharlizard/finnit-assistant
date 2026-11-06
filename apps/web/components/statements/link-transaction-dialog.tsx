@@ -14,16 +14,16 @@ import {
 } from '@finnit/ui/components/ui/dialog';
 import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 
-import { dayKeyOf, shortDate } from '@/lib/finance/dates';
-import { formatMoney } from '@/lib/finance/money';
+import { dayKeyOf, shortDate } from '@finnit/core/finance/dates';
+import { formatMoney } from '@finnit/core/finance/money';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import {
   findCandidates,
   statementErrorMessage,
   type LinkCandidate,
-} from '@/lib/statements/api';
-import type { StatementLineView } from '@/lib/statements/view';
+} from '@finnit/core/statements/api';
+import type { StatementLineView } from '@finnit/core/statements/view';
 
 /**
  * "Vincular con un movimiento": movements on the same card with the same

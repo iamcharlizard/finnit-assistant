@@ -3,7 +3,7 @@ import { Link2, Trash2 } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 
-import type { ContributionItem } from '@/lib/goals/view';
+import type { ContributionItem } from '@finnit/core/goals/view';
 
 /** The goal's contributions, newest first, each removable. */
 export function ContributionList({

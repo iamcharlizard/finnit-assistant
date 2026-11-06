@@ -7,7 +7,7 @@ import {
   PAID_COLOR,
   type PaidMonthBar,
   type PaidSeries,
-} from '@/lib/debts/insights-view';
+} from '@finnit/core/debts/insights-view';
 import { ChartTable } from './chart-table';
 import { ChartTooltip } from './chart-tooltip';
 

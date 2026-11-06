@@ -1,0 +1,7 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Finnit",
+    "NSCameraUsageDescription": "Finnit uses the camera to photograph your receipts and record them as expenses.",
+    "NSPhotoLibraryUsageDescription": "Finnit opens your photos so you can pick a receipt or a screenshot from your bank."
+  }
+}

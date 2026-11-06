@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-import { DEBTS_PATH } from '@/lib/debts/view';
+import { DEBTS_PATH } from '@finnit/core/debts/view';
 
 /** A loan's page lives under Deudas now. */
 export default async function LoanPage({

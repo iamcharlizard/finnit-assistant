@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 
 import { SelectField } from '@/components/recurring/select-field';
-import { LENDING_METHODS, type LendingMethod } from '@/lib/debts/types';
+import { LENDING_METHODS, type LendingMethod } from '@finnit/core/debts/types';
 
 const NONE = 'none';
 

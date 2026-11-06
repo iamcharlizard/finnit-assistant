@@ -18,15 +18,15 @@ import {
 import { cn } from '@finnit/ui/lib/utils';
 
 import { SwitchField } from '@/components/finance/switch-field';
-import { todayKey } from '@/lib/finance/dates';
-import type { EntryAccount, EntryCategory } from '@/lib/new-entry/graphql';
-import { accountOptions, categoryOptions } from '@/lib/new-entry/options';
+import { todayKey } from '@finnit/core/finance/dates';
+import type { EntryAccount, EntryCategory } from '@finnit/core/new-entry/graphql';
+import { accountOptions, categoryOptions } from '@finnit/core/new-entry/options';
 import { useLocalizer } from '@/lib/i18n/client';
 import type {
   ScreenshotImport,
   ScreenshotLine,
   ScreenshotLineChange,
-} from '@/lib/screenshots/graphql';
+} from '@finnit/core/screenshots/graphql';
 import {
   buildScreenshotReview,
   lineChangeOf,
@@ -34,7 +34,7 @@ import {
   validateLineDraft,
   type LineDraft,
   type ScreenshotRow,
-} from '@/lib/screenshots/view';
+} from '@finnit/core/screenshots/view';
 
 /** Fields read poorly: the same amber as the expense form's checks. */
 const CHECK_CLASS =

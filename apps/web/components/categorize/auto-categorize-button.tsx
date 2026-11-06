@@ -26,7 +26,7 @@ import {
   autoCategorizeOutcome,
   type AutoCategorizeMode,
   type AutoCategorizeResult,
-} from '@/lib/categorize/auto';
+} from '@finnit/core/categorize/auto';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 

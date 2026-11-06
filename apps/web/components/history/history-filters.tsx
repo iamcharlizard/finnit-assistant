@@ -29,7 +29,7 @@ import {
   monthOf,
   shortDate,
   type DayKey,
-} from '@/lib/finance/dates';
+} from '@finnit/core/finance/dates';
 import {
   TYPE_OPTIONS,
   hasFilters,
@@ -41,8 +41,8 @@ import {
   withPeriod,
   type HistoryFilters as Filters,
   type HistoryType,
-} from '@/lib/history/filters';
-import type { Option } from '@/lib/history/view';
+} from '@finnit/core/history/filters';
+import type { Option } from '@finnit/core/history/view';
 
 const ALL = 'all';
 

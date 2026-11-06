@@ -1,4 +1,4 @@
-import { dayKeyOf, timeOf } from '@/lib/finance/dates';
+import { dayKeyOf, timeOf } from '@finnit/core/finance/dates';
 
 /** /admin/waitlist: the newest 200 sign-ups (the API's page cap). */
 export const WAITLIST_QUERY = `query AdminWaitlist {

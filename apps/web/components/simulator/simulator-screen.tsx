@@ -6,10 +6,10 @@ import { Info, RotateCcw } from 'lucide-react';
 import { Button } from '@finnit/ui/components/ui/button';
 
 import { PageHeader } from '@/components/page-header';
-import { formatMoney } from '@/lib/finance/money';
+import { formatMoney } from '@finnit/core/finance/money';
 import { useLocalizer } from '@/lib/i18n/client';
-import { compactAmount } from '@/lib/simulator/chart';
-import { parseMoneyField, parsePercentField } from '@/lib/simulator/form';
+import { compactAmount } from '@finnit/core/simulator/chart';
+import { parseMoneyField, parsePercentField } from '@finnit/core/simulator/form';
 import {
   clampMonths,
   isNeutral,
@@ -19,13 +19,13 @@ import {
   type MonthlyItem,
   type OneTimeItem,
   type Scenario,
-} from '@/lib/simulator/scenario';
+} from '@finnit/core/simulator/scenario';
 import {
   describeResult,
   monthAxisLabels,
   projectionMonthLabel,
   type SimulatorData,
-} from '@/lib/simulator/view';
+} from '@finnit/core/simulator/view';
 import { BalanceChart } from './balance-chart';
 import { BalanceTable } from './balance-table';
 import { BaselineCard } from './baseline-card';

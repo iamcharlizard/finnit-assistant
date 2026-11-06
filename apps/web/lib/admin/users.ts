@@ -1,5 +1,5 @@
-import type { Locale } from '@/lib/i18n/locales';
-import type { Translate } from '@/lib/i18n/translator';
+import type { Locale } from '@finnit/core/i18n/locales';
+import type { Translate } from '@finnit/core/i18n/translator';
 
 /** Admin panel, users: GraphQL documents, types and pure helpers. */
 

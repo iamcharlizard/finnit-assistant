@@ -15,7 +15,7 @@ import {
 import { Progress } from '@finnit/ui/components/ui/progress';
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { ExpenseItem } from '@/lib/recurring/view';
+import type { ExpenseItem } from '@finnit/core/recurring/view';
 import { KindIcon } from './kind-icon';
 
 /** One recurring expense in "Mis pagos recurrentes". */

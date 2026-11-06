@@ -728,6 +728,7 @@ export class RecurringSuggestionsService {
       balanceCurrent: Number(row.balanceCurrent),
       metadata: row.metadata ? (row.metadata as AccountMetadata) : undefined,
       archived: row.archived,
+      isDefaultCash: row.isDefaultCash ?? false,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

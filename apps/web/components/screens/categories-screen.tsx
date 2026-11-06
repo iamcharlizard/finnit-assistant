@@ -37,19 +37,19 @@ import {
   SHOW_CATEGORY_MUTATION,
   categoryErrorMessage,
   type CategoryForm,
-} from '@/lib/categories/api';
+} from '@finnit/core/categories/api';
 import type { CategoriesData } from '@/lib/categories/load';
 import {
   CATEGORY_KINDS,
   type CategoryKind,
   type SettingsCategory,
-} from '@/lib/categories/types';
+} from '@finnit/core/categories/types';
 import {
   categoryTree,
   type CategoryGroup,
   type CategoryRow,
-} from '@/lib/categories/view';
-import { ICON_COLORS } from '@/lib/finance/categories';
+} from '@finnit/core/categories/view';
+import { ICON_COLORS } from '@finnit/core/finance/categories';
 import { CATEGORY_ICONS } from '@/lib/finance/category-icons';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';

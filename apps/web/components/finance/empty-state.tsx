@@ -15,7 +15,8 @@ export function EmptyState({
   icon: LucideIcon;
   title: string;
   description?: string;
-  action?: { href: string; label: string };
+  /** A link (`href`) or a button (`onClick`). */
+  action?: { href?: string; onClick?: () => void; label: string };
   className?: string;
 }) {
   return (
@@ -32,9 +33,18 @@ export function EmptyState({
           {description}
         </p>
       ) : null}
-      {action ? (
+      {action?.href ? (
         <Button variant="secondary" size="sm" asChild className="mt-2">
           <Link href={action.href}>{action.label}</Link>
+        </Button>
+      ) : action ? (
+        <Button
+          variant="secondary"
+          size="sm"
+          className="mt-2"
+          onClick={action.onClick}
+        >
+          {action.label}
         </Button>
       ) : null}
     </div>

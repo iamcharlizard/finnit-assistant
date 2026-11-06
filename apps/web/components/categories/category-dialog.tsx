@@ -27,19 +27,19 @@ import {
   validateCategoryForm,
   type CategoryForm,
   type CategoryFormError,
-} from '@/lib/categories/api';
+} from '@finnit/core/categories/api';
 import {
   CATEGORY_KINDS,
   CATEGORY_NAME_MAX,
   type SettingsCategory,
-} from '@/lib/categories/types';
-import { parentOptions } from '@/lib/categories/view';
+} from '@finnit/core/categories/types';
+import { parentOptions } from '@finnit/core/categories/view';
 import {
   ICON_COLORS,
   PICKABLE_ICON_KEYS,
   iconKeyForName,
   isIconKey,
-} from '@/lib/finance/categories';
+} from '@finnit/core/finance/categories';
 import { CATEGORY_ICONS } from '@/lib/finance/category-icons';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';

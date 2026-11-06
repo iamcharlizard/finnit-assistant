@@ -13,8 +13,8 @@ import {
   categorizeErrorMessage,
   reviewSuggestions,
   suggestCategories,
-} from '@/lib/categorize/api';
-import type { CategorizeFilters } from '@/lib/categorize/filters';
+} from '@finnit/core/categorize/api';
+import type { CategorizeFilters } from '@finnit/core/categorize/filters';
 import {
   SUGGEST_MAX,
   isAllSelected,
@@ -25,23 +25,23 @@ import {
   suggestionTargets,
   toggleAll,
   toggleSelection,
-} from '@/lib/categorize/selection';
+} from '@finnit/core/categorize/selection';
 import type {
   CategorizeCategory,
   CategorizePageData,
-} from '@/lib/categorize/types';
-import { toCategorizeRow } from '@/lib/categorize/view';
-import { indexCategories } from '@/lib/finance/categories';
-import type { DayKey } from '@/lib/finance/dates';
-import { groupByDay } from '@/lib/finance/transactions';
+} from '@finnit/core/categorize/types';
+import { toCategorizeRow } from '@finnit/core/categorize/view';
+import { indexCategories } from '@finnit/core/finance/categories';
+import type { DayKey } from '@finnit/core/finance/dates';
+import { groupByDay } from '@finnit/core/finance/transactions';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { categoryOptions } from '@/lib/new-entry/options';
+import { categoryOptions } from '@finnit/core/new-entry/options';
 import { AiNotice } from './ai-notice';
 import { CategorizeRow } from './categorize-row';
 import { EmptyList } from './empty-list';
 import { MoveBar } from './move-bar';
-import { renameTransaction } from '@/lib/categorize/api';
+import { renameTransaction } from '@finnit/core/categorize/api';
 import { SelectAllToggle } from './select-all-toggle';
 
 type Busy = 'move' | 'suggest' | 'accept' | 'reject' | `row:${string}` | null;

@@ -30,7 +30,7 @@ import { cn } from '@finnit/ui/lib/utils';
 import { PageHeader } from '@/components/page-header';
 import { SummaryCard } from '@/components/recurring/summary-card';
 import type { DebtTab, DebtsScreenData } from '@/lib/debts/load';
-import { DEBTS_PATH } from '@/lib/debts/view';
+import { DEBTS_PATH } from '@finnit/core/debts/view';
 import { useLocalizer } from '@/lib/i18n/client';
 import { DebtDialog } from './debt-dialog';
 import { DebtList } from './debt-list';

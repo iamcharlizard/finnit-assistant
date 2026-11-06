@@ -19,7 +19,7 @@ import {
   regexErrorOf,
   saveAlias,
   suggestAliasPattern,
-} from '@/lib/aliases/api';
+} from '@finnit/core/aliases/api';
 import {
   DISPLAY_NAME_MAX,
   PATTERN_MAX,
@@ -32,12 +32,12 @@ import {
   type AliasForm,
   type AliasFormErrorCode,
   type AliasFormErrors,
-} from '@/lib/aliases/form';
-import { MATCH_TYPES, type ApiMerchantAlias } from '@/lib/aliases/types';
-import type { CategorizeCategory } from '@/lib/categorize/types';
+} from '@finnit/core/aliases/form';
+import { MATCH_TYPES, type ApiMerchantAlias } from '@finnit/core/aliases/types';
+import type { CategorizeCategory } from '@finnit/core/categorize/types';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { categoryOptions } from '@/lib/new-entry/options';
+import { categoryOptions } from '@finnit/core/new-entry/options';
 import { AliasPreview } from './alias-preview';
 
 /** Thrown by `save` when the form is not valid (its errors are on screen). */

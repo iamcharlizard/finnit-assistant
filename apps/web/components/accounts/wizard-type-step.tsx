@@ -14,7 +14,7 @@ import { cn } from '@finnit/ui/lib/utils';
 import {
   MANUAL_ACCOUNT_TYPES,
   type ManualAccountType,
-} from '@/lib/accounts/form';
+} from '@finnit/core/accounts/form';
 
 const ICONS: Record<ManualAccountType, LucideIcon> = {
   debit: Wallet,

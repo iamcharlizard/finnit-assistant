@@ -33,10 +33,10 @@ import {
 
 import { SwitchField } from '@/components/finance/switch-field';
 import { SelectField } from '@/components/recurring/select-field';
-import { budgetCategoryOptions } from '@/lib/budgets/options';
-import type { BudgetCategory } from '@/lib/budgets/types';
-import { debtErrorMessage, loadLoanDraft, saveLoan } from '@/lib/debts/api';
-import { hasErrors, NAME_MAX } from '@/lib/debts/form';
+import { budgetCategoryOptions } from '@finnit/core/budgets/options';
+import type { BudgetCategory } from '@finnit/core/budgets/types';
+import { debtErrorMessage, loadLoanDraft, saveLoan } from '@finnit/core/debts/api';
+import { hasErrors, NAME_MAX } from '@finnit/core/debts/form';
 import {
   DESCRIPTION_MAX,
   depositMismatch,
@@ -56,9 +56,9 @@ import {
   type LoanErrorCode,
   type LoanForm,
   type LoanFormErrors,
-} from '@/lib/debts/loan-form';
-import { addsToBalanceByDefault } from '@/lib/debts/charge-form';
-import { loanAccounts } from '@/lib/debts/detail-view';
+} from '@finnit/core/debts/loan-form';
+import { addsToBalanceByDefault } from '@finnit/core/debts/charge-form';
+import { loanAccounts } from '@finnit/core/debts/detail-view';
 import {
   LOAN_FREQUENCIES,
   LOAN_INTEREST_MODES,
@@ -66,13 +66,13 @@ import {
   destinationOfMethod,
   type ApiLoanDraft,
   type LoanType,
-} from '@/lib/debts/types';
-import type { DayKey } from '@/lib/finance/dates';
-import { formatMoney, DEFAULT_CURRENCY } from '@/lib/finance/money';
-import type { ApiAccount } from '@/lib/finance/types';
+} from '@finnit/core/debts/types';
+import type { DayKey } from '@finnit/core/finance/dates';
+import { formatMoney, DEFAULT_CURRENCY } from '@finnit/core/finance/money';
+import type { ApiAccount } from '@finnit/core/finance/types';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { accountOptions } from '@/lib/new-entry/options';
+import { accountOptions } from '@finnit/core/new-entry/options';
 
 /**
  * A new loan, by type: institutional (fixed payments), personal (flexible,

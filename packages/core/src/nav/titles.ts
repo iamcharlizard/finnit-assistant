@@ -1,0 +1,77 @@
+/**
+ * The top bar's title for each route. Patterns use Next's segment syntax:
+ * `[id]` matches one segment, `[...rest]` one or more. The first match wins,
+ * so specific routes go before dynamic ones.
+ */
+export type PageTitleKey =
+  | 'app'
+  | 'history'
+  | 'categorize'
+  | 'recurring'
+  | 'calendar'
+  | 'cards'
+  | 'budgets'
+  | 'debts'
+  | 'goals'
+  | 'simulator'
+  | 'notifications'
+  | 'analytics'
+  | 'statements'
+  | 'settings'
+  | 'categories'
+  | 'banks'
+  | 'aliases'
+  | 'connectBank'
+  | 'admin';
+
+export const PAGE_TITLES: ReadonlyArray<
+  [pattern: string, title: PageTitleKey]
+> = [
+  ['/dashboard', 'app'],
+  ['/history', 'history'],
+  ['/transactions/categorize', 'categorize'],
+  ['/recurring', 'recurring'],
+  ['/recurring/[...rest]', 'recurring'],
+  ['/calendar', 'calendar'],
+  ['/accounts', 'cards'],
+  ['/planning/budgets', 'budgets'],
+  ['/planning/debts', 'debts'],
+  ['/planning/debts/[id]', 'debts'],
+  ['/planning/goals', 'goals'],
+  ['/planning/simulator', 'simulator'],
+  ['/notifications', 'notifications'],
+  ['/analytics', 'analytics'],
+  ['/statements', 'statements'],
+  ['/statements/[...rest]', 'statements'],
+  ['/settings', 'settings'],
+  ['/settings/banks', 'banks'],
+  ['/settings/banks/connect', 'connectBank'],
+  ['/settings/aliases', 'aliases'],
+  ['/settings/categories', 'categories'],
+  ['/admin', 'admin'],
+  ['/admin/[...rest]', 'admin'],
+];
+
+/** Whether `pathname` matches a route pattern like "/transactions/[id]". */
+export function matchRoute(pattern: string, pathname: string): boolean {
+  const want = pattern.split('/').filter(Boolean);
+  const have = pathname.split('/').filter(Boolean);
+  for (let i = 0; i < want.length; i++) {
+    const segment = want[i]!;
+    if (/^\[\.\.\.[^\]]+\]$/.test(segment)) return have.length > i;
+    if (have[i] === undefined) return false;
+    if (/^\[[^\]]+\]$/.test(segment)) continue;
+    if (segment !== have[i]) return false;
+  }
+  return have.length === want.length;
+}
+
+/** The title key for a path ("app" — just "Finnit" — when none matches). */
+export function pageTitleKey(
+  pathname: string,
+  titles: ReadonlyArray<[string, PageTitleKey]> = PAGE_TITLES,
+): PageTitleKey {
+  return (
+    titles.find(([pattern]) => matchRoute(pattern, pathname))?.[1] ?? 'app'
+  );
+}

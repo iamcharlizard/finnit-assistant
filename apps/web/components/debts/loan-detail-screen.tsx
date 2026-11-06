@@ -27,14 +27,14 @@ import {
   deleteDebtCharge,
   deleteHistoricalPayment,
   loadLoanCandidates,
-} from '@/lib/debts/api';
+} from '@finnit/core/debts/api';
 import {
   buildCandidateRows,
   type CandidateRow,
   type ScheduleRow,
-} from '@/lib/debts/detail-view';
+} from '@finnit/core/debts/detail-view';
 import type { LoanDetailData } from '@/lib/debts/load';
-import { DEBTS_PATH, LOANS_PATH } from '@/lib/debts/view';
+import { DEBTS_PATH, LOANS_PATH } from '@finnit/core/debts/view';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import { ChargeDialog } from './charge-dialog';

@@ -133,6 +133,43 @@ function DropdownMenuRadioItem({
   );
 }
 
+/**
+ * A checkable item (several can be on). A box on the left shows its state;
+ * the menu stays open while choosing unless `onSelect` says otherwise.
+ */
+function DropdownMenuCheckboxItem({
+  className,
+  children,
+  onSelect,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
+  return (
+    <DropdownMenuPrimitive.CheckboxItem
+      data-slot="dropdown-menu-checkbox-item"
+      // Keep the menu open: filters usually take more than one choice.
+      onSelect={onSelect ?? ((event) => event.preventDefault())}
+      className={cn(
+        "group/check relative flex min-h-10 cursor-default select-none items-center gap-2.5 rounded-lg py-2 pr-3 pl-3 text-sm outline-none focus:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:text-on-surface-variant",
+        className,
+      )}
+      {...props}
+    >
+      <span
+        aria-hidden
+        className="flex size-4 shrink-0 items-center justify-center rounded-[4px] border-[1.5px] border-input group-data-[state=checked]/check:border-accent-neon group-data-[state=checked]/check:bg-accent-neon"
+      >
+        <DropdownMenuPrimitive.ItemIndicator>
+          <Check
+            className="size-3 text-secondary-foreground!"
+            strokeWidth={3}
+          />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
+      {children}
+    </DropdownMenuPrimitive.CheckboxItem>
+  );
+}
+
 function DropdownMenuSub(
   props: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>,
 ) {
@@ -180,6 +217,7 @@ function DropdownMenuSubContent({
 
 export {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuGroup,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,

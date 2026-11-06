@@ -20,9 +20,9 @@ import {
 import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
-import { budgetCategoryOptions } from '@/lib/budgets/options';
-import type { BudgetCategory } from '@/lib/budgets/types';
-import { debtErrorMessage, registerDebtPayment } from '@/lib/debts/api';
+import { budgetCategoryOptions } from '@finnit/core/budgets/options';
+import type { BudgetCategory } from '@finnit/core/budgets/types';
+import { debtErrorMessage, registerDebtPayment } from '@finnit/core/debts/api';
 import {
   buildPaymentMovement,
   hasErrors,
@@ -33,14 +33,14 @@ import {
   type PaymentErrorCode,
   type PaymentForm,
   type PaymentFormErrors,
-} from '@/lib/debts/form';
-import type { ApiDebt } from '@/lib/debts/types';
-import { accountLabel } from '@/lib/finance/accounts';
-import type { DayKey } from '@/lib/finance/dates';
-import type { ApiAccount } from '@/lib/finance/types';
+} from '@finnit/core/debts/form';
+import type { ApiDebt } from '@finnit/core/debts/types';
+import { accountLabel } from '@finnit/core/finance/accounts';
+import type { DayKey } from '@finnit/core/finance/dates';
+import type { ApiAccount } from '@finnit/core/finance/types';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { accountOptions } from '@/lib/new-entry/options';
+import { accountOptions } from '@finnit/core/new-entry/options';
 
 /**
  * Registers a payment: the movement that moved the money (a transfer to a

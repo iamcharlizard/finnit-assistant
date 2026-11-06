@@ -9,16 +9,16 @@ import { LabelSm } from '@finnit/ui/components/ui/typography';
 
 import { EmptyState } from '@/components/finance/empty-state';
 import { PageHeader } from '@/components/page-header';
-import type { Connection } from '@/lib/finance/types';
+import type { Connection } from '@finnit/core/finance/types';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import {
   STATEMENTS_PAGE_SIZE,
   STATEMENTS_QUERY,
   type StatementsData,
-} from '@/lib/statements/queries';
-import type { ApiStatementImport } from '@/lib/statements/types';
-import { accountsById, toStatementListItem } from '@/lib/statements/view';
+} from '@finnit/core/statements/queries';
+import type { ApiStatementImport } from '@finnit/core/statements/types';
+import { accountsById, toStatementListItem } from '@finnit/core/statements/view';
 import { StatementListItem } from './statement-list-item';
 import { StatementUploadCard } from './statement-upload-card';
 

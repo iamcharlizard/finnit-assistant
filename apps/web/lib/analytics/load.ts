@@ -2,21 +2,14 @@ import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
 import { getLocalizer } from '@/lib/i18n/server';
-import { monthOf, todayKey, type MonthRef } from '@/lib/finance/dates';
+import { monthOf, todayKey, type MonthRef } from '@finnit/core/finance/dates';
 import {
-  CATEGORY_FIELDS,
-  MONTHLY_REPORT_FIELDS,
-  type ApiCategory,
-  type ApiMonthlyReport,
-} from '@/lib/finance/types';
-import {
-  buildAnalyticsView,
-  trendMonths,
-  type AnalyticsView,
-  type ProjectionPoint,
-} from './view';
-
-const PROJECTION_MONTHS = 6;
+  PROJECTION_MONTHS,
+  analyticsData,
+  analyticsQuery,
+  type AnalyticsResult,
+} from '@finnit/core/analytics/request';
+import { buildAnalyticsView, type AnalyticsView } from '@finnit/core/analytics/view';
 
 /** Current month (Mexico City), the latest one analytics can show. */
 export function currentMonth(): MonthRef {
@@ -27,39 +20,10 @@ export function currentMonth(): MonthRef {
 export async function loadAnalytics(
   selected: MonthRef,
 ): Promise<AnalyticsView> {
-  const months = trendMonths(selected);
-  // Aliased reports, one per month; the numbers are validated MonthRefs.
-  const reports = months
-    .map(
-      (m, i) =>
-        `m${i}: monthlyReport(year: ${m.year}, month: ${m.month}) { ${MONTHLY_REPORT_FIELDS} }`,
-    )
-    .join('\n  ');
   const l = await getLocalizer();
-  const data = await serverGraphql<
-    Record<string, ApiMonthlyReport> & {
-      categories: ApiCategory[];
-      cashFlowProjection: ProjectionPoint[];
-      accounts: { totalCount: number };
-    }
-  >(
-    `query Analytics($monthsAhead: Int!) {
-  ${reports}
-  categories(includeHidden: true) { ${CATEGORY_FIELDS} }
-  cashFlowProjection(monthsAhead: $monthsAhead) { date projectedBalance }
-  accounts(first: 1, archived: false) { totalCount }
-}`,
-    { monthsAhead: PROJECTION_MONTHS },
-  );
+  const data = await serverGraphql<AnalyticsResult>(analyticsQuery(selected), {
+    monthsAhead: PROJECTION_MONTHS,
+  });
 
-  return buildAnalyticsView(
-    {
-      reports: months.map((_, i) => data[`m${i}`] as ApiMonthlyReport),
-      categories: data.categories,
-      projection: data.cashFlowProjection,
-      accountCount: data.accounts.totalCount,
-    },
-    { selected, current: currentMonth() },
-    l,
-  );
+  return buildAnalyticsView(analyticsData(data, selected), { selected, current: currentMonth() }, l);
 }

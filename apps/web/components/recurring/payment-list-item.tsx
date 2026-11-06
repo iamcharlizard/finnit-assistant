@@ -6,8 +6,8 @@ import { Check, Pencil, RotateCcw, SkipForward } from 'lucide-react';
 import { Button } from '@finnit/ui/components/ui/button';
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { PaymentAction } from '@/lib/recurring/api';
-import type { PaymentItem } from '@/lib/recurring/view';
+import type { PaymentAction } from '@finnit/core/recurring/api';
+import type { PaymentItem } from '@finnit/core/recurring/view';
 import { KindIcon } from './kind-icon';
 import { PaymentStatusBadge } from './payment-status-badge';
 

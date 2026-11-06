@@ -21,7 +21,7 @@ import {
   LOCALE_COOKIE_MAX_AGE_S,
   isLocale,
   type Locale,
-} from '@/lib/i18n/locales';
+} from '@finnit/core/i18n/locales';
 
 // Inline input: works whatever the API names its input type.
 const UPDATE_PREFERENCES = `mutation UpdateMyPreferences($locale: String!) {

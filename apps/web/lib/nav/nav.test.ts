@@ -9,8 +9,11 @@ import {
   isNavGroup,
   visibleSections,
 } from './sections';
-import { matchRoute, pageTitleKey } from './titles';
-import { openGroupsCookieValue, parseOpenGroups } from './sidebar';
+import { matchRoute, pageTitleKey } from '@finnit/core/nav/titles';
+import {
+  openGroupsCookieValue,
+  parseOpenGroups,
+} from '@finnit/core/nav/sidebar';
 
 describe('nav sections', () => {
   it('hides empty sections and, for non-admins, Administración', () => {
@@ -19,6 +22,7 @@ describe('nav sections', () => {
       'home',
       'transactions',
       'accounts',
+      'calendar',
       'planning',
       'analytics',
     ]);
@@ -103,7 +107,7 @@ describe('page titles', () => {
     assert.equal(pageTitleKey('/settings/banks/connect'), 'connectBank');
     assert.equal(pageTitleKey('/settings/aliases'), 'aliases');
     assert.equal(pageTitleKey('/admin/users'), 'admin');
-    assert.equal(pageTitleKey('/calendar'), 'recurring');
+    assert.equal(pageTitleKey('/calendar'), 'calendar');
     assert.equal(pageTitleKey('/accounts'), 'cards');
     assert.equal(pageTitleKey('/nowhere'), 'app');
   });

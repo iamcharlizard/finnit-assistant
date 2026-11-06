@@ -22,7 +22,7 @@ import {
   fetchFinnitAccounts,
   type FinnitAccount,
 } from '@/lib/bank-connect/api';
-import { DEFAULT_CURRENCY, formatMoney } from '@/lib/finance/money';
+import { DEFAULT_CURRENCY, formatMoney } from '@finnit/core/finance/money';
 import { AccountChoiceSelect } from './account-choice-select';
 
 /** Syncfy's account types → `bankConnect.accountTypes.<key>`. */

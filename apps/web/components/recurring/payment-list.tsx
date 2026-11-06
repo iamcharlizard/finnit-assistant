@@ -6,8 +6,8 @@ import { CalendarCheck } from 'lucide-react';
 import { SectionHeading } from '@finnit/ui/components/ui/section-heading';
 
 import { EmptyState } from '@/components/finance/empty-state';
-import type { PaymentAction } from '@/lib/recurring/api';
-import type { CardDateItem, PaymentItem } from '@/lib/recurring/view';
+import type { PaymentAction } from '@finnit/core/recurring/api';
+import type { CardDateItem, PaymentItem } from '@finnit/core/recurring/view';
 import { CardDateRow } from './card-date-row';
 import { PaymentListItem } from './payment-list-item';
 

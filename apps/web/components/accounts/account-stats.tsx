@@ -10,7 +10,7 @@ import {
   Wallet,
 } from 'lucide-react';
 
-import type { AccountDetail, DateFact } from '@/lib/accounts/view';
+import type { AccountDetail, DateFact } from '@finnit/core/accounts/view';
 import { AccountFacts } from './account-facts';
 import { AccountStat } from './account-stat';
 

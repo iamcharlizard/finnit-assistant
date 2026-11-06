@@ -15,8 +15,8 @@ import { EmptyState } from '@/components/finance/empty-state';
 import { PaymentRow } from '@/components/finance/payment-row';
 import { PageHeader } from '@/components/page-header';
 import { useSessionUser } from '@/components/session-provider';
-import type { BudgetCardView } from '@/lib/budgets/view';
-import { UPCOMING_DAYS, type DashboardView } from '@/lib/dashboard/view';
+import type { BudgetCardView } from '@finnit/core/budgets/view';
+import { UPCOMING_DAYS, type DashboardView } from '@finnit/core/dashboard/view';
 
 const LINK_CLASS =
   'flex min-h-11 items-center text-sm font-medium text-income hover:underline';
@@ -60,7 +60,7 @@ export function DashboardScreen({
               title={t('noAccountsTitle')}
               description={t('noAccountsDescription')}
               action={{
-                href: '/settings/banks/connect',
+                href: '/accounts?add=bank',
                 label: tc('connectBank'),
               }}
             />

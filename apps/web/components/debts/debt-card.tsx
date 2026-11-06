@@ -27,9 +27,9 @@ import {
 import { Progress } from '@finnit/ui/components/ui/progress';
 import { cn } from '@finnit/ui/lib/utils';
 
-import { CATEGORY_COLOR } from '@/lib/debts/insights-view';
-import type { DebtCategory } from '@/lib/debts/types';
-import type { DebtItem } from '@/lib/debts/view';
+import { CATEGORY_COLOR } from '@finnit/core/debts/insights-view';
+import type { DebtCategory } from '@finnit/core/debts/types';
+import type { DebtItem } from '@finnit/core/debts/view';
 
 const TYPE_ICONS: Record<Exclude<DebtCategory, 'msi'>, typeof Landmark> = {
   institutional: Landmark,

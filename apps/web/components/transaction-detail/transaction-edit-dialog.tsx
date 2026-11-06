@@ -37,9 +37,9 @@ import {
 } from '@/components/aliases/alias-fields';
 import { SwitchField } from '@/components/finance/switch-field';
 import { AmountField } from '@/components/new-entry/amount-field';
-import { aliasErrorMessage } from '@/lib/aliases/api';
-import { aliasPatternGuess } from '@/lib/aliases/guess';
-import type { ApiMerchantAlias } from '@/lib/aliases/types';
+import { aliasErrorMessage } from '@finnit/core/aliases/api';
+import { aliasPatternGuess } from '@finnit/core/aliases/guess';
+import type { ApiMerchantAlias } from '@finnit/core/aliases/types';
 import {
   DISPLAY_NAME_MAX,
   privateByRule,
@@ -49,19 +49,19 @@ import {
   validateRename,
   type NameSubject,
   type RenameForm,
-} from '@/lib/categorize/rename';
-import { todayKey } from '@/lib/finance/dates';
+} from '@finnit/core/categorize/rename';
+import { todayKey } from '@finnit/core/finance/dates';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { categoryOptions } from '@/lib/new-entry/options';
+import { categoryOptions } from '@finnit/core/new-entry/options';
 import {
   SET_ALIAS_MUTATION,
   similarCategory,
   suggestCategoryWithAi,
   transactionErrorMessage,
   updateTransaction,
-} from '@/lib/transaction-detail/api';
-import { ownNameUpdate, shownSuggestion } from '@/lib/transaction-detail/edit';
+} from '@finnit/core/transaction-detail/api';
+import { ownNameUpdate, shownSuggestion } from '@finnit/core/transaction-detail/edit';
 import {
   DESCRIPTION_MAX,
   MERCHANT_MAX,
@@ -70,12 +70,12 @@ import {
   validateDetailForm,
   type DetailForm,
   type DetailFormErrors,
-} from '@/lib/transaction-detail/form';
+} from '@finnit/core/transaction-detail/form';
 import type {
   DetailCategory,
   SimilarCategory,
-} from '@/lib/transaction-detail/types';
-import type { EditRules } from '@/lib/transaction-detail/view';
+} from '@finnit/core/transaction-detail/types';
+import type { EditRules } from '@finnit/core/transaction-detail/view';
 
 export interface EditSaved {
   /** False when nothing was different. */

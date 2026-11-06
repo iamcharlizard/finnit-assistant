@@ -1,0 +1,160 @@
+/**
+ * Shapes of the Finnit API data the finance screens read, and the GraphQL
+ * field selections that fetch them.
+ */
+export type AccountType = 'cash' | 'credit' | 'debit' | 'ewallet' | 'savings';
+
+export interface ApiAccount {
+  id: string;
+  name: string;
+  type: AccountType;
+  currency: string;
+  /** Credit cards: negative is what is owed. */
+  balanceCurrent: number;
+  archived: boolean;
+  /** The user's cash account ("Efectivo"): can't be deleted or archived. */
+  isDefaultCash?: boolean;
+  metadata: {
+    bank: string | null;
+    last4: string | null;
+    creditLimit: number | null;
+    /** The user's name for the account (feature 18). */
+    nickname?: string | null;
+    /** Card colors chosen by the user, '#RRGGBB'. */
+    design?: AccountDesign | null;
+  } | null;
+  creditCardTerms: {
+    statementDay: number;
+    paymentDueDay: number;
+    interestRateAnnual?: number | null;
+  } | null;
+}
+
+export interface AccountDesign {
+  primaryColor: string;
+  secondaryColor?: string | null;
+}
+
+export const ACCOUNT_FIELDS =
+  'id name type currency balanceCurrent archived isDefaultCash metadata { bank last4 creditLimit nickname design { primaryColor secondaryColor } } creditCardTerms { statementDay paymentDueDay interestRateAnnual }';
+
+export type TransactionType = 'income' | 'expense' | 'transfer' | 'adjustment';
+
+export interface ApiTransaction {
+  id: string;
+  type: TransactionType;
+  /** Always positive; `balanceEffect` (or `type`) gives the direction. */
+  amount: number;
+  /**
+   * What it added (+) or took (−) from the account balance. Null (or
+   * missing in older data) for adjustments of unknown direction.
+   */
+  balanceEffect?: number | null;
+  /**
+   * "En proceso": the bank shows it but hasn't applied it. It counts in the
+   * balance; only marked (missing in older data).
+   */
+  inProcess?: boolean;
+  currency: string;
+  txnDate: string;
+  description: string | null;
+  merchantName: string | null;
+  isPending: boolean;
+  source: string;
+  /** Transfers only: 'out' on the source account, 'in' on the destination. */
+  transferDirection?: 'in' | 'out' | null;
+  accountId: string;
+  account: {
+    id: string;
+    name: string;
+    type: AccountType;
+    metadata?: { nickname?: string | null } | null;
+  } | null;
+  category: { id: string; name: string; parentId: string | null } | null;
+  /** What to show: the alias (rule or one-off) or the merchant/description. */
+  displayName: string;
+  /** A private alias: lists show only `displayName`, never the original. */
+  isPrivate: boolean;
+  /** The alias rule applied, if any. */
+  aliasId?: string | null;
+  /** Renamed one by one (setTransactionAlias), without a rule. */
+  hasOwnAlias?: boolean;
+  /** The movement's own private flag (`isPrivate` also counts its rule). */
+  ownPrivate?: boolean;
+  /** The automatic name (alias rule) that names it. */
+  aliasRule?: {
+    id: string;
+    displayName: string;
+    isPrivate: boolean;
+    isProtected: boolean;
+  } | null;
+}
+
+export const TRANSACTION_FIELDS =
+  'id type amount balanceEffect currency txnDate description merchantName displayName isPrivate ownPrivate aliasId aliasRule { id displayName isPrivate isProtected } hasOwnAlias isPending inProcess source transferDirection accountId account { id name type metadata { nickname } } category { id name parentId }';
+
+export type CategorySource = 'manual' | 'rule' | 'ai' | 'bank';
+
+export interface ApiCategory {
+  id: string;
+  name: string;
+  parentId: string | null;
+  /** Icon key chosen for it (catalog or user); null: by name. */
+  icon?: string | null;
+}
+
+export const CATEGORY_FIELDS = 'id name parentId icon';
+
+export interface Connection<T> {
+  totalCount: number;
+  edges: { node: T }[];
+  pageInfo: { endCursor: string | null; hasNextPage: boolean };
+}
+
+export type RecurringKind =
+  | 'housing'
+  | 'installment'
+  | 'insurance'
+  | 'loan'
+  | 'membership'
+  | 'other'
+  | 'subscription'
+  | 'utility';
+
+export type OccurrenceStatus = 'upcoming' | 'paid' | 'skipped' | 'missed';
+
+export interface ApiUpcomingPayment {
+  dueDate: string;
+  expectedAmount: number;
+  occurrenceId: string | null;
+  /** Null for reminder-only expenses. */
+  status: OccurrenceStatus | null;
+  recurringExpense: {
+    id: string;
+    name: string;
+    kind: RecurringKind;
+    currency: string;
+    accountId: string | null;
+    isVariableAmount: boolean;
+  };
+}
+
+export const UPCOMING_PAYMENT_FIELDS =
+  'dueDate expectedAmount occurrenceId status recurringExpense { id name kind currency accountId isVariableAmount }';
+
+export interface ApiMonthlyReport {
+  year: number;
+  month: number;
+  currency: string;
+  totalIncome: number;
+  totalExpenses: number;
+  netIncome: number;
+  categoryBreakdown: {
+    categoryId: string;
+    categoryName: string;
+    amount: number;
+  }[];
+}
+
+export const MONTHLY_REPORT_FIELDS =
+  'year month currency totalIncome totalExpenses netIncome categoryBreakdown { categoryId categoryName amount }';

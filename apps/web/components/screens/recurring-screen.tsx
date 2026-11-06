@@ -2,20 +2,8 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  CalendarClock,
-  CalendarDays,
-  CircleCheck,
-  Landmark,
-  Plus,
-  Repeat,
-  Sparkles,
-} from 'lucide-react';
+import { Plus, Repeat, Sparkles } from 'lucide-react';
 
-import {
-  RecurringCalendar,
-  type RecurringCalendarLabels,
-} from '@finnit/ui/components/finance/recurring-calendar';
 import { Button } from '@finnit/ui/components/ui/button';
 import {
   Tabs,
@@ -24,7 +12,6 @@ import {
   TabsTrigger,
 } from '@finnit/ui/components/ui/tabs';
 import { toast } from '@finnit/ui/components/ui/toaster';
-import { cn } from '@finnit/ui/lib/utils';
 
 import {
   ConfirmDialog,
@@ -37,66 +24,55 @@ import {
 } from '@/components/recurring/expense-dialog';
 import { LoanDialog } from '@/components/debts/loan-dialog';
 import { ExpenseList } from '@/components/recurring/expense-list';
-import { PaymentList } from '@/components/recurring/payment-list';
 import { SuggestionsSection } from '@/components/recurring/suggestions-section';
-import { SummaryCard } from '@/components/recurring/summary-card';
 import { TabCount } from '@/components/recurring/tab-count';
 import { useSessionUser } from '@/components/session-provider';
 import { useRecurringSuggestions } from '@/hooks/use-recurring-suggestions';
-import {
-  longDate,
-  monthNames,
-  shortDate,
-  weekdayNames,
-} from '@/lib/finance/dates';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import {
   deleteRecurring,
   dismissSuggestion,
   recurringErrorMessage,
-  runPaymentAction,
   setRecurringActive,
-  type PaymentAction,
-} from '@/lib/recurring/api';
-import { inRange, recurringHref } from '@/lib/recurring/range';
+} from '@finnit/core/recurring/api';
+import {
+  withExpenseFilters,
+  type ExpenseFilters,
+} from '@finnit/core/recurring/filters';
 import {
   parseTabParam,
   withTabParam,
   type RecurringTab,
-} from '@/lib/recurring/tabs';
-import type { ApiRecurringSuggestion } from '@/lib/recurring/types';
-import { DEBTS_PATH } from '@/lib/debts/view';
+} from '@finnit/core/recurring/tabs';
+import type { ApiRecurringSuggestion } from '@finnit/core/recurring/types';
+import { DEBTS_PATH } from '@finnit/core/debts/view';
 import type {
   ExpenseItem,
-  PaymentItem,
   RecurringScreenView,
-} from '@/lib/recurring/view';
+} from '@finnit/core/recurring/view';
 
-const TEAL = '#00696e';
-const GREEN = '#00a86b';
-const PURPLE = '#6c72cb';
-const SUMMARY_CARD = 'w-[78%] shrink-0 snap-start sm:w-auto';
 const TAB = 'flex-1 px-2 sm:flex-none sm:px-4';
 const TAB_ICON = 'hidden sm:block';
 
 /**
- * "Pagos recurrentes": totals, then one tab at a time: the period's calendar
- * and payments, every recurring expense, and suggestions detected from the
- * user's movements.
+ * "Pagos recurrentes": the user's recurring expenses (with a filter bar)
+ * and the ones detected from their movements, one tab at a time. Their
+ * dates and totals live in the payments calendar (/calendar).
  */
 export function RecurringScreen({
   data,
   initialTab,
+  initialFilters,
 }: {
   data: RecurringScreenView;
   initialTab: RecurringTab;
+  initialFilters: ExpenseFilters;
 }) {
   const router = useRouter();
   const l = useLocalizer();
-  const { t, locale } = l;
-  const [pending, startTransition] = React.useTransition();
-  const [selectedDay, setSelectedDay] = React.useState<string | null>(null);
+  const { t } = l;
+  const [, startTransition] = React.useTransition();
   const [dialog, setDialog] = React.useState<ExpenseDialogSubject | null>(null);
   // A suggestion being saved as a loan.
   const [loanFor, setLoanFor] = React.useState<ApiRecurringSuggestion | null>(
@@ -106,6 +82,7 @@ export function RecurringScreen({
   const [busyKey, setBusyKey] = React.useState<string | null>(null);
   const suggestions = useRecurringSuggestions(useSessionUser().id);
   const [tab, setTab] = React.useState(initialTab);
+  const [filters, setFilters] = React.useState(initialFilters);
 
   // The tab lives in the URL (no navigation) so a reload or refresh keeps it.
   function changeTab(value: string) {
@@ -118,65 +95,18 @@ export function RecurringScreen({
     );
   }
 
-  // A selection outside the visible period (after navigating) is dropped.
-  const selected =
-    selectedDay && inRange(selectedDay, data.range) ? selectedDay : null;
-  const panelDay = data.view === 'day' ? data.date : selected;
+  // The filters too: a shared or reloaded link shows the same list.
+  function changeFilters(next: ExpenseFilters) {
+    setFilters(next);
+    window.history.replaceState(
+      null,
+      '',
+      `${window.location.pathname}${withExpenseFilters(window.location.search, next)}`,
+    );
+  }
 
-  const navigate = (href: string) =>
-    startTransition(() => router.push(href, { scroll: false }));
   const refresh = () => startTransition(() => router.refresh());
   const fail = (error: unknown) => toast.error(recurringErrorMessage(error, t));
-
-  const labels = React.useMemo<Partial<RecurringCalendarLabels>>(() => {
-    const weekdays = weekdayNames(locale);
-    return {
-      views: {
-        day: t('recurring.calendar.views.day'),
-        week: t('recurring.calendar.views.week'),
-        month: t('recurring.calendar.views.month'),
-      },
-      viewSwitcher: t('recurring.calendar.viewSwitcher'),
-      today: t('recurring.calendar.today'),
-      previous: t(`recurring.calendar.previous.${data.view}`),
-      next: t(`recurring.calendar.next.${data.view}`),
-      months: monthNames(locale),
-      weekdays,
-      weekdaysShort: weekdays.map((w) => w.slice(0, 3)),
-      weekdaysNarrow: weekdays.map((w) => w.charAt(0).toUpperCase()),
-      status: {
-        upcoming: t('recurring.status.upcoming'),
-        paid: t('recurring.status.paid'),
-        skipped: t('recurring.status.skipped'),
-        missed: t('recurring.status.overdue'),
-        reminder: t('recurring.status.reminder'),
-      },
-      more: (count) => t('recurring.calendar.more', { count }),
-      eventCount: (count) => t('recurring.calendar.eventCount', { count }),
-      noEvents: t('recurring.calendar.noEvents'),
-    };
-  }, [t, locale, data.view]);
-
-  const panelPayments = panelDay
-    ? data.payments.filter((p) => p.day === panelDay)
-    : data.payments;
-  const panelCardDates = panelDay
-    ? data.cardDates.filter((c) => c.day === panelDay)
-    : data.cardDates;
-
-  async function onPaymentAction(item: PaymentItem, action: PaymentAction) {
-    if (!item.occurrenceId) return;
-    setBusyKey(item.key);
-    try {
-      await runPaymentAction(action, item.occurrenceId, gql);
-      toast.success(t(`recurring.toasts.${action}`, { name: item.name }));
-      refresh();
-    } catch (error) {
-      fail(error);
-    } finally {
-      setBusyKey(null);
-    }
-  }
 
   function editExpense(id: string) {
     const item = data.expenses.find((e) => e.id === id);
@@ -270,12 +200,6 @@ export function RecurringScreen({
     refresh();
   }
 
-  const panelTitle = panelDay
-    ? t('recurring.panel.dayTitle', {
-        date: longDate(panelDay, data.today, locale),
-      })
-    : t('recurring.panel.periodTitle', { period: data.periodLabel });
-
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -292,51 +216,11 @@ export function RecurringScreen({
         }
       />
 
-      {/* On phones the totals scroll sideways, so the tabs stay near the top. */}
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
-        <SummaryCard
-          className={SUMMARY_CARD}
-          icon={CalendarClock}
-          accent={TEAL}
-          label={t('recurring.summary.toPay')}
-          amount={data.totals.toPay}
-          detail={t('recurring.summary.toPayDetail', {
-            count: data.totals.toPayCount,
-            period: data.periodLabel,
-          })}
-        />
-        <SummaryCard
-          className={SUMMARY_CARD}
-          icon={CircleCheck}
-          accent={GREEN}
-          label={t('recurring.summary.paid')}
-          amount={data.totals.paid}
-          detail={t('recurring.summary.paidDetail', {
-            count: data.totals.paidCount,
-            period: data.periodLabel,
-          })}
-        />
-        <SummaryCard
-          className={SUMMARY_CARD}
-          icon={Landmark}
-          accent={PURPLE}
-          label={t('recurring.summary.fixedMonthly')}
-          amount={data.totals.fixedMonthly}
-          detail={t('recurring.summary.fixedMonthlyDetail', {
-            count: data.totals.activeCount,
-          })}
-        />
-      </div>
-
       <Tabs value={tab} onValueChange={changeTab} className="gap-5">
         <TabsList
           aria-label={t('recurring.tabs.label')}
           className="w-full sm:w-fit"
         >
-          <TabsTrigger value="calendar" className={TAB}>
-            <CalendarDays aria-hidden className={TAB_ICON} />{' '}
-            {t('recurring.tabs.calendar')}
-          </TabsTrigger>
           <TabsTrigger value="list" className={TAB}>
             <Repeat aria-hidden className={TAB_ICON} />{' '}
             {t('recurring.tabs.list')}
@@ -351,69 +235,11 @@ export function RecurringScreen({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="calendar">
-          <div
-            aria-busy={pending}
-            className={cn(
-              'grid gap-6 transition-opacity',
-              // A week needs the full width for its seven columns of payments.
-              data.view !== 'week' &&
-                '@3xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]',
-              pending && 'opacity-60',
-            )}
-          >
-            <RecurringCalendar
-              className="min-w-0 self-start"
-              view={data.view}
-              date={data.date}
-              selectedDate={data.view === 'day' ? data.date : selected}
-              today={data.today}
-              events={data.events}
-              weekStartsOn={1}
-              labels={labels}
-              onViewChange={(view) =>
-                navigate(recurringHref({ view, date: selected ?? data.date }))
-              }
-              onSelectDate={(day) => {
-                if (data.view === 'day' || !inRange(day, data.range)) {
-                  navigate(recurringHref({ view: data.view, date: day }));
-                  return;
-                }
-                setSelectedDay((current) => (current === day ? null : day));
-              }}
-              onPrevious={() => navigate(data.prevHref)}
-              onNext={() => navigate(data.nextHref)}
-              onToday={() => navigate(data.todayHref)}
-              onEventClick={(event) => setSelectedDay(event.date)}
-            />
-
-            <PaymentList
-              title={panelTitle}
-              payments={panelPayments}
-              cardDates={panelCardDates}
-              emptyText={
-                panelDay
-                  ? t('recurring.panel.emptyDay')
-                  : t('recurring.panel.emptyPeriod')
-              }
-              busyKey={busyKey}
-              cardDateLabel={
-                panelDay ? undefined : (item) => shortDate(item.day, locale)
-              }
-              onAction={onPaymentAction}
-              onEdit={(item) => editExpense(item.expenseId)}
-              onShowPeriod={
-                selected && data.view !== 'day'
-                  ? () => setSelectedDay(null)
-                  : undefined
-              }
-            />
-          </div>
-        </TabsContent>
-
         <TabsContent value="list">
           <ExpenseList
             expenses={data.expenses}
+            filters={filters}
+            onFiltersChange={changeFilters}
             busyId={busyKey}
             onCreate={() => setDialog({ mode: 'create' })}
             onEdit={(item) => editExpense(item.id)}

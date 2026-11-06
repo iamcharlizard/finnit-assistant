@@ -6,8 +6,8 @@ import { EmptyState } from '@/components/finance/empty-state';
 import {
   categorizeHref,
   type CategorizeFilters,
-} from '@/lib/categorize/filters';
-import type { DayKey } from '@/lib/finance/dates';
+} from '@finnit/core/categorize/filters';
+import type { DayKey } from '@finnit/core/finance/dates';
 import { useLocalizer } from '@/lib/i18n/client';
 
 /** Nothing to show: all categorized 🎉, no suggestions, or no movements. */

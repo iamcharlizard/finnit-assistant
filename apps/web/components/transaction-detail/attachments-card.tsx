@@ -18,12 +18,12 @@ import { useAttachmentUpload } from '@/hooks/use-attachment-upload';
 import { MAX_UPLOAD_BYTES } from '@/lib/files/routes';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { ATTACHMENT_ACCEPT } from '@/lib/new-entry/errors';
+import { ATTACHMENT_ACCEPT } from '@finnit/core/new-entry/errors';
 import {
   removeAttachment,
   transactionErrorMessage,
-} from '@/lib/transaction-detail/api';
-import type { AttachmentView } from '@/lib/transaction-detail/view';
+} from '@finnit/core/transaction-detail/api';
+import type { AttachmentView } from '@finnit/core/transaction-detail/view';
 import { AttachmentItem } from './attachment-item';
 import { useDetailHost } from './detail-host';
 

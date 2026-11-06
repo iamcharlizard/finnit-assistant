@@ -2,7 +2,7 @@ import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
 import { getLocalizer } from '@/lib/i18n/server';
-import { indexCategories } from '@/lib/finance/categories';
+import { indexCategories } from '@finnit/core/finance/categories';
 import {
   endOfDayIso,
   lastDayOf,
@@ -10,38 +10,39 @@ import {
   startOfDayIso,
   todayKey,
   type DayKey,
-} from '@/lib/finance/dates';
+} from '@finnit/core/finance/dates';
 import {
   toTransactionRow,
   type TransactionRow,
-} from '@/lib/finance/transactions';
-import type { Localizer } from '@/lib/i18n/translator';
+} from '@finnit/core/finance/transactions';
+import type { Localizer } from '@finnit/core/i18n/translator';
 import {
-  ALL_BALANCE_FIELDS,
   buildOverviewTimeline,
   type ApiAllBalanceHistory,
   type OverviewTimeline,
-} from './all-balance';
+} from '@finnit/core/accounts/all-balance';
 import {
-  BALANCE_HISTORY_FIELDS,
   buildBalanceTimeline,
   historyWindow,
   parseDayParam,
   type ApiBalanceHistory,
   type BalanceTimeline,
-} from './balance-history';
+} from '@finnit/core/accounts/balance-history';
 import {
-  ACCOUNT_FIELDS,
-  CATEGORY_FIELDS,
-  TRANSACTION_FIELDS,
   type ApiAccount,
   type ApiCategory,
   type ApiTransaction,
   type Connection,
-} from '@/lib/finance/types';
+} from '@finnit/core/finance/types';
 import {
-  BANK_CONNECTIONS_FIELDS,
-  PENDING_CHARGE_FIELDS,
+  ACCOUNTS_QUERY,
+  ACCOUNT_DETAIL_QUERY,
+  CARD_SUMMARY_QUERY,
+  DAY_MOVEMENTS,
+  OVERVIEW_QUERY,
+  RECENT_COUNT,
+} from '@finnit/core/accounts/request';
+import {
   buildAccountDetail,
   buildAccounts,
   type AccountDetail,
@@ -49,7 +50,7 @@ import {
   type BankConnectionInfo,
   type CardMonthSummaryData,
   type PendingCharge,
-} from './view';
+} from '@finnit/core/accounts/view';
 
 /** All the accounts together (no account chosen). */
 export interface OverviewData {
@@ -71,36 +72,6 @@ export interface AccountsData {
   /** Every account name the user has (archived too): names are unique. */
   existingNames: string[];
 }
-
-// Archived accounts too: the toggle shows them and their names stay taken.
-const ACCOUNTS_QUERY = `query Accounts {
-  accounts(first: 100) { edges { node { ${ACCOUNT_FIELDS} } } }
-  bankConnections { ${BANK_CONNECTIONS_FIELDS} }
-}`;
-
-const ACCOUNT_DETAIL_QUERY = `query AccountDetail($accountId: String!, $recent: Int!, $from: DateTime!, $to: DateTime!, $dayStart: DateTime, $dayEnd: DateTime, $historyFrom: DateTime!, $historyTo: DateTime!) {
-  recent: transactions(first: $recent, filters: { accountId: $accountId, startDate: $dayStart, endDate: $dayEnd }) { edges { node { ${TRANSACTION_FIELDS} } } }
-  categories(includeHidden: true) { ${CATEGORY_FIELDS} }
-  upcomingPayments(from: $from, to: $to, accountId: $accountId) { ${PENDING_CHARGE_FIELDS} }
-  accountBalanceHistory(accountId: $accountId, from: $historyFrom, to: $historyTo) { ${BALANCE_HISTORY_FIELDS} }
-}`;
-
-const OVERVIEW_QUERY = `query AccountsOverview($recent: Int!, $dayStart: DateTime, $dayEnd: DateTime, $historyFrom: DateTime!, $historyTo: DateTime!) {
-  recent: transactions(first: $recent, filters: { startDate: $dayStart, endDate: $dayEnd }) { edges { node { ${TRANSACTION_FIELDS} } } }
-  categories(includeHidden: true) { ${CATEGORY_FIELDS} }
-  accountsBalanceHistory(from: $historyFrom, to: $historyTo) { ${ALL_BALANCE_FIELDS} }
-}`;
-
-const CARD_SUMMARY_QUERY = `query CardMonth($accountId: String!, $year: Int!, $month: Int!) {
-  cardMonthSummary(accountId: $accountId, year: $year, month: $month) {
-    statement { statementDate paymentDueDate statementBalance minimumPayment noInterestPayment }
-  }
-}`;
-
-/** Movements in the detail's list (it scrolls); the rest are in "Movimientos". */
-const RECENT_COUNT = 30;
-/** A past day's movements (all of them, in practice). */
-const DAY_MOVEMENTS = 100;
 
 /**
  * The user's accounts, and for the selected one (?account=…) its recent

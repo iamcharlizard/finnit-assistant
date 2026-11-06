@@ -3,14 +3,14 @@
 import * as React from 'react';
 
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
-import { previewAlias, regexErrorOf } from '@/lib/aliases/api';
+import { previewAlias, regexErrorOf } from '@finnit/core/aliases/api';
 import {
   PREVIEW_DEBOUNCE_MS,
   previewInput,
   previewKey,
   type AliasForm,
-} from '@/lib/aliases/form';
-import type { AliasPreview } from '@/lib/aliases/types';
+} from '@finnit/core/aliases/form';
+import type { AliasPreview } from '@finnit/core/aliases/types';
 import { gql } from '@/lib/graphql/client';
 
 export type AliasPreviewState =

@@ -9,10 +9,10 @@ import { SectionHeading } from '@finnit/ui/components/ui/section-heading';
 
 import { BalanceProjectionChart } from '@/components/debts/insights/balance-projection-chart';
 import { DebtTypeBars } from '@/components/debts/insights/debt-type-bars';
-import { buildDebtInsightsView } from '@/lib/debts/insights-view';
-import type { ApiDebtInsights } from '@/lib/debts/types';
-import { DEBTS_PATH } from '@/lib/debts/view';
-import type { DayKey } from '@/lib/finance/dates';
+import { buildDebtInsightsView } from '@finnit/core/debts/insights-view';
+import type { ApiDebtInsights } from '@finnit/core/debts/types';
+import { DEBTS_PATH } from '@finnit/core/debts/view';
+import type { DayKey } from '@finnit/core/finance/dates';
 import { useLocalizer } from '@/lib/i18n/client';
 
 const LINK_CLASS =

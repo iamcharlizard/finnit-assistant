@@ -6,7 +6,7 @@ import { Trophy } from 'lucide-react';
 import { Badge } from '@finnit/ui/components/ui/badge';
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { StrategyPlan } from '@/lib/debts/payoff';
+import type { StrategyPlan } from '@finnit/core/debts/payoff';
 
 /** One strategy's plan: totals, then each debt in the order it is paid. */
 export function StrategyColumn({

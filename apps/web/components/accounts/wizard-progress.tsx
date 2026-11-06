@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 
 import { cn } from '@finnit/ui/lib/utils';
 
-import { WIZARD_STEPS, type WizardStep } from '@/lib/accounts/form';
+import { WIZARD_STEPS, type WizardStep } from '@finnit/core/accounts/form';
 
 /** "Paso 2 de 4: Datos" and a bar per step. */
 export function WizardProgress({ step }: { step: WizardStep }) {

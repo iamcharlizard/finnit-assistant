@@ -1,6 +1,6 @@
 import { compressImageForUpload } from '@/lib/files/compress-image';
 import { isUuid } from '@/lib/files/routes';
-import type { ReceiptStatus } from './graphql';
+import type { ReceiptStatus } from '@finnit/core/receipts/graphql';
 
 /**
  * Uploads a receipt photo through this site's file proxy

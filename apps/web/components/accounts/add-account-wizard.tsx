@@ -6,6 +6,7 @@ import { CircleCheck } from 'lucide-react';
 import { Button } from '@finnit/ui/components/ui/button';
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -14,7 +15,10 @@ import {
 } from '@finnit/ui/components/ui/dialog';
 import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 
-import { accountErrorMessage, createManualAccount } from '@/lib/accounts/api';
+import {
+  accountErrorMessage,
+  createManualAccount,
+} from '@finnit/core/accounts/api';
 import {
   WIZARD_STEPS,
   bankNameOf,
@@ -28,10 +32,12 @@ import {
   type FormErrors,
   type ManualAccountForm,
   type WizardStep,
-} from '@/lib/accounts/form';
-import { cardPreview } from '@/lib/accounts/view';
+} from '@finnit/core/accounts/form';
+import { cardPreview } from '@finnit/core/accounts/view';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
+import { ConnectBankSteps } from '@/components/bank-connect/connect-bank-flow';
+import { AddAccountChoice, type AddAccountMode } from './add-account-choice';
 import { WizardDesignStep } from './wizard-design-step';
 import { WizardDetailsStep } from './wizard-details-step';
 import { WizardMoneyStep } from './wizard-money-step';
@@ -39,17 +45,22 @@ import { WizardProgress } from './wizard-progress';
 import { WizardTypeStep } from './wizard-type-step';
 
 /**
- * "Agregar cuenta": a manual debit, credit, cash or savings account in four
+ * "Agregar cuenta": first the choice between connecting the bank (Syncfy,
+ * the same flow as Configuración → Bancos, inside this dialog) and adding it
+ * by hand; then a manual debit, credit, cash or savings account in four
  * steps. Mounted while open, so every opening starts empty.
  */
 export function AddAccountWizard({
   existingNames,
   holderName,
+  start = 'choose',
   onClose,
   onCreated,
 }: {
   existingNames: ReadonlyArray<string>;
   holderName: string;
+  /** Where it opens: the choice, or straight into one of the two ways. */
+  start?: 'choose' | AddAccountMode;
   onClose: () => void;
   onCreated: (accountId: string) => void;
 }) {
@@ -57,6 +68,9 @@ export function AddAccountWizard({
   const exit = useDialogExit();
   const l = useLocalizer();
   const { t } = l;
+  const [mode, setMode] = React.useState<'choose' | AddAccountMode>(start);
+  // "Cancelar" goes back to the choice when the user came from it.
+  const backToChoice = start === 'choose' ? () => setMode('choose') : null;
   const [form, setForm] = React.useState<ManualAccountForm>(
     emptyManualAccountForm,
   );
@@ -168,7 +182,32 @@ export function AddAccountWizard({
         closeLabel={t('common.close')}
         className="sm:max-w-xl"
       >
-        {partial ? (
+        {mode === 'choose' ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>{t('accounts.wizard.title')}</DialogTitle>
+              <DialogDescription>
+                {t('accounts.addChoice.description')}
+              </DialogDescription>
+            </DialogHeader>
+            <AddAccountChoice onChoose={setMode} />
+          </>
+        ) : mode === 'bank' ? (
+          <>
+            <DialogHeader className="sr-only">
+              <DialogTitle>{t('common.connectBank')}</DialogTitle>
+              <DialogDescription>
+                {t('accounts.addChoice.bankDescription')}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogBody>
+              <ConnectBankSteps
+                onCancel={backToChoice ?? (() => exit.close(onClose))}
+                onClose={() => exit.close(onClose)}
+              />
+            </DialogBody>
+          </>
+        ) : partial ? (
           <>
             <DialogHeader>
               <CircleCheck aria-hidden className="mb-1 size-8 text-income" />
@@ -254,9 +293,11 @@ export function AddAccountWizard({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => exit.close(onClose)}
+                  onClick={backToChoice ?? (() => exit.close(onClose))}
                 >
-                  {t('common.cancel')}
+                  {backToChoice
+                    ? t('accounts.wizard.back')
+                    : t('common.cancel')}
                 </Button>
               )}
               <Button type="submit" variant="secondary" disabled={saving}>

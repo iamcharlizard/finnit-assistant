@@ -11,8 +11,8 @@ import { Button } from '@finnit/ui/components/ui/button';
 import { EmptyState } from '@/components/finance/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { useNotificationActions } from '@/hooks/use-notification-actions';
-import { todayKey } from '@/lib/finance/dates';
-import type { Connection } from '@/lib/finance/types';
+import { todayKey } from '@finnit/core/finance/dates';
+import type { Connection } from '@finnit/core/finance/types';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import {
@@ -23,7 +23,7 @@ import {
   type NotificationFilter,
   type NotificationItem,
   type NotificationPage,
-} from '@/lib/notifications/view';
+} from '@finnit/core/notifications/view';
 import { NotificationRow } from './notification-row';
 
 /** /notifications: every notification, all or unread, with "Cargar más". */

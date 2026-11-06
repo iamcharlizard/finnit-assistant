@@ -10,7 +10,7 @@ import {
 } from '@finnit/ui/components/ui/combobox';
 import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
-import type { BudgetErrorCode, CapRow } from '@/lib/budgets/form';
+import type { BudgetErrorCode, CapRow } from '@finnit/core/budgets/form';
 
 /** One cap in the budget dialog: category, amount and a remove button. */
 export function CapField({

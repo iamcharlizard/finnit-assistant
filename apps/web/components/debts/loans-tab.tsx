@@ -3,9 +3,9 @@
 import { CalendarClock, Landmark, Wallet } from 'lucide-react';
 
 import { SummaryCard } from '@/components/recurring/summary-card';
-import type { BudgetCategory } from '@/lib/budgets/types';
-import type { ApiDebtInsights } from '@/lib/debts/types';
-import type { DebtsView } from '@/lib/debts/view';
+import type { BudgetCategory } from '@finnit/core/budgets/types';
+import type { ApiDebtInsights } from '@finnit/core/debts/types';
+import type { DebtsView } from '@finnit/core/debts/view';
 import { useLocalizer } from '@/lib/i18n/client';
 import { DebtList } from './debt-list';
 import { DebtInsights } from './insights/debt-insights';

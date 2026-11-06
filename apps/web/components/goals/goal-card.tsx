@@ -3,7 +3,7 @@ import { CalendarDays, ChevronRight, ChartLine } from 'lucide-react';
 
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { GoalCardView } from '@/lib/goals/view';
+import type { GoalCardView } from '@finnit/core/goals/view';
 import { GoalStatusBadge } from './goal-status-badge';
 import { ProgressRing } from './progress-ring';
 

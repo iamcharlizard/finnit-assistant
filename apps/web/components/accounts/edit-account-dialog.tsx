@@ -20,8 +20,11 @@ import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 import { Label } from '@finnit/ui/components/ui/label';
 import { Switch } from '@finnit/ui/components/ui/switch';
 
-import { accountErrorMessage, saveAccountChanges } from '@/lib/accounts/api';
-import { bankChoiceOf } from '@/lib/accounts/banks';
+import {
+  accountErrorMessage,
+  saveAccountChanges,
+} from '@finnit/core/accounts/api';
+import { bankChoiceOf } from '@finnit/core/accounts/banks';
 import {
   NICKNAME_MAX_LENGTH,
   buildMetadataPatch,
@@ -31,8 +34,8 @@ import {
   type AccountEditForm,
   type ErrorCode,
   type FormErrors,
-} from '@/lib/accounts/form';
-import { cardPreview, type AccountSummary } from '@/lib/accounts/view';
+} from '@finnit/core/accounts/form';
+import { cardPreview, type AccountSummary } from '@finnit/core/accounts/view';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import { ArchiveAccountButton } from './archive-account-button';
@@ -273,14 +276,20 @@ export function EditAccountDialog({
           ) : null}
 
           <DialogFooter className="sm:justify-between">
-            <ArchiveAccountButton
-              accountId={account.id}
-              label={account.label}
-              archived={account.archived}
-              disabled={saving}
-              onDone={(archived) => exit.after(onSaved)({ archived })}
-              onError={setSubmitError}
-            />
+            {initial.defaultCash ? (
+              <p className="flex items-center gap-1.5 text-xs text-on-surface-variant">
+                {t('accounts.editDialog.defaultCashNote')}
+              </p>
+            ) : (
+              <ArchiveAccountButton
+                accountId={account.id}
+                label={account.label}
+                archived={account.archived}
+                disabled={saving}
+                onDone={(archived) => exit.after(onSaved)({ archived })}
+                onError={setSubmitError}
+              />
+            )}
             <div className="flex flex-col-reverse gap-2 sm:flex-row">
               <DialogClose asChild>
                 <Button type="button" variant="outline" disabled={saving}>

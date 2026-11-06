@@ -11,11 +11,11 @@ import { cn } from '@finnit/ui/lib/utils';
 
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import type { EntryCategory } from '@/lib/new-entry/graphql';
+import type { EntryCategory } from '@finnit/core/new-entry/graphql';
 import {
   RESOLVE_TRANSFER_SUGGESTION_MUTATION,
   type TransferSuggestionView,
-} from '@/lib/transfers/suggestions';
+} from '@finnit/core/transfers/suggestions';
 import { ConvertTransferDialog } from './convert-transfer-dialog';
 import { PaidSomeoneDialog } from './paid-someone-dialog';
 

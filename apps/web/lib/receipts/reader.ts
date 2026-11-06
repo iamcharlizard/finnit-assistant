@@ -1,4 +1,4 @@
-import type { ReceiptImport, ReceiptStatus } from './graphql';
+import type { ReceiptImport, ReceiptStatus } from '@finnit/core/receipts/graphql';
 
 /** What the reader follows: a receipt, or any import read the same way. */
 export interface ReadableImport {

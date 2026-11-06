@@ -10,7 +10,7 @@ import { PageHeader } from '@/components/page-header';
 import {
   historyQuery,
   type HistoryFilters as Filters,
-} from '@/lib/history/filters';
+} from '@finnit/core/history/filters';
 import type { HistoryData } from '@/lib/history/load';
 
 export function HistoryScreen({

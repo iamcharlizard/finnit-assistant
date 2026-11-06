@@ -1,10 +1,10 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { GraphqlRequestError, NETWORK_ERROR } from '@/lib/graphql/client';
-import { testLocalizer } from '@/lib/i18n/testing';
-import { duplicateCheck, planForDuplicateAnswer } from './duplicates';
-import { createErrorKey, uploadErrorKey } from './errors';
+import { GraphqlRequestError, NETWORK_ERROR } from '@finnit/core/graphql/request';
+import { testLocalizer } from '@finnit/core/i18n/testing';
+import { duplicateCheck, planForDuplicateAnswer } from '@finnit/core/new-entry/duplicates';
+import { createErrorKey, uploadErrorKey } from '@finnit/core/new-entry/errors';
 import {
   applySuggestedCategory,
   buildTransactionInput,
@@ -19,12 +19,12 @@ import {
   validateEntry,
   validateTransfer,
   type EntryDraft,
-} from './form';
+} from '@finnit/core/new-entry/form';
 import type {
   EntryAccount,
   EntryCategory,
   SimilarTransaction,
-} from './graphql';
+} from '@finnit/core/new-entry/graphql';
 import {
   accountOptionLabel,
   accountOptions,
@@ -32,7 +32,7 @@ import {
   isCardPayment,
   transferSources,
   transferTargets,
-} from './options';
+} from '@finnit/core/new-entry/options';
 import { attachmentUploadUrl } from './upload';
 
 const TODAY = '2026-10-13';

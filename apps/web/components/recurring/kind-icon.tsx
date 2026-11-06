@@ -1,9 +1,9 @@
 import { cn } from '@finnit/ui/lib/utils';
 
-import { ICON_COLORS } from '@/lib/finance/categories';
+import { ICON_COLORS } from '@finnit/core/finance/categories';
 import { CATEGORY_ICONS } from '@/lib/finance/category-icons';
-import { recurringKindIcon } from '@/lib/finance/payments';
-import type { RecurringKind } from '@/lib/finance/types';
+import { recurringKindIcon } from '@finnit/core/finance/payments';
+import type { RecurringKind } from '@finnit/core/finance/types';
 
 /** The kind of a recurring expense as a colored icon tile. */
 export function KindIcon({

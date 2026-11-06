@@ -2,7 +2,7 @@
 
 import { Input } from '@finnit/ui/components/ui/input';
 
-import { PIN_MAX, pinInput } from '@/lib/privacy/pin';
+import { PIN_MAX, pinInput } from '@finnit/core/privacy/pin';
 
 /** A masked numeric field for the privacy PIN (digits only). */
 export function PinField({

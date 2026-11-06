@@ -10,7 +10,7 @@ import {
 
 import { Badge } from '@finnit/ui/components/ui/badge';
 
-import type { GoalStatus } from '@/lib/goals/status';
+import type { GoalStatus } from '@finnit/core/goals/status';
 
 const STYLE: Record<
   GoalStatus,

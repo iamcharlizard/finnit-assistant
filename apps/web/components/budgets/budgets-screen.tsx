@@ -19,14 +19,14 @@ import {
   copyBudget,
   deleteBudget,
   type BudgetTarget,
-} from '@/lib/budgets/api';
+} from '@finnit/core/budgets/api';
 import {
   emptyBudgetForm,
   formOfBudget,
   formOfSuggestions,
   type BudgetForm,
-} from '@/lib/budgets/form';
-import type { BudgetsView } from '@/lib/budgets/view';
+} from '@finnit/core/budgets/form';
+import type { BudgetsView } from '@finnit/core/budgets/view';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import { AlertsList } from './alerts-list';

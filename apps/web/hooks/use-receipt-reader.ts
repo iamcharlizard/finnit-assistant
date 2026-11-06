@@ -4,7 +4,7 @@ import { gql } from '@/lib/graphql/client';
 import {
   RECEIPT_IMPORT_QUERY,
   type ReceiptImport,
-} from '@/lib/receipts/graphql';
+} from '@finnit/core/receipts/graphql';
 import { uploadReceipt } from '@/lib/receipts/upload';
 import { useImportReader } from './use-import-reader';
 

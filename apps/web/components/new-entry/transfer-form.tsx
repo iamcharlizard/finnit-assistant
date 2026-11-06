@@ -9,20 +9,20 @@ import { Combobox } from '@finnit/ui/components/ui/combobox';
 import { DatePicker } from '@finnit/ui/components/ui/date-picker';
 import { Input } from '@finnit/ui/components/ui/input';
 
-import { creditOwed } from '@/lib/finance/accounts';
-import { todayKey } from '@/lib/finance/dates';
-import { formatMoney } from '@/lib/finance/money';
+import { creditOwed } from '@finnit/core/finance/accounts';
+import { todayKey } from '@finnit/core/finance/dates';
+import { formatMoney } from '@finnit/core/finance/money';
 import {
   currencyOf,
   type TransferDraft,
   type TransferErrors,
-} from '@/lib/new-entry/form';
-import type { EntryAccount } from '@/lib/new-entry/graphql';
+} from '@finnit/core/new-entry/form';
+import type { EntryAccount } from '@finnit/core/new-entry/graphql';
 import {
   isCardPayment,
   transferSources,
   transferTargets,
-} from '@/lib/new-entry/options';
+} from '@finnit/core/new-entry/options';
 import { AmountField } from './amount-field';
 
 /** Transferencia between the user's accounts; into a credit card it is a card payment. */

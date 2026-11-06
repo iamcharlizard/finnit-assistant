@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 
 import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
-import type { ManualAccountForm } from '@/lib/accounts/form';
+import type { ManualAccountForm } from '@finnit/core/accounts/form';
 import { CreditTermsFields } from './credit-terms-fields';
 
 /** Step 3: today's balance, or a card's debt, limit and dates. */

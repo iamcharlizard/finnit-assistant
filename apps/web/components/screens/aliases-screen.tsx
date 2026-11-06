@@ -22,12 +22,12 @@ import {
   deleteAlias,
   deleteRule,
   setAliasActive,
-} from '@/lib/aliases/api';
+} from '@finnit/core/aliases/api';
 import type { AliasesData } from '@/lib/aliases/load';
-import type { ApiMerchantAlias, ApiMerchantRule } from '@/lib/aliases/types';
+import type { ApiMerchantAlias, ApiMerchantRule } from '@finnit/core/aliases/types';
 import { gql } from '@/lib/graphql/client';
 import { PrivacyUnlockDialog } from '@/components/privacy/privacy-unlock-dialog';
-import { isPrivacyLocked } from '@/lib/privacy/pin';
+import { isPrivacyLocked } from '@finnit/core/privacy/pin';
 import { useLocalizer } from '@/lib/i18n/client';
 
 type DialogState = { alias: ApiMerchantAlias | null } | null;

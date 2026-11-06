@@ -26,6 +26,7 @@ import {
 } from './merchant-rules.service';
 import { MerchantAliasesService } from './merchant-aliases.service';
 import { buildHistoryIndex, categoryFromHistory } from './history-category';
+import { CATEGORIZABLE_TYPES, categorizableWhere } from './categorizable';
 import {
   SimilarCategory,
   SimilarCategorySource,
@@ -73,22 +74,8 @@ export function longestWord(text: string | null): string | null {
 export function uncategorizedWhere(
   userId: string,
 ): Prisma.TransactionWhereInput {
-  return {
-    userId,
-    categoryId: null,
-    type: { in: CATEGORIZABLE_TYPES },
-    OR: [
-      { transferSuggestion: { is: null } },
-      { transferSuggestion: { status: { not: 'pending' } } },
-    ],
-  };
+  return { userId, categoryId: null, ...categorizableWhere() };
 }
-
-/** Movement types that take a category. */
-const CATEGORIZABLE_TYPES: TransactionType[] = [
-  TransactionType.expense,
-  TransactionType.income,
-];
 
 const AI_PROMPT = `You categorize the bank movements of a Mexican user for a personal-finance app.
 The input is JSON: "movements" (each with a ref, the merchant or name as shown to the user, the amount and its type: expense or income) and "categories" (the user's categories: ref and name, "Parent > Child" for subcategories).

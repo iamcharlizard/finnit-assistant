@@ -22,12 +22,12 @@ import {
   balanceDifference,
   balanceFromTyped,
   setAccountBalance,
-} from '@/lib/accounts/api';
-import type { AccountSummary } from '@/lib/accounts/view';
-import { formatMoney } from '@/lib/finance/money';
+} from '@finnit/core/accounts/api';
+import type { AccountSummary } from '@finnit/core/accounts/view';
+import { formatMoney } from '@finnit/core/finance/money';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { parseAmount } from '@/lib/new-entry/form';
+import { parseAmount } from '@finnit/core/new-entry/form';
 
 /**
  * Sets an account's balance to what the bank shows (credit cards: what is

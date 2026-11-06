@@ -17,7 +17,7 @@ import { cn } from '@finnit/ui/lib/utils';
 import type {
   NotificationItem,
   NotificationType,
-} from '@/lib/notifications/view';
+} from '@finnit/core/notifications/view';
 
 const ICONS: Record<NotificationType, LucideIcon> = {
   recurring: CalendarClock,

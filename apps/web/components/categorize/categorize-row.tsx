@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 
 import { TransactionListCard } from '@/components/finance/transaction-card';
-import type { CategorizeRow as Row } from '@/lib/categorize/view';
+import type { CategorizeRow as Row } from '@finnit/core/categorize/view';
 import { SuggestionChip } from './suggestion-chip';
 
 /**

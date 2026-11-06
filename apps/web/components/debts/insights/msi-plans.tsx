@@ -6,7 +6,7 @@ import { CreditCard } from 'lucide-react';
 
 import { Progress } from '@finnit/ui/components/ui/progress';
 
-import type { MsiRow } from '@/lib/debts/insights-view';
+import type { MsiRow } from '@finnit/core/debts/insights-view';
 
 /**
  * Card purchases in interest-free (or with-interest) monthly installments.

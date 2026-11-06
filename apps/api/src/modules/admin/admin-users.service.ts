@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ensureDefaultCashAccount } from '../accounts/default-cash';
 import { Prisma, UserRole } from '@finnit/database';
 import type { User as UserRow } from '@finnit/database';
 import { PrismaService } from '../../services/prisma.service';
@@ -101,6 +102,7 @@ export class AdminUsersService {
           },
           include: { invitedBy: { select: { name: true } } },
         });
+        await ensureDefaultCashAccount(tx, created.id, created.locale);
         return created;
       })
       .catch((error: unknown) => {

@@ -28,13 +28,13 @@ import {
 
 import { SwitchField } from '@/components/finance/switch-field';
 import { SelectField } from '@/components/recurring/select-field';
-import { budgetCategoryOptions } from '@/lib/budgets/options';
-import type { BudgetCategory } from '@/lib/budgets/types';
+import { budgetCategoryOptions } from '@finnit/core/budgets/options';
+import type { BudgetCategory } from '@finnit/core/budgets/types';
 import {
   addDebtCharge,
   debtErrorMessage,
   updateDebtCharge,
-} from '@/lib/debts/api';
+} from '@finnit/core/debts/api';
 import {
   asksFirstPayment,
   asksPaidInstallments,
@@ -46,20 +46,20 @@ import {
   type ChargeErrorCode,
   type ChargeForm,
   type ChargeFormErrors,
-} from '@/lib/debts/charge-form';
-import { loanAccounts } from '@/lib/debts/detail-view';
-import { hasErrors } from '@/lib/debts/form';
+} from '@finnit/core/debts/charge-form';
+import { loanAccounts } from '@finnit/core/debts/detail-view';
+import { hasErrors } from '@finnit/core/debts/form';
 import {
   destinationOfMethod,
   type ApiDebt,
   type ApiDebtCharge,
-} from '@/lib/debts/types';
-import type { DayKey } from '@/lib/finance/dates';
-import { DEFAULT_CURRENCY, formatMoney } from '@/lib/finance/money';
-import type { ApiAccount } from '@/lib/finance/types';
+} from '@finnit/core/debts/types';
+import type { DayKey } from '@finnit/core/finance/dates';
+import { DEFAULT_CURRENCY, formatMoney } from '@finnit/core/finance/money';
+import type { ApiAccount } from '@finnit/core/finance/types';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { accountOptions } from '@/lib/new-entry/options';
+import { accountOptions } from '@finnit/core/new-entry/options';
 
 /**
  * More money on a loan: another personal loan (it may be deposited into an

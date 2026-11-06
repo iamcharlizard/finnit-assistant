@@ -11,7 +11,7 @@ import { LandingFooter } from '@/components/landing/landing-footer';
 import { LandingHeader } from '@/components/landing/landing-header';
 import { Trust } from '@/components/landing/trust';
 import { ACCESS_COOKIE } from '@/lib/auth/cookies';
-import { intlLocale } from '@/lib/i18n/locales';
+import { intlLocale } from '@finnit/core/i18n/locales';
 import { campaignSource } from '@/lib/landing/waitlist';
 import { siteUrl } from '@/lib/landing/site-url';
 

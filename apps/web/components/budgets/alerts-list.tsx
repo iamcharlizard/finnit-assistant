@@ -5,7 +5,7 @@ import { OctagonAlert, TriangleAlert } from 'lucide-react';
 
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { AlertItem } from '@/lib/budgets/view';
+import type { AlertItem } from '@finnit/core/budgets/view';
 
 /** Caps at 80% or more of their limit, the fullest first. */
 export function AlertsList({ alerts }: { alerts: AlertItem[] }) {

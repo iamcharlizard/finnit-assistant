@@ -20,12 +20,12 @@ import { Input } from '@finnit/ui/components/ui/input';
 import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
 import { SelectField } from '@/components/recurring/select-field';
-import { todayKey } from '@/lib/finance/dates';
+import { todayKey } from '@finnit/core/finance/dates';
 import {
   goalErrorMessage,
   saveGoal,
   type GoalSaveTarget,
-} from '@/lib/goals/api';
+} from '@finnit/core/goals/api';
 import {
   NAME_MAX,
   formOfGoal,
@@ -35,11 +35,11 @@ import {
   type GoalForm,
   type GoalFormErrorCode,
   type GoalFormErrors,
-} from '@/lib/goals/form';
-import type { ApiGoal } from '@/lib/goals/types';
+} from '@finnit/core/goals/form';
+import type { ApiGoal } from '@finnit/core/goals/types';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { CURRENCIES } from '@/lib/recurring/types';
+import { CURRENCIES } from '@finnit/core/recurring/types';
 
 export type GoalDialogSubject =
   | { mode: 'create' }

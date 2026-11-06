@@ -6,7 +6,7 @@ import { Landmark, Plus, Sparkles, X } from 'lucide-react';
 import { Badge } from '@finnit/ui/components/ui/badge';
 import { Button } from '@finnit/ui/components/ui/button';
 
-import type { SuggestionCard as SuggestionCardData } from '@/lib/recurring/suggestions';
+import type { SuggestionCard as SuggestionCardData } from '@finnit/core/recurring/suggestions';
 import { KindIcon } from './kind-icon';
 import { SuggestionEvidence } from './suggestion-evidence';
 

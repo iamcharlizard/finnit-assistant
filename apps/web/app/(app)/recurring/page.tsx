@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 import { RecurringScreen } from '@/components/screens/recurring-screen';
-import { todayKey } from '@/lib/finance/dates';
+import { todayKey } from '@finnit/core/finance/dates';
 import { loadRecurring } from '@/lib/recurring/load';
-import { parseDateParam, parseViewParam } from '@/lib/recurring/range';
-import { parseTabParam } from '@/lib/recurring/tabs';
+import { parseExpenseFilters } from '@finnit/core/recurring/filters';
+import { parseTabParam } from '@finnit/core/recurring/tabs';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();
@@ -15,14 +15,14 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RecurringPage({
   searchParams,
 }: PageProps<'/recurring'>) {
-  // ?month= comes from the old /calendar links.
-  const { view, date, month, tab } = await searchParams;
-  const parsedView = parseViewParam(view);
-  const parsedDate = parseDateParam({ date, month }, todayKey());
+  // Old links to the calendar (?view=, ?date=, ?tab=calendar) are
+  // redirected to /calendar in next.config.ts.
+  const params = await searchParams;
   return (
     <RecurringScreen
-      data={await loadRecurring({ view: parsedView, date: parsedDate })}
-      initialTab={parseTabParam(tab)}
+      data={await loadRecurring({ view: 'month', date: todayKey() })}
+      initialTab={parseTabParam(params.tab)}
+      initialFilters={parseExpenseFilters(params)}
     />
   );
 }

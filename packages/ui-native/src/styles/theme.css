@@ -1,0 +1,96 @@
+/*
+ * Finnit design tokens for React Native (NativeWind v5).
+ *
+ * The values are NOT here: they are the web's tokens (packages/ui/src/styles/
+ * globals.css), resolved per palette and color scheme into
+ * src/theme/tokens.generated.ts and provided at runtime by <ThemeRoot>.
+ * This file only maps them to Tailwind classes with the same names as the
+ * web (bg-card, text-on-surface-variant, text-income, border-outline…).
+ *
+ * Import it from the app's global.css, after Tailwind and nativewind/theme:
+ *   @import '@finnit/ui-native/theme.css';
+ */
+
+/* bg-income-10 & co.: the web's color/opacity classes (generated). */
+@import './tints.css';
+
+/* Scan the shared components so the app generates their classes. */
+@source '../';
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-on-background: var(--on-background);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline: var(--outline);
+  --color-primary: var(--primary);
+  --color-accent-neon: var(--accent-neon);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-ink: var(--brand-ink);
+  --color-violet-ink: var(--violet-ink);
+  --color-tertiary: var(--tertiary);
+  --color-highlight: var(--highlight);
+  --color-glass: var(--glass);
+  --color-glass-border: var(--glass-border);
+  --color-track: var(--track);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/*
+ * Line heights are ratios of the font size (44/36 → 44px), like Tailwind's
+ * own text-* sizes: react-native-css multiplies px line heights by the font
+ * size (24px → 384). For the same reason avoid `leading-<n>` classes.
+ */
+@theme inline {
+  /* Ubuntu, registered per weight by the app (see app/_layout.tsx). */
+  --font-ubuntu: 'Ubuntu';
+  --font-ubuntu-medium: 'Ubuntu Medium';
+  --font-ubuntu-bold: 'Ubuntu Bold';
+
+  /* Type scale (same as the web). */
+  --text-display-lg: 36px;
+  --text-display-lg--line-height: calc(44 / 36);
+  --text-headline-lg: 28px;
+  --text-headline-lg--line-height: calc(36 / 28);
+  --text-title-lg: 22px;
+  --text-title-lg--line-height: calc(28 / 22);
+  --text-body-md: 16px;
+  --text-body-md--line-height: calc(24 / 16);
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: calc(16 / 12);
+
+  /* Radii: the web's --radius (0.75rem) steps, and the named ones. */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-card: 24px;
+  --radius-button: 9999px;
+  --radius-chip: 12px;
+  --radius-input: 12px;
+}

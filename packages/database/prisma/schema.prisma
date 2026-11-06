@@ -344,6 +344,9 @@ model Account {
   balanceCurrent Decimal     @db.Decimal(18, 2)
   metadata       Json?
   archived       Boolean     @default(false)
+  // The user's cash account ("Efectivo"): every user has exactly one (partial
+  // unique index in SQL); it can't be deleted, archived or change type.
+  isDefaultCash  Boolean     @default(false)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

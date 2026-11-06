@@ -3,8 +3,9 @@ import { getRequestConfig } from 'next-intl/server';
 
 import { getCurrentUser } from '@/lib/auth/session';
 import { ACCESS_COOKIE } from '@/lib/auth/cookies';
-import { TIME_ZONE } from '@/lib/finance/dates';
-import { LOCALE_COOKIE, resolveLocale } from '@/lib/i18n/locales';
+import { TIME_ZONE } from '@finnit/core/finance/dates';
+import { LOCALE_COOKIE, resolveLocale } from '@finnit/core/i18n/locales';
+import { loadMessages } from '@finnit/core/i18n/messages';
 
 /**
  * next-intl without locale-prefixed URLs: each request picks its language
@@ -25,7 +26,7 @@ export default getRequestConfig(async () => {
 
   return {
     locale,
-    messages: (await import(`../messages/${locale}.json`)).default,
+    messages: await loadMessages(locale),
     timeZone: TIME_ZONE,
   };
 });

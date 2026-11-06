@@ -7,8 +7,8 @@ import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 import { cn } from '@finnit/ui/lib/utils';
 
 import { usePayoffComparison } from '@/hooks/use-payoff-comparison';
-import type { PayoffComparison } from '@/lib/debts/payoff';
-import type { DayKey } from '@/lib/finance/dates';
+import type { PayoffComparison } from '@finnit/core/debts/payoff';
+import type { DayKey } from '@finnit/core/finance/dates';
 import { StrategyColumn } from './strategy-column';
 
 /**

@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 
-import type { DebtInsightsView, LoadLevel } from '@/lib/debts/insights-view';
+import type { DebtInsightsView, LoadLevel } from '@finnit/core/debts/insights-view';
 
 const LEVEL_ICON: Record<LoadLevel, typeof Info> = {
   low: CheckCircle2,

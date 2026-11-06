@@ -6,7 +6,7 @@ import { ChevronDown } from 'lucide-react';
 
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { SuggestionCard } from '@/lib/recurring/suggestions';
+import type { SuggestionCard } from '@finnit/core/recurring/suggestions';
 
 /** The movements a suggestion was detected from, collapsed by default. */
 export function SuggestionEvidence({

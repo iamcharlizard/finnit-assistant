@@ -1,10 +1,10 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { emptyEntryDraft, type EntryDraft } from '@/lib/new-entry/form';
-import type { SimilarTransaction } from '@/lib/new-entry/graphql';
+import { emptyEntryDraft, type EntryDraft } from '@finnit/core/new-entry/form';
+import type { SimilarTransaction } from '@finnit/core/new-entry/graphql';
 import { discardWhenSettled } from './discard';
-import type { ReceiptImport, ReceiptStatus } from './graphql';
+import type { ReceiptImport, ReceiptStatus } from '@finnit/core/receipts/graphql';
 import {
   amountText,
   buildConfirmInput,
@@ -13,7 +13,7 @@ import {
   readSourceKey,
   receiptDayKey,
   receiptMatches,
-} from './prefill';
+} from '@finnit/core/receipts/prefill';
 import {
   READER_IDLE,
   RECEIPT_POLL_MAX_MS,

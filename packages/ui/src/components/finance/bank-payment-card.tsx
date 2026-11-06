@@ -11,7 +11,7 @@ import {
 } from '../../lib/color';
 import { cn } from '../../lib/utils';
 
-type CardVariant = 'platinum' | 'virtual' | 'premium' | 'stealth';
+import type { CardVariant } from '@finnit/core/ui/bank-card';
 
 interface BankPaymentCardProps {
   /** Preset look; ignored when `primaryColor` is a valid hex color. */

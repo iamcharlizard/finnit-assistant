@@ -38,7 +38,7 @@ export function DashboardWelcome({ firstName }: { firstName: string }) {
         ))}
       </ul>
       <Button asChild>
-        <Link href="/settings/banks/connect">
+        <Link href="/accounts?add=bank">
           <Plus className="size-4" /> {t('common.connectBank')}
         </Link>
       </Button>

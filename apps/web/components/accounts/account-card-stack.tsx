@@ -2,7 +2,7 @@
 
 import { cn } from '@finnit/ui/lib/utils';
 
-import type { AccountSummary } from '@/lib/accounts/view';
+import type { AccountSummary } from '@finnit/core/accounts/view';
 import { AccountCardVisual } from './account-card-visual';
 
 /** Height of a BankPaymentCard. */

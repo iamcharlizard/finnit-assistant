@@ -272,9 +272,10 @@ Detailed, verified status per feature and platform: [features.md](./features.md)
 **Implemented:**
 - **Authentication**: invitation-only (no sign-up), sign in with password or Google, refresh tokens with revocation, password reset token flow (no email delivery yet).
 - **Admin**: master admin (CLI), admins, user access management, AI models and per-feature AI settings.
-- **Web create & accounts**: "+" flow for expenses, income and transfers (card payments) with duplicate check, category suggestion and receipt upload; `/accounts` with manual accounts (debit, credit with terms, cash, savings), nickname and card design.
-- **Recurring payments screen**: `/recurring` with day/week/month calendar, payment actions, recurring expense CRUD and suggestions detected from movements (rules) and classified with AI; accept in one click or dismiss.
-- **Categorization & aliases**: bulk categorization with merchant rules learned from corrections, AI category suggestions on demand, alias rules (contains/starts with/exact/regex, private) materialized per transaction, one-off aliases.
+- **Web create & accounts**: "+" flow for expenses, income and transfers (card payments) with duplicate check, category suggestion and receipt upload; `/accounts` with "Nueva cuenta": connect the bank through Syncfy in the same dialog, or add a manual account (debit, credit with terms, cash, savings), nickname and card design. Every user has a cash account ("Efectivo") that can't be deleted or archived.
+- **Payments calendar**: `/calendar` (its own menu item) with the day/week/month calendar, card cut-off and due dates and payment actions, and a Summary tab (this month's totals; charts of the next six months by series, this month's progress, fixed spending by type and by account).
+- **Recurring payments screen**: `/recurring` with recurring expense CRUD behind a filter bar (search, status, type, account, sort; kept in the URL) and suggestions detected from movements (rules) and classified with AI; accept in one click or dismiss.
+- **Categorization & aliases**: Clasificar lists only movements that take a category (no transfers or adjustments); bulk categorization with merchant rules learned from corrections, AI category suggestions on demand, alias rules (contains/starts with/exact/regex, private) materialized per transaction, one-off aliases.
 - **Web screens**: transaction detail (edit, attachments, alias, reveal original), notifications panel and page, statement upload and review, budgets, debts (month-by-month payoff simulation), goals and the what-if simulator.
 - **Receipts (OCR)**: internal OCR service (RapidOCR), receipt upload with CFDI QR / OCR rules / AI-text fallback, review and confirm or attach to an existing movement; scanned statements read with OCR.
 - **i18n**: categories stored in English with es/en translations (Google Cloud Translation, AI fallback); user language preference.
@@ -300,10 +301,12 @@ Detailed, verified status per feature and platform: [features.md](./features.md)
 
 **Not implemented:** CSV export, email delivery, weekly reconciliation review.
 
-### 🟡 **MOBILE APP (Expo) — UI with mock data**
-- Expo Router app (`apps/finnit-app`) with login, dashboard, history, analytics, calendar, cards and settings screens (NativeWind v5).
-- Login connected to the `signIn` mutation (urql + SecureStore).
-- Pending: replace mock data with GraphQL queries, signup, token refresh, route guard, create forms.
+### 🟡 **MOBILE APP (Expo) — real data, mirrors the web's mobile version**
+- `apps/finnit-app`: Expo SDK 58 (React Native 0.88, React 19.3), NativeWind v5; native projects generated with `expo prebuild` (CNG).
+- Shared code: `@finnit/core` (view builders, formatting, forms, GraphQL documents and `api.ts` runners, nav, messages) is used by the web and the app; `@finnit/ui-native` has the web's component names and props and its design tokens (4 palettes × light/dark, generated from `@finnit/ui`'s CSS, checked by a test).
+- Session with token refresh and a route guard, Spanish and English (account language, device fallback, localized permission prompts), light/dark/system, the admin palette preview.
+- Screens with real data: dashboard, movements (filters, pagination), movement detail and edit, new movement (expense, income, transfer, receipt scan), accounts (new account: Syncfy or manual), analytics, payments calendar (calendar and summary charts), recurring payments (filters, suggestions), notifications, budgets, debts, goals, simulator, categorize, statements, settings, categories, automatic names.
+- Pending (see `docs/features.md` → App móvil): screenshot import, creating/editing recurring payments, debts and accounts, statement reconciliation, categories and automatic names editors, profile editing; not yet tested signed in on a device.
 
 ### 🟡 **WEB APP (Next.js) — UI with mock data**
 - `apps/web`: Next.js 16 App Router with the same screens as mobile (`/login`, `/dashboard`, `/history`, `/analytics`, `/calendar`, `/cards`, `/settings`), responsive layout (sidebar on desktop, bottom nav on small screens) and light/dark theme.

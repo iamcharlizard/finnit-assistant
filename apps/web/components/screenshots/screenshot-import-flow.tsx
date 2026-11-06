@@ -10,7 +10,7 @@ import { ReceiptReadFailed } from '@/components/receipts/receipt-read-failed';
 import { ReceiptReading } from '@/components/receipts/receipt-reading';
 import { useImportReader } from '@/hooks/use-import-reader';
 import { gql } from '@/lib/graphql/client';
-import type { EntryAccount, EntryCategory } from '@/lib/new-entry/graphql';
+import type { EntryAccount, EntryCategory } from '@finnit/core/new-entry/graphql';
 import { leftoverReceiptId } from '@/lib/receipts/reader';
 import { uploadImage } from '@/lib/receipts/upload';
 import {
@@ -21,7 +21,7 @@ import {
   UPDATE_SCREENSHOT_LINE_MUTATION,
   type ScreenshotImport,
   type ScreenshotLineChange,
-} from '@/lib/screenshots/graphql';
+} from '@finnit/core/screenshots/graphql';
 import { ScreenshotReview } from './screenshot-review';
 
 export type ScreenshotPhase = 'capture' | 'reading' | 'failed' | 'review';

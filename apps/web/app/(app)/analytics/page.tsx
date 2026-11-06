@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { AnalyticsScreen } from '@/components/screens/analytics-screen';
 import { currentMonth, loadAnalytics } from '@/lib/analytics/load';
-import { formatMonthParam, parseMonthParam } from '@/lib/finance/dates';
+import { formatMonthParam, parseMonthParam } from '@finnit/core/finance/dates';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();

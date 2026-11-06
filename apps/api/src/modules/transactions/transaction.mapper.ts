@@ -269,6 +269,7 @@ export function mapTransaction(
         balanceCurrent: Number(transaction.account.balanceCurrent),
         metadata: transaction.account.metadata as AccountMetadata,
         archived: transaction.account.archived,
+        isDefaultCash: transaction.account.isDefaultCash ?? false,
         createdAt: transaction.account.createdAt,
         updatedAt: transaction.account.updatedAt,
       },

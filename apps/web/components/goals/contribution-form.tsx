@@ -8,15 +8,15 @@ import { Button } from '@finnit/ui/components/ui/button';
 import { DatePicker } from '@finnit/ui/components/ui/date-picker';
 import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
-import { todayKey } from '@/lib/finance/dates';
-import { addContribution, goalErrorMessage } from '@/lib/goals/api';
+import { todayKey } from '@finnit/core/finance/dates';
+import { addContribution, goalErrorMessage } from '@finnit/core/goals/api';
 import {
   hasErrors,
   newContributionForm,
   validateContributionForm,
   type ContributionErrors,
   type ContributionForm as Form,
-} from '@/lib/goals/form';
+} from '@finnit/core/goals/form';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 

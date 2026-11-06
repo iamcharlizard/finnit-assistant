@@ -2,8 +2,8 @@ import { Loader2 } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
 
-import type { StatementStatus } from '@/lib/statements/types';
-import { STATUS_BADGE, isWorking } from '@/lib/statements/view';
+import type { StatementStatus } from '@finnit/core/statements/types';
+import { STATUS_BADGE, isWorking } from '@finnit/core/statements/view';
 
 /** uploaded / processing / needs_review / confirmed / failed. */
 export function StatementStatusBadge({

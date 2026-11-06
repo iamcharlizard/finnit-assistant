@@ -12,7 +12,7 @@ import {
   ToggleGroupItem,
 } from '@finnit/ui/components/ui/toggle-group';
 
-import type { DesignMode, DesignValue } from '@/lib/accounts/form';
+import type { DesignMode, DesignValue } from '@finnit/core/accounts/form';
 
 const MODES: DesignMode[] = ['preset', 'solid', 'gradient'];
 

@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 
-import type { ResultView } from '@/lib/simulator/view';
+import type { ResultView } from '@finnit/core/simulator/view';
 import { StatTile } from './stat-tile';
 
 /** Key numbers: end balances, the difference and when the balance goes negative. */

@@ -21,16 +21,16 @@ import {
   DELETE_CATEGORY_MUTATION,
   categoryErrorMessage,
   categoryReferences,
-} from '@/lib/categories/api';
-import type { SettingsCategory } from '@/lib/categories/types';
+} from '@finnit/core/categories/api';
+import type { SettingsCategory } from '@finnit/core/categories/types';
 import {
   isInUse,
   moveTargets,
   type CategoryReferences,
-} from '@/lib/categories/view';
+} from '@finnit/core/categories/view';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { categoryOptions } from '@/lib/new-entry/options';
+import { categoryOptions } from '@finnit/core/new-entry/options';
 
 /**
  * Deletes one of the user's categories. When something uses it (movements,

@@ -9,7 +9,7 @@ import { cn } from '@finnit/ui/lib/utils';
 import {
   TRACKING_MODES,
   type RecurringTrackingMode,
-} from '@/lib/recurring/types';
+} from '@finnit/core/recurring/types';
 
 const ICONS: Record<RecurringTrackingMode, LucideIcon> = {
   automatic: Zap,

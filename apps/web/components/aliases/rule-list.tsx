@@ -5,7 +5,7 @@ import { ArrowRight, Trash2 } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 
-import type { ApiMerchantRule } from '@/lib/aliases/types';
+import type { ApiMerchantRule } from '@finnit/core/aliases/types';
 
 /** "Reglas de categoría aprendidas": merchant → category, with its uses. */
 export function RuleList({

@@ -1,0 +1,14 @@
+{
+  "extends": "@finnit/typescript-config/react-library.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["es2022"],
+    "types": ["node", "react-native-css/types"],
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src", "scripts"],
+  "exclude": ["node_modules"]
+}

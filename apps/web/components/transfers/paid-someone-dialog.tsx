@@ -20,12 +20,12 @@ import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import type { EntryCategory } from '@/lib/new-entry/graphql';
-import { categoryOptions } from '@/lib/new-entry/options';
+import type { EntryCategory } from '@finnit/core/new-entry/graphql';
+import { categoryOptions } from '@finnit/core/new-entry/options';
 import {
   RESOLVE_TRANSFER_SUGGESTION_MUTATION,
   type TransferSuggestionView,
-} from '@/lib/transfers/suggestions';
+} from '@finnit/core/transfers/suggestions';
 import { RememberField } from './convert-transfer-dialog';
 
 const CONCEPT_MAX = 80;

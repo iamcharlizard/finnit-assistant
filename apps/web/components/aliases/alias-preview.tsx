@@ -5,8 +5,8 @@ import { useTranslations } from 'next-intl';
 import { Eye } from 'lucide-react';
 
 import type { AliasPreviewState } from '@/hooks/use-alias-preview';
-import { dayKeyOf, shortDate } from '@/lib/finance/dates';
-import { formatMoney } from '@/lib/finance/money';
+import { dayKeyOf, shortDate } from '@finnit/core/finance/dates';
+import { formatMoney } from '@finnit/core/finance/money';
 import { useLocalizer } from '@/lib/i18n/client';
 
 /** "Coincide con N movimientos" and up to 20 samples of the original text. */

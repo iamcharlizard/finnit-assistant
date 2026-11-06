@@ -3,13 +3,13 @@
 import * as React from 'react';
 
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
-import { loadPayoffComparison } from '@/lib/debts/api';
+import { loadPayoffComparison } from '@finnit/core/debts/api';
 import {
   buildPayoffComparison,
   parseExtraPayment,
   type PayoffComparison,
-} from '@/lib/debts/payoff';
-import type { DayKey } from '@/lib/finance/dates';
+} from '@finnit/core/debts/payoff';
+import type { DayKey } from '@finnit/core/finance/dates';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 

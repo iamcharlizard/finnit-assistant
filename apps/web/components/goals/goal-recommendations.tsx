@@ -6,7 +6,7 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 
-import type { GoalDetailView } from '@/lib/goals/view';
+import type { GoalDetailView } from '@finnit/core/goals/view';
 
 /** Tips for this goal from goalRecommendations and its due date. */
 export function GoalRecommendations({ detail }: { detail: GoalDetailView }) {

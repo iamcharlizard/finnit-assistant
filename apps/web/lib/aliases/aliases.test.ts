@@ -33,8 +33,11 @@ const alias: ApiMerchantAlias = {
   displayName: 'Tacos Don Güero',
   category: { id: 'food', name: 'Comida', parentId: null },
   isPrivate: false,
+  isProtected: false,
+  locked: false,
   priority: 5,
   active: true,
+  transferAccountId: null,
   matchCount: 3,
   createdAt: '2026-10-12T00:00:00.000Z',
 };
@@ -141,6 +144,8 @@ describe('alias form', () => {
         isPrivate: true,
         priority: 10,
         active: true,
+        transferAccountId: null,
+        isProtected: false,
       },
     );
     assert.deepEqual(buildAliasInput(formOfAlias(alias)), {
@@ -151,6 +156,8 @@ describe('alias form', () => {
       isPrivate: false,
       priority: 5,
       active: true,
+      transferAccountId: null,
+      isProtected: false,
     });
     assert.deepEqual(withActive(alias, false), {
       ...buildAliasInput(formOfAlias(alias)),
@@ -177,6 +184,8 @@ describe('alias preview', () => {
         isPrivate: false,
         priority: 0,
         active: true,
+        transferAccountId: null,
+        isProtected: false,
       },
     );
   });
@@ -230,7 +239,33 @@ describe('alias api', () => {
         new GraphqlRequestError('Alias not found', 'NOT_FOUND', true),
         t,
       ),
-      'Ese alias ya no existe.',
+      'Ese nombre automático ya no existe.',
     );
+  });
+
+  it("keeps a rule's transfer account when it is edited or switched off", () => {
+    const transfer = { ...alias, transferAccountId: 'acc-nu' };
+    assert.equal(
+      buildAliasInput(formOfAlias(transfer)).transferAccountId,
+      'acc-nu',
+    );
+    assert.equal(withActive(transfer, false).transferAccountId, 'acc-nu');
+  });
+
+  it('makes a protected rule private, and starts a new one from given values', () => {
+    const form = newAliasForm({
+      pattern: 'KSK*VID ONLYFANSFPA',
+      displayName: 'Suscripción digital',
+      isProtected: true,
+    });
+    assert.equal(form.matchType, 'contains');
+    const input = buildAliasInput(form);
+    assert.equal(input.isProtected, true);
+    assert.equal(input.isPrivate, true);
+  });
+
+  it('a locked rule has no pattern to fill the form with', () => {
+    const locked = { ...alias, pattern: null, isProtected: true, locked: true };
+    assert.equal(formOfAlias(locked).pattern, '');
   });
 });

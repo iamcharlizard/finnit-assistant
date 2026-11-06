@@ -22,6 +22,7 @@ import { AiModule } from './ai/ai.module';
 import { AdminModule } from './admin/admin.module';
 import { BankConnectionsModule } from './bank-connections/bank-connections.module';
 import { CategorizationModule } from './categorization/categorization.module';
+import { PrivacyModule } from './privacy/privacy.module';
 import { ReceiptsModule } from './receipts/receipts.module';
 import { ScreenshotsModule } from './screenshots/screenshots.module';
 import { PrismaService } from '../services/prisma.service';
@@ -65,6 +66,7 @@ function envFlag(name: string, fallback: boolean): boolean {
     AdminModule,
     BankConnectionsModule,
     CategorizationModule,
+    PrivacyModule,
     ReceiptsModule,
     ScreenshotsModule,
   ],

@@ -340,8 +340,10 @@ export class TransferSuggestionsService {
         ? mapTransaction(row.counterpartTransaction)
         : null,
       counterpartAccountId: row.counterpartAccountId,
-      suggestedPattern:
-        aliasPatternFor(text) || (text ?? '').trim().slice(0, 200),
+      // A protected rule's movement doesn't give its bank text away.
+      suggestedPattern: row.transaction.alias?.isProtected
+        ? ''
+        : aliasPatternFor(text) || (text ?? '').trim().slice(0, 200),
       createdAt: row.createdAt,
     };
   }

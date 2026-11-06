@@ -22,7 +22,13 @@ import {
   toApiFilters,
   type CategorizeFilters,
 } from './filters';
-import { renameFormOf, renameInput, validateRename } from './rename';
+import {
+  nameSubjectOf,
+  privateByRule,
+  renameFormOf,
+  renameInput,
+  validateRename,
+} from './rename';
 import {
   categorizeBatches,
   isAllSelected,
@@ -343,13 +349,13 @@ describe('selection', () => {
   });
 });
 
-describe('rename (one-off alias)', () => {
-  it('starts empty unless the movement already has its own name', () => {
+describe('own name of a movement', () => {
+  it('starts from its own name and own privacy, not the automatic name', () => {
     assert.deepEqual(
       renameFormOf({
         displayName: 'OXXO',
         hasOwnAlias: false,
-        isPrivate: false,
+        ownPrivate: false,
       }),
       { displayName: '', isPrivate: false },
     );
@@ -357,33 +363,54 @@ describe('rename (one-off alias)', () => {
       renameFormOf({
         displayName: 'Regalo',
         hasOwnAlias: true,
-        isPrivate: true,
+        ownPrivate: true,
       }),
       { displayName: 'Regalo', isPrivate: true },
     );
+    // Private without a name: saving keeps it private.
+    assert.deepEqual(
+      renameFormOf({
+        displayName: 'Movimiento privado',
+        hasOwnAlias: false,
+        ownPrivate: true,
+      }),
+      { displayName: '', isPrivate: true },
+    );
   });
 
-  it('validates and builds the input', () => {
-    assert.equal(
-      validateRename({ displayName: '  ', isPrivate: false }),
-      'required',
-    );
+  it('allows an empty name (removes it) and keeps privacy as chosen', () => {
+    assert.equal(validateRename({ displayName: '  ', isPrivate: false }), null);
     assert.equal(
       validateRename({ displayName: 'x'.repeat(81), isPrivate: false }),
       'tooLong',
-    );
-    assert.equal(
-      validateRename({ displayName: 'Cena', isPrivate: true }),
-      null,
     );
     assert.deepEqual(renameInput({ displayName: ' Cena ', isPrivate: true }), {
       displayName: 'Cena',
       isPrivate: true,
     });
-    assert.deepEqual(renameInput('remove'), {
+    assert.deepEqual(renameInput({ displayName: '', isPrivate: true }), {
       displayName: null,
-      isPrivate: false,
+      isPrivate: true,
     });
+  });
+
+  it('tells privacy from the rule apart from its own', () => {
+    const rule = {
+      id: 'r',
+      displayName: 'Suscripción',
+      isPrivate: false,
+      isProtected: true,
+    };
+    const subject = nameSubjectOf({
+      id: 't1',
+      displayName: 'Suscripción',
+      isPrivate: true,
+      ownPrivate: false,
+      aliasRule: rule,
+    });
+    assert.equal(subject.ownPrivate, false);
+    assert.equal(privateByRule(subject), true);
+    assert.equal(privateByRule({ rule: null }), false);
   });
 });
 

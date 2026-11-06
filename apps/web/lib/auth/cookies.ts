@@ -1,3 +1,4 @@
+import { PRIVACY_COOKIE } from '@/lib/privacy/cookie';
 import { tokenExpiry } from './jwt';
 
 /**
@@ -72,4 +73,6 @@ export function clearSession(cookies: CookieWriter): void {
   cookies.delete(ACCESS_COOKIE);
   cookies.delete(REFRESH_COOKIE);
   cookies.delete(REMEMBER_COOKIE);
+  // A privacy unlock never outlives the session.
+  cookies.delete(PRIVACY_COOKIE);
 }

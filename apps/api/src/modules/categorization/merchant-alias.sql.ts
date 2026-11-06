@@ -60,6 +60,9 @@ export function aliasMatchSql(
 }
 
 /**
+ * A protected rule (privacy PIN) always wins over the others, so a new rule
+ * can't reveal which movements it names.
+ *
  * Recomputes Transaction.aliasId for the user's movements (all, or only
  * `transactionIds`): the active alias with the highest priority (then the
  * newest) whose pattern matches. A matched movement without a category
@@ -97,7 +100,7 @@ FROM (
     SELECT a."id", a."categoryId"
     FROM "MerchantAlias" AS a
     WHERE a."userId" = t2."userId" AND a."active" AND ${match}
-    ORDER BY a."priority" DESC, a."createdAt" DESC, a."id" DESC
+    ORDER BY a."isProtected" DESC, a."priority" DESC, a."createdAt" DESC, a."id" DESC
     LIMIT 1
   ) AS a ON true
   WHERE t2."userId" = ${userId} ${scope}
@@ -113,13 +116,29 @@ export interface AliasPreviewRow {
   amount: Prisma.Decimal | number | string;
   currency: string;
   total: bigint | number;
+  own_named: bigint | number;
+  other_rule: bigint | number;
 }
 
-/** The user's movements a candidate alias would match: newest first, with the total count. */
+/**
+ * The user's movements a candidate alias would match: newest first, with
+ * the total count, how many have a one-off name and how many another rule
+ * with a higher priority would keep (`aliasId`: the rule being edited).
+ */
 export function previewAliasSql(
   userId: string,
   matchType: AliasMatchType,
   pattern: string,
+  {
+    priority = 0,
+    aliasId = null,
+    hideProtected = true,
+  }: {
+    priority?: number;
+    aliasId?: string | null;
+    /** Leave out movements of protected rules (no privacy PIN entered). */
+    hideProtected?: boolean;
+  } = {},
 ): Prisma.Sql {
   const match = aliasMatchSql(
     matchType,
@@ -128,9 +147,17 @@ export function previewAliasSql(
   );
   return Prisma.sql`
 SELECT t."id", ${originalTextSql('t')} AS original, t."txnDate", t."amount", t."currency",
-       count(*) OVER () AS total
+       count(*) OVER () AS total,
+       count(*) FILTER (WHERE t."aliasName" IS NOT NULL) OVER () AS own_named,
+       count(*) FILTER (
+         WHERE t."aliasName" IS NULL AND o."priority" > ${priority}
+       ) OVER () AS other_rule
 FROM "Transaction" AS t
+LEFT JOIN "MerchantAlias" AS o
+  ON o."id" = t."aliasId" AND o."id" IS DISTINCT FROM ${aliasId}
+LEFT JOIN "MerchantAlias" AS p ON p."id" = t."aliasId"
 WHERE t."userId" = ${userId} AND ${match}
+  AND (${!hideProtected} OR p."isProtected" IS NOT TRUE OR p."id" = ${aliasId})
 ORDER BY t."txnDate" DESC, t."createdAt" DESC, t."id" DESC
 LIMIT ${ALIAS_PREVIEW_SAMPLES}`;
 }
@@ -138,3 +165,50 @@ LIMIT ${ALIAS_PREVIEW_SAMPLES}`;
 /** Compiles the regex in Postgres (throws invalid_regular_expression). */
 export const regexCheckSql = (pattern: string): Prisma.Sql =>
   Prisma.sql`SELECT ('' ~* unaccent(${pattern})) AS ok`;
+
+/** Which of some texts a candidate pattern matches (same comparison as the rules). */
+export function coverageSql(
+  matchType: AliasMatchType,
+  pattern: string,
+  texts: string[],
+): Prisma.Sql {
+  const match = aliasMatchSql(
+    matchType,
+    Prisma.raw('x.text'),
+    Prisma.sql`${pattern}`,
+  );
+  return Prisma.sql`
+SELECT x.text, (${match}) AS ok
+FROM unnest(${texts}::text[]) AS x(text)`;
+}
+
+export interface AliasSpendingRow {
+  aliasId: string;
+  currency: string;
+  count: bigint | number;
+  spent: Prisma.Decimal | number | string;
+  received: Prisma.Decimal | number | string;
+}
+
+/**
+ * Per alias rule: what the movements it names (no one-off name) add up to
+ * between two dates, by currency.
+ */
+export function aliasSpendingSql(
+  userId: string,
+  from: Date,
+  to: Date,
+): Prisma.Sql {
+  return Prisma.sql`
+SELECT t."aliasId" AS "aliasId", t."currency",
+       count(*) AS count,
+       coalesce(sum(t."amount") FILTER (WHERE t."type" = 'expense'), 0) AS spent,
+       coalesce(sum(t."amount") FILTER (WHERE t."type" = 'income'), 0) AS received
+FROM "Transaction" AS t
+WHERE t."userId" = ${userId}
+  AND t."aliasId" IS NOT NULL
+  AND t."aliasName" IS NULL
+  AND t."type" IN ('expense', 'income')
+  AND t."txnDate" >= ${from} AND t."txnDate" <= ${to}
+GROUP BY t."aliasId", t."currency"`;
+}

@@ -210,6 +210,7 @@ enum AiFeatureKey {
   receipt_parsing
   translation
   screenshot_parsing
+  alias_pattern
 }
 
 /// Whether a category is for spending or income (subcategories share their parent's).
@@ -282,23 +283,27 @@ enum ReceiptConfidence {
 // ---------------------- Models -----------------------
 
 model User {
-  id               String    @id @default(uuid())
-  name             String
-  email            String    @unique
-  passwordHash     String? // null: signs in only with Google
-  role             UserRole  @default(user)
-  isMaster         Boolean   @default(false) // at most one (partial unique index in SQL)
-  googleSubject    String?   @unique // Google account id ("sub"), linked on first Google sign-in
-  disabledAt       DateTime?
-  lastLoginAt      DateTime?
-  tokenVersion     Int       @default(0) // bumped to revoke every open session
-  locale           String    @default("es") @db.VarChar(5) // UI / data language: 'es' | 'en'
-  googlePictureUrl String? // "picture" of the Google account, refreshed on each Google sign-in
-  avatarKey        String? // uploaded profile photo (S3 key, users/<id>/avatars/…); wins over Google's
-  avatarUpdatedAt  DateTime? // when the photo last changed (cache-busting version)
-  invitedById      String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                       String    @id @default(uuid())
+  name                     String
+  email                    String    @unique
+  passwordHash             String? // null: signs in only with Google
+  role                     UserRole  @default(user)
+  isMaster                 Boolean   @default(false) // at most one (partial unique index in SQL)
+  googleSubject            String?   @unique // Google account id ("sub"), linked on first Google sign-in
+  disabledAt               DateTime?
+  lastLoginAt              DateTime?
+  tokenVersion             Int       @default(0) // bumped to revoke every open session
+  locale                   String    @default("es") @db.VarChar(5) // UI / data language: 'es' | 'en'
+  googlePictureUrl         String? // "picture" of the Google account, refreshed on each Google sign-in
+  avatarKey                String? // uploaded profile photo (S3 key, users/<id>/avatars/…); wins over Google's
+  avatarUpdatedAt          DateTime? // when the photo last changed (cache-busting version)
+  privacyPinHash           String? // scrypt hash of the privacy PIN (protected automatic names)
+  privacyPinVersion        Int       @default(0) // bumped when the PIN changes: ends every unlock
+  privacyPinFailedAttempts Int       @default(0)
+  privacyPinLockedUntil    DateTime? // too many wrong PINs: no attempts until then
+  invitedById              String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
   invitedBy      User?       @relation("UserInvitations", fields: [invitedById], references: [id], onDelete: SetNull)
   invitedUsers   User[]      @relation("UserInvitations")
@@ -327,6 +332,7 @@ model User {
   transferSuggestions       TransferSuggestion[]
   merchantTaxIds            MerchantTaxId[]
   hiddenCategories          CategoryHidden[]
+  privacyPinResets          PrivacyPinReset[]
 }
 
 model Account {
@@ -415,6 +421,21 @@ model Category {
   @@unique([userId, key], name: "category_user_key_unique")
   @@index([userId])
   @@index([parentId])
+}
+
+/// A "forgot my privacy PIN" link (the token is stored hashed; single use).
+model PrivacyPinReset {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  // Throwaway single-use links: they go with the user.
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 /// A global category a user hid from their pickers (pivot).
@@ -530,6 +551,7 @@ model MerchantAlias {
   isPrivate         Boolean        @default(false)
   priority          Int            @default(0)
   active            Boolean        @default(true)
+  isProtected       Boolean        @default(false) // needs the privacy PIN to see its pattern, edit it or see its movements' bank text
   // "These go to my account X": a matching synced movement is suggested as
   // a transfer to it (never converted on its own).
   transferAccountId String?

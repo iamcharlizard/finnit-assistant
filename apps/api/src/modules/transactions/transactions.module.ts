@@ -6,9 +6,10 @@ import { AttachmentsController } from './attachments.controller';
 import { PrismaService } from '../../services/prisma.service';
 import { StorageModule } from '../storage/storage.module';
 import { CategorizationModule } from '../categorization/categorization.module';
+import { PrivacyModule } from '../privacy/privacy.module';
 
 @Module({
-  imports: [StorageModule, CategorizationModule],
+  imports: [StorageModule, CategorizationModule, PrivacyModule],
   controllers: [AttachmentsController],
   providers: [
     TransactionsResolver,

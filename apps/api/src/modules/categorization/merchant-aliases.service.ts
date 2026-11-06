@@ -3,11 +3,13 @@ import { AliasMatchType, Prisma } from '@finnit/database';
 import { PrismaService } from '../../services/prisma.service';
 import {
   NotFoundError,
+  PrivacyLockedError,
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import { mapCategory } from '../transactions/transaction.mapper';
 import {
   AliasPreview,
+  AliasSpending,
   MAX_ALIAS_NAME_LENGTH,
   MAX_ALIAS_PATTERN_LENGTH,
   MerchantAlias,
@@ -15,6 +17,8 @@ import {
 } from './dto/merchant-alias.dto';
 import {
   AliasPreviewRow,
+  AliasSpendingRow,
+  aliasSpendingSql,
   previewAliasSql,
   recomputeAliasesSql,
   regexCheckSql,
@@ -39,6 +43,7 @@ interface ValidAlias {
   priority: number;
   active: boolean;
   transferAccountId: string | null;
+  isProtected: boolean;
 }
 
 const aliasInclude = {
@@ -58,13 +63,14 @@ export class MerchantAliasesService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(userId: string): Promise<MerchantAlias[]> {
+  /** `unlocked`: the privacy PIN was entered (protected rules show their pattern). */
+  async list(userId: string, unlocked = false): Promise<MerchantAlias[]> {
     const rows = await this.prisma.merchantAlias.findMany({
       where: { userId },
       include: aliasInclude,
       orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
     });
-    return rows.map((row) => this.map(row));
+    return rows.map((row) => this.map(row, unlocked));
   }
 
   async create(
@@ -82,24 +88,26 @@ export class MerchantAliasesService {
       const row = await tx.merchantAlias.create({ data: { userId, ...data } });
       return row.id;
     });
-    return this.findOne(userId, id);
+    return this.findOne(userId, id, true);
   }
 
+  /** A protected rule only changes with the privacy PIN entered. */
   async update(
     userId: string,
     id: string,
     input: MerchantAliasInput,
+    unlocked = false,
   ): Promise<MerchantAlias> {
-    await this.ensureOwned(userId, id);
+    await this.ensureChangeable(userId, id, unlocked);
     const data = await this.validate(userId, input);
     await this.inRecompute(userId, (tx) =>
       tx.merchantAlias.update({ where: { id }, data }),
     );
-    return this.findOne(userId, id);
+    return this.findOne(userId, id, unlocked);
   }
 
-  async delete(userId: string, id: string): Promise<boolean> {
-    await this.ensureOwned(userId, id);
+  async delete(userId: string, id: string, unlocked = false): Promise<boolean> {
+    await this.ensureChangeable(userId, id, unlocked);
     // The FK clears aliasId; the recompute lets a lower-priority alias match.
     await this.inRecompute(userId, (tx) =>
       tx.merchantAlias.delete({ where: { id } }),
@@ -107,22 +115,39 @@ export class MerchantAliasesService {
     return true;
   }
 
-  /** What a candidate alias would match, without saving anything. */
+  /**
+   * What a candidate alias would match, without saving anything; how many
+   * of those keep another name (a one-off name, or a rule with a higher
+   * priority). `aliasId`: the rule being edited (its own matches don't count
+   * as "another rule").
+   */
   async preview(
     userId: string,
     input: MerchantAliasInput,
+    aliasId?: string | null,
+    unlocked = false,
   ): Promise<AliasPreview> {
-    const { matchType, pattern } = await this.validate(userId, input, {
-      preview: true,
-    });
+    if (aliasId) await this.ensureChangeable(userId, aliasId, unlocked);
+    const { matchType, pattern, priority } = await this.validate(
+      userId,
+      input,
+      { preview: true },
+    );
     const rows = await this.prisma.$transaction(async (tx) => {
       await this.limitStatementTime(tx);
       return tx.$queryRaw<AliasPreviewRow[]>(
-        previewAliasSql(userId, matchType, pattern),
+        previewAliasSql(userId, matchType, pattern, {
+          priority,
+          aliasId: aliasId ?? null,
+          // Movements of protected rules stay out until the PIN is entered.
+          hideProtected: !unlocked,
+        }),
       );
     });
     return {
       count: rows.length ? Number(rows[0].total) : 0,
+      withOwnName: rows.length ? Number(rows[0].own_named) : 0,
+      withOtherRule: rows.length ? Number(rows[0].other_rule) : 0,
       samples: rows.map((row) => ({
         transactionId: row.id,
         original: row.original,
@@ -131,6 +156,31 @@ export class MerchantAliasesService {
         currency: row.currency,
       })),
     };
+  }
+
+  /**
+   * Per rule, what the movements it names (no one-off name) add up to
+   * between two dates: spent minus received, in the currency most of them
+   * use.
+   */
+  async spending(
+    userId: string,
+    from: Date,
+    to: Date,
+  ): Promise<Map<string, AliasSpending>> {
+    const rows = await this.prisma.$queryRaw<AliasSpendingRow[]>(
+      aliasSpendingSql(userId, from, to),
+    );
+    const result = new Map<string, AliasSpending>();
+    for (const row of rows) {
+      const count = Number(row.count);
+      const total = Number(row.spent) - Number(row.received);
+      const current = result.get(row.aliasId);
+      if (!current || count > current.count) {
+        result.set(row.aliasId, { count, total, currency: row.currency });
+      }
+    }
+    return result;
   }
 
   /**
@@ -218,12 +268,24 @@ export class MerchantAliasesService {
     if (input.matchType === AliasMatchType.regex) {
       await this.checkRegex(pattern);
     }
+    const isProtected = input.isProtected ?? false;
+    if (isProtected && !preview) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { privacyPinHash: true },
+      });
+      if (!user?.privacyPinHash) {
+        throw new ValidationError('Create your privacy PIN first');
+      }
+    }
     return {
       matchType: input.matchType,
       pattern,
       displayName,
       categoryId: input.categoryId || null,
-      isPrivate: input.isPrivate ?? false,
+      // A protected rule is always private.
+      isPrivate: (input.isPrivate ?? false) || isProtected,
+      isProtected,
       priority: input.priority ?? 0,
       active: input.active ?? true,
       transferAccountId: input.transferAccountId || null,
@@ -272,30 +334,44 @@ export class MerchantAliasesService {
     );
   }
 
-  private async ensureOwned(userId: string, id: string): Promise<void> {
+  /** The user's rule; a protected one needs the privacy PIN to change. */
+  private async ensureChangeable(
+    userId: string,
+    id: string,
+    unlocked: boolean,
+  ): Promise<void> {
     const alias = await this.prisma.merchantAlias.findFirst({
       where: { id, userId },
-      select: { id: true },
+      select: { id: true, isProtected: true },
     });
     if (!alias) throw new NotFoundError('Alias not found');
+    if (alias.isProtected && !unlocked) throw new PrivacyLockedError();
   }
 
-  private async findOne(userId: string, id: string): Promise<MerchantAlias> {
+  private async findOne(
+    userId: string,
+    id: string,
+    unlocked: boolean,
+  ): Promise<MerchantAlias> {
     const row = await this.prisma.merchantAlias.findFirst({
       where: { id, userId },
       include: aliasInclude,
     });
     if (!row) throw new NotFoundError('Alias not found');
-    return this.map(row);
+    return this.map(row, unlocked);
   }
 
   private map(
     row: Prisma.MerchantAliasGetPayload<{ include: typeof aliasInclude }>,
+    unlocked: boolean,
   ): MerchantAlias {
+    const locked = row.isProtected && !unlocked;
     return {
       id: row.id,
       matchType: row.matchType,
-      pattern: row.pattern,
+      pattern: locked ? null : row.pattern,
+      isProtected: row.isProtected,
+      locked,
       displayName: row.displayName,
       category: row.category ? mapCategory(row.category) : null,
       isPrivate: row.isPrivate,

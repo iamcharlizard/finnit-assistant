@@ -203,7 +203,11 @@ export class TransactionsService {
     return connection;
   }
 
-  async findById(id: string, userId: string): Promise<Transaction> {
+  async findById(
+    id: string,
+    userId: string,
+    unlocked = false,
+  ): Promise<Transaction> {
     const transaction = await this.prisma.transaction.findFirst({
       where: { id, userId },
       include: {
@@ -218,8 +222,9 @@ export class TransactionsService {
       throw new NotFoundError('Transaction not found');
     }
 
-    // The detail reveals the original text of private movements ("ver original").
-    return mapTransaction(transaction, { reveal: true });
+    // The detail reveals the original text of private movements ("ver
+    // original"), except behind a protected rule until the PIN is entered.
+    return mapTransaction(transaction, { reveal: true, unlocked });
   }
 
   /**
@@ -951,6 +956,12 @@ export class TransactionsService {
 
     if (filters.isPending !== undefined) {
       where.isPending = filters.isPending;
+    }
+
+    if (filters.aliasId) {
+      // The movements that show this rule's name (a one-off name wins).
+      where.aliasId = filters.aliasId;
+      where.aliasName = null;
     }
 
     if (filters.startDate || filters.endDate) {

@@ -11,6 +11,7 @@ import {
 } from './cookies';
 import { isExpiring, tokenExpiry } from './jwt';
 import { safeNextPath } from './redirect';
+import { PRIVACY_COOKIE } from '@/lib/privacy/cookie';
 
 const jwt = (payload: object) =>
   `h.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.s`;
@@ -79,7 +80,7 @@ describe('session cookies', () => {
     clearSession(cookies);
     assert.deepEqual(
       deleted.sort(),
-      [ACCESS_COOKIE, REFRESH_COOKIE, REMEMBER_COOKIE].sort(),
+      [ACCESS_COOKIE, REFRESH_COOKIE, REMEMBER_COOKIE, PRIVACY_COOKIE].sort(),
     );
   });
 });

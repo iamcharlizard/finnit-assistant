@@ -33,6 +33,8 @@ export interface HistoryFilters {
   from?: DayKey;
   to?: DayKey;
   search?: string;
+  /** Only movements shown with this automatic name (alias rule). */
+  aliasId?: string;
   /** Ignored while a from/to range is set. */
   period: HistoryPeriod;
 }
@@ -65,6 +67,7 @@ export function parseHistoryFilters(
   const to = one(params.to);
   const search = one(params.q)?.slice(0, 100);
   const month = one(params.month);
+  const aliasId = one(params.alias);
   return {
     ...(type && TYPE_OPTIONS.some((o) => o === type && type !== 'all')
       ? { type: type as HistoryType }
@@ -74,6 +77,7 @@ export function parseHistoryFilters(
     ...(isDayKey(from) ? { from } : {}),
     ...(isDayKey(to) ? { to } : {}),
     ...(search ? { search } : {}),
+    ...(aliasId && ID.test(aliasId) ? { aliasId } : {}),
     period: month === 'all' ? 'all' : parseMonthParam(month, monthOf(today)),
   };
 }
@@ -100,6 +104,7 @@ export function historyQuery(
   if (filters.from) params.set('from', filters.from);
   if (filters.to) params.set('to', filters.to);
   if (filters.search) params.set('q', filters.search);
+  if (filters.aliasId) params.set('alias', filters.aliasId);
   if (!hasRange(filters)) {
     if (filters.period === 'all') params.set('month', 'all');
     else if (!sameMonth(filters.period, monthOf(today))) {
@@ -124,6 +129,7 @@ export function hasFilters(filters: HistoryFilters): boolean {
     filters.accountId ||
     filters.categoryId ||
     filters.search ||
+    filters.aliasId ||
     hasRange(filters),
   );
 }
@@ -173,5 +179,6 @@ export function toApiFilters(filters: HistoryFilters): Record<string, string> {
     ...(from && { startDate: startOfDayIso(from) }),
     ...(to && { endDate: endOfDayIso(to) }),
     ...(filters.search && { search: filters.search }),
+    ...(filters.aliasId && { aliasId: filters.aliasId }),
   };
 }

@@ -17,8 +17,10 @@ export interface ApiAttachment {
 
 /** A movement as its detail screen reads it (transaction(id)). */
 export interface TransactionDetail extends ApiTransaction {
-  /** The bank's/user's text; transaction(id) returns it even for private ones. */
+  /** The bank's/user's text; transaction(id) returns it even for private ones (not behind a locked PIN). */
   originalDescription: string | null;
+  /** The bank text is behind the privacy PIN (protected automatic name). */
+  originalLocked?: boolean;
   categorySource: CategorySource | null;
   attachments: ApiAttachment[] | null;
   transferCounterpart: {
@@ -38,7 +40,7 @@ export interface TransactionDetail extends ApiTransaction {
   } | null;
 }
 
-export const TRANSACTION_DETAIL_FIELDS = `${TRANSACTION_FIELDS} originalDescription categorySource attachments { id fileName fileType fileSize downloadPath uploadedAt } transferCounterpart { transferId converted transactionId accountId accountName direction } recurringPayment { occurrenceId recurringExpenseId name dueDate }`;
+export const TRANSACTION_DETAIL_FIELDS = `${TRANSACTION_FIELDS} originalDescription originalLocked categorySource attachments { id fileName fileType fileSize downloadPath uploadedAt } transferCounterpart { transferId converted transactionId accountId accountName direction } recurringPayment { occurrenceId recurringExpenseId name dueDate }`;
 
 /** A category for the edit form's picker (key orders the income group). */
 export interface DetailCategory {

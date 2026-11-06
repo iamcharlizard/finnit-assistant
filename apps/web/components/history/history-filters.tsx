@@ -56,11 +56,14 @@ export function HistoryFilters({
   accounts,
   categories,
   today,
+  aliasName,
 }: {
   filters: Filters;
   accounts: Option[];
   categories: Option[];
   today: DayKey;
+  /** The automatic name the list is filtered by (?alias=). */
+  aliasName?: string | null;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -221,6 +224,18 @@ export function HistoryFilters({
           </PopoverContent>
         </Popover>
       </div>
+
+      {filters.aliasId ? (
+        <button
+          type="button"
+          onClick={() => apply({ ...filters, aliasId: undefined })}
+          aria-label={t('clearAlias')}
+          className="flex min-h-9 items-center gap-1.5 self-start rounded-full bg-primary/15 px-3 text-sm font-medium text-on-background hover:bg-primary/25"
+        >
+          {t('aliasFilter', { name: aliasName ?? '…' })}
+          <X aria-hidden className="size-4" />
+        </button>
+      ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <FilterChipGroup

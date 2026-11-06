@@ -26,13 +26,16 @@ import {
 import type { AliasesData } from '@/lib/aliases/load';
 import type { ApiMerchantAlias, ApiMerchantRule } from '@/lib/aliases/types';
 import { gql } from '@/lib/graphql/client';
+import { PrivacyUnlockDialog } from '@/components/privacy/privacy-unlock-dialog';
+import { isPrivacyLocked } from '@/lib/privacy/pin';
 import { useLocalizer } from '@/lib/i18n/client';
 
 type DialogState = { alias: ApiMerchantAlias | null } | null;
 
 /**
- * "Alias de movimientos": the alias rules (create, edit, enable, delete)
- * and the category rules learned while categorizing.
+ * "Nombres automáticos": the alias rules (create, edit, enable, delete;
+ * protected ones ask for the privacy PIN first) with what their movements
+ * add up to, and the category rules learned while categorizing.
  */
 export function AliasesScreen({ data }: { data: AliasesData }) {
   const router = useRouter();
@@ -41,6 +44,7 @@ export function AliasesScreen({ data }: { data: AliasesData }) {
   const [dialog, setDialog] = React.useState<DialogState>(null);
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
   const [busyId, setBusyId] = React.useState<string | null>(null);
+  const [unlocking, setUnlocking] = React.useState(false);
   // The switch flips at once; the server's list replaces it after the refresh.
   const [aliases, setOptimisticActive] = React.useOptimistic(
     data.aliases,
@@ -66,7 +70,8 @@ export function AliasesScreen({ data }: { data: AliasesData }) {
         await action();
         router.refresh();
       } catch (error) {
-        toast.error(aliasErrorMessage(error, t));
+        if (isPrivacyLocked(error)) setUnlocking(true);
+        else toast.error(aliasErrorMessage(error, t));
       }
     });
   }
@@ -147,9 +152,16 @@ export function AliasesScreen({ data }: { data: AliasesData }) {
                   key={alias.id}
                   alias={alias}
                   busy={busy(alias.id)}
+                  transferAccount={
+                    alias.transferAccountId
+                      ? data.accountNames[alias.transferAccountId]
+                      : undefined
+                  }
+                  historyHref={`/history?alias=${encodeURIComponent(alias.id)}&month=${data.month}`}
                   onToggleActive={(active) => toggleActive(alias, active)}
                   onEdit={() => setDialog({ alias })}
                   onDelete={() => askDeleteAlias(alias)}
+                  onUnlock={() => setUnlocking(true)}
                 />
               ))}
             </section>
@@ -182,6 +194,13 @@ export function AliasesScreen({ data }: { data: AliasesData }) {
           />
         ) : null}
         <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />
+        {unlocking ? (
+          <PrivacyUnlockDialog
+            reason={t('aliases.unlockReason')}
+            onClose={() => setUnlocking(false)}
+            onUnlocked={() => setUnlocking(false)}
+          />
+        ) : null}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { cache } from 'react';
 import { cookies } from 'next/headers';
 
 import { apiGraphql, type AuthUser } from '@/lib/api/finnit-api';
+import { PRIVACY_COOKIE, privacyHeaders } from '@/lib/privacy/cookie';
 import { ACCESS_COOKIE } from './cookies';
 
 const ME_FIELDS = 'id name email role isMaster';
@@ -30,21 +31,36 @@ function lacksLocaleField(
  * still works (the query is retried without it and `locale` is null).
  */
 export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
-  const accessToken = (await cookies()).get(ACCESS_COOKIE)?.value;
+  const store = await cookies();
+  const accessToken = store.get(ACCESS_COOKIE)?.value;
   if (!accessToken) return null;
-  const me = (fields: string) =>
-    apiGraphql<{ me: AuthUser }>(
-      `query Me { me { ${fields} } }`,
+  const unlock = privacyHeaders(store.get(PRIVACY_COOKIE)?.value);
+  const me = (fields: string, extra = '') =>
+    apiGraphql<{ me: AuthUser; privacyStatus?: AuthUser['privacy'] }>(
+      `query Me { me { ${fields} } ${extra} }`,
       {},
       accessToken,
+      unlock,
     ).catch(() => null);
 
-  let result = await me(`${ME_FIELDS} locale avatar { source url version }`);
+  let result = await me(
+    `${ME_FIELDS} locale avatar { source url version }`,
+    'privacyStatus { hasPin unlocked }',
+  );
   if (!result?.data?.me && lacksLocaleField(result?.errors)) {
     result = await me(ME_FIELDS);
   }
   const user = result?.data?.me;
-  return user ? { ...user, locale: user.locale ?? null } : null;
+  return user
+    ? {
+        ...user,
+        locale: user.locale ?? null,
+        privacy: result?.data?.privacyStatus ?? {
+          hasPin: false,
+          unlocked: false,
+        },
+      }
+    : null;
 });
 
 export function isAdmin(user: Pick<AuthUser, 'role'> | null): boolean {

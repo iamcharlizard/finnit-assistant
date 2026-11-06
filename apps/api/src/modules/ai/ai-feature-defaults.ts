@@ -28,4 +28,6 @@ export const AI_FEATURE_DEFAULTS: Record<AiFeatureKey, AiFeatureDefaults> = {
   translation: { enabled: true, useFallbacks: true, needsPdf: false },
   // Sends the OCR text of the screenshot (with positions), not the image.
   screenshot_parsing: { enabled: false, useFallbacks: true, needsPdf: false },
+  // Example bank texts in, a pattern out; only when the user asks.
+  alias_pattern: { enabled: true, useFallbacks: true, needsPdf: false },
 };

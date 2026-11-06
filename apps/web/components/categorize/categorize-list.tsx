@@ -44,7 +44,7 @@ import { AiNotice } from './ai-notice';
 import { CategorizeRow } from './categorize-row';
 import { EmptyList } from './empty-list';
 import { MoveBar } from './move-bar';
-import { RenameDialog } from './rename-dialog';
+import { renameTransaction } from '@/lib/categorize/api';
 import { SelectAllToggle } from './select-all-toggle';
 
 type Busy = 'move' | 'suggest' | 'accept' | 'reject' | `row:${string}` | null;
@@ -73,7 +73,6 @@ export function CategorizeList({
   );
   const [busy, setBusy] = React.useState<Busy>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
-  const [renaming, setRenaming] = React.useState<Row | null>(null);
 
   const index = React.useMemo(() => indexCategories(categories), [categories]);
   const rows = React.useMemo(
@@ -233,7 +232,14 @@ export function CategorizeList({
                   onReview={(action) =>
                     reviewMany(action, [row.id], `row:${row.id}`)
                   }
-                  onRename={() => setRenaming(row)}
+                  onRename={async (name) => {
+                    const updated = await renameTransaction(
+                      row.id,
+                      { displayName: name, isPrivate: row.name.ownPrivate },
+                      gql,
+                    );
+                    pages.merge([updated]);
+                  }}
                 />
               ))}
             </div>
@@ -264,24 +270,6 @@ export function CategorizeList({
           busy={busy === 'move'}
           onMove={move}
           onClear={() => setSelection(new Set())}
-        />
-      ) : null}
-
-      {renaming ? (
-        <RenameDialog
-          row={renaming}
-          onClose={() => setRenaming(null)}
-          onSaved={(updated, removed) => {
-            pages.merge([updated]);
-            setRenaming(null);
-            toast.success(
-              t(
-                removed
-                  ? 'categorize.toasts.aliasRemoved'
-                  : 'categorize.toasts.renamed',
-              ),
-            );
-          }}
         />
       ) : null}
     </div>

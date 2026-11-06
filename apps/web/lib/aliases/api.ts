@@ -5,6 +5,7 @@ import { buildAliasInput, withActive, type AliasForm } from './form';
 import {
   ALIAS_PREVIEW_FIELDS,
   MERCHANT_ALIAS_FIELDS,
+  type AliasPatternSuggestion,
   type AliasPreview,
   type ApiMerchantAlias,
   type MerchantAliasInput,
@@ -18,7 +19,9 @@ export const UPDATE_ALIAS_MUTATION = `mutation UpdateMerchantAlias($id: ID!, $in
 
 export const DELETE_ALIAS_MUTATION = `mutation DeleteMerchantAlias($id: ID!) { deleteMerchantAlias(id: $id) }`;
 
-export const PREVIEW_ALIAS_QUERY = `query PreviewMerchantAlias($input: MerchantAliasInput!) { previewMerchantAlias(input: $input) { ${ALIAS_PREVIEW_FIELDS} } }`;
+export const PREVIEW_ALIAS_QUERY = `query PreviewMerchantAlias($input: MerchantAliasInput!, $aliasId: ID) { previewMerchantAlias(input: $input, aliasId: $aliasId) { ${ALIAS_PREVIEW_FIELDS} } }`;
+
+export const SUGGEST_ALIAS_PATTERN_MUTATION = `mutation SuggestAliasPattern($input: SuggestAliasPatternInput!) { suggestAliasPattern(input: $input) { matchType pattern explanation source coversAll aiUnavailable preview { ${ALIAS_PREVIEW_FIELDS} } } }`;
 
 export const DELETE_RULE_MUTATION = `mutation DeleteMerchantRule($id: ID!) { deleteMerchantRule(id: $id) }`;
 
@@ -65,12 +68,25 @@ export async function deleteRule(id: string, run: GqlRunner): Promise<void> {
 export async function previewAlias(
   input: MerchantAliasInput,
   run: GqlRunner,
+  aliasId: string | null = null,
 ): Promise<AliasPreview> {
   const data = await run<{ previewMerchantAlias: AliasPreview }>(
     PREVIEW_ALIAS_QUERY,
-    { input },
+    { input, aliasId },
   );
   return data.previewMerchantAlias;
+}
+
+/** A pattern (AI first) for movements that should share an automatic name. */
+export async function suggestAliasPattern(
+  transactionIds: string[],
+  run: GqlRunner,
+): Promise<AliasPatternSuggestion> {
+  const data = await run<{ suggestAliasPattern: AliasPatternSuggestion }>(
+    SUGGEST_ALIAS_PATTERN_MUTATION,
+    { input: { transactionIds } },
+  );
+  return data.suggestAliasPattern;
 }
 
 /** A regex the API refused: its own message goes under the pattern field. */
@@ -84,6 +100,8 @@ const MESSAGES: [RegExp, Parameters<Translate>[0]][] = [
   [/already exists|unique constraint/i, 'aliases.errors.duplicate'],
   [/alias not found/i, 'aliases.errors.notFound'],
   [/category not found/i, 'aliases.errors.category'],
+  [/privacy pin to continue/i, 'aliases.errors.locked'],
+  [/create your privacy pin/i, 'aliases.errors.noPin'],
 ];
 
 export function aliasErrorMessage(error: unknown, t: Translate): string {

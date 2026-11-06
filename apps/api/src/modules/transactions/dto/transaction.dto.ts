@@ -162,6 +162,15 @@ export class TransactionFilters {
   @IsBoolean()
   isPending?: boolean;
 
+  @Field(() => ID, {
+    nullable: true,
+    description:
+      "Only movements shown with this alias rule's automatic name (no one-off name)",
+  })
+  @IsOptional()
+  @IsString()
+  aliasId?: string;
+
   @Field(() => Boolean, {
     nullable: true,
     description:

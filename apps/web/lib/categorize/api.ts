@@ -109,7 +109,7 @@ export async function reviewSuggestions(
 
 export async function renameTransaction(
   id: string,
-  form: RenameForm | 'remove',
+  form: RenameForm,
   run: GqlRunner,
 ): Promise<CategorizeTransaction> {
   const data = await run<{ setTransactionAlias: CategorizeTransaction }>(

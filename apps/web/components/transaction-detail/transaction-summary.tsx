@@ -2,13 +2,15 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { Eye, EyeOff, Lock } from 'lucide-react';
+import { Eye, EyeOff, Lock, LockKeyhole } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
 import { Button } from '@finnit/ui/components/ui/button';
 import { Card } from '@finnit/ui/components/ui/card';
 import { cn } from '@finnit/ui/lib/utils';
 
+import { PrivacyUnlockDialog } from '@/components/privacy/privacy-unlock-dialog';
+import { useDetailHost } from './detail-host';
 import type { TransactionDetailView } from '@/lib/transaction-detail/view';
 
 const AMOUNT_COLOR = {
@@ -24,6 +26,8 @@ const AMOUNT_COLOR = {
 export function TransactionSummary({ view }: { view: TransactionDetailView }) {
   const t = useTranslations();
   const [revealed, setRevealed] = React.useState(false);
+  const [unlocking, setUnlocking] = React.useState(false);
+  const host = useDetailHost();
   const originalId = React.useId();
 
   return (
@@ -66,7 +70,32 @@ export function TransactionSummary({ view }: { view: TransactionDetailView }) {
           <p className="text-xs text-on-surface-variant">
             {t('transaction.privateHint')}
           </p>
-          {view.original ? (
+          {view.originalLocked ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="self-start"
+                onClick={() => setUnlocking(true)}
+              >
+                <LockKeyhole aria-hidden /> {t('transaction.showOriginal')}
+              </Button>
+              <p className="text-xs text-on-surface-variant">
+                {t('transaction.originalLocked')}
+              </p>
+              {unlocking ? (
+                <PrivacyUnlockDialog
+                  reason={t('transaction.unlockOriginal')}
+                  onClose={() => setUnlocking(false)}
+                  onUnlocked={() => {
+                    setUnlocking(false);
+                    setRevealed(true);
+                    host.refresh();
+                  }}
+                />
+              ) : null}
+            </>
+          ) : view.original ? (
             <>
               <Button
                 variant="outline"

@@ -8,6 +8,9 @@ import {
   registerEnumType,
 } from '@nestjs/graphql';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
   IsBoolean,
   IsEnum,
   IsInt,
@@ -41,11 +44,22 @@ export class MerchantAlias {
   @Field(() => AliasMatchType)
   matchType: AliasMatchType;
 
-  @Field()
-  pattern: string;
+  @Field(() => String, {
+    nullable: true,
+    description: 'Null for a protected rule until the privacy PIN is entered',
+  })
+  pattern: string | null;
 
   @Field()
   displayName: string;
+
+  @Field({ description: 'Needs the privacy PIN to see or change it' })
+  isProtected: boolean;
+
+  @Field({
+    description: 'Protected and not unlocked: pattern hidden, changes refused',
+  })
+  locked: boolean;
 
   @Field(() => Category, { nullable: true })
   category?: Category | null;
@@ -118,6 +132,16 @@ export class MerchantAliasInput {
   @IsOptional()
   @IsString()
   transferAccountId?: string | null;
+
+  @Field({
+    nullable: true,
+    defaultValue: false,
+    description:
+      "Needs the privacy PIN to see its pattern, change it or see its movements' bank text (always private)",
+  })
+  @IsOptional()
+  @IsBoolean()
+  isProtected?: boolean;
 }
 
 @ObjectType()
@@ -142,6 +166,16 @@ export class AliasPreviewSample {
 export class AliasPreview {
   @Field(() => Int, { description: 'Movements the alias would match' })
   count: number;
+
+  @Field(() => Int, {
+    description: 'Of those, how many keep their one-off name',
+  })
+  withOwnName: number;
+
+  @Field(() => Int, {
+    description: 'Of those, how many keep the name of a higher-priority rule',
+  })
+  withOtherRule: number;
 
   @Field(() => [AliasPreviewSample], {
     description: 'Up to 20, newest first',
@@ -168,4 +202,78 @@ export class TransactionAliasInput {
   @IsOptional()
   @IsBoolean()
   isPrivate?: boolean | null;
+}
+
+@InputType()
+export class SuggestAliasPatternInput {
+  @Field(() => [ID], {
+    description:
+      'Movements that should get the name (their bank text is used), 1 to 10',
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  transactionIds: string[];
+
+  @Field(() => [ID], {
+    nullable: true,
+    description: 'Movements that must not match',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  excludeTransactionIds?: string[] | null;
+}
+
+export enum AliasPatternSource {
+  ai = 'ai',
+  heuristic = 'heuristic',
+}
+
+registerEnumType(AliasPatternSource, {
+  name: 'AliasPatternSource',
+  description:
+    'ai: proposed by the AI; heuristic: the words the examples share',
+});
+
+@ObjectType({ description: 'A proposed pattern for an automatic name' })
+export class AliasPatternSuggestion {
+  @Field(() => AliasMatchType)
+  matchType: AliasMatchType;
+
+  @Field()
+  pattern: string;
+
+  @Field({
+    description: "What it looks for, in the user's language (may be empty)",
+  })
+  explanation: string;
+
+  @Field(() => AliasPatternSource)
+  source: AliasPatternSource;
+
+  @Field({ description: 'It matches every example (and none of the excluded)' })
+  coversAll: boolean;
+
+  @Field({
+    description: 'The AI could not be used (disabled, no model or it failed)',
+  })
+  aiUnavailable: boolean;
+
+  @Field(() => AliasPreview)
+  preview: AliasPreview;
+}
+
+@ObjectType({ description: 'What the movements an alias names add up to' })
+export class AliasSpending {
+  @Field(() => Int)
+  count: number;
+
+  @Field(() => Float, { description: 'Spent minus received' })
+  total: number;
+
+  @Field()
+  currency: string;
 }

@@ -1,3 +1,4 @@
+import { nameSubjectOf, type NameSubject } from '@/lib/categorize/rename';
 import type { Localizer, Translate } from '@/lib/i18n/translator';
 import { accountLabel } from '@/lib/finance/accounts';
 import { spendingByCategory } from '@/lib/finance/breakdown';
@@ -36,10 +37,8 @@ export const TRANSACTIONS_PAGE_QUERY = `query TransactionsPage($first: Int!, $af
 
 /** A history row plus what its "⋯" menu needs. */
 export interface HistoryRow extends TransactionRow {
-  /** "Editar descripción": the current own description and privacy. */
-  alias: { displayName: string; hasOwnAlias: boolean; isPrivate: boolean };
-  /** The bank's/user's original text (shown in the rename dialog). */
-  original: string | null;
+  /** What the name editor ("Editar nombre") starts from. */
+  name: NameSubject;
   /** "Convertir en transferencia"; null for transfers and adjustments. */
   convert: ConvertSource | null;
   /** Signed amount for the day's net: transfers and adjustments are 0. */
@@ -56,14 +55,7 @@ export function toHistoryRow(
   const amount = Math.abs(tx.amount);
   return {
     ...row,
-    alias: {
-      displayName: tx.displayName,
-      hasOwnAlias: Boolean(tx.hasOwnAlias),
-      isPrivate: tx.isPrivate,
-    },
-    original: tx.isPrivate
-      ? null
-      : (tx.merchantName ?? tx.description)?.trim() || null,
+    name: nameSubjectOf(tx),
     convert: canConvertToTransfer(tx)
       ? {
           id: tx.id,

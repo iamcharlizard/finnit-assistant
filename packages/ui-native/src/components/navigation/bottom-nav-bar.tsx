@@ -110,7 +110,7 @@ interface BottomNavBarProps {
 }
 
 /**
- * @finnit/ui's AppBottomNav for React Native: a floating glass pill with
+ * @finnit/ui's AppBottomNav for React Native: a floating solid pill with
  * three tabs and "Más", and a round "+" that sticks out of its middle and
  * fans out the shortcuts. A highlight slides under the active tab.
  * Render it over the screens (it fills the screen with `box-none`, so the
@@ -120,7 +120,8 @@ export function BottomNavBar({ tabs, more, actions, addLabel, closeLabel, label 
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const [open, setOpen] = React.useState(false);
-  const glass = useToken('--glass');
+  // Solid (not translucent): --popover is opaque in every palette.
+  const fill = useToken('--popover');
   const glassBorder = useToken('--glass-border');
   const elevation = useElevation();
   const step = Math.min(screenWidth * 0.18, 104);
@@ -179,7 +180,7 @@ export function BottomNavBar({ tabs, more, actions, addLabel, closeLabel, label 
       >
         <View style={[StyleSheet.absoluteFill, styles.shadow, elevation]} pointerEvents="none" />
         <Svg width={BAR_WIDTH} height={BAR_HEIGHT} style={StyleSheet.absoluteFill} pointerEvents="none">
-          <Path d={BAR_PATH} x={0.5} y={0.5} fill={glass} stroke={glassBorder} strokeWidth={1} />
+          <Path d={BAR_PATH} x={0.5} y={0.5} fill={fill} stroke={glassBorder} strokeWidth={1} />
         </Svg>
         <TwView className="flex-1 flex-row items-center p-2" style={{ gap: GAP, margin: 1 }}>
           <Animated.View pointerEvents="none" style={[styles.highlight, highlightStyle]}>

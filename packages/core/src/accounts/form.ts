@@ -387,6 +387,8 @@ export interface AccountEditValues {
   /** Imported from a bank connection: bank fields are read-only. */
   linked: boolean;
   archived: boolean;
+  /** The user's cash account: it can't be archived. */
+  defaultCash?: boolean;
   nickname: string | null;
   design: { primaryColor: string; secondaryColor: string | null } | null;
   bank: string | null;

@@ -27,7 +27,8 @@
       "accounts": "Cuentas y tarjetas",
       "planning": "Planeación",
       "analytics": "Análisis",
-      "admin": "Administración"
+      "admin": "Administración",
+      "calendar": "Calendario"
     },
     "items": {
       "dashboard": "Inicio",
@@ -41,12 +42,14 @@
       "debts": "Deudas",
       "goals": "Metas",
       "simulator": "Simulador",
-      "statements": "Estados de cuenta"
+      "statements": "Estados de cuenta",
+      "calendar": "Calendario"
     },
     "short": {
       "dashboard": "Inicio",
       "history": "Movimientos",
-      "cards": "Cuentas"
+      "cards": "Cuentas",
+      "calendar": "Calendario"
     },
     "collapse": "Contraer menú",
     "expand": "Expandir menú",
@@ -77,7 +80,8 @@
     "notifications": "Notificaciones",
     "categories": "Categorías",
     "privacyReset": "Nuevo PIN de privacidad",
-    "adminWaitlist": "Lista de espera · Administración"
+    "adminWaitlist": "Lista de espera · Administración",
+    "calendar": "Calendario de pagos"
   },
   "newEntry": {
     "title": "Nuevo movimiento",
@@ -459,7 +463,8 @@
     "status": {
       "linked": "Conectada",
       "manual": "Manual",
-      "archived": "Archivada"
+      "archived": "Archivada",
+      "defaultCash": "Tu efectivo"
     },
     "cardBalance": "Saldo",
     "manualLink": {
@@ -571,7 +576,8 @@
       "hasTerms": "Registrar corte y pago",
       "hasTermsHint": "Apágalo para quitar el corte y el pago de esta tarjeta.",
       "save": "Guardar",
-      "saving": "Guardando…"
+      "saving": "Guardando…",
+      "defaultCashNote": "Tu cuenta de efectivo siempre existe: no se puede archivar ni eliminar."
     },
     "archive": {
       "archive": "Archivar",
@@ -616,11 +622,24 @@
       "statement": "Estado de cuenta",
       "movements": "Movimientos",
       "seeAll": "Ver todos"
+    },
+    "addChoice": {
+      "description": "Elige cómo quieres agregarla.",
+      "bankDescription": "Conecta tu banco con Syncfy para importar tus cuentas y movimientos.",
+      "bank": {
+        "title": "Conectar mi banco",
+        "description": "Tus cuentas, saldos y movimientos llegan solos, a través de Syncfy.",
+        "badge": "Automático"
+      },
+      "manual": {
+        "title": "Agregar manualmente",
+        "description": "Para bancos que no podemos conectar, efectivo, o si prefieres registrar tus movimientos a mano."
+      }
     }
   },
   "recurring": {
     "title": "Pagos recurrentes",
-    "subtitle": "Tus suscripciones, servicios y mensualidades: cuándo vence cada uno y qué ya pagaste.",
+    "subtitle": "Tus suscripciones, servicios y mensualidades, y los que Finnit detecta en tus movimientos.",
     "new": "Nuevo pago recurrente",
     "summary": {
       "toPay": "Por pagar",
@@ -868,6 +887,24 @@
       "calendar": "Calendario",
       "list": "Mis pagos",
       "suggestions": "Sugeridos"
+    },
+    "filters": {
+      "search": "Buscar pago",
+      "searchLabel": "Buscar por nombre, cuenta o categoría",
+      "status": "Estado",
+      "kind": "Tipo",
+      "account": "Cuenta",
+      "sort": "Ordenar",
+      "sorts": {
+        "next": "Próximo pago",
+        "amount": "Monto mensual",
+        "name": "Nombre"
+      },
+      "clear": "Limpiar filtros",
+      "remove": "Quitar filtro {name}",
+      "results": "{count, plural, =1 {1 pago} other {# pagos}}",
+      "statusValue": "Estado: {value}",
+      "sortValue": "Orden: {value}"
     }
   },
   "budgets": {
@@ -1762,7 +1799,8 @@
       "linked": "{count, plural, one {Importamos # cuenta.} other {Importamos # cuentas.}} Sincronizaremos tus movimientos dos veces al día.",
       "noneLinked": "No importamos ninguna cuenta. Puedes ligarlas después desde Bancos conectados.",
       "connectedBanks": "Bancos conectados",
-      "seeMovements": "Ver movimientos"
+      "seeMovements": "Ver movimientos",
+      "seeAccounts": "Listo"
     },
     "error": {
       "title": "No pudimos conectar tu banco",
@@ -3512,6 +3550,44 @@
       "haveInvite": "¿Ya tienes invitación?",
       "signIn": "Inicia sesión",
       "rights": "© {year} Finnit"
+    }
+  },
+  "calendar": {
+    "title": "Calendario de pagos",
+    "subtitle": "Cuándo vence cada pago, lo que ya pagaste y cuánto se va en gastos fijos.",
+    "tabs": {
+      "label": "Secciones del calendario",
+      "calendar": "Calendario",
+      "summary": "Resumen"
+    },
+    "summary": {
+      "noAccount": "Sin cuenta",
+      "monthsTitle": "Próximos {count} meses",
+      "monthsHint": "Pagos recurrentes y préstamos programados. Las tarjetas cuentan su deuda de hoy en su próxima fecha límite; los meses siguientes no la incluyen.",
+      "series": {
+        "recurring": "Recurrentes",
+        "loans": "Préstamos y MSI",
+        "cards": "Pago de tarjetas"
+      },
+      "byKindTitle": "Gasto fijo por tipo",
+      "byAccountTitle": "Gasto fijo por cuenta",
+      "perMonthHint": "Costo mensual de tus pagos activos.",
+      "progressTitle": "Avance de {month}",
+      "parts": {
+        "paid": "Pagado",
+        "pending": "Por pagar",
+        "overdue": "Vencido"
+      },
+      "partCount": "{count, plural, =1 {1 pago} other {# pagos}}",
+      "progressEmpty": "No hay pagos este mes.",
+      "empty": "Aún no hay pagos para mostrar.",
+      "count": "{count, plural, =1 {1 pago} other {# pagos}}",
+      "seeTable": "Ver como tabla",
+      "month": "Mes",
+      "total": "Total",
+      "name": "Nombre",
+      "amount": "Al mes",
+      "monthLabel": "{month}: {amount}"
     }
   }
 }

@@ -1,5 +1,5 @@
 import { authExchange } from '@urql/exchange-auth';
-import { Client, CombinedError, cacheExchange, fetchExchange, mapExchange } from 'urql';
+import { Client, CombinedError, cacheExchange, fetchExchange, mapExchange, type Operation } from 'urql';
 
 import { DEFAULT_LOCALE, type Locale } from '@finnit/core/i18n/locales';
 
@@ -23,6 +23,14 @@ export function onSessionEnded(listener: () => void): () => void {
   return () => sessionEndedListeners.delete(listener);
 }
 
+/** Dev only: when each request left for the API, to log how long it took. */
+const startedAt = new Map<number, number>();
+
+function operationName(query: Operation['query']): string {
+  const def = query.definitions.find((d) => d.kind === 'OperationDefinition');
+  return (def && 'name' in def && def.name?.value) || 'anonymous';
+}
+
 function isUnauthenticated(error: CombinedError): boolean {
   return (
     error.response?.status === 401 ||
@@ -40,6 +48,9 @@ function createClient(): Client {
   return new Client({
     url: GRAPHQL_URL,
     requestPolicy: 'cache-and-network',
+    // Always POST: urql sends short queries as GET by default, and the API's
+    // CSRF prevention (Apollo) rejects those with a 400.
+    preferGetMethod: false,
     fetchOptions: () => {
       const privacy = privacyUnlockToken();
       return {
@@ -81,6 +92,19 @@ function createClient(): Client {
         };
       }),
       mapExchange({
+        // After the cache: only requests that really go to the API get here.
+        onOperation(operation) {
+          if (!__DEV__ || operation.kind === 'teardown') return;
+          startedAt.set(operation.key, Date.now());
+          console.log(`[graphql] → ${operationName(operation.query)} (${operation.context.requestPolicy})`);
+        },
+        onResult(result) {
+          if (!__DEV__) return;
+          const started = startedAt.get(result.operation.key);
+          startedAt.delete(result.operation.key);
+          const ms = started ? ` in ${Date.now() - started} ms` : '';
+          console.log(`[graphql] ← ${operationName(result.operation.query)}${ms}${result.error ? ' (error)' : ''}`);
+        },
         onError(error) {
           if (__DEV__ && !isUnauthenticated(error)) console.warn('[graphql]', error.message);
         },

@@ -42,7 +42,11 @@ import {
   toggleSelection,
 } from '@finnit/core/categorize/selection';
 import type { CategorizeTransaction } from '@finnit/core/categorize/types';
-import { appendPage, mergeTransactions, toCategorizeRow } from '@finnit/core/categorize/view';
+import {
+  appendPage,
+  mergeTransactions,
+  toCategorizeRow,
+} from '@finnit/core/categorize/view';
 
 const TODAY = '2026-10-13';
 const es = testLocalizer('es');
@@ -151,6 +155,7 @@ describe('categorize filters', () => {
         period: { year: 2026, month: 2 },
       }),
       {
+        categorizable: true,
         accountId: 'a1',
         startDate: '2026-02-01T00:00:00.000Z',
         endDate: '2026-02-28T23:59:59.999Z',
@@ -158,14 +163,22 @@ describe('categorize filters', () => {
       },
     );
     assert.deepEqual(toApiFilters({ show: 'suggested', period: 'all' }), {
+      categorizable: true,
       hasSuggestion: true,
     });
-    assert.deepEqual(toApiFilters({ show: 'all', period: 'all' }), {});
+    // Transfers never show: they don't take a category.
+    assert.deepEqual(toApiFilters({ show: 'all', period: 'all' }), {
+      categorizable: true,
+    });
   });
 
   it('pages 30 at a time and reloads what is on screen, up to 100', () => {
     const f: CategorizeFilters = { show: 'all', period: 'all' };
-    assert.deepEqual(pageVariables(f), { first: 30, after: null, filters: {} });
+    assert.deepEqual(pageVariables(f), {
+      first: 30,
+      after: null,
+      filters: { categorizable: true },
+    });
     assert.equal(pageVariables(f, { after: 'c1' }).after, 'c1');
     assert.equal(pageVariables(f, { loaded: 60 }).first, 60);
     assert.equal(pageVariables(f, { loaded: 250 }).first, 100);

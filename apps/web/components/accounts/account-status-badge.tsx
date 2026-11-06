@@ -1,17 +1,29 @@
 import { useTranslations } from 'next-intl';
-import { Archive, Link2, PencilLine } from 'lucide-react';
+import { Archive, Link2, PencilLine, Wallet } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
 
-/** "Conectada" (imported from a bank), "Manual" or "Archivada". */
+/**
+ * "Conectada" (imported from a bank), "Manual", "Archivada" or "Tu efectivo"
+ * (the cash account every user has).
+ */
 export function AccountStatusBadge({
   linked,
   archived,
+  defaultCash,
 }: {
   linked: boolean;
   archived?: boolean;
+  defaultCash?: boolean;
 }) {
   const t = useTranslations('accounts.status');
+  if (defaultCash) {
+    return (
+      <Badge variant="muted">
+        <Wallet aria-hidden /> {t('defaultCash')}
+      </Badge>
+    );
+  }
   if (archived) {
     return (
       <Badge variant="outline">

@@ -42,6 +42,7 @@ export function useView<Result, Variables extends AnyVariables, View>({
   const view = fresh ?? (result.fetching ? last.current : null);
 
   const refresh = React.useCallback(() => {
+    if (__DEV__) console.log('[refresh] pulled: asking the API again');
     setRefreshing(true);
     reexecute({ requestPolicy: 'network-only' });
   }, [reexecute]);

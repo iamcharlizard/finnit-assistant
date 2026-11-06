@@ -110,6 +110,8 @@ export type ApiTransactionFilters = {
   endDate?: string;
   uncategorized?: boolean;
   hasSuggestion?: boolean;
+  /** Only expenses and income: transfers never take a category. */
+  categorizable?: boolean;
 };
 
 /** The API's TransactionFilters. Months are whole UTC days, like its reports. */
@@ -117,6 +119,7 @@ export function toApiFilters(
   filters: CategorizeFilters,
 ): ApiTransactionFilters {
   return {
+    categorizable: true,
     ...(filters.accountId && { accountId: filters.accountId }),
     ...(filters.period !== 'all' && {
       startDate: startOfDayIso(firstDayOf(filters.period)),

@@ -116,7 +116,7 @@ export function AccountDetailScreen() {
             <AccountCardVisual account={card} holderName={user?.name ?? ''} />
           </TwView>
           <TwView className="flex-row items-center gap-2 px-1">
-            <AccountStatusBadge linked={card.linked} archived={card.archived} />
+            <AccountStatusBadge linked={card.linked} archived={card.archived} defaultCash={card.defaultCash} />
           </TwView>
           {card.archived ? <Text className="px-1 text-xs text-on-surface-variant">{t('archive.archivedNote')}</Text> : null}
           <AccountStats detail={detail} />

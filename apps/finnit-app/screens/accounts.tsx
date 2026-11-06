@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useRouter } from 'expo-router';
 import { useQuery } from 'urql';
 import { useTranslations } from 'use-intl';
-import { Landmark } from 'lucide-react-native';
+import { Landmark, Plus } from 'lucide-react-native';
 
 import { ACCOUNTS_QUERY, OVERVIEW_QUERY, RECENT_COUNT, type AccountsResult, type OverviewResult } from '@finnit/core/accounts/request';
 import { historyWindow } from '@finnit/core/accounts/balance-history';
@@ -11,11 +11,13 @@ import { indexCategories } from '@finnit/core/finance/categories';
 import { startOfDayIso, todayKey } from '@finnit/core/finance/dates';
 import { toTransactionRow } from '@finnit/core/finance/transactions';
 import { TwPressable, TwView } from '@finnit/ui-native/lib/tw';
+import { Button } from '@finnit/ui-native/components/ui/button';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
 import { Switch } from '@finnit/ui-native/components/ui/switch';
 import { Text } from '@finnit/ui-native/components/ui/text';
 
 import { AccountCardStack } from '@/components/accounts/account-card-stack';
+import { AddAccountSheet } from '@/components/accounts/add-account-sheet';
 import { AccountMovements } from '@/components/accounts/account-movements';
 import { Screen } from '@/components/shell/screen';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,6 +32,7 @@ export function AccountsScreen() {
   const { user } = useAuth();
   const l = useLocalizer();
   const [showArchived, setShowArchived] = React.useState(false);
+  const [adding, setAdding] = React.useState(false);
   const today = todayKey();
   const window = historyWindow(null, today);
 
@@ -71,14 +74,36 @@ export function AccountsScreen() {
   useOnTransactionsChanged(reload);
 
   return (
-    <Screen title={t('accounts.title')} loading={loading} error={error} refreshing={refreshing} onRefresh={reload}>
+    <Screen
+      title={t('accounts.title')}
+      actions={<Button size="icon" variant="secondary" icon={Plus} label={t('accounts.add')} onPress={() => setAdding(true)} />}
+      loading={loading}
+      error={error}
+      refreshing={refreshing}
+      onRefresh={reload}
+    >
+      {adding ? (
+        <AddAccountSheet
+          existingNames={view?.all.map((a) => a.name) ?? []}
+          onClose={() => setAdding(false)}
+          onConnectBank={() => {
+            setAdding(false);
+            router.push('/connect-bank');
+          }}
+          onCreated={(accountId) => {
+            setAdding(false);
+            reload();
+            router.push({ pathname: '/accounts/[accountId]', params: { accountId } });
+          }}
+        />
+      ) : null}
       {view ? (
         shown.length === 0 && view.archivedCount === 0 ? (
           <EmptyState
             icon={Landmark}
             title={t('accounts.emptyTitle')}
             description={t('accounts.emptyDescription')}
-            action={{ label: t('common.connectBank'), onPress: () => router.push('/connect-bank') }}
+            action={{ label: t('accounts.add'), onPress: () => setAdding(true) }}
           />
         ) : (
           <TwView className="gap-6">

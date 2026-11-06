@@ -96,7 +96,7 @@ export function HistoryList({
         title={t('history.emptyTitle')}
         description={t('history.emptyDescription')}
         action={{
-          href: '/settings/banks/connect',
+          href: '/accounts?add=bank',
           label: t('common.connectBank'),
         }}
       />

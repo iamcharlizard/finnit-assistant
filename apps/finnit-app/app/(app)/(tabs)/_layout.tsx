@@ -9,6 +9,22 @@ import { BottomNavBar, type BottomNavTab } from '@finnit/ui-native/components/na
 import { NAV_ITEM_ICONS } from '@/lib/nav/icons';
 import { useNav } from '@/lib/nav/use-nav';
 
+/** Every route under (tabs): Expo Router 58 only shows the declared ones. */
+const TAB_ROUTES = [
+  'dashboard',
+  'history',
+  'accounts',
+  'recurring',
+  'analytics',
+  'settings',
+  'statements',
+  'transactions/categorize',
+  'planning/budgets',
+  'planning/debts',
+  'planning/goals',
+  'planning/simulator',
+] as const;
+
 /**
  * The main screens, with the floating bottom bar over them (like the web
  * below lg): Inicio, Movimientos, "+", Cuentas and "Más".
@@ -37,7 +53,11 @@ export default function TabsLayout() {
       <Tabs
         tabBar={() => null}
         screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: 'transparent' } }}
-      />
+      >
+        {TAB_ROUTES.map((name) => (
+          <Tabs.Screen key={name} name={name} />
+        ))}
+      </Tabs>
       <BottomNavBar
         label={t('nav.mainNavigation')}
         tabs={tabs}

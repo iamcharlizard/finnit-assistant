@@ -195,6 +195,15 @@ export class TransactionFilters {
 
   @Field(() => Boolean, {
     nullable: true,
+    description:
+      'true: only movements that can take a category (expenses and income, not transfers, adjustments or possible transfers waiting for an answer)',
+  })
+  @IsOptional()
+  @IsBoolean()
+  categorizable?: boolean | null;
+
+  @Field(() => Boolean, {
+    nullable: true,
     description: 'true: only movements with a pending category suggestion',
   })
   @IsOptional()

@@ -727,6 +727,7 @@ function mapAccount(
     balanceCurrent: Number(account.balanceCurrent),
     metadata: (account.metadata as AccountMetadata | null) ?? undefined,
     archived: account.archived,
+    isDefaultCash: account.isDefaultCash ?? false,
     createdAt: account.createdAt,
     updatedAt: account.updatedAt,
   };

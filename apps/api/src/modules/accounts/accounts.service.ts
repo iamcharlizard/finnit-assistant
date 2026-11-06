@@ -170,6 +170,10 @@ export class AccountsService {
       throw new NotFoundError('Account not found');
     }
 
+    if (existingAccount.isDefaultCash && input.archived) {
+      throw new ValidationError('The cash account cannot be archived');
+    }
+
     // Merge, so fields set by the bank sync survive a personalization.
     const metadata = input.metadata
       ? this.mergeMetadata(existingAccount.metadata, input.metadata)
@@ -458,6 +462,10 @@ export class AccountsService {
       throw new NotFoundError('Account not found');
     }
 
+    if (account.isDefaultCash) {
+      throw new ValidationError('The cash account cannot be deleted');
+    }
+
     if (account.transactions.length > 0) {
       throw new ValidationError(
         'Cannot delete account with existing transactions',
@@ -569,6 +577,7 @@ export class AccountsService {
         ? (account.metadata as AccountMetadata)
         : undefined,
       archived: account.archived,
+      isDefaultCash: account.isDefaultCash,
       createdAt: account.createdAt,
       updatedAt: account.updatedAt,
     };
@@ -590,6 +599,7 @@ export class AccountsService {
         ? (account.metadata as AccountMetadata)
         : undefined,
       archived: account.archived,
+      isDefaultCash: account.isDefaultCash,
       createdAt: account.createdAt,
       updatedAt: account.updatedAt,
       creditCardTerms: account.creditCardTerms

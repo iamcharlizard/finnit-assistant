@@ -2,6 +2,19 @@ import { Redirect, Stack } from 'expo-router';
 
 import { useAuth } from '@/contexts/AuthContext';
 
+/** Detail screens pushed over the tabs (declared, as Expo Router 58 expects). */
+const PUSHED_ROUTES = [
+  'transaction/[id]',
+  'accounts/[accountId]',
+  'planning/debts/[id]',
+  'planning/goals/[goalId]',
+  'statements/[id]',
+  'settings/categories',
+  'settings/aliases',
+  'notifications',
+  'connect-bank',
+] as const;
+
 /**
  * Everything behind the session. Without one, back to login (like the
  * web's proxy). The tabs show the bottom bar; detail screens push over
@@ -15,6 +28,9 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
       <Stack.Screen name="(tabs)" />
+      {PUSHED_ROUTES.map((name) => (
+        <Stack.Screen key={name} name={name} />
+      ))}
       <Stack.Screen
         name="new-entry"
         options={{

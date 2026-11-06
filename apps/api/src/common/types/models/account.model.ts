@@ -34,6 +34,12 @@ export class Account {
   @Field()
   archived: boolean;
 
+  @Field({
+    description:
+      'The user\'s cash account ("Efectivo"): always there; can\'t be deleted or archived',
+  })
+  isDefaultCash: boolean;
+
   @Field()
   createdAt: Date;
 

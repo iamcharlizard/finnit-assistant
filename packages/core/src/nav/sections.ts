@@ -13,6 +13,7 @@ export type NavSectionKey =
   | 'home'
   | 'transactions'
   | 'accounts'
+  | 'calendar'
   | 'planning'
   | 'analytics'
   | 'admin';
@@ -24,6 +25,7 @@ export type NavItemKey =
   | 'recurring'
   | 'statements'
   | 'cards'
+  | 'calendar'
   | 'budgets'
   | 'debts'
   | 'goals'
@@ -62,6 +64,10 @@ export const NAV_SECTIONS: ReadonlyArray<NavSection> = [
   {
     key: 'accounts',
     items: [{ key: 'cards', href: '/accounts' }],
+  },
+  {
+    key: 'calendar',
+    items: [{ key: 'calendar', href: '/calendar' }],
   },
   {
     key: 'planning',

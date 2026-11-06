@@ -1,5 +1,6 @@
 import {
   ArrowLeftRight,
+  CalendarDays,
   Calculator,
   ChartLine,
   ClipboardList,
@@ -45,6 +46,7 @@ const ITEM_ICONS: Record<NavItemKey, LucideIcon> = {
   recurring: Repeat,
   statements: FileText,
   cards: CreditCard,
+  calendar: CalendarDays,
   budgets: PiggyBank,
   debts: Landmark,
   goals: Target,
@@ -72,7 +74,10 @@ export const NAV_SECTIONS: ReadonlyArray<NavSection> = SECTION_DATA.map(
   (section) => ({
     ...section,
     icon: GROUP_ICONS[section.key],
-    items: section.items.map((item) => ({ ...item, icon: ITEM_ICONS[item.key] })),
+    items: section.items.map((item) => ({
+      ...item,
+      icon: ITEM_ICONS[item.key],
+    })),
   }),
 );
 

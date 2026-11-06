@@ -23,7 +23,7 @@ export function AnalyticsScreen({ view }: { view: AnalyticsView }) {
         title={t('analytics.emptyTitle')}
         description={t('analytics.emptyDescription')}
         action={{
-          href: '/settings/banks/connect',
+          href: '/accounts?add=bank',
           label: t('common.connectBank'),
         }}
       />

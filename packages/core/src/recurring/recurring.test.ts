@@ -11,8 +11,17 @@ import {
   recurringErrorMessage,
   saveRecurring,
 } from './api';
-import { filterExpenses, kindFilterOptions } from '@finnit/core/recurring/filters';
-import { parseTabParam, withTabParam } from '@finnit/core/recurring/tabs';
+import {
+  filterExpenses,
+  kindFilterOptions,
+} from '@finnit/core/recurring/filters';
+import {
+  CALENDAR_TABS,
+  parseTab,
+  parseTabParam,
+  withTab,
+  withTabParam,
+} from '@finnit/core/recurring/tabs';
 import {
   buildAcceptInput,
   buildCreateInput,
@@ -27,11 +36,14 @@ import {
   parseDateParam,
   parseViewParam,
   periodLabel,
-  recurringHref,
+  calendarHref,
   shiftDate,
   visibleRange,
 } from '@finnit/core/recurring/range';
-import { confidencePercent, toSuggestionCard } from '@finnit/core/recurring/suggestions';
+import {
+  confidencePercent,
+  toSuggestionCard,
+} from '@finnit/core/recurring/suggestions';
 import type {
   ApiRecurringExpense,
   ApiRecurringPayment,
@@ -169,12 +181,12 @@ describe('range per view', () => {
     assert.equal(shiftDate('month', '2026-01-31', 1), '2026-02-28');
     assert.equal(shiftDate('month', '2026-01-15', -1), '2025-12-15');
     assert.equal(
-      recurringHref({ view: 'month', date: TODAY }),
-      '/recurring?date=2026-10-13',
+      calendarHref({ view: 'month', date: TODAY }),
+      '/calendar?date=2026-10-13',
     );
     assert.equal(
-      recurringHref({ view: 'week', date: TODAY }),
-      '/recurring?view=week&date=2026-10-13',
+      calendarHref({ view: 'week', date: TODAY }),
+      '/calendar?view=week&date=2026-10-13',
     );
   });
 
@@ -298,7 +310,7 @@ describe('payments and calendar events', () => {
       view.expenses.map((e) => e.name),
       ['Agua', 'Zeta'],
     );
-    assert.equal(view.prevHref, '/recurring?view=week&date=2026-10-06');
+    assert.equal(view.prevHref, '/calendar?view=week&date=2026-10-06');
     assert.equal(view.periodLabel, '12–18 oct');
     // The week has no card date; October has the cut-off on the 20th.
     assert.deepEqual(view.cardDates, []);
@@ -619,23 +631,34 @@ describe('suggestion cards', () => {
 });
 
 describe('recurring tabs', () => {
-  it('parses known tabs and falls back to the calendar', () => {
-    assert.equal(parseTabParam('list'), 'list');
+  it('parses known tabs and falls back to the list', () => {
     assert.equal(parseTabParam('suggestions'), 'suggestions');
-    assert.equal(parseTabParam('nope'), 'calendar');
-    assert.equal(parseTabParam(['list']), 'calendar');
-    assert.equal(parseTabParam(undefined), 'calendar');
+    assert.equal(parseTabParam('list'), 'list');
+    // The calendar moved to its own screen.
+    assert.equal(parseTabParam('calendar'), 'list');
+    assert.equal(parseTabParam(['suggestions']), 'list');
+    assert.equal(parseTabParam(undefined), 'list');
   });
 
   it('keeps the other params and drops the default tab', () => {
     assert.equal(
-      withTabParam('?view=week&date=2026-10-30', 'list'),
-      '?view=week&date=2026-10-30&tab=list',
+      withTabParam('?q=net', 'suggestions'),
+      '?q=net&tab=suggestions',
+    );
+    assert.equal(withTabParam('?tab=suggestions&q=net', 'list'), '?q=net');
+    assert.equal(withTabParam('', 'list'), '');
+  });
+
+  it('the calendar screen opens on the calendar', () => {
+    assert.equal(parseTab(CALENDAR_TABS, 'summary'), 'summary');
+    assert.equal(parseTab(CALENDAR_TABS, 'list'), 'calendar');
+    assert.equal(
+      withTab(CALENDAR_TABS, '?view=week&date=2026-10-30', 'summary'),
+      '?view=week&date=2026-10-30&tab=summary',
     );
     assert.equal(
-      withTabParam('?tab=list&date=2026-10-30', 'calendar'),
+      withTab(CALENDAR_TABS, '?tab=summary&date=2026-10-30', 'calendar'),
       '?date=2026-10-30',
     );
-    assert.equal(withTabParam('', 'calendar'), '');
   });
 });

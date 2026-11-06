@@ -9,10 +9,13 @@ export function ErrorStep({
   message,
   canRetry,
   onRetry,
+  onClose,
 }: {
   message: string;
   canRetry: boolean;
   onRetry: () => void;
+  /** Inside a dialog; otherwise "Cerrar" goes back to the banks page. */
+  onClose?: () => void;
 }) {
   const t = useTranslations();
   return (
@@ -26,9 +29,15 @@ export function ErrorStep({
       <TitleLg as="h2">{t('bankConnect.error.title')}</TitleLg>
       <BodyMd className="max-w-md text-on-surface-variant">{message}</BodyMd>
       <div className="flex flex-col gap-3 sm:flex-row">
-        <Button variant="outline" asChild>
-          <Link href="/settings/banks">{t('common.close')}</Link>
-        </Button>
+        {onClose ? (
+          <Button variant="outline" onClick={onClose}>
+            {t('common.close')}
+          </Button>
+        ) : (
+          <Button variant="outline" asChild>
+            <Link href="/settings/banks">{t('common.close')}</Link>
+          </Button>
+        )}
         {canRetry ? (
           <Button variant="secondary" onClick={onRetry}>
             {t('bankConnect.error.retry')}

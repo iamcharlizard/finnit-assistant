@@ -15,6 +15,7 @@ const TAB_ROUTES = [
   'history',
   'accounts',
   'recurring',
+  'calendar',
   'analytics',
   'settings',
   'statements',

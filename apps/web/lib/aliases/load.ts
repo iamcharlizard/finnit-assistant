@@ -1,71 +1,20 @@
 import 'server-only';
 
 import { serverGraphql } from '@/lib/api/server-graphql';
-import type { CategorizeCategory } from '@finnit/core/categorize/types';
 import {
-  endOfDayIso,
-  firstDayOf,
-  lastDayOf,
-  monthOf,
-  startOfDayIso,
-  todayKey,
-} from '@finnit/core/finance/dates';
-import { accountLabel } from '@finnit/core/finance/accounts';
-import {
-  ALIAS_SPENDING_FIELDS,
-  MERCHANT_ALIAS_FIELDS,
-  MERCHANT_RULE_FIELDS,
-  type ApiMerchantAlias,
-  type ApiMerchantRule,
-} from '@finnit/core/aliases/types';
+  ALIASES_QUERY,
+  aliasesData,
+  aliasesVariables,
+  type AliasesData,
+  type AliasesResult,
+} from '@finnit/core/aliases/request';
+import { todayKey } from '@finnit/core/finance/dates';
 
-export interface AliasesData {
-  aliases: ApiMerchantAlias[];
-  rules: ApiMerchantRule[];
-  categories: CategorizeCategory[];
-  /** Account names by id (rules that send movements to one of them). */
-  accountNames: Record<string, string>;
-  /** "YYYY-MM" of this month, for the "Ver movimientos" links. */
-  month: string;
-}
-
-const ALIASES_QUERY = `query Aliases($monthFrom: DateTime!, $monthTo: DateTime!, $yearFrom: DateTime!, $yearTo: DateTime!) {
-  merchantAliases { ${MERCHANT_ALIAS_FIELDS} ${ALIAS_SPENDING_FIELDS} }
-  merchantRules { ${MERCHANT_RULE_FIELDS} }
-  categories { id name parentId key kind icon }
-  accounts(first: 100) { edges { node { id name metadata } } }
-}`;
+export type { AliasesData };
 
 /** Every automatic name (with this month's and year's spending), the learned category rules and the category picker. */
 export async function loadAliases(): Promise<AliasesData> {
   const today = todayKey();
-  const month = monthOf(today);
-  const data = await serverGraphql<{
-    merchantAliases: ApiMerchantAlias[];
-    merchantRules: ApiMerchantRule[];
-    categories: CategorizeCategory[];
-    accounts: {
-      edges: {
-        node: {
-          id: string;
-          name: string;
-          metadata: { nickname?: string | null } | null;
-        };
-      }[];
-    };
-  }>(ALIASES_QUERY, {
-    monthFrom: startOfDayIso(firstDayOf(month)),
-    monthTo: endOfDayIso(lastDayOf(month)),
-    yearFrom: startOfDayIso(firstDayOf({ year: month.year, month: 1 })),
-    yearTo: endOfDayIso(today),
-  });
-  return {
-    aliases: data.merchantAliases,
-    rules: data.merchantRules,
-    categories: data.categories,
-    accountNames: Object.fromEntries(
-      data.accounts.edges.map(({ node }) => [node.id, accountLabel(node)]),
-    ),
-    month: `${month.year}-${String(month.month).padStart(2, '0')}`,
-  };
+  const data = await serverGraphql<AliasesResult>(ALIASES_QUERY, aliasesVariables(today));
+  return aliasesData(data, today);
 }

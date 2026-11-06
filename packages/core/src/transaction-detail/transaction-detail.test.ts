@@ -4,9 +4,16 @@ import { describe, it } from 'node:test';
 import { testLocalizer } from '@finnit/core/i18n/testing';
 import { GraphqlRequestError } from '@finnit/core/graphql/request';
 import { transactionErrorMessage } from './api';
-import { buildUpdateInput, detailFormOf, validateDetailForm } from '@finnit/core/transaction-detail/form';
+import {
+  buildUpdateInput,
+  detailFormOf,
+  validateDetailForm,
+} from '@finnit/core/transaction-detail/form';
 import type { TransactionDetail } from '@finnit/core/transaction-detail/types';
-import { ownNameUpdate, shownSuggestion } from '@finnit/core/transaction-detail/edit';
+import {
+  ownNameUpdate,
+  shownSuggestion,
+} from '@finnit/core/transaction-detail/edit';
 import {
   deleteBlock,
   editRules,
@@ -371,5 +378,49 @@ describe('transaction detail: the editor', () => {
       }),
       null,
     );
+  });
+});
+
+describe('transaction detail: loan payments', () => {
+  it('an expense that pays nothing can be linked to a loan', () => {
+    const view = toTransactionDetailView(tx(), today, es);
+    assert.equal(view.canLinkLoan, true);
+    assert.equal(view.loan, null);
+    assert.equal(
+      toTransactionDetailView(tx({ type: 'income' }), today, es).canLinkLoan,
+      false,
+    );
+    assert.equal(
+      toTransactionDetailView(tx({ isPending: true }), today, es).canLinkLoan,
+      false,
+    );
+  });
+
+  it('a loan payment links to the loan and hides the recurring link', () => {
+    const view = toTransactionDetailView(
+      tx({
+        recurringPayment: {
+          occurrenceId: 'occ-1',
+          recurringExpenseId: 'rec-1',
+          name: 'Préstamo DiDi',
+          dueDate: '2026-10-03T00:00:00.000Z',
+        },
+        loanPayment: {
+          debtId: 'debt-1',
+          debtName: 'Préstamo DiDi',
+          occurrenceId: 'occ-1',
+          dueDate: '2026-10-03T00:00:00.000Z',
+        },
+      }),
+      today,
+      es,
+    );
+    assert.equal(view.recurring, null);
+    assert.equal(view.canLinkLoan, false);
+    assert.deepEqual(view.loan, {
+      href: '/planning/debts/debt-1',
+      label: 'Pago de Préstamo DiDi del 3 de octubre',
+      occurrenceId: 'occ-1',
+    });
   });
 });

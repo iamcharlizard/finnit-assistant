@@ -17,7 +17,7 @@ import {
   withPeriod,
   type HistoryFilters,
 } from '@finnit/core/history/filters';
-import { TRANSACTIONS_PAGE_QUERY, dayNet, toTransactionPage, type TransactionPage } from '@finnit/core/history/view';
+import { TRANSACTIONS_PAGE_QUERY, dayNet, groupTransfers, toTransactionPage, type TransactionPage } from '@finnit/core/history/view';
 import { cn } from '@finnit/ui-native/lib/utils';
 import { TwView } from '@finnit/ui-native/lib/tw';
 import { Button } from '@finnit/ui-native/components/ui/button';
@@ -28,8 +28,9 @@ import { LabelSm } from '@finnit/ui-native/components/ui/typography';
 import { TransactionListCard } from '@/components/finance/transaction-card';
 import { useGql } from '@/lib/graphql/runner';
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
+import { TransferGroupCard } from './transfer-group-card';
 
-/** Movements grouped by day, with "Cargar más" (the web's HistoryList). */
+/** Movements grouped by day (a transfer's two sides as one item), with "Cargar más" (the web's HistoryList). */
 export function HistoryList({
   initial,
   filters,
@@ -56,7 +57,10 @@ export function HistoryList({
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const index = React.useMemo(() => indexCategories(categories), [categories]);
-  const groups = React.useMemo(() => groupByDay(page.rows, today, l.locale), [page.rows, today, l.locale]);
+  const groups = React.useMemo(
+    () => groupByDay(page.rows, today, l.locale).map((group) => ({ ...group, items: groupTransfers(group.rows, l) })),
+    [page.rows, today, l],
+  );
   const links = monthLinks(filters, today);
   const previous = links
     ? {
@@ -145,9 +149,13 @@ export function HistoryList({
               ) : null}
             </TwView>
             <TwView className="gap-2">
-              {group.rows.map((row) => (
-                <TransactionListCard key={row.id} row={row} showStatus />
-              ))}
+              {group.items.map((item) =>
+                item.kind === 'transfer' ? (
+                  <TransferGroupCard key={item.key} group={item} />
+                ) : (
+                  <TransactionListCard key={item.row.id} row={item.row} showStatus />
+                ),
+              )}
             </TwView>
           </TwView>
         );

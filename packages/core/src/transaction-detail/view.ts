@@ -5,10 +5,8 @@ import { categoryLabel } from '../finance/categories';
 import { dayKeyOf, longDate, timeOf, type DayKey } from '../finance/dates';
 import { formatMoney } from '../finance/money';
 import { direction, transactionTitle } from '../finance/transactions';
-import {
-  canConvertToTransfer,
-  type ConvertSource,
-} from '../transfers/convert';
+import { canConvertToTransfer, type ConvertSource } from '../transfers/convert';
+import { debtHref } from '../debts/view';
 import type { ApiAttachment, TransactionDetail } from './types';
 
 /** Where a movement came from, as the detail names it. */
@@ -168,6 +166,17 @@ export interface TransactionDetailView {
   convertSource: ConvertSource | null;
   /** The recurring payment it paid, linked. */
   recurring: { href: string; label: string } | null;
+  /**
+   * The loan payment it is: the loan's page, and the scheduled payment to
+   * unlink (null when the loan has no schedule: nothing to unlink).
+   */
+  loan: {
+    href: string;
+    label: string;
+    occurrenceId: string | null;
+  } | null;
+  /** An expense that pays nothing yet: it can be linked to a loan payment. */
+  canLinkLoan: boolean;
   attachments: AttachmentView[];
   rules: EditRules;
   deleteBlock: DeleteBlock;
@@ -188,6 +197,8 @@ export function toTransactionDetailView(
   const counterpart = tx.transferCounterpart;
   const recurring = tx.recurringPayment;
   const recurringDay = recurring ? dayKeyOf(recurring.dueDate) : null;
+  const loan = tx.loanPayment ?? null;
+  const loanDay = loan?.dueDate ? dayKeyOf(loan.dueDate) : null;
 
   return {
     id: tx.id,
@@ -235,8 +246,9 @@ export function toTransactionDetailView(
           ),
         }
       : null,
+    // A loan's scheduled payment is shown as the loan payment instead.
     recurring:
-      recurring && recurringDay
+      recurring && recurringDay && !loan
         ? {
             href: `/recurring?date=${recurringDay}`,
             label: t('transaction.recurringPaid', {
@@ -245,6 +257,19 @@ export function toTransactionDetailView(
             }),
           }
         : null,
+    loan: loan
+      ? {
+          href: debtHref({ id: loan.debtId, kind: 'loan' }),
+          label: loanDay
+            ? t('transaction.loanPaid', {
+                name: loan.debtName,
+                date: longDate(loanDay, today, locale),
+              })
+            : t('transaction.loanPaidUnscheduled', { name: loan.debtName }),
+          occurrenceId: loan.occurrenceId,
+        }
+      : null,
+    canLinkLoan: tx.type === 'expense' && !tx.isPending && !loan && !recurring,
     attachments: (tx.attachments ?? []).map((a) =>
       toAttachmentView(a, t('transaction.attachments.unnamed')),
     ),

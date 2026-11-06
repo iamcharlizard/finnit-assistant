@@ -18,6 +18,7 @@ import { PrismaService } from '../../services/prisma.service';
 import { DebtsService } from './debts.service';
 import { LoansService } from './loans.service';
 import { LoanTrackingService } from './loan-tracking.service';
+import { LoanLinksService } from './loan-links.service';
 import { DebtInsightsService } from './debt-insights.service';
 import { RecurringExpensesService } from '../recurring-expenses/recurring-expenses.service';
 import { RecurringSuggestionsService } from '../recurring-expenses/suggestions/recurring-suggestions.service';
@@ -28,6 +29,7 @@ import { S3StorageService } from '../storage/s3-storage.service';
 import { MerchantAliasesService } from '../categorization/merchant-aliases.service';
 import { MerchantRulesService } from '../categorization/merchant-rules.service';
 import {
+  ConflictError,
   DebtOverpaymentError,
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
@@ -42,6 +44,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
   let prisma: PrismaService;
   let loans: LoansService;
   let tracking: LoanTrackingService;
+  let links: LoanLinksService;
   let insights: DebtInsightsService;
   let debts: DebtsService;
   let recurring: RecurringExpensesService;
@@ -58,6 +61,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
         DebtsService,
         LoansService,
         LoanTrackingService,
+        LoanLinksService,
         DebtInsightsService,
         RecurringExpensesService,
         RecurringSuggestionsService,
@@ -82,6 +86,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
     await prisma.$connect();
     loans = module.get(LoansService);
     tracking = module.get(LoanTrackingService);
+    links = module.get(LoanLinksService);
     insights = module.get(DebtInsightsService);
     debts = module.get(DebtsService);
     recurring = module.get(RecurringExpensesService);
@@ -1332,5 +1337,131 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
     for (const debt of [old, edited, withCharge]) {
       await debts.delete(debt.id, userId);
     }
+  });
+
+  it('links expenses to loan payments from either side and unlinks them', async () => {
+    const debt = await loans.create(userId, {
+      name: 'Préstamo DiDi',
+      kind: DebtKind.loan,
+      loanType: LoanType.institutional,
+      lenderName: 'DiDi',
+      principal: 5_000,
+      interestMode: LoanInterestMode.installment_amount,
+      installmentAmount: 990.19,
+      installmentsTotal: 6,
+      paymentFrequency: RecurringFrequency.monthly,
+      firstPaymentDate: d('2026-09-03'),
+      installmentsPaid: 1,
+      paymentAccountId: debitId,
+    });
+    const occurrences = await prisma.recurringOccurrence.findMany({
+      where: { recurringExpense: { debtId: debt.id } },
+      orderBy: { dueDate: 'asc' },
+    });
+    const byDay = new Map(occurrences.map((o) => [iso(o.dueDate), o]));
+    const september = byDay.get('2026-09-03')!;
+    const october = byDay.get('2026-10-03')!;
+    const november = byDay.get('2026-11-03')!;
+    expect(september.status).toBe(OccurrenceStatus.paid);
+    const owed = debt.remainingBalance;
+
+    const movement = (day: string, amount: number, text: string) =>
+      prisma.transaction.create({
+        data: {
+          userId,
+          accountId: debitId,
+          type: TransactionType.expense,
+          amount,
+          currency: 'MXN',
+          txnDate: d(day),
+          description: text,
+          merchantName: text,
+          source: TransactionSource.imported,
+        },
+      });
+
+    // From the movement: the payment due that same day is suggested.
+    const octoberMovement = await movement(
+      '2026-10-03',
+      990.19,
+      'DIDI*PRESTAMOS 2',
+    );
+    const options = await links.linkOptions(userId, octoberMovement.id);
+    expect(options.suggestedDebtId).toBe(debt.id);
+    const loan = options.loans.find((l) => l.debtId === debt.id)!;
+    expect(loan.suggestedOccurrenceId).toBe(october.id);
+    expect(
+      loan.payments.find((p) => p.occurrenceId === september.id)?.state,
+    ).toBe('paid_without_movement');
+    const linked = await links.link(userId, october.id, octoberMovement.id);
+    expect(linked.remainingBalance).toBeCloseTo(owed - 990.19, 2);
+    await expect(
+      links.link(userId, october.id, octoberMovement.id),
+    ).rejects.toBeInstanceOf(ConflictError);
+
+    // From the loan: movements close in amount, those naming it first.
+    const named = await movement('2026-11-02', 990.19, 'DIDI*PRESTAMOS 2');
+    const other = await movement('2026-11-04', 985, 'OXXO REFORMA');
+    await movement('2026-11-03', 500, 'DIDI*PRESTAMOS 2');
+    const candidates = await links.expenseCandidates(userId, november.id);
+    expect(candidates.map((c) => c.transactionId)).toEqual([
+      named.id,
+      other.id,
+    ]);
+    expect(candidates[0]).toMatchObject({ nameMatch: true, exactAmount: true });
+    const searched = await links.expenseCandidates(userId, november.id, 'didi');
+    // Any amount, but not the movement already linked in October.
+    expect(searched).toHaveLength(2);
+    expect(searched.map((c) => c.transactionId)).not.toContain(
+      octoberMovement.id,
+    );
+
+    // A payment made before registering the loan takes a movement.
+    const septemberMovement = await movement('2026-09-03', 990.19, 'DIDI PAGO');
+    const withHistory = await links.link(
+      userId,
+      september.id,
+      septemberMovement.id,
+    );
+    expect(withHistory.historicalPaid).toBe(0);
+    expect(withHistory.remainingBalance).toBeCloseTo(owed - 990.19, 2);
+    expect(
+      (
+        await prisma.transaction.findUniqueOrThrow({
+          where: { id: septemberMovement.id },
+        })
+      ).categoryId,
+    ).not.toBeNull();
+
+    // Unlinked and kept paid: historical again, the movement stays.
+    const kept = await links.unlink(userId, september.id, true);
+    expect(kept.historicalPaid).toBe(990.19);
+    expect(kept.remainingBalance).toBeCloseTo(owed - 990.19, 2);
+    expect(
+      await prisma.transaction.findUnique({
+        where: { id: septemberMovement.id },
+      }),
+    ).not.toBeNull();
+    const schedule = await tracking.schedule(userId, debt.id);
+    expect(schedule.find((i) => i.occurrenceId === september.id)).toMatchObject(
+      { status: 'paid', isHistorical: true },
+    );
+
+    // Unlinked and reopened: owed again.
+    const reopened = await links.unlink(userId, october.id, false);
+    expect(reopened.remainingBalance).toBe(owed);
+    expect(
+      (
+        await prisma.recurringOccurrence.findUniqueOrThrow({
+          where: { id: october.id },
+        })
+      ).status,
+    ).toBe(OccurrenceStatus.upcoming);
+
+    await prisma.recurringOccurrence.updateMany({
+      where: { recurringExpense: { debtId: debt.id } },
+      data: { transactionId: null },
+    });
+    await debts.delete(debt.id, userId);
   });
 });

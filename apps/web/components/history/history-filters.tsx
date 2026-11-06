@@ -47,7 +47,8 @@ import type { Option } from '@finnit/core/history/view';
 const ALL = 'all';
 
 /**
- * The history's toolbar, fixed under the header while the list scrolls:
+ * The history's toolbar, fixed under the header while the list scrolls
+ * (exactly where it starts, so it never moves; see useStickyTops):
  * search, type, the month (‹ Noviembre 2026 ›) and "Filtros" (account,
  * category, whole history or a date range). Every change updates the URL.
  */
@@ -96,7 +97,11 @@ export function HistoryFilters({
   const backToMonth = () => apply(withPeriod(filters, monthOf(today)));
 
   return (
-    <div className="glass sticky top-24 z-20 mb-6 flex flex-col gap-3 rounded-3xl border border-glass-border bg-surface/95 p-3 shadow-elevation backdrop-blur-xl">
+    <div
+      // Measured by useStickyTops: the day headings stick below it.
+      data-history-toolbar=""
+      className="glass sticky top-[var(--history-top,6rem)] z-20 mb-6 flex flex-col gap-3 rounded-3xl border border-glass-border bg-surface/95 p-3 shadow-elevation backdrop-blur-xl"
+    >
       <div className="flex items-center gap-2">
         <div role="search" className="min-w-0 flex-1">
           <InputWithIcon

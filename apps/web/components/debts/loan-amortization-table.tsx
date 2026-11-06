@@ -2,14 +2,17 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { CalendarClock } from 'lucide-react';
+import { CalendarClock, Link2, Receipt, Unlink } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
 import { Button } from '@finnit/ui/components/ui/button';
 import { DataTable, type ColumnDef } from '@finnit/ui/components/ui/data-table';
 
 import { useTableLabels } from '@/components/use-table-labels';
-import type { ScheduleRow, ScheduleRowStatus } from '@finnit/core/debts/detail-view';
+import type {
+  ScheduleRow,
+  ScheduleRowStatus,
+} from '@finnit/core/debts/detail-view';
 
 const STATUS_BADGE: Record<
   ScheduleRowStatus,
@@ -31,7 +34,9 @@ const dash = (label: string | null) => label ?? '—';
  * loans given by their rate, how much is principal, interest, VAT and fee,
  * with the balance left; for loans scheduled by their charges, which
  * installment of which charge it is. Five per page by default; sortable by
- * number and date. Open payments can be paid from here.
+ * number and date. Open payments can be paid from here; one paid without
+ * a movement can take an expense, and one paid by an expense opens it or
+ * unlinks it.
  */
 export function LoanAmortizationTable({
   rows,
@@ -39,6 +44,9 @@ export function LoanAmortizationTable({
   hasFees,
   onPay,
   onReschedule,
+  onLinkExpense,
+  onUnlink,
+  onOpenMovement,
 }: {
   rows: ScheduleRow[];
   hasBreakdown: boolean;
@@ -46,8 +54,14 @@ export function LoanAmortizationTable({
   onPay: (row: ScheduleRow) => void;
   /** Moves an open payment to another day. */
   onReschedule: (row: ScheduleRow) => void;
+  /** A payment paid without a movement takes an existing expense. */
+  onLinkExpense: (row: ScheduleRow) => void;
+  /** Takes the expense off a payment. */
+  onUnlink: (row: ScheduleRow) => void;
+  onOpenMovement: (transactionId: string) => void;
 }) {
   const td = useTranslations('debts.detail');
+  const tl = useTranslations('debts.links');
   const labels = useTableLabels();
 
   const hasConcept = rows.some((row) => row.concept);
@@ -150,34 +164,90 @@ export function LoanAmortizationTable({
       {
         id: 'actions',
         header: () => <span className="sr-only">{td('columns.actions')}</span>,
-        cell: ({ row }) =>
-          row.original.occurrenceId ? (
-            <span className="flex items-center justify-end gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                aria-label={td('reschedule')}
-                title={td('reschedule')}
-                onClick={() => onReschedule(row.original)}
-              >
-                <CalendarClock aria-hidden />
-              </Button>
+        cell: ({ row }) => {
+          const r = row.original;
+          if (r.occurrenceId) {
+            return (
+              <span className="flex items-center justify-end gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={td('reschedule')}
+                  title={td('reschedule')}
+                  onClick={() => onReschedule(row.original)}
+                >
+                  <CalendarClock aria-hidden />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="min-h-8 py-1"
+                  onClick={() => onPay(row.original)}
+                >
+                  {td('payThis')}
+                </Button>
+              </span>
+            );
+          }
+          if (r.unlinkOccurrenceId && r.transactionId) {
+            const transactionId = r.transactionId;
+            return (
+              <span className="flex items-center justify-end gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={tl('viewMovement')}
+                  title={tl('viewMovement')}
+                  onClick={() => onOpenMovement(transactionId)}
+                >
+                  <Receipt aria-hidden />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={tl('unlink.action')}
+                  title={tl('unlink.action')}
+                  onClick={() => onUnlink(r)}
+                >
+                  <Unlink aria-hidden />
+                </Button>
+              </span>
+            );
+          }
+          if (r.linkOccurrenceId) {
+            return (
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
                 className="min-h-8 py-1"
-                onClick={() => onPay(row.original)}
+                onClick={() => onLinkExpense(r)}
               >
-                {td('payThis')}
+                <Link2 aria-hidden /> {tl('linkPaid')}
               </Button>
-            </span>
-          ) : null,
+            );
+          }
+          return null;
+        },
         meta: right,
       },
     ];
-  }, [hasBreakdown, hasConcept, hasFees, onPay, onReschedule, td]);
+  }, [
+    hasBreakdown,
+    hasConcept,
+    hasFees,
+    onPay,
+    onReschedule,
+    onLinkExpense,
+    onUnlink,
+    onOpenMovement,
+    td,
+    tl,
+  ]);
 
   if (rows.length === 0) {
     return (

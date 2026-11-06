@@ -1432,6 +1432,24 @@ type LinkedBankAccount {
   type: String
 }
 
+"""An expense movement that could be a payment of a loan"""
+type LoanExpenseCandidate {
+  accountName: String!
+  amount: Float!
+  date: DateTime!
+  description: String!
+
+  """Within a few cents of the payment"""
+  exactAmount: Boolean!
+
+  """Its text shares a word with the loan or lender"""
+  nameMatch: Boolean!
+
+  """0..1"""
+  score: Float!
+  transactionId: ID!
+}
+
 """
 Which value defines the amount to repay: rate (principal + annual rate, French amortization), total_amount or installment_amount
 """
@@ -1439,6 +1457,38 @@ enum LoanInterestMode {
   installment_amount
   rate
   total_amount
+}
+
+"""A loan and the payments a movement can pay"""
+type LoanLinkLoan {
+  debtId: ID!
+  lenderName: String
+  name: String!
+
+  """Closest to the movement first"""
+  payments: [LoanLinkTarget!]!
+
+  """The payment that fits the movement best (same date first), if any"""
+  suggestedOccurrenceId: ID
+}
+
+"""Where an expense movement can be linked"""
+type LoanLinkOptions {
+  """Best fit first"""
+  loans: [LoanLinkLoan!]!
+  suggestedDebtId: ID
+}
+
+"""A payment of a loan an expense can be linked to"""
+type LoanLinkTarget {
+  amount: Float!
+  dueDate: DateTime!
+  occurrenceId: ID!
+
+  """
+  open (to pay), overdue, or paid_without_movement (paid before the loan was registered or unlinked)
+  """
+  state: String!
 }
 
 """A bank movement that looks like an open payment of a loan"""
@@ -1804,6 +1854,11 @@ type Mutation {
   linkBankAccount(input: LinkBankAccountInput!, linkedAccountId: ID!): BankSyncResult!
 
   """
+  Links an expense movement to a loan payment (open, or paid without a movement)
+  """
+  linkLoanPayment(occurrenceId: ID!, transactionId: ID!): Debt!
+
+  """
   Admin only: maps a Finnit user (by email) to an existing Syncfy user (id_user or id_external)
   """
   linkSyncfyUser(email: String!, syncfyUser: String!): Boolean!
@@ -1911,6 +1966,15 @@ type Mutation {
   """Gives the movements of a converted transfer their type back"""
   undoTransferConversion(transferId: ID!): Boolean!
   unlinkBankAccount(linkedAccountId: ID!): BankConnection!
+
+  """
+  Takes the movement off a loan payment; the payment reopens or stays paid without a movement
+  """
+  unlinkLoanPayment(
+    """true: the payment stays paid, without a movement; false: back to open"""
+    keepPaid: Boolean!
+    occurrenceId: ID!
+  ): Debt!
 
   """Admin only"""
   unlinkUserGoogle(id: ID!): AdminUser!
@@ -2153,6 +2217,23 @@ type Query {
   """Over all the user's goals, or only goalId when given"""
   goalRecommendations(goalId: ID): GoalRecommendations!
   goals: [Goal!]!
+
+  """
+  Expense movements that could be this loan payment: close in amount and date, those naming the loan first
+  """
+  loanExpenseCandidates(
+    occurrenceId: ID!
+
+    """
+    Text to look for instead (any amount, the last year): when the movement is not among the matches
+    """
+    search: String
+  ): [LoanExpenseCandidate!]!
+
+  """
+  Loans and payments an expense movement can pay; the payment due the same day is suggested
+  """
+  loanLinkOptions(transactionId: ID!): LoanLinkOptions!
 
   """
   Bank movements that look like open payments of a loan; confirm them with confirmLoanPayment
@@ -2852,6 +2933,11 @@ type Transaction {
   """
   isPrivate: Boolean!
   isRecurringInstance: Boolean!
+
+  """
+  The loan payment this movement is (one query per movement; for the detail, not lists)
+  """
+  loanPayment: TransactionLoanPayment
   merchantName: String
 
   """The user's notes; null for private movements except in transaction(id)"""
@@ -2890,6 +2976,11 @@ type Transaction {
   For transfers: "out" on the source account, "in" on the destination; null otherwise
   """
   transferDirection: String
+
+  """
+  For transfers: the transfer both sides share (batched; lists use it to group them)
+  """
+  transferId: ID
   txnDate: DateTime!
   type: String!
   updatedAt: DateTime!
@@ -2961,6 +3052,18 @@ input TransactionFilters {
 
   """true: only movements without a category; false: only with one"""
   uncategorized: Boolean
+}
+
+"""The loan payment a movement pays"""
+type TransactionLoanPayment {
+  debtId: ID!
+  debtName: String!
+
+  """Due date of that scheduled payment"""
+  dueDate: DateTime
+
+  """Its scheduled payment (null for loans without a schedule)"""
+  occurrenceId: ID
 }
 
 """The recurring payment a movement paid"""

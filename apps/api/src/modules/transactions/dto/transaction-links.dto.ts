@@ -43,3 +43,21 @@ export class TransactionRecurringPayment {
   @Field()
   dueDate: Date;
 }
+
+@ObjectType({ description: 'The loan payment a movement pays' })
+export class TransactionLoanPayment {
+  @Field(() => ID)
+  debtId: string;
+
+  @Field()
+  debtName: string;
+
+  @Field(() => ID, {
+    nullable: true,
+    description: 'Its scheduled payment (null for loans without a schedule)',
+  })
+  occurrenceId?: string;
+
+  @Field({ nullable: true, description: 'Due date of that scheduled payment' })
+  dueDate?: Date;
+}

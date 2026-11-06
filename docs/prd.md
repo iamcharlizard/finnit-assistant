@@ -288,7 +288,7 @@ Detailed, verified status per feature and platform: [features.md](./features.md)
 - **Transfers**: inter-account transfers with atomic validation.
 - **Categories**: hierarchical defaults and user categories.
 - **Budgets**: monthly/category budgets, templates, usage and alerts on query.
-- **Debts**: loans and credit cards, payments, avalanche/snowball strategies.
+- **Debts**: loans and credit cards, payments, avalanche/snowball strategies; link an existing expense to a loan payment from the movement (the payment due that day is suggested) or from the loan (expenses close in amount and naming the loan), and unlink it (web and mobile).
 - **Goals**: create, list and progress (contributions not exposed yet).
 - **Notifications**: list and mark as read (nothing generates them yet).
 - **Reports**: monthly summary, cash flow projection, "What If" scenarios.

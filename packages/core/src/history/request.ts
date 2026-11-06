@@ -15,13 +15,20 @@ import {
   type Connection,
 } from '../finance/types';
 import type { Localizer } from '../i18n/translator';
-import { HISTORY_PAGE_SIZE, shownMonth, toApiFilters, type HistoryFilters } from './filters';
+import {
+  HISTORY_PAGE_SIZE,
+  shownMonth,
+  toApiFilters,
+  type HistoryFilters,
+} from './filters';
 import {
   HISTORY_QUERY_FIELDS,
   accountOptions,
   categoryOptions,
   toTransactionPage,
+  topCategoryChart,
   topCategoryRows,
+  type CategoryChart,
   type Option,
   type TransactionPage,
 } from './view';
@@ -35,6 +42,7 @@ export interface HistoryData {
   topCategories: {
     title: string;
     rows: ReturnType<typeof topCategoryRows>;
+    chart: CategoryChart;
   };
   /** Name of the automatic name the list is filtered by. */
   aliasName: string | null;
@@ -81,7 +89,11 @@ export function buildHistoryData(
   const month = topMonth(filters, today);
   return {
     today,
-    page: toTransactionPage(data.transactions, indexCategories(data.categories), l),
+    page: toTransactionPage(
+      data.transactions,
+      indexCategories(data.categories),
+      l,
+    ),
     categories: data.categories,
     accounts: accountOptions(
       data.accounts.edges.map((e) => e.node),
@@ -90,10 +102,12 @@ export function buildHistoryData(
     categoryOptions: categoryOptions(data.categories, t),
     topCategories: {
       title: t('history.topCategories', { month: monthLabel(month, locale) }),
-      rows: topCategoryRows(data.monthlyReport, data.categories, t),
+      rows: topCategoryRows(data.monthlyReport, data.categories, l),
+      chart: topCategoryChart(data.monthlyReport, data.categories, l),
     },
     aliasName: filters.aliasId
-      ? (data.merchantAliases.find((a) => a.id === filters.aliasId)?.displayName ?? null)
+      ? (data.merchantAliases.find((a) => a.id === filters.aliasId)
+          ?.displayName ?? null)
       : null,
   };
 }

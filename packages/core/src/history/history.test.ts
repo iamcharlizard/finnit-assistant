@@ -11,7 +11,21 @@ import {
   withPeriod,
 } from './filters';
 import { testLocalizer } from '../i18n/testing';
-import { accountOptions, categoryOptions, dayNet } from './view';
+import { indexCategories } from '../finance/categories';
+import type {
+  ApiCategory,
+  ApiMonthlyReport,
+  ApiTransaction,
+} from '../finance/types';
+import {
+  accountOptions,
+  categoryOptions,
+  dayNet,
+  groupTransfers,
+  toHistoryRow,
+  topCategoryChart,
+  topCategoryRows,
+} from './view';
 
 describe('history filters', () => {
   it('filters by an automatic name (?alias=) and sends it to the API', () => {
@@ -179,5 +193,130 @@ describe('history filters', () => {
       accountOptions([account], testLocalizer('en').t)[0]?.label,
       'Oro · Credit',
     );
+  });
+});
+
+describe('history: transfers and top categories', () => {
+  const es = testLocalizer('es');
+  const tx = (over: Partial<ApiTransaction>): ApiTransaction => ({
+    id: 't',
+    type: 'expense',
+    amount: 100,
+    currency: 'MXN',
+    txnDate: '2026-11-05T00:00:00.000Z',
+    description: 'Cena',
+    merchantName: null,
+    isPending: false,
+    source: 'manual',
+    transferDirection: null,
+    accountId: 'a1',
+    account: { id: 'a1', name: 'BBVA Débito', type: 'debit', metadata: null },
+    category: null,
+    displayName: 'Cena',
+    isPrivate: false,
+    aliasId: null,
+    hasOwnAlias: false,
+    ...over,
+  });
+  const row = (over: Partial<ApiTransaction>) =>
+    toHistoryRow(tx(over), indexCategories([]), es);
+
+  it("joins a transfer's two sides where the first one was", () => {
+    const items = groupTransfers(
+      [
+        row({ id: 'e1' }),
+        row({
+          id: 'in',
+          type: 'transfer',
+          amount: 1000,
+          transferId: 'tr-1',
+          transferDirection: 'in',
+          accountId: 'a2',
+          account: { id: 'a2', name: 'Nu', type: 'debit', metadata: null },
+        }),
+        row({ id: 'e2' }),
+        row({
+          id: 'out',
+          type: 'transfer',
+          amount: 1000,
+          transferId: 'tr-1',
+          transferDirection: 'out',
+        }),
+      ],
+      es,
+    );
+    assert.deepEqual(
+      items.map((i) => (i.kind === 'row' ? i.row.id : i.key)),
+      ['e1', 'transfer:tr-1', 'e2'],
+    );
+    const group = items[1]!;
+    assert.equal(group.kind, 'transfer');
+    if (group.kind !== 'transfer') return;
+    assert.equal(group.route, 'BBVA Débito → Nu');
+    assert.equal(group.amount, '$1,000.00');
+    assert.equal(group.outLabel, 'Sale de BBVA Débito');
+    assert.equal(group.inLabel, 'Entra a Nu');
+    assert.equal(group.out.id, 'out');
+  });
+
+  it('keeps a side alone when its pair is not in the list', () => {
+    const items = groupTransfers(
+      [
+        row({
+          id: 'out',
+          type: 'transfer',
+          transferId: 'tr-2',
+          transferDirection: 'out',
+        }),
+      ],
+      es,
+    );
+    assert.deepEqual(items, [
+      { kind: 'row', row: items[0]!.kind === 'row' ? items[0]!.row : null },
+    ]);
+  });
+
+  it('charts the top five categories and the rest together', () => {
+    const report = {
+      totalExpenses: 1000,
+      categoryBreakdown: [
+        ['c1', 'Comida', 300],
+        ['c2', 'Transporte', 200],
+        ['c3', 'Servicios', 150],
+        ['c4', 'Compras', 120],
+        ['c5', 'Salud', 100],
+        ['c6', 'Mascotas', 80],
+        ['c7', 'Regalos', 50],
+      ].map(([categoryId, categoryName, amount]) => ({
+        categoryId,
+        categoryName,
+        amount,
+      })),
+    } as unknown as ApiMonthlyReport;
+    const categories = report.categoryBreakdown.map((c) => ({
+      id: c.categoryId,
+      name: c.categoryName,
+      parentId: null,
+    })) as ApiCategory[];
+    const chart = topCategoryChart(report, categories, es);
+    assert.equal(chart.slices.length, 6);
+    assert.deepEqual(chart.slices[5], {
+      id: 'others',
+      label: 'Otras categorías',
+      percentage: '13%',
+      dotColor: 'var(--outline)',
+      value: 130,
+      amount: '$130.00',
+      percent: 13,
+      others: true,
+    });
+    assert.equal(chart.total, '$1,000.00');
+    assert.equal(
+      Math.round(chart.slices.reduce((sum, s) => sum + s.percent, 0)),
+      100,
+    );
+    const rows = topCategoryRows(report, categories, es);
+    assert.equal(rows.length, 5);
+    assert.equal(rows[0]!.amount, '$300.00');
   });
 });

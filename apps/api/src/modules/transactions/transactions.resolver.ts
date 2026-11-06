@@ -27,6 +27,7 @@ import { TransferDirectionLoader } from './transfer-direction.loader';
 import { PrivacyService } from '../privacy/privacy.service';
 import { TransactionAliasInput } from '../categorization/dto/merchant-alias.dto';
 import {
+  TransactionLoanPayment,
   TransactionRecurringPayment,
   TransferCounterpart,
 } from './dto/transaction-links.dto';
@@ -77,6 +78,22 @@ export class TransactionsResolver {
     return this.transferDirections.load(req, transaction.id);
   }
 
+  @ResolveField('transferId', () => ID, {
+    nullable: true,
+    description:
+      'For transfers: the transfer both sides share (batched; lists use it to group them)',
+  })
+  async transferId(
+    @Parent() transaction: Transaction,
+    @Context('req') req: object,
+  ): Promise<string | null> {
+    if (transaction.type !== 'transfer') return null;
+    return (
+      (await this.transferDirections.loadSide(req, transaction.id))
+        ?.transferId ?? null
+    );
+  }
+
   @ResolveField('transferCounterpart', () => TransferCounterpart, {
     nullable: true,
     description:
@@ -101,6 +118,20 @@ export class TransactionsResolver {
     @Parent() transaction: Transaction,
   ): Promise<TransactionRecurringPayment | null> {
     return this.transactionsService.findRecurringPayment(
+      transaction.id,
+      transaction.userId,
+    );
+  }
+
+  @ResolveField('loanPayment', () => TransactionLoanPayment, {
+    nullable: true,
+    description:
+      'The loan payment this movement is (one query per movement; for the detail, not lists)',
+  })
+  async loanPayment(
+    @Parent() transaction: Transaction,
+  ): Promise<TransactionLoanPayment | null> {
+    return this.transactionsService.findLoanPayment(
       transaction.id,
       transaction.userId,
     );

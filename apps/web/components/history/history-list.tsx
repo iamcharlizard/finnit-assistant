@@ -23,10 +23,20 @@ import {
   withPeriod,
   type HistoryFilters,
 } from '@finnit/core/history/filters';
-import { dayNet, type TransactionPage } from '@finnit/core/history/view';
+import {
+  dayNet,
+  groupTransfers,
+  type TransactionPage,
+} from '@finnit/core/history/view';
+import { useLocalizer } from '@/lib/i18n/client';
 import { HistoryRow } from './history-row';
+import { TransferGroupCard } from './transfer-group-card';
 
-/** Transactions grouped by day, with "Cargar más" and the row actions. */
+/**
+ * Transactions grouped by day (a transfer's two sides as one item), with
+ * "Cargar más" and the row actions. Each day's heading sticks under the
+ * toolbar until the day's last movement scrolls past.
+ */
 export function HistoryList({
   initial,
   filters,
@@ -42,10 +52,15 @@ export function HistoryList({
     useTransactionPages(initial, filters, categories);
   const t = useTranslations();
   const locale = useLocale();
+  const l = useLocalizer();
   const router = useRouter();
   const groups = React.useMemo(
-    () => groupByDay(rows, today, locale),
-    [rows, today, locale],
+    () =>
+      groupByDay(rows, today, locale).map((group) => ({
+        ...group,
+        items: groupTransfers(group.rows, l),
+      })),
+    [rows, today, locale, l],
   );
   const links = monthLinks(filters, today);
   const previous = links
@@ -118,7 +133,7 @@ export function HistoryList({
         const net = dayNet(group.rows);
         return (
           <section key={group.day} className="mb-8">
-            <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
+            <div className="glass sticky top-[var(--history-day-top,12rem)] z-10 mb-3 flex items-baseline justify-between gap-3 rounded-full border border-glass-border bg-glass px-4 py-2 shadow-elevation">
               <LabelSm as="h2" className="block">
                 {group.heading}
               </LabelSm>
@@ -136,13 +151,17 @@ export function HistoryList({
               ) : null}
             </div>
             <div className="flex flex-col gap-2">
-              {group.rows.map((row) => (
-                <HistoryRow
-                  key={row.id}
-                  row={row}
-                  onRenamed={() => router.refresh()}
-                />
-              ))}
+              {group.items.map((item) =>
+                item.kind === 'transfer' ? (
+                  <TransferGroupCard key={item.key} group={item} />
+                ) : (
+                  <HistoryRow
+                    key={item.row.id}
+                    row={item.row}
+                    onRenamed={() => router.refresh()}
+                  />
+                ),
+              )}
             </div>
           </section>
         );

@@ -6,37 +6,19 @@ import { serverGraphql } from '@/lib/api/server-graphql';
 import { isUuid } from '@/lib/files/routes';
 import { getLocalizer } from '@/lib/i18n/server';
 import { todayKey } from '@finnit/core/finance/dates';
-import {
-  ACCOUNT_FIELDS,
-  type ApiAccount,
-  type Connection,
-} from '@finnit/core/finance/types';
+import type { ApiAccount, Connection } from '@finnit/core/finance/types';
 import type { BudgetCategory } from '@finnit/core/budgets/types';
 import { loadPayoffComparison } from '@finnit/core/debts/api';
+import { DEBTS_PAGE, DEBTS_QUERY, DEBT_DETAIL_QUERY } from '@finnit/core/debts/request';
 import { buildPayoffComparison, type PayoffComparison } from '@finnit/core/debts/payoff';
 import { buildLoanDetailView, type LoanDetailView } from '@finnit/core/debts/detail-view';
 import {
-  DEBT_DETAIL_FIELDS,
-  DEBT_FIELDS,
-  DEBT_INSIGHTS_FIELDS,
   type ApiDebtInsights,
-  LOAN_SCHEDULE_FIELDS,
   type ApiDebt,
   type ApiDebtDetail,
   type ApiLoanScheduleItem,
 } from '@finnit/core/debts/types';
 import { buildDebtsView, type DebtsView } from '@finnit/core/debts/view';
-
-/** The API's page limit; far more debts than anyone has. */
-const DEBTS_PAGE = 100;
-
-const DEBTS_QUERY = `query Debts($first: Int!) {
-  debts(first: $first) { edges { node { ${DEBT_FIELDS} } } }
-  debtInsights { ${DEBT_INSIGHTS_FIELDS} }
-  loanInsights: debtInsights(loansOnly: true) { ${DEBT_INSIGHTS_FIELDS} }
-  accounts(first: 100) { edges { node { ${ACCOUNT_FIELDS} } } }
-  categories { id name parentId key kind icon }
-}`;
 
 /** Tabs of Deudas; the URL's ?tab= picks one. */
 export const DEBT_TABS = ['summary', 'loans', 'other'] as const;
@@ -102,13 +84,6 @@ export async function loadDebts(): Promise<DebtsScreenData> {
     plan,
   };
 }
-
-const DEBT_DETAIL_QUERY = `query DebtDetail($id: String!, $debtId: ID!) {
-  debt(id: $id) { ${DEBT_DETAIL_FIELDS} }
-  loanSchedule(debtId: $debtId) { ${LOAN_SCHEDULE_FIELDS} }
-  accounts(first: 100) { edges { node { ${ACCOUNT_FIELDS} } } }
-  categories { id name parentId key kind icon }
-}`;
 
 export interface LoanDetailData {
   today: string;

@@ -1,4 +1,12 @@
-import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Context,
+  ID,
+  Int,
+  Mutation,
+  Query,
+  Resolver,
+} from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -6,8 +14,12 @@ import { User } from '../../common/types/models/user.model';
 import { Transaction } from '../../common/types/models/transaction.model';
 import { CategorizationService } from './categorization.service';
 import { MerchantRule } from './dto/merchant-rule.dto';
-import { SimilarCategory } from './dto/similar-category.dto';
+import {
+  AiCategorySuggestion,
+  SimilarCategory,
+} from './dto/similar-category.dto';
 import { MerchantRulesService } from './merchant-rules.service';
+import { PrivacyService } from '../privacy/privacy.service';
 
 @Resolver()
 @UseGuards(JwtAuthGuard)
@@ -15,6 +27,7 @@ export class CategorizationResolver {
   constructor(
     private readonly categorization: CategorizationService,
     private readonly rules: MerchantRulesService,
+    private readonly privacy: PrivacyService,
   ) {}
 
   @Query(() => [MerchantRule], {
@@ -65,6 +78,25 @@ export class CategorizationResolver {
     @Args('transactionId', { type: () => ID }) transactionId: string,
   ): Promise<SimilarCategory | null> {
     return this.categorization.similarCategory(user.id, transactionId);
+  }
+
+  @Mutation(() => AiCategorySuggestion, {
+    description:
+      "Asks the AI for a movement's category from `name` (the name being typed; else its bank text) and its amount. Nothing is saved",
+  })
+  async suggestCategoryWithAi(
+    @CurrentUser() user: User,
+    @Context('req') req: object,
+    @Args('transactionId', { type: () => ID }) transactionId: string,
+    @Args('name', { type: () => String, nullable: true }) name?: string | null,
+  ): Promise<AiCategorySuggestion> {
+    const unlocked = await this.privacy.isUnlocked(req, user.id);
+    return this.categorization.suggestCategoryWithAi(
+      user.id,
+      transactionId,
+      name,
+      unlocked,
+    );
   }
 
   @Mutation(() => [Transaction], {

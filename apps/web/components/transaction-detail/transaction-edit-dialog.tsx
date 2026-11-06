@@ -3,7 +3,14 @@
 import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { ChevronDown, LockKeyhole, Sparkles, Wand2 } from 'lucide-react';
+import {
+  ChevronDown,
+  History,
+  Loader2,
+  LockKeyhole,
+  Sparkles,
+  Wand2,
+} from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import { Combobox } from '@finnit/ui/components/ui/combobox';
@@ -50,6 +57,7 @@ import { categoryOptions } from '@/lib/new-entry/options';
 import {
   SET_ALIAS_MUTATION,
   similarCategory,
+  suggestCategoryWithAi,
   transactionErrorMessage,
   updateTransaction,
 } from '@/lib/transaction-detail/api';
@@ -137,6 +145,43 @@ export function TransactionEditDialog({
   );
   const similar = useSimilarCategory(transactionId, rules.category);
   const suggestion = shownSuggestion(similar, form.categoryId, options);
+  const [aiBusy, setAiBusy] = React.useState(false);
+  const [aiNote, setAiNote] = React.useState<string | null>(null);
+
+  /**
+   * Asks the AI for the category from the name being typed (else, for a
+   * movement made by hand, its merchant or description; else the bank
+   * text, on the server) and the amount. The answer is picked, not saved.
+   */
+  async function askAi() {
+    setAiBusy(true);
+    setAiNote(null);
+    const typedName =
+      name.displayName.trim() ||
+      (rules.merchant
+        ? form.merchantName.trim() || form.description.trim()
+        : '');
+    try {
+      const found = await suggestCategoryWithAi(
+        transactionId,
+        typedName || null,
+        gql,
+      );
+      const option = found.categoryId
+        ? options.find((o) => o.value === found.categoryId)
+        : undefined;
+      if (option) {
+        update({ categoryId: option.value });
+        setAiNote(tf('aiPicked', { category: option.label }));
+      } else {
+        setAiNote(tf(found.aiUnavailable ? 'aiUnavailable' : 'aiNone'));
+      }
+    } catch (error) {
+      setAiNote(transactionErrorMessage(error, t));
+    } finally {
+      setAiBusy(false);
+    }
+  }
 
   const update = (patch: Partial<DetailForm>) => {
     setForm((f) => ({ ...f, ...patch }));
@@ -359,17 +404,46 @@ export function TransactionEditDialog({
             {/* Category */}
             {rules.category ? (
               <div className="flex flex-col gap-2">
-                <Combobox
-                  label={tf('category')}
-                  options={options}
-                  value={form.categoryId || undefined}
-                  onChange={(categoryId) =>
-                    update({ categoryId: categoryId ?? '' })
-                  }
-                  placeholder={tf('categoryPlaceholder')}
-                  searchPlaceholder={tf('categorySearch')}
-                  emptyText={tf('noResults')}
-                />
+                <div className="flex items-end gap-2">
+                  <div className="min-w-0 flex-1">
+                    <Combobox
+                      label={tf('category')}
+                      options={options}
+                      value={form.categoryId || undefined}
+                      onChange={(categoryId) => {
+                        update({ categoryId: categoryId ?? '' });
+                        setAiNote(null);
+                      }}
+                      placeholder={tf('categoryPlaceholder')}
+                      searchPlaceholder={tf('categorySearch')}
+                      emptyText={tf('noResults')}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0 rounded-input"
+                    aria-label={tf('aiSuggest')}
+                    title={tf('aiSuggestHint')}
+                    disabled={aiBusy || saving}
+                    onClick={askAi}
+                  >
+                    {aiBusy ? (
+                      <Loader2 aria-hidden className="animate-spin" />
+                    ) : (
+                      <Sparkles aria-hidden />
+                    )}
+                  </Button>
+                </div>
+                {aiNote ? (
+                  <p
+                    role="status"
+                    className="px-1 text-xs text-on-surface-variant"
+                  >
+                    {aiNote}
+                  </p>
+                ) : null}
                 {suggestion ? (
                   <button
                     type="button"
@@ -381,7 +455,7 @@ export function TransactionEditDialog({
                     })}
                     className="inline-flex min-h-8 max-w-full items-center gap-1.5 self-start rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-medium text-brand-ink transition-colors hover:bg-brand/15 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
-                    <Sparkles aria-hidden className="size-3.5 shrink-0" />
+                    <History aria-hidden className="size-3.5 shrink-0" />
                     <span className="truncate">
                       {tf('suggested', { category: suggestion.label })}
                     </span>

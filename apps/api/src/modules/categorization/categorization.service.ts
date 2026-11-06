@@ -11,7 +11,7 @@ import {
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import { Transaction } from '../../common/types/models/transaction.model';
-import { AiModelsService } from '../ai/ai-models.service';
+import { AiModelsService, NoUsableAiModelError } from '../ai/ai-models.service';
 import { JsonSchema } from '../ai/providers/ai-provider';
 import {
   TRANSACTION_PRESENTATION_INCLUDE,
@@ -39,6 +39,8 @@ import {
 export const MAX_CATEGORIZE_IDS = 500;
 export const MAX_SUGGEST_IDS = 100;
 export const AI_TIMEOUT_MS = 20_000;
+/** Longest typed name sent to the AI for one movement. */
+const MAX_AI_NAME_LENGTH = 120;
 /** Past categorizations considered when categorizing on our own. */
 const HISTORY_DAYS = 365;
 /** Uncategorized movements looked at per run (newest first). */
@@ -569,67 +571,118 @@ export class CategorizationService {
     userId: string,
     rows: ListRow[],
   ): Promise<Map<string, string>> {
-    const result = new Map<string, string>();
     try {
-      const categories = await this.userCategories(userId);
-      const refs = new Map<string, string>();
-      const byId = new Map(categories.map((c) => [c.id, c]));
-      const spanish = (category: CategoryRow) =>
-        category.translations.find((t) => t.locale === 'es')?.name ??
-        category.name;
-      const categoryList = categories.map((category, index) => {
-        const ref = `c${index + 1}`;
-        refs.set(ref, category.id);
-        const parent = category.parentId ? byId.get(category.parentId) : null;
-        return {
-          ref,
-          name: parent
-            ? `${spanish(parent)} > ${spanish(category)}`
-            : spanish(category),
-        };
-      });
-      const movements = rows.map((row, index) => ({
-        ref: `t${index + 1}`,
-        text: presentTransaction(row).displayName,
-        amount: Number(row.amount),
-        type: row.type,
-      }));
-
-      const { data } = await this.withTimeout(
-        this.aiModels.extractFromText(
-          {
-            prompt: AI_PROMPT,
-            text: JSON.stringify({ movements, categories: categoryList }),
-            schema: AI_SCHEMA,
-            schemaName: 'categorize_movements',
-            timeoutMs: AI_TIMEOUT_MS,
-          },
-          { feature: AiFeatureKey.transaction_categorization },
-        ),
+      return await this.aiCategories(
+        userId,
+        rows.map((row) => ({
+          id: row.id,
+          text: presentTransaction(row).displayName,
+          amount: Number(row.amount),
+          type: row.type,
+        })),
       );
-
-      const items = (data as { items?: unknown } | null)?.items;
-      if (!Array.isArray(items)) return result;
-      for (const item of items as Record<string, unknown>[]) {
-        if (!item || typeof item !== 'object') continue;
-        const match =
-          typeof item.ref === 'string'
-            ? /^t(\d+)$/.exec(item.ref.trim())
-            : null;
-        const index = match ? Number(match[1]) - 1 : -1;
-        if (index < 0 || index >= rows.length) continue;
-        const categoryId =
-          typeof item.categoryRef === 'string'
-            ? refs.get(item.categoryRef.trim())
-            : undefined;
-        if (categoryId && !result.has(rows[index].id)) {
-          result.set(rows[index].id, categoryId);
-        }
-      }
     } catch (error) {
       this.logger.warn(
         `Category suggestions without AI: ${(error as Error).message}`,
       );
+      return new Map();
+    }
+  }
+
+  /**
+   * Asks the AI for the category of one movement while it is being edited,
+   * from the name the user typed (else its bank text, unless a locked
+   * privacy PIN protects it: then its shown name) and its amount. Nothing
+   * is saved: the editor picks the category. `aiUnavailable` when the AI is
+   * off or has no model.
+   */
+  async suggestCategoryWithAi(
+    userId: string,
+    transactionId: string,
+    name: string | null | undefined,
+    unlocked: boolean,
+  ): Promise<{ categoryId: string | null; aiUnavailable: boolean }> {
+    const [row] = await this.load(userId, [transactionId]);
+    if (!row) throw new NotFoundError('Transaction not found');
+    if (!CATEGORIZABLE_TYPES.includes(row.type)) {
+      throw new ValidationError('Only expenses and income take a category');
+    }
+    const shown = presentTransaction(row, true, unlocked);
+    const text =
+      name?.trim().slice(0, MAX_AI_NAME_LENGTH) ||
+      shown.originalDescription ||
+      shown.displayName;
+    try {
+      const found = await this.aiCategories(userId, [
+        { id: row.id, text, amount: Number(row.amount), type: row.type },
+      ]);
+      return { categoryId: found.get(row.id) ?? null, aiUnavailable: false };
+    } catch (error) {
+      if (error instanceof NoUsableAiModelError) {
+        return { categoryId: null, aiUnavailable: true };
+      }
+      throw error;
+    }
+  }
+
+  /** One AI call: category ids by movement id (throws when the AI fails). */
+  private async aiCategories(
+    userId: string,
+    rows: { id: string; text: string; amount: number; type: TransactionType }[],
+  ): Promise<Map<string, string>> {
+    const result = new Map<string, string>();
+    const categories = await this.userCategories(userId);
+    const refs = new Map<string, string>();
+    const byId = new Map(categories.map((c) => [c.id, c]));
+    const spanish = (category: CategoryRow) =>
+      category.translations.find((t) => t.locale === 'es')?.name ??
+      category.name;
+    const categoryList = categories.map((category, index) => {
+      const ref = `c${index + 1}`;
+      refs.set(ref, category.id);
+      const parent = category.parentId ? byId.get(category.parentId) : null;
+      return {
+        ref,
+        name: parent
+          ? `${spanish(parent)} > ${spanish(category)}`
+          : spanish(category),
+      };
+    });
+    const movements = rows.map((row, index) => ({
+      ref: `t${index + 1}`,
+      text: row.text,
+      amount: row.amount,
+      type: row.type,
+    }));
+
+    const { data } = await this.withTimeout(
+      this.aiModels.extractFromText(
+        {
+          prompt: AI_PROMPT,
+          text: JSON.stringify({ movements, categories: categoryList }),
+          schema: AI_SCHEMA,
+          schemaName: 'categorize_movements',
+          timeoutMs: AI_TIMEOUT_MS,
+        },
+        { feature: AiFeatureKey.transaction_categorization },
+      ),
+    );
+
+    const items = (data as { items?: unknown } | null)?.items;
+    if (!Array.isArray(items)) return result;
+    for (const item of items as Record<string, unknown>[]) {
+      if (!item || typeof item !== 'object') continue;
+      const match =
+        typeof item.ref === 'string' ? /^t(\d+)$/.exec(item.ref.trim()) : null;
+      const index = match ? Number(match[1]) - 1 : -1;
+      if (index < 0 || index >= rows.length) continue;
+      const categoryId =
+        typeof item.categoryRef === 'string'
+          ? refs.get(item.categoryRef.trim())
+          : undefined;
+      if (categoryId && !result.has(rows[index].id)) {
+        result.set(rows[index].id, categoryId);
+      }
     }
     return result;
   }

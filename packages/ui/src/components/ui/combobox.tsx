@@ -8,6 +8,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import { rankOptions } from '../../lib/option-search';
 import { cn } from '../../lib/utils';
 import {
   Command,
@@ -56,6 +57,9 @@ interface ComboboxProps {
   'aria-label'?: string;
   className?: string;
 }
+
+/** cmdk value of the "add what I typed" item (never an option's value). */
+const CREATE_VALUE = '\u0000create';
 
 interface OptionGroup {
   heading: string | undefined;
@@ -126,7 +130,22 @@ function Combobox({
   const errorId = `${triggerId}-error`;
 
   const selected = options.find((option) => option.value === value);
-  const groups = React.useMemo(() => groupOptions(options), [options]);
+  // Typing: one list, best match first (rankOptions), each with its group
+  // as a hint; otherwise the options grouped as given.
+  const searching = typed.length > 0;
+  const groups = React.useMemo(
+    () =>
+      searching
+        ? [{ heading: undefined, options: rankOptions(options, typed) }]
+        : groupOptions(options),
+    [options, typed, searching],
+  );
+  const first = groups[0]?.options.find((option) => !option.disabled);
+  // The highlighted item: the best match while typing.
+  const [active, setActive] = React.useState('');
+  React.useEffect(() => {
+    setActive(first?.value ?? (canCreate ? CREATE_VALUE : ''));
+  }, [first?.value, canCreate]);
   const SelectedIcon = selected?.icon;
 
   const trigger = (
@@ -169,7 +188,7 @@ function Combobox({
         className="w-(--radix-popover-trigger-width) min-w-56 p-0"
         align="start"
       >
-        <Command>
+        <Command shouldFilter={false} value={active} onValueChange={setActive}>
           <CommandInput
             placeholder={searchPlaceholder}
             value={query}
@@ -185,9 +204,7 @@ function Combobox({
                   return (
                     <CommandItem
                       key={option.value}
-                      // cmdk filters on `value`; include the label and group so search matches them.
-                      value={`${option.label} ${option.group ?? ''} ${option.value}`}
-                      keywords={option.keywords}
+                      value={option.value}
                       disabled={option.disabled}
                       data-checked={isSelected || undefined}
                       onSelect={() => {
@@ -199,6 +216,13 @@ function Combobox({
                     >
                       {Icon ? <Icon aria-hidden /> : null}
                       <span className="flex-1 truncate">{option.label}</span>
+                      {searching &&
+                      option.group &&
+                      option.group !== option.label ? (
+                        <span className="max-w-[45%] shrink-0 truncate text-xs text-on-surface-variant">
+                          {option.group}
+                        </span>
+                      ) : null}
                       <CheckIcon
                         aria-hidden
                         className={cn(
@@ -212,10 +236,9 @@ function Combobox({
               </CommandGroup>
             ))}
             {canCreate ? (
-              <CommandGroup forceMount>
+              <CommandGroup>
                 <CommandItem
-                  forceMount
-                  value={`__create__ ${typed}`}
+                  value={CREATE_VALUE}
                   disabled={creating}
                   onSelect={() => void create()}
                 >

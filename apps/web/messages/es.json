@@ -2380,7 +2380,12 @@
         "history": "{count, plural, one {como # movimiento parecido} other {como # movimientos parecidos}}"
       },
       "save": "Guardar",
-      "saving": "Guardando…"
+      "saving": "Guardando…",
+      "aiSuggest": "Sugerir categoría con IA",
+      "aiSuggestHint": "Sugerir categoría con IA: envía el nombre (o el texto del banco) y el monto",
+      "aiPicked": "La IA eligió {category}. Revísala antes de guardar.",
+      "aiNone": "La IA no encontró una categoría que le quede.",
+      "aiUnavailable": "La IA no está disponible ahora."
     },
     "validation": {
       "amountRequired": "Escribe el monto.",

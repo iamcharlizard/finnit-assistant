@@ -38,6 +38,15 @@ export interface ScheduleRow {
   status: ScheduleRowStatus;
   /** Set when it can be paid (or moved to another day) from the page. */
   occurrenceId: string | null;
+  /**
+   * Set when an existing expense can be linked to it: open payments and
+   * those paid without a movement (paid before registering the loan).
+   */
+  linkOccurrenceId: string | null;
+  /** Set when it is paid by a movement, which can be unlinked. */
+  unlinkOccurrenceId: string | null;
+  /** The movement that paid it (opens its detail). */
+  transactionId: string | null;
   /** Moved by the user: the date the schedule gave it, with the year. */
   originalDateLabel: string | null;
   /**
@@ -297,6 +306,19 @@ export function buildLoanDetailView(
         item.occurrenceId && (status === 'upcoming' || status === 'overdue')
           ? item.occurrenceId
           : null,
+      linkOccurrenceId:
+        item.occurrenceId &&
+        !item.transactionId &&
+        (status === 'upcoming' ||
+          status === 'overdue' ||
+          status === 'historical')
+          ? item.occurrenceId
+          : null,
+      unlinkOccurrenceId:
+        item.occurrenceId && item.transactionId && status === 'paid'
+          ? item.occurrenceId
+          : null,
+      transactionId: item.transactionId ?? null,
       originalDateLabel: item.originalDueDate
         ? fullDate(dayKeyOf(item.originalDueDate), locale)
         : null,

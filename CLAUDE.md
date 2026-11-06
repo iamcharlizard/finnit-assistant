@@ -38,7 +38,7 @@ All 11 original GraphQL modules implemented, plus recurring expenses in `apps/ap
 | Statements (PDF import + reconciliation) | `src/modules/statements/` (+ `src/modules/storage/` for S3) |
 | AI model catalog + providers (Anthropic, OpenAI, Gemini) | `src/modules/ai/` |
 | Bank connections (Syncfy aggregation) | `src/modules/bank-connections/` |
-| Loans (types, terms, schedule, charges, historical payments, payment matching, charts) | `src/modules/debts/` (`loans.service.ts`, `loan-tracking.service.ts`, `debt-insights.service.ts`; pure math in `loan-math.ts`) |
+| Loans (types, terms, schedule, charges, historical payments, payment matching, linking expenses to payments, charts) | `src/modules/debts/` (`loans.service.ts`, `loan-tracking.service.ts`, `loan-links.service.ts`, `debt-insights.service.ts`; pure rules in `loan-math.ts`, `loan-links.ts`) |
 | Receipts (photo → draft expense: CFDI QR, OCR + rules, AI fallback) | `src/modules/receipts/` |
 | Screenshots (bank app movement list → several movements; account by last digits; "en proceso" movements) | `src/modules/screenshots/` |
 | OCR client (internal `ocr` service, `OCR_SERVICE_URL` / `OCR_SERVICE_TOKEN`) | `src/modules/ocr/` |

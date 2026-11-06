@@ -44,6 +44,9 @@ import { LoanDetailsTab } from './loan-details-tab';
 import { LoanLentTable } from './loan-lent-table';
 import { LoanPaymentsTable } from './loan-payments-table';
 import { LoanProgress } from './loan-progress';
+import { LinkExpenseDialog } from '@/components/loan-links/link-expense-dialog';
+import { UnlinkLoanDialog } from '@/components/loan-links/unlink-loan-dialog';
+import { useTransactionDrawer } from '@/components/transaction-detail/transaction-drawer';
 import { PaymentDialog } from './payment-dialog';
 import { RescheduleDialog } from './reschedule-dialog';
 
@@ -73,6 +76,12 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
   // Personal loans and purchase financing list each amount in its own tab.
   const lentTab = personal || debt.loanType === 'purchase_financing';
   const [moving, setMoving] = React.useState<ScheduleRow | null>(null);
+  const [linkingRow, setLinkingRow] = React.useState<ScheduleRow | null>(null);
+  const [unlinkingRow, setUnlinkingRow] = React.useState<ScheduleRow | null>(
+    null,
+  );
+  const drawer = useTransactionDrawer();
+  const tl = useTranslations('debts.links');
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
   const [candidates, setCandidates] = React.useState<CandidatesState>({
@@ -121,6 +130,10 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
     } finally {
       setBusy(null);
     }
+  }
+
+  function openMovement(transactionId: string) {
+    drawer.open(transactionId, { onChange: refresh });
   }
 
   function askDeleteCharge(id: string) {
@@ -370,6 +383,9 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
                 hasFees={view.hasFees}
                 onPay={(row) => setPaying({ row })}
                 onReschedule={setMoving}
+                onLinkExpense={setLinkingRow}
+                onUnlink={setUnlinkingRow}
+                onOpenMovement={openMovement}
               />
             </TabsContent>
           )}
@@ -395,6 +411,9 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
                   hasFees={false}
                   onPay={(row) => setPaying({ row })}
                   onReschedule={setMoving}
+                  onLinkExpense={setLinkingRow}
+                  onUnlink={setUnlinkingRow}
+                  onOpenMovement={openMovement}
                 />
               </section>
             ) : null}
@@ -446,6 +465,8 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
               ? {
                   occurrenceId: paying.row.occurrenceId,
                   amount: paying.row.amount,
+                  dateLabel: paying.row.dateLabel,
+                  amountLabel: paying.row.amountLabel,
                 }
               : undefined
           }
@@ -471,6 +492,31 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
           onSaved={() => {
             setAdding(false);
             toast.success(td(editingCharge ? 'chargeUpdated' : 'chargeAdded'));
+            refresh();
+          }}
+        />
+      ) : null}
+      {linkingRow?.linkOccurrenceId ? (
+        <LinkExpenseDialog
+          occurrenceId={linkingRow.linkOccurrenceId}
+          dateLabel={linkingRow.dateLabel}
+          amountLabel={linkingRow.amountLabel}
+          today={today}
+          onClose={() => setLinkingRow(null)}
+          onLinked={() => {
+            setLinkingRow(null);
+            toast.success(tl('expense.done'));
+            refresh();
+          }}
+        />
+      ) : null}
+      {unlinkingRow?.unlinkOccurrenceId ? (
+        <UnlinkLoanDialog
+          occurrenceId={unlinkingRow.unlinkOccurrenceId}
+          onClose={() => setUnlinkingRow(null)}
+          onUnlinked={() => {
+            setUnlinkingRow(null);
+            toast.success(tl('unlink.done'));
             refresh();
           }}
         />

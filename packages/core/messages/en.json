@@ -1199,7 +1199,11 @@
       "firstPaymentAfterDate": "The first payment cannot be before the date.",
       "installmentsPaidCount": "Payments already made cannot be more than the number of payments.",
       "dateTaken": "That day already has a payment of this loan.",
-      "notOpen": "Only open payments can be moved."
+      "notOpen": "Only open payments can be moved.",
+      "alreadyLinked": "That payment already has an expense linked; unlink it first.",
+      "notExpense": "Only an expense can pay a loan.",
+      "skippedPayment": "Reopen the skipped payment before linking it.",
+      "notLinked": "That payment has no expense linked."
     },
     "newLoan": "Loan",
     "newOther": "Card or other debt",
@@ -1689,6 +1693,65 @@
     "otherEmpty": {
       "title": "No cards or other debts",
       "description": "Add what you owe on cards, to stores or to someone else to see it next to your loans."
+    },
+    "links": {
+      "linkAction": "Link to a loan",
+      "title": "Link to a loan payment",
+      "description": "Choose the loan and the payment this {amount} expense covers.",
+      "loan": "Loan",
+      "loanPlaceholder": "Choose a loan",
+      "loanSearch": "Search loans",
+      "noResults": "No results",
+      "payment": "Payment",
+      "pickPayment": "Choose the payment this expense covers.",
+      "suggested": "Suggested",
+      "states": {
+        "open": "To pay",
+        "overdue": "Overdue",
+        "paid_without_movement": "Paid without a movement"
+      },
+      "paidWithoutHint": "It was already paid; once linked it counts with this expense.",
+      "noLoans": "You have no loans with payments to link.",
+      "noPayments": "This loan has no payments to link.",
+      "loading": "Searching…",
+      "loadError": "Couldn't load. Try again.",
+      "retry": "Retry",
+      "submit": "Link",
+      "saving": "Linking…",
+      "done": "Expense linked to {name}",
+      "linkPaid": "Link expense",
+      "viewMovement": "View expense",
+      "mode": {
+        "label": "How to record the payment",
+        "new": "New payment",
+        "existing": "Existing expense"
+      },
+      "expense": {
+        "title": "Link an existing expense",
+        "description": "Choose the expense you made the {date} payment of {amount} with.",
+        "search": "Search by description",
+        "searchLabel": "Search expenses by description",
+        "matchesHint": "Expenses close in amount and date; those naming the loan first.",
+        "searchHint": "Matching expenses from the last year, any amount.",
+        "empty": "No similar expenses. Search by description.",
+        "emptySearch": "No expense matches your search.",
+        "nameMatch": "Names the loan",
+        "exactAmount": "Same amount",
+        "submit": "Link expense",
+        "done": "Expense linked to the payment"
+      },
+      "unlink": {
+        "action": "Unlink",
+        "title": "Unlink the expense",
+        "description": "The expense stays in your history as a regular expense. What happens to the payment?",
+        "reopen": "Back to to-pay",
+        "reopenHint": "The payment is pending again and counts in what you owe.",
+        "keepPaid": "Keep it paid without a movement",
+        "keepPaidHint": "For a payment you did make, just not with this expense.",
+        "confirm": "Unlink",
+        "saving": "Unlinking…",
+        "done": "Expense unlinked"
+      }
     }
   },
   "analytics": {
@@ -2380,7 +2443,8 @@
       "original": "Original text",
       "transfer": "Transfer",
       "recurring": "Recurring payment",
-      "notes": "Notes"
+      "notes": "Notes",
+      "loan": "Loan"
     },
     "sources": {
       "manual": "Added by hand",
@@ -2513,7 +2577,9 @@
       "description": "The movement's data, name, category, notes and files.",
       "notFound": "This movement no longer exists.",
       "failed": "We couldn't load the movement. Try again."
-    }
+    },
+    "loanPaid": "{name} payment due {date}",
+    "loanPaidUnscheduled": "{name} payment"
   },
   "notifications": {
     "title": "Notifications",

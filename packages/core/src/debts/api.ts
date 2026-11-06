@@ -8,7 +8,10 @@ import {
   type DebtForm,
   type PaymentMovement,
 } from '@finnit/core/debts/form';
-import { buildChargeInput, type ChargeForm } from '@finnit/core/debts/charge-form';
+import {
+  buildChargeInput,
+  type ChargeForm,
+} from '@finnit/core/debts/charge-form';
 import { buildLoanInput, type LoanForm } from '@finnit/core/debts/loan-form';
 import {
   LOAN_CANDIDATE_FIELDS,
@@ -282,6 +285,10 @@ const MESSAGES: [RegExp, Parameters<Translate>[0]][] = [
     'debts.errors.firstPaymentTooLate',
   ],
   [/recurring suggestion not found/i, 'debts.errors.suggestionGone'],
+  [/already linked to a movement/i, 'debts.errors.alreadyLinked'],
+  [/only an expense can pay a loan/i, 'debts.errors.notExpense'],
+  [/reopen the skipped payment/i, 'debts.errors.skippedPayment'],
+  [/has no movement linked/i, 'debts.errors.notLinked'],
   [
     /already pays something else|already marked as paid/i,
     'debts.errors.candidateTaken',

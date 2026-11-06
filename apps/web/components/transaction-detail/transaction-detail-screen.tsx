@@ -5,9 +5,11 @@ import { useTranslations } from 'next-intl';
 import {
   ArrowLeftRight,
   CheckCheck,
+  Landmark,
   PencilLine,
   Trash2,
   Undo2,
+  Unlink,
 } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
@@ -27,6 +29,8 @@ import {
 import type { TransactionDetailData } from '@/lib/transaction-detail/load';
 import { UNDO_TRANSFER_CONVERSION_MUTATION } from '@finnit/core/transfers/convert';
 import { ConvertTransferDialog } from '@/components/transfers/convert-transfer-dialog';
+import { LinkLoanDialog } from '@/components/loan-links/link-loan-dialog';
+import { UnlinkLoanDialog } from '@/components/loan-links/unlink-loan-dialog';
 import { AttachmentsCard } from './attachments-card';
 import { useDetailHost } from './detail-host';
 import { TransactionEditDialog } from './transaction-edit-dialog';
@@ -43,8 +47,11 @@ export function TransactionDetailScreen({
   const { t } = useLocalizer();
   const tt = useTranslations('transaction');
   const tx = useTranslations('transfers');
+  const tl = useTranslations('debts.links');
   const { view } = data;
-  const [dialog, setDialog] = React.useState<'edit' | 'convert' | null>(null);
+  const [dialog, setDialog] = React.useState<
+    'edit' | 'convert' | 'linkLoan' | 'unlinkLoan' | null
+  >(null);
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
   const [deleting, setDeleting] = React.useState(false);
   const [applying, setApplying] = React.useState(false);
@@ -120,6 +127,16 @@ export function TransactionDetailScreen({
             <ArrowLeftRight aria-hidden /> {tx('convert.action')}
           </Button>
         ) : null}
+        {view.canLinkLoan ? (
+          <Button variant="outline" onClick={() => setDialog('linkLoan')}>
+            <Landmark aria-hidden /> {tl('linkAction')}
+          </Button>
+        ) : null}
+        {view.loan?.occurrenceId ? (
+          <Button variant="outline" onClick={() => setDialog('unlinkLoan')}>
+            <Unlink aria-hidden /> {tl('unlink.action')}
+          </Button>
+        ) : null}
         {view.counterpart?.converted ? (
           <Button
             variant="outline"
@@ -188,6 +205,29 @@ export function TransactionDetailScreen({
           onConverted={() => {
             setDialog(null);
             toast.success(tx('convert.done'));
+            host.refresh();
+          }}
+        />
+      ) : null}
+      {dialog === 'linkLoan' ? (
+        <LinkLoanDialog
+          transactionId={view.id}
+          amountLabel={view.amount}
+          onClose={() => setDialog(null)}
+          onLinked={(name) => {
+            setDialog(null);
+            toast.success(tl('done', { name }));
+            host.refresh();
+          }}
+        />
+      ) : null}
+      {dialog === 'unlinkLoan' && view.loan?.occurrenceId ? (
+        <UnlinkLoanDialog
+          occurrenceId={view.loan.occurrenceId}
+          onClose={() => setDialog(null)}
+          onUnlinked={() => {
+            setDialog(null);
+            toast.success(tl('unlink.done'));
             host.refresh();
           }}
         />

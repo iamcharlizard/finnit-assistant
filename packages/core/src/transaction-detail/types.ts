@@ -40,9 +40,16 @@ export interface TransactionDetail extends ApiTransaction {
     name: string;
     dueDate: string;
   } | null;
+  /** The loan payment it is (with its scheduled payment, when there is one). */
+  loanPayment?: {
+    debtId: string;
+    debtName: string;
+    occurrenceId: string | null;
+    dueDate: string | null;
+  } | null;
 }
 
-export const TRANSACTION_DETAIL_FIELDS = `${TRANSACTION_FIELDS} originalDescription originalLocked notes categorySource attachments { id fileName fileType fileSize downloadPath uploadedAt } transferCounterpart { transferId converted transactionId accountId accountName direction } recurringPayment { occurrenceId recurringExpenseId name dueDate }`;
+export const TRANSACTION_DETAIL_FIELDS = `${TRANSACTION_FIELDS} originalDescription originalLocked notes categorySource attachments { id fileName fileType fileSize downloadPath uploadedAt } transferCounterpart { transferId converted transactionId accountId accountName direction } recurringPayment { occurrenceId recurringExpenseId name dueDate } loanPayment { debtId debtName occurrenceId dueDate }`;
 
 /** Where the editor's suggested category comes from (never AI). */
 export type SimilarCategorySource = 'rule' | 'automatic_name' | 'history';

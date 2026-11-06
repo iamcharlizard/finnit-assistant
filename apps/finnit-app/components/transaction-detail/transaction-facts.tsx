@@ -18,7 +18,7 @@ interface Fact {
   transactionId?: string;
 }
 
-/** Account, category, source, status, the transfer's other side, recurring payment and notes. */
+/** Account, category, source, status, the transfer's other side, loan or recurring payment and notes. */
 export function TransactionFacts({
   view,
   merchant,
@@ -42,6 +42,7 @@ export function TransactionFacts({
     ...(view.counterpart
       ? [{ label: t('fields.transfer'), value: view.counterpart.label, transactionId: view.counterpart.transactionId }]
       : []),
+    ...(view.loan ? [{ label: t('fields.loan'), value: view.loan.label, href: view.loan.href }] : []),
     ...(view.recurring ? [{ label: t('fields.recurring'), value: view.recurring.label, href: view.recurring.href }] : []),
     ...(!view.isPrivate && merchant ? [{ label: t('fields.merchant'), value: merchant }] : []),
     ...(!view.isPrivate && description && description !== merchant && !/^Transfer to .+/i.test(description)

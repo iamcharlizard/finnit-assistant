@@ -1199,7 +1199,11 @@
       "firstPaymentAfterDate": "El primer pago no puede ser antes de la fecha.",
       "installmentsPaidCount": "Los pagos ya hechos no pueden ser más que el número de pagos.",
       "dateTaken": "Ese día ya tiene un pago de este préstamo.",
-      "notOpen": "Solo se pueden mover los pagos pendientes."
+      "notOpen": "Solo se pueden mover los pagos pendientes.",
+      "alreadyLinked": "Ese pago ya tiene un gasto ligado; deslígalo primero.",
+      "notExpense": "Solo un gasto puede pagar un préstamo.",
+      "skippedPayment": "Reabre el pago omitido antes de ligarlo.",
+      "notLinked": "Ese pago no tiene un gasto ligado."
     },
     "newLoan": "Préstamo",
     "newOther": "Tarjeta u otra deuda",
@@ -1689,6 +1693,65 @@
     "otherEmpty": {
       "title": "Sin tarjetas ni otras deudas",
       "description": "Registra lo que debes en tarjetas, a tiendas o a alguien más para verlo junto a tus préstamos."
+    },
+    "links": {
+      "linkAction": "Ligar a préstamo",
+      "title": "Ligar a un pago de préstamo",
+      "description": "Elige el préstamo y el pago que cubre este gasto de {amount}.",
+      "loan": "Préstamo",
+      "loanPlaceholder": "Elige un préstamo",
+      "loanSearch": "Buscar préstamo",
+      "noResults": "Sin resultados",
+      "payment": "Pago",
+      "pickPayment": "Elige el pago que cubre este gasto.",
+      "suggested": "Sugerido",
+      "states": {
+        "open": "Por pagar",
+        "overdue": "Vencido",
+        "paid_without_movement": "Pagado sin movimiento"
+      },
+      "paidWithoutHint": "Ya estaba pagado; al ligarlo contará con este gasto.",
+      "noLoans": "No tienes préstamos con pagos por ligar.",
+      "noPayments": "Este préstamo no tiene pagos por ligar.",
+      "loading": "Buscando…",
+      "loadError": "No se pudo cargar. Inténtalo de nuevo.",
+      "retry": "Reintentar",
+      "submit": "Ligar",
+      "saving": "Ligando…",
+      "done": "Gasto ligado a {name}",
+      "linkPaid": "Ligar gasto",
+      "viewMovement": "Ver gasto",
+      "mode": {
+        "label": "Cómo registrar el pago",
+        "new": "Pago nuevo",
+        "existing": "Gasto existente"
+      },
+      "expense": {
+        "title": "Ligar un gasto existente",
+        "description": "Elige el gasto con el que hiciste el pago del {date} de {amount}.",
+        "search": "Buscar por descripción",
+        "searchLabel": "Buscar gastos por descripción",
+        "matchesHint": "Gastos cercanos en monto y fecha; primero los que mencionan el préstamo.",
+        "searchHint": "Gastos del último año que coinciden, de cualquier monto.",
+        "empty": "No hay gastos parecidos. Busca por descripción.",
+        "emptySearch": "Ningún gasto coincide con tu búsqueda.",
+        "nameMatch": "Menciona el préstamo",
+        "exactAmount": "Mismo monto",
+        "submit": "Ligar gasto",
+        "done": "Gasto ligado al pago"
+      },
+      "unlink": {
+        "action": "Desligar",
+        "title": "Desligar el gasto",
+        "description": "El gasto se queda en tu historial como un gasto normal. ¿Qué pasa con el pago?",
+        "reopen": "Volver a por pagar",
+        "reopenHint": "El pago queda pendiente y vuelve a contar en lo que debes.",
+        "keepPaid": "Dejarlo pagado sin movimiento",
+        "keepPaidHint": "Para un pago que sí hiciste, pero no con este gasto.",
+        "confirm": "Desligar",
+        "saving": "Desligando…",
+        "done": "Gasto desligado"
+      }
     }
   },
   "analytics": {
@@ -2380,7 +2443,8 @@
       "original": "Texto original",
       "transfer": "Transferencia",
       "recurring": "Pago recurrente",
-      "notes": "Notas"
+      "notes": "Notas",
+      "loan": "Préstamo"
     },
     "sources": {
       "manual": "Registrado a mano",
@@ -2513,7 +2577,9 @@
       "description": "Datos, nombre, categoría, notas y archivos del movimiento.",
       "notFound": "Este movimiento ya no existe.",
       "failed": "No pudimos cargar el movimiento. Intenta de nuevo."
-    }
+    },
+    "loanPaid": "Pago de {name} del {date}",
+    "loanPaidUnscheduled": "Pago de {name}"
   },
   "notifications": {
     "title": "Notificaciones",

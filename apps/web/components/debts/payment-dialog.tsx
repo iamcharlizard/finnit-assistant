@@ -19,10 +19,17 @@ import {
 } from '@finnit/ui/components/ui/dialog';
 import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { MoneyInput } from '@finnit/ui/components/ui/money-input';
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from '@finnit/ui/components/ui/toggle-group';
+
+import { ExpensePicker } from '@/components/loan-links/expense-picker';
 
 import { budgetCategoryOptions } from '@finnit/core/budgets/options';
 import type { BudgetCategory } from '@finnit/core/budgets/types';
 import { debtErrorMessage, registerDebtPayment } from '@finnit/core/debts/api';
+import { linkLoanPayment } from '@finnit/core/debts/links';
 import {
   buildPaymentMovement,
   hasErrors,
@@ -46,7 +53,9 @@ import { accountOptions } from '@finnit/core/new-entry/options';
  * Registers a payment: the movement that moved the money (a transfer to a
  * linked credit card, otherwise an expense) and the debt payment linked to
  * it. With `installment` it pays that scheduled payment of a loan (amount
- * prefilled). Mounted while open.
+ * prefilled), or links an expense already in the history to it ("Gasto
+ * existente": close in amount and date, naming the loan first). Mounted
+ * while open.
  */
 export function PaymentDialog({
   debt,
@@ -61,7 +70,13 @@ export function PaymentDialog({
   debt: ApiDebt;
   /** What is still owed, formatted. */
   remainingLabel: string;
-  installment?: { occurrenceId: string; amount: number };
+  installment?: {
+    occurrenceId: string;
+    amount: number;
+    /** The payment's date and amount, formatted (for "Gasto existente"). */
+    dateLabel: string;
+    amountLabel: string;
+  };
   accounts: ApiAccount[];
   categories: BudgetCategory[];
   today: DayKey;
@@ -72,6 +87,9 @@ export function PaymentDialog({
   const exit = useDialogExit();
   const { t } = useLocalizer();
   const tf = useTranslations('debts.payment');
+  const tl = useTranslations('debts.links');
+  const [linking, setLinking] = React.useState(false);
+  const [linkedId, setLinkedId] = React.useState<string | null>(null);
   const locale = useLocale();
   const mode = React.useMemo(
     () => paymentMode(debt, accounts),
@@ -118,6 +136,19 @@ export function PaymentDialog({
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (linking) {
+      if (!installment || !linkedId) return;
+      setSaving(true);
+      setSubmitError(null);
+      try {
+        await linkLoanPayment(installment.occurrenceId, linkedId, gql);
+        exit.after(onSaved)();
+      } catch (error) {
+        setSubmitError(debtErrorMessage(error, t));
+        setSaving(false);
+      }
+      return;
+    }
     const found = validatePaymentForm(form, {
       remaining: debt.remainingBalance,
       today,
@@ -165,65 +196,104 @@ export function PaymentDialog({
           </DialogHeader>
 
           <DialogBody>
-            <p className="flex items-start gap-2 rounded-input bg-track/60 p-3 text-xs text-on-background">
-              {mode.kind === 'transfer' ? (
-                <ArrowRightLeft aria-hidden className="size-4 shrink-0" />
-              ) : (
-                <Receipt aria-hidden className="size-4 shrink-0" />
-              )}
-              {mode.kind === 'transfer'
-                ? tf('transferNote', { card: accountLabel(mode.card) })
-                : tf('expenseNote')}
-            </p>
-
-            <MoneyInput
-              label={tf('amount')}
-              value={form.amount}
-              onValueChange={(value) => update({ amount: value })}
-              error={errorText(errors.amount)}
-            />
-            <DatePicker
-              label={tf('date')}
-              value={form.date || undefined}
-              onChange={(day) => update({ date: day ?? '' })}
-              max={today}
-              locale={locale}
-              placeholder={tf('datePlaceholder')}
-              required
-              error={errorText(errors.date)}
-            />
-            {sources.length > 0 ? (
-              <Combobox
-                label={tf('account')}
-                options={sourceItems}
-                value={form.accountId || undefined}
-                onChange={(accountId) => update({ accountId: accountId ?? '' })}
-                placeholder={tf('accountPlaceholder')}
-                searchPlaceholder={tf('accountSearch')}
-                emptyText={tf('noResults')}
-                error={errorText(errors.accountId)}
-              />
-            ) : (
-              <p role="alert" className="text-[13px] text-expense">
-                {mode.kind === 'transfer'
-                  ? tf('noSourcesTransfer')
-                  : tf('noSources')}
-              </p>
-            )}
-            {mode.kind === 'expense' ? (
-              <Combobox
-                label={tf('category')}
-                options={categoryItems}
-                value={form.categoryId || undefined}
-                onChange={(categoryId) =>
-                  update({ categoryId: categoryId ?? '' })
-                }
-                placeholder={tf('categoryPlaceholder')}
-                searchPlaceholder={tf('categorySearch')}
-                emptyText={tf('noResults')}
-                clearable
-              />
+            {installment ? (
+              <ToggleGroup
+                type="single"
+                value={linking ? 'existing' : 'new'}
+                onValueChange={(value) => {
+                  if (!value) return;
+                  setLinking(value === 'existing');
+                  setSubmitError(null);
+                }}
+                aria-label={tl('mode.label')}
+                className="flex-wrap"
+              >
+                <ToggleGroupItem value="new">{tl('mode.new')}</ToggleGroupItem>
+                <ToggleGroupItem value="existing">
+                  {tl('mode.existing')}
+                </ToggleGroupItem>
+              </ToggleGroup>
             ) : null}
+            {linking && installment ? (
+              <>
+                <p className="px-1 text-sm text-on-surface-variant">
+                  {tl('expense.description', {
+                    date: installment.dateLabel,
+                    amount: installment.amountLabel,
+                  })}
+                </p>
+                <ExpensePicker
+                  occurrenceId={installment.occurrenceId}
+                  today={today}
+                  value={linkedId}
+                  onChange={setLinkedId}
+                />
+              </>
+            ) : (
+              <>
+                <p className="flex items-start gap-2 rounded-input bg-track/60 p-3 text-xs text-on-background">
+                  {mode.kind === 'transfer' ? (
+                    <ArrowRightLeft aria-hidden className="size-4 shrink-0" />
+                  ) : (
+                    <Receipt aria-hidden className="size-4 shrink-0" />
+                  )}
+                  {mode.kind === 'transfer'
+                    ? tf('transferNote', { card: accountLabel(mode.card) })
+                    : tf('expenseNote')}
+                </p>
+
+                <MoneyInput
+                  label={tf('amount')}
+                  value={form.amount}
+                  onValueChange={(value) => update({ amount: value })}
+                  error={errorText(errors.amount)}
+                />
+                <DatePicker
+                  label={tf('date')}
+                  value={form.date || undefined}
+                  onChange={(day) => update({ date: day ?? '' })}
+                  max={today}
+                  locale={locale}
+                  placeholder={tf('datePlaceholder')}
+                  required
+                  error={errorText(errors.date)}
+                />
+                {sources.length > 0 ? (
+                  <Combobox
+                    label={tf('account')}
+                    options={sourceItems}
+                    value={form.accountId || undefined}
+                    onChange={(accountId) =>
+                      update({ accountId: accountId ?? '' })
+                    }
+                    placeholder={tf('accountPlaceholder')}
+                    searchPlaceholder={tf('accountSearch')}
+                    emptyText={tf('noResults')}
+                    error={errorText(errors.accountId)}
+                  />
+                ) : (
+                  <p role="alert" className="text-[13px] text-expense">
+                    {mode.kind === 'transfer'
+                      ? tf('noSourcesTransfer')
+                      : tf('noSources')}
+                  </p>
+                )}
+                {mode.kind === 'expense' ? (
+                  <Combobox
+                    label={tf('category')}
+                    options={categoryItems}
+                    value={form.categoryId || undefined}
+                    onChange={(categoryId) =>
+                      update({ categoryId: categoryId ?? '' })
+                    }
+                    placeholder={tf('categoryPlaceholder')}
+                    searchPlaceholder={tf('categorySearch')}
+                    emptyText={tf('noResults')}
+                    clearable
+                  />
+                ) : null}
+              </>
+            )}
 
             {submitError ? (
               <p role="alert" className="text-[13px] text-expense">
@@ -238,13 +308,23 @@ export function PaymentDialog({
                 {t('common.cancel')}
               </Button>
             </DialogClose>
-            <Button
-              type="submit"
-              variant="secondary"
-              disabled={saving || sources.length === 0}
-            >
-              {saving ? tf('saving') : tf('submit')}
-            </Button>
+            {linking ? (
+              <Button
+                type="submit"
+                variant="secondary"
+                disabled={saving || !linkedId}
+              >
+                {saving ? tl('saving') : tl('expense.submit')}
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                variant="secondary"
+                disabled={saving || sources.length === 0}
+              >
+                {saving ? tf('saving') : tf('submit')}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

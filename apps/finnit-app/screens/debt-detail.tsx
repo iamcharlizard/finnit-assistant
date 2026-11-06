@@ -1,20 +1,26 @@
 import * as React from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
 
-import { buildLoanDetailView, type ScheduleRowStatus } from '@finnit/core/debts/detail-view';
+import { Link2, Receipt, Unlink } from 'lucide-react-native';
+
+import { buildLoanDetailView, type ScheduleRow, type ScheduleRowStatus } from '@finnit/core/debts/detail-view';
 import { DEBT_DETAIL_QUERY, type DebtDetailResult } from '@finnit/core/debts/request';
 import { todayKey } from '@finnit/core/finance/dates';
 import { cn } from '@finnit/ui-native/lib/utils';
 import { TwView } from '@finnit/ui-native/lib/tw';
 import { Badge, type BadgeVariant } from '@finnit/ui-native/components/ui/badge';
+import { Button } from '@finnit/ui-native/components/ui/button';
 import { Card } from '@finnit/ui-native/components/ui/card';
 import { Progress } from '@finnit/ui-native/components/ui/progress';
 import { Text } from '@finnit/ui-native/components/ui/text';
+import { toast } from '@finnit/ui-native/components/ui/toaster';
 
+import { LinkExpenseSheet } from '@/components/loan-links/link-expense-sheet';
+import { UnlinkLoanSheet } from '@/components/loan-links/unlink-loan-sheet';
 import { Screen } from '@/components/shell/screen';
 import { useView } from '@/lib/graphql/use-view';
-import { useOnTransactionsChanged } from '@/lib/transactions/events';
+import { emitTransactionsChanged, useOnTransactionsChanged } from '@/lib/transactions/events';
 
 const STATUS_VARIANT: Record<ScheduleRowStatus, BadgeVariant> = {
   paid: 'income',
@@ -25,10 +31,18 @@ const STATUS_VARIANT: Record<ScheduleRowStatus, BadgeVariant> = {
   projected: 'outline',
 };
 
-/** One debt (the web's /planning/debts/[id]): what's left, its terms, schedule and payments. */
+/**
+ * One debt (the web's /planning/debts/[id]): what's left, its terms,
+ * schedule and payments. A payment takes an existing expense ("Ligar
+ * gasto"); one paid by an expense opens it or unlinks it.
+ */
 export function DebtDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTranslations('debts.detail');
+  const tl = useTranslations('debts.links');
+  const router = useRouter();
+  const [linking, setLinking] = React.useState<ScheduleRow | null>(null);
+  const [unlinking, setUnlinking] = React.useState<ScheduleRow | null>(null);
   const today = todayKey();
   const { view, loading, error, refreshing, refresh } = useView({
     query: DEBT_DETAIL_QUERY,
@@ -36,6 +50,12 @@ export function DebtDetailScreen() {
     build: (data: DebtDetailResult, l) => buildLoanDetailView(data.debt, data.loanSchedule, { today, categories: data.categories }, l),
   });
   useOnTransactionsChanged(refresh);
+
+  // Reloads this screen too (it listens) and the lists that show movements.
+  const changed = (message: string) => {
+    toast.success(message);
+    emitTransactionsChanged(null);
+  };
 
   return (
     <Screen
@@ -109,6 +129,21 @@ export function DebtDetailScreen() {
                       {row.amountLabel}
                     </Text>
                     <Badge variant={STATUS_VARIANT[row.status]} label={t(`status.${row.status}`)} />
+                    {row.linkOccurrenceId ? (
+                      <Button size="sm" variant="outline" icon={Link2} label={tl('linkPaid')} onPress={() => setLinking(row)} />
+                    ) : null}
+                    {row.unlinkOccurrenceId && row.transactionId ? (
+                      <TwView className="flex-row gap-1">
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          icon={Receipt}
+                          label={tl('viewMovement')}
+                          onPress={() => router.push({ pathname: '/transaction/[id]', params: { id: row.transactionId! } })}
+                        />
+                        <Button size="icon-sm" variant="ghost" icon={Unlink} label={tl('unlink.action')} onPress={() => setUnlinking(row)} />
+                      </TwView>
+                    ) : null}
                   </TwView>
                 </TwView>
               ))
@@ -132,6 +167,29 @@ export function DebtDetailScreen() {
               ))
             )}
           </Card>
+          {linking?.linkOccurrenceId ? (
+            <LinkExpenseSheet
+              occurrenceId={linking.linkOccurrenceId}
+              dateLabel={linking.dateLabel}
+              amountLabel={linking.amountLabel}
+              today={today}
+              onClose={() => setLinking(null)}
+              onLinked={() => {
+                setLinking(null);
+                changed(tl('expense.done'));
+              }}
+            />
+          ) : null}
+          {unlinking?.unlinkOccurrenceId ? (
+            <UnlinkLoanSheet
+              occurrenceId={unlinking.unlinkOccurrenceId}
+              onClose={() => setUnlinking(null)}
+              onUnlinked={() => {
+                setUnlinking(null);
+                changed(tl('unlink.done'));
+              }}
+            />
+          ) : null}
         </TwView>
       ) : null}
     </Screen>

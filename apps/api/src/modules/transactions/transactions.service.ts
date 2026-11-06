@@ -28,6 +28,7 @@ import {
   SimilarTransactionsArgs,
 } from './dto/transaction.dto';
 import {
+  TransactionLoanPayment,
   TransactionRecurringPayment,
   TransferCounterpart,
 } from './dto/transaction-links.dto';
@@ -430,6 +431,31 @@ export class TransactionsService {
       recurringExpenseId: occurrence.recurringExpense.id,
       name: occurrence.recurringExpense.name,
       dueDate: occurrence.dueDate,
+    };
+  }
+
+  /** The loan payment this movement is, if any (with its scheduled payment). */
+  async findLoanPayment(
+    id: string,
+    userId: string,
+  ): Promise<TransactionLoanPayment | null> {
+    const payment = await this.prisma.debtPayment.findFirst({
+      where: { transactionId: id, debt: { userId } },
+      select: { debt: { select: { id: true, name: true } } },
+    });
+    if (!payment) return null;
+    const occurrence = await this.prisma.recurringOccurrence.findFirst({
+      where: {
+        transactionId: id,
+        recurringExpense: { debtId: payment.debt.id },
+      },
+      select: { id: true, dueDate: true },
+    });
+    return {
+      debtId: payment.debt.id,
+      debtName: payment.debt.name,
+      occurrenceId: occurrence?.id,
+      dueDate: occurrence?.dueDate,
     };
   }
 

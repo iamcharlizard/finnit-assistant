@@ -27,6 +27,7 @@ import { TransferDirectionLoader } from './transfer-direction.loader';
 import { PrivacyService } from '../privacy/privacy.service';
 import { TransactionAliasInput } from '../categorization/dto/merchant-alias.dto';
 import {
+  TransactionLoanPayment,
   TransactionRecurringPayment,
   TransferCounterpart,
 } from './dto/transaction-links.dto';
@@ -101,6 +102,20 @@ export class TransactionsResolver {
     @Parent() transaction: Transaction,
   ): Promise<TransactionRecurringPayment | null> {
     return this.transactionsService.findRecurringPayment(
+      transaction.id,
+      transaction.userId,
+    );
+  }
+
+  @ResolveField('loanPayment', () => TransactionLoanPayment, {
+    nullable: true,
+    description:
+      'The loan payment this movement is (one query per movement; for the detail, not lists)',
+  })
+  async loanPayment(
+    @Parent() transaction: Transaction,
+  ): Promise<TransactionLoanPayment | null> {
+    return this.transactionsService.findLoanPayment(
       transaction.id,
       transaction.userId,
     );

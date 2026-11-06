@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
-import { CheckCheck, PencilLine, Trash2, Undo2 } from 'lucide-react-native';
+import { CheckCheck, Landmark, PencilLine, Trash2, Undo2, Unlink } from 'lucide-react-native';
 
 import { todayKey } from '@finnit/core/finance/dates';
 import { deleteTransaction, transactionErrorMessage, updateTransaction } from '@finnit/core/transaction-detail/api';
@@ -17,6 +17,8 @@ import { Button } from '@finnit/ui-native/components/ui/button';
 import { Text } from '@finnit/ui-native/components/ui/text';
 import { toast } from '@finnit/ui-native/components/ui/toaster';
 
+import { LinkLoanSheet } from '@/components/loan-links/link-loan-sheet';
+import { UnlinkLoanSheet } from '@/components/loan-links/unlink-loan-sheet';
 import { Screen } from '@/components/shell/screen';
 import { TransactionEditSheet } from '@/components/transaction-detail/transaction-edit-sheet';
 import { TransactionFacts } from '@/components/transaction-detail/transaction-facts';
@@ -32,11 +34,13 @@ export function TransactionDetailScreen() {
   const t = useTranslations('transaction');
   const tx = useTranslations('transfers');
   const tc = useTranslations('common');
+  const tl = useTranslations('debts.links');
   const l = useLocalizer();
   const gql = useGql();
   const router = useRouter();
   const today = todayKey();
   const [editing, setEditing] = React.useState(false);
+  const [loanSheet, setLoanSheet] = React.useState<'link' | 'unlink' | null>(null);
   const [busy, setBusy] = React.useState(false);
 
   const { view: data, loading, error, refreshing, refresh } = useView({
@@ -113,6 +117,8 @@ export function TransactionDetailScreen() {
           <TransactionSummary view={view} onUnlock={() => router.push('/privacy-unlock')} />
           <TwView className="flex-row flex-wrap gap-2">
             <Button variant="outline" icon={PencilLine} label={t('edit')} onPress={() => setEditing(true)} />
+            {view.canLinkLoan ? <Button variant="outline" icon={Landmark} label={tl('linkAction')} onPress={() => setLoanSheet('link')} /> : null}
+            {view.loan?.occurrenceId ? <Button variant="outline" icon={Unlink} label={tl('unlink.action')} onPress={() => setLoanSheet('unlink')} /> : null}
             {view.counterpart?.converted ? (
               <Button
                 variant="outline"
@@ -139,6 +145,29 @@ export function TransactionDetailScreen() {
             <Text className="-mt-2 text-xs text-on-surface-variant">{t(`deleteBlocked.${view.deleteBlock}`)}</Text>
           ) : null}
           <TransactionFacts view={view} merchant={data.form.merchantName} description={data.form.description} />
+          {loanSheet === 'link' ? (
+            <LinkLoanSheet
+              transactionId={view.id}
+              amountLabel={view.amount}
+              onClose={() => setLoanSheet(null)}
+              onLinked={(name) => {
+                setLoanSheet(null);
+                toast.success(tl('done', { name }));
+                changed();
+              }}
+            />
+          ) : null}
+          {loanSheet === 'unlink' && view.loan?.occurrenceId ? (
+            <UnlinkLoanSheet
+              occurrenceId={view.loan.occurrenceId}
+              onClose={() => setLoanSheet(null)}
+              onUnlinked={() => {
+                setLoanSheet(null);
+                toast.success(tl('unlink.done'));
+                changed();
+              }}
+            />
+          ) : null}
           {editing ? (
             <TransactionEditSheet
               open

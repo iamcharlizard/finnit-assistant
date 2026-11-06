@@ -13,28 +13,36 @@ import {
   HeaderChromeContext,
   type HeaderChrome,
 } from '@/components/header-chrome';
-import { ModeSegmented } from '@/components/mode-segmented';
-import { ThemePicker } from '@/components/theme-picker';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { AppBottomNav } from '@/components/navigation/app-bottom-nav';
 import { AppSideNav } from '@/components/navigation/app-side-nav';
+import { ProfileMenu } from '@/components/navigation/profile-menu';
+import { useNavGroups } from '@/components/navigation/use-nav-groups';
 import { useSidebarState } from '@/components/navigation/use-sidebar-state';
 import type { NewEntryAction } from '@/components/new-entry/new-entry-flow';
 import { NewEntrySheet } from '@/components/new-entry/new-entry-sheet';
 import { NotificationsSheet } from '@/components/notifications/notifications-sheet';
-import { initials, useSessionUser } from '@/components/session-provider';
-import { activeNavHref, visibleSections } from '@/lib/nav/sections';
+import { useSessionUser } from '@/components/session-provider';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import {
+  SETTINGS_HREF,
+  activeGroupKey,
+  activeNavHref,
+  visibleSections,
+} from '@/lib/nav/sections';
 import { pageTitleKey } from '@/lib/nav/titles';
 
 export function AppShell({
   children,
   notificationCount,
   sidebarCollapsed,
+  openNavGroups,
 }: {
   children: React.ReactNode;
   notificationCount: number;
   /** Desktop sidebar state from the cookie, so the server renders it. */
   sidebarCollapsed: boolean;
+  /** Sidebar groups left open (cookie). */
+  openNavGroups: ReadonlyArray<string>;
 }) {
   const pathname = usePathname();
   const user = useSessionUser();
@@ -55,28 +63,27 @@ export function AppShell({
   } | null>(null);
   const handleAdd = (action?: NewEntryAction) => setAdding({ action });
   const sidebar = useSidebarState(sidebarCollapsed);
+  const groups = useNavGroups(
+    openNavGroups,
+    activeGroupKey(sections, activeHref),
+  );
+  // With the sidebar on the left (lg), toasts go to the bottom right, away
+  // from the header; on phones and tablets they stay at the top.
+  const wide = useMediaQuery('(min-width: 64rem)');
+  const inSettings =
+    pathname === SETTINGS_HREF || pathname.startsWith(`${SETTINGS_HREF}/`);
   // The bell's panel (latest notifications).
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
   const chrome = React.useMemo<HeaderChrome>(
     () => ({
       notificationCount,
       onNotificationsClick: () => setNotificationsOpen(true),
-      avatarFallback: initials(user.name),
       notificationsLabel: (count) =>
         count > 0 ? tu('notificationsUnread', { count }) : tu('notifications'),
-      profileLabel: tu('userProfile'),
-      // Theme, then light/dark: a pill from sm, a single icon below.
-      tools: (
-        <>
-          <ThemePicker />
-          <ModeSegmented className="mx-1 hidden sm:flex" />
-          <span className="sm:hidden">
-            <ThemeToggle />
-          </span>
-        </>
-      ),
+      // From lg the profile lives at the bottom of the sidebar.
+      profile: <ProfileMenu variant="header" className="lg:hidden" />,
     }),
-    [notificationCount, user.name, tu],
+    [notificationCount, tu],
   );
 
   return (
@@ -88,6 +95,15 @@ export function AppShell({
         onAddClick={() => handleAdd()}
         collapsed={sidebar.collapsed}
         onToggle={sidebar.toggle}
+        openGroups={groups.open}
+        onToggleGroup={groups.toggle}
+        footer={
+          <ProfileMenu
+            variant="sidebar"
+            collapsed={sidebar.collapsed}
+            active={inSettings}
+          />
+        }
         className="sticky top-3 z-40 my-3 ml-3 hidden h-[calc(100dvh-1.5rem)] shrink-0 lg:block"
       />
 
@@ -136,7 +152,10 @@ export function AppShell({
         onOpenChange={setNotificationsOpen}
         unreadCount={notificationCount}
       />
-      <Toaster position="top-center" closeButton={false} />
+      <Toaster
+        position={wide ? 'bottom-right' : 'top-center'}
+        closeButton={false}
+      />
     </div>
   );
 }

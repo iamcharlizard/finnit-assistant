@@ -1,6 +1,7 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { AvatarService } from './avatar.service';
 import { UpdateMyPreferencesInput, UpdateUserInput } from './dto/user.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -9,7 +10,10 @@ import { User } from '../../common/types/models/user.model';
 @Resolver(() => User)
 @UseGuards(JwtAuthGuard)
 export class UsersResolver {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly avatars: AvatarService,
+  ) {}
 
   @Query(() => User)
   async user(@Args('id') id: string): Promise<User> {
@@ -32,5 +36,13 @@ export class UsersResolver {
     @Args('input') input: UpdateMyPreferencesInput,
   ): Promise<User> {
     return this.usersService.updatePreferences(currentUser.id, input);
+  }
+
+  @Mutation(() => User, {
+    description:
+      'Removes the uploaded profile photo (back to the Google picture or initials)',
+  })
+  async removeMyAvatar(@CurrentUser() currentUser: User): Promise<User> {
+    return this.avatars.remove(currentUser.id);
   }
 }

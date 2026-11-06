@@ -3,7 +3,7 @@ import {
   MIN_PASSWORD_LENGTH,
   hashPassword,
 } from '../../common/utils/password.util';
-import { createDefaultCategories } from '../auth/default-categories';
+import { syncCategoryCatalog } from '../auth/default-categories';
 
 export interface MasterUserOptions {
   email: string;
@@ -88,7 +88,8 @@ export async function setMasterUser(
         isMaster: true,
       },
     });
-    await createDefaultCategories(tx, created.id);
+    // A fresh environment may not have started the API yet.
+    await syncCategoryCatalog(tx);
     return { id: created.id, created: true };
   });
 }

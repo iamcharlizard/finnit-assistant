@@ -13,6 +13,8 @@ const SIMILAR_DAYS_WINDOW = 3;
 const SIMILAR_MAX_RESULTS = 5;
 const MAX_CATEGORY_DEPTH = 5;
 const toCents = (value: number) => Math.round(value * 100) / 100;
+/** What the user may change on a bank or statement movement. */
+const USER_EDITABLE_ON_IMPORTED = new Set<string>(['categoryId', 'inProcess']);
 import { PrismaService } from '../../services/prisma.service';
 import {
   CreateTransactionInput,
@@ -58,6 +60,7 @@ import {
   mapAttachment,
   mapTransaction,
 } from './transaction.mapper';
+import { visibleCategoryWhere } from '../categories/category-scope';
 
 @Injectable()
 export class TransactionsService {
@@ -103,7 +106,7 @@ export class TransactionsService {
       const category = await this.prisma.category.findFirst({
         where: {
           id: categoryId,
-          OR: [{ userId }, { userId: null, isDefault: true }],
+          ...visibleCategoryWhere(userId),
         },
       });
 
@@ -273,11 +276,15 @@ export class TransactionsService {
     }
 
     // Movements from the bank or a statement keep the bank's data; only the
-    // category is the user's (the name is changed with an alias).
+    // category and "en proceso" are the user's (the name is changed with an
+    // alias).
     if (existingTransaction.source !== TransactionSource.manual) {
       const changed = (
         Object.keys(input) as (keyof UpdateTransactionInput)[]
-      ).filter((key) => key !== 'categoryId' && input[key] !== undefined);
+      ).filter(
+        (key) =>
+          !USER_EDITABLE_ON_IMPORTED.has(key) && input[key] !== undefined,
+      );
       if (changed.length > 0) {
         throw new ValidationError(
           'Cannot modify imported transactions; only the category can change',
@@ -301,7 +308,7 @@ export class TransactionsService {
       const category = await this.prisma.category.findFirst({
         where: {
           id: input.categoryId,
-          OR: [{ userId }, { userId: null, isDefault: true }],
+          ...visibleCategoryWhere(userId),
         },
       });
 
@@ -367,7 +374,13 @@ export class TransactionsService {
         OR: [{ fromTxnId: id }, { toTxnId: id }],
         fromTxn: { userId },
       },
-      select: { fromTxnId: true, fromTxn: side, toTxn: side },
+      select: {
+        id: true,
+        convertedAt: true,
+        fromTxnId: true,
+        fromTxn: side,
+        toTxn: side,
+      },
     });
     if (!transfer) return null;
     const isSource = transfer.fromTxnId === id;
@@ -376,6 +389,8 @@ export class TransactionsService {
       other.account.metadata as { nickname?: string | null } | null
     )?.nickname?.trim();
     return {
+      transferId: transfer.id,
+      converted: transfer.convertedAt !== null,
       transactionId: other.id,
       accountId: other.accountId,
       accountName: nickname || other.account.name,
@@ -693,7 +708,7 @@ export class TransactionsService {
     const category = await this.prisma.category.findFirst({
       where: {
         id: categoryId,
-        OR: [{ userId }, { userId: null, isDefault: true }],
+        ...visibleCategoryWhere(userId),
       },
     });
 

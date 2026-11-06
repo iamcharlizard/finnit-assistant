@@ -38,19 +38,23 @@ export function accountOptions(
 }
 
 const INCOME_KEY = 'categories.income';
-const isIncomeRoot = (c: EntryCategory) => c.key === INCOME_KEY;
+const isIncomeRoot = (c: EntryCategory) =>
+  c.kind ? c.kind === 'income' : c.key === INCOME_KEY;
 
 /**
  * Categories for the combobox: each top-level category is a group holding
- * itself and its subcategories. For an income the income group comes
- * first; for an expense it goes last. Names come from the API in the user's
- * language and are sorted alphabetically within each group.
+ * itself and its subcategories. An expense lists spending categories and an
+ * income the income ones (`any`: both, income last). Names come from the
+ * API in the user's language and are sorted alphabetically within each
+ * group.
  */
 export function categoryOptions(
-  categories: ReadonlyArray<EntryCategory>,
-  type: 'expense' | 'income',
+  all: ReadonlyArray<EntryCategory>,
+  type: 'expense' | 'income' | 'any',
   locale: string,
 ): PickerOption[] {
+  const categories =
+    type === 'any' ? all : all.filter((c) => !c.kind || c.kind === type);
   const ids = new Set(categories.map((c) => c.id));
   const roots = categories.filter((c) => !c.parentId || !ids.has(c.parentId));
   const byName = (a: EntryCategory, b: EntryCategory) =>

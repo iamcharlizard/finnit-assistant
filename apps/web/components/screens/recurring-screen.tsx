@@ -66,7 +66,7 @@ import {
   type RecurringTab,
 } from '@/lib/recurring/tabs';
 import type { ApiRecurringSuggestion } from '@/lib/recurring/types';
-import { LOANS_PATH } from '@/lib/debts/view';
+import { DEBTS_PATH } from '@/lib/debts/view';
 import type {
   ExpenseItem,
   PaymentItem,
@@ -244,7 +244,7 @@ export function RecurringScreen({
     setLoanFor(null);
     if (suggestion) suggestions.remove(suggestion.fingerprint);
     toast.success(t('recurring.toasts.acceptedAsLoan', { name }));
-    router.push(`${LOANS_PATH}/${id}`);
+    router.push(`${DEBTS_PATH}/${id}`);
   }
 
   function onSaved(changed: boolean, name: string) {

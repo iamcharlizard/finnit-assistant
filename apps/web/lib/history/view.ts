@@ -18,6 +18,10 @@ import {
   type ApiTransaction,
   type Connection,
 } from '@/lib/finance/types';
+import {
+  canConvertToTransfer,
+  type ConvertSource,
+} from '@/lib/transfers/convert';
 
 export const HISTORY_QUERY_FIELDS = `transactions(first: $first, after: $after, filters: $filters) {
     totalCount
@@ -30,8 +34,69 @@ export const TRANSACTIONS_PAGE_QUERY = `query TransactionsPage($first: Int!, $af
   ${HISTORY_QUERY_FIELDS}
 }`;
 
+/** A history row plus what its "⋯" menu needs. */
+export interface HistoryRow extends TransactionRow {
+  /** "Editar descripción": the current own description and privacy. */
+  alias: { displayName: string; hasOwnAlias: boolean; isPrivate: boolean };
+  /** The bank's/user's original text (shown in the rename dialog). */
+  original: string | null;
+  /** "Convertir en transferencia"; null for transfers and adjustments. */
+  convert: ConvertSource | null;
+  /** Signed amount for the day's net: transfers and adjustments are 0. */
+  net: number;
+  currency: string;
+}
+
+export function toHistoryRow(
+  tx: ApiTransaction,
+  categories: CategoryIndex,
+  l: Localizer,
+): HistoryRow {
+  const row = toTransactionRow(tx, categories, l);
+  const amount = Math.abs(tx.amount);
+  return {
+    ...row,
+    alias: {
+      displayName: tx.displayName,
+      hasOwnAlias: Boolean(tx.hasOwnAlias),
+      isPrivate: tx.isPrivate,
+    },
+    original: tx.isPrivate
+      ? null
+      : (tx.merchantName ?? tx.description)?.trim() || null,
+    convert: canConvertToTransfer(tx)
+      ? {
+          id: tx.id,
+          type: tx.type,
+          accountId: tx.accountId,
+          currency: tx.currency,
+          amount,
+        }
+      : null,
+    net: tx.isPending
+      ? 0
+      : tx.type === 'income'
+        ? amount
+        : tx.type === 'expense'
+          ? -amount
+          : 0,
+    currency: tx.currency,
+  };
+}
+
+/** The day's income minus spending, when its rows share one currency. */
+export function dayNet(
+  rows: ReadonlyArray<Pick<HistoryRow, 'net' | 'currency'>>,
+): { amount: number; currency: string } | null {
+  const currencies = new Set(rows.map((row) => row.currency));
+  if (currencies.size !== 1) return null;
+  const amount =
+    Math.round(rows.reduce((sum, row) => sum + row.net, 0) * 100) / 100;
+  return { amount, currency: rows[0]!.currency };
+}
+
 export interface TransactionPage {
-  rows: TransactionRow[];
+  rows: HistoryRow[];
   totalCount: number;
   endCursor: string | null;
   hasNextPage: boolean;
@@ -43,7 +108,7 @@ export function toTransactionPage(
   l: Localizer,
 ): TransactionPage {
   return {
-    rows: connection.edges.map((e) => toTransactionRow(e.node, categories, l)),
+    rows: connection.edges.map((e) => toHistoryRow(e.node, categories, l)),
     totalCount: connection.totalCount,
     endCursor: connection.pageInfo.endCursor,
     hasNextPage: connection.pageInfo.hasNextPage,

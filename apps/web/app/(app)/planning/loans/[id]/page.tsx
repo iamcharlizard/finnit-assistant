@@ -1,17 +1,11 @@
-import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
-import { LoanDetailScreen } from '@/components/debts/loan-detail-screen';
-import { loadDebtDetail } from '@/lib/debts/load';
+import { DEBTS_PATH } from '@/lib/debts/view';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations();
-  return { title: t('pageTitles.loans') };
-}
-
+/** A loan's page lives under Deudas now. */
 export default async function LoanPage({
   params,
 }: PageProps<'/planning/loans/[id]'>) {
   const { id } = await params;
-  return <LoanDetailScreen data={await loadDebtDetail(id)} />;
+  redirect(`${DEBTS_PATH}/${encodeURIComponent(id)}`);
 }

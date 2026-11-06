@@ -18,6 +18,10 @@ import { MerchantRulesService } from './merchant-rules.service';
     CategorizationResolver,
     PrismaService,
   ],
-  exports: [MerchantAliasesService, MerchantRulesService],
+  exports: [
+    MerchantAliasesService,
+    MerchantRulesService,
+    CategorizationService,
+  ],
 })
 export class CategorizationModule {}

@@ -12,8 +12,12 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   name: 'Pets',
   key: null,
   isDefault: false,
+  kind: 'expense' as const,
+  icon: null,
+  color: null,
   sortOrder: null,
   createdAt: new Date('2026-10-13'),
+  children: [],
   translations: [
     { locale: 'en', name: 'Pets' },
     { locale: 'es', name: 'Mascotas' },
@@ -33,6 +37,9 @@ describe('CategoriesService', () => {
       en: { name: 'Pets', source: 'google' },
       es: { name: 'Mascotas', source: 'user' },
     });
+    prisma.$transaction.mockImplementation(((fn: (tx: unknown) => unknown) =>
+      fn(prisma)) as never);
+    prisma.categoryHidden.findMany.mockResolvedValue([]);
     service = new CategoriesService(prisma, translation);
   });
 
@@ -138,8 +145,190 @@ describe('CategoriesService', () => {
 
       expect(translation.translateName).not.toHaveBeenCalled();
       expect(prisma.category.update.mock.calls[0][0].data).toEqual({
+        parentId: null,
+        kind: 'expense',
         sortOrder: 2,
       });
+    });
+
+    it('refuses to change a catalog category', async () => {
+      prisma.category.findFirst.mockResolvedValueOnce(
+        row({ userId: null, isDefault: true }),
+      );
+
+      await expect(
+        service.update('cat-1', 'user-1', { name: 'Otra' }),
+      ).rejects.toThrow(ValidationError);
+      expect(prisma.category.update).not.toHaveBeenCalled();
+    });
+
+    it("gives the subcategories a main category's new kind", async () => {
+      prisma.category.findFirst.mockResolvedValueOnce(row());
+      prisma.category.update.mockResolvedValue(row({ kind: 'income' }));
+
+      await service.update('cat-1', 'user-1', { kind: 'income' });
+
+      expect(prisma.category.updateMany).toHaveBeenCalledWith({
+        where: { parentId: 'cat-1', userId: 'user-1' },
+        data: { kind: 'income' },
+      });
+    });
+  });
+
+  describe('subcategories', () => {
+    it('hang from a catalog category and take its kind', async () => {
+      prisma.category.findFirst
+        .mockResolvedValueOnce({
+          id: 'income',
+          kind: 'income',
+          parentId: null,
+        } as never)
+        .mockResolvedValueOnce(null);
+      prisma.category.create.mockResolvedValue(row());
+
+      await service.create('user-1', {
+        name: 'Mascotas',
+        parentId: 'income',
+        kind: 'expense',
+      });
+
+      expect(prisma.category.create.mock.calls[0][0].data).toMatchObject({
+        userId: 'user-1',
+        parentId: 'income',
+        kind: 'income',
+      });
+    });
+
+    it('go two levels deep at most', async () => {
+      prisma.category.findFirst.mockResolvedValueOnce({
+        id: 'groceries',
+        kind: 'expense',
+        parentId: 'food',
+      } as never);
+
+      await expect(
+        service.create('user-1', { name: 'Frutas', parentId: 'groceries' }),
+      ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  describe('delete', () => {
+    const inUse = () => {
+      prisma.transaction.count.mockResolvedValue(3);
+      prisma.category.count.mockResolvedValue(0);
+      prisma.bUDGET_CATEGORY.count.mockResolvedValue(0);
+      prisma.merchantRule.count.mockResolvedValue(1);
+      prisma.merchantAlias.count.mockResolvedValue(0);
+      prisma.recurringExpense.count.mockResolvedValue(0);
+    };
+
+    it('asks where to move what a category in use has', async () => {
+      prisma.category.findFirst.mockResolvedValue({
+        id: 'cat-1',
+        userId: 'user-1',
+        isDefault: false,
+        kind: 'expense',
+      } as never);
+      inUse();
+
+      await expect(service.delete('cat-1', 'user-1')).rejects.toThrow(
+        ValidationError,
+      );
+      expect(prisma.category.delete).not.toHaveBeenCalled();
+    });
+
+    it('moves movements and rules to the target, then deletes', async () => {
+      prisma.category.findFirst
+        .mockResolvedValueOnce({
+          id: 'cat-1',
+          userId: 'user-1',
+          isDefault: false,
+          kind: 'expense',
+        } as never)
+        .mockResolvedValueOnce({
+          id: 'cat-1',
+          userId: 'user-1',
+          isDefault: false,
+          kind: 'expense',
+        } as never)
+        .mockResolvedValueOnce({
+          id: 'food',
+          parentId: null,
+          kind: 'expense',
+        } as never);
+      inUse();
+      prisma.bUDGET_CATEGORY.findMany.mockResolvedValue([]);
+
+      await service.delete('cat-1', 'user-1', 'food');
+
+      expect(prisma.transaction.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1', categoryId: 'cat-1' },
+        data: { categoryId: 'food' },
+      });
+      expect(prisma.merchantRule.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1', categoryId: 'cat-1' },
+        data: { categoryId: 'food' },
+      });
+      expect(prisma.category.delete).toHaveBeenCalledWith({
+        where: { id: 'cat-1' },
+      });
+    });
+
+    it('refuses a target of the other kind', async () => {
+      prisma.category.findFirst
+        .mockResolvedValueOnce({
+          id: 'cat-1',
+          userId: 'user-1',
+          isDefault: false,
+          kind: 'expense',
+        } as never)
+        .mockResolvedValueOnce({
+          id: 'cat-1',
+          userId: 'user-1',
+          isDefault: false,
+          kind: 'expense',
+        } as never)
+        .mockResolvedValueOnce({
+          id: 'salary',
+          parentId: 'income',
+          kind: 'income',
+        } as never);
+      inUse();
+
+      await expect(service.delete('cat-1', 'user-1', 'salary')).rejects.toThrow(
+        ValidationError,
+      );
+    });
+
+    it('never deletes a catalog category', async () => {
+      prisma.category.findFirst.mockResolvedValue({
+        id: 'food',
+        userId: null,
+        isDefault: true,
+        kind: 'expense',
+      } as never);
+
+      await expect(service.delete('food', 'user-1')).rejects.toThrow(
+        ValidationError,
+      );
+    });
+  });
+
+  it('hides a category with its subcategories', async () => {
+    prisma.category.findFirst.mockResolvedValue({
+      id: 'food',
+      children: [{ id: 'groceries' }, { id: 'coffee' }],
+    } as never);
+
+    await service.hide('user-1', 'food');
+
+    expect(prisma.categoryHidden.createMany).toHaveBeenCalledWith({
+      data: [
+        { userId: 'user-1', categoryId: 'food' },
+        { userId: 'user-1', categoryId: 'groceries' },
+        { userId: 'user-1', categoryId: 'coffee' },
+      ],
+      skipDuplicates: true,
     });
   });
 

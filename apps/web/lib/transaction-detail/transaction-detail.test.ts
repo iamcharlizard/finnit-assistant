@@ -4,7 +4,12 @@ import { describe, it } from 'node:test';
 import { testLocalizer } from '@/lib/i18n/testing';
 import { GraphqlRequestError } from '@/lib/graphql/client';
 import { transactionErrorMessage } from './api';
-import { buildUpdateInput, detailFormOf, validateDetailForm } from './form';
+import {
+  buildAliasInput,
+  buildUpdateInput,
+  detailFormOf,
+  validateDetailForm,
+} from './form';
 import type { TransactionDetail } from './types';
 import {
   deleteBlock,
@@ -57,11 +62,13 @@ describe('transaction detail: what can change', () => {
       merchant: true,
       description: true,
       category: true,
+      alias: false,
+      privacy: true,
     });
     assert.equal(deleteBlock(tx()), null);
   });
 
-  it('bank and statement movements: only the category, and no delete', () => {
+  it('bank and statement movements: own description and category, no delete', () => {
     for (const source of ['imported', 'statement']) {
       assert.deepEqual(editRules(tx({ source })), {
         amount: false,
@@ -69,15 +76,17 @@ describe('transaction detail: what can change', () => {
         merchant: false,
         description: false,
         category: true,
+        alias: true,
+        privacy: true,
       });
       assert.equal(deleteBlock(tx({ source })), 'imported');
     }
-    // A bank adjustment has nothing to edit.
-    assert.ok(
-      !Object.values(
-        editRules(tx({ source: 'imported', type: 'adjustment' })),
-      ).some(Boolean),
+    // A bank adjustment only takes a description.
+    const adjustment = editRules(
+      tx({ source: 'imported', type: 'adjustment' }),
     );
+    assert.equal(adjustment.category, false);
+    assert.equal(adjustment.alias, true);
   });
 
   it('transfers keep amount, date and category; adjustments keep the amount', () => {
@@ -108,7 +117,54 @@ describe('transaction detail: the edit form', () => {
       categoryId: 'cat-food',
       merchantName: 'La Fonda',
       description: 'Cena',
+      aliasName: '',
+      isPrivate: false,
     });
+    assert.equal(
+      detailFormOf(tx({ hasOwnAlias: true, displayName: 'Renta' })).aliasName,
+      'Renta',
+    );
+  });
+
+  it('sends the own description and privacy apart from the bank data', () => {
+    const imported = tx({
+      source: 'imported',
+      description: 'P INT 0311026 Transferencia interbancaria',
+    });
+    const importedRules = editRules(imported);
+    const initial = detailFormOf(imported);
+    assert.equal(buildAliasInput(initial, initial, importedRules), null);
+    assert.deepEqual(
+      buildAliasInput(
+        { ...initial, aliasName: ' Pago a Nu ' },
+        initial,
+        importedRules,
+      ),
+      { displayName: 'Pago a Nu' },
+    );
+    const named = { ...initial, aliasName: 'Pago a Nu' };
+    assert.deepEqual(
+      buildAliasInput({ ...named, aliasName: '' }, named, importedRules),
+      { displayName: null },
+    );
+    // A manual movement edits its own texts; only privacy goes as alias.
+    const manual = detailFormOf(tx());
+    assert.deepEqual(
+      buildAliasInput(
+        { ...manual, aliasName: 'x', isPrivate: true },
+        manual,
+        rules,
+      ),
+      { isPrivate: true },
+    );
+    assert.equal(
+      validateDetailForm(
+        { ...initial, aliasName: 'x'.repeat(81) },
+        importedRules,
+        today,
+      ).aliasName,
+      'aliasTooLong',
+    );
   });
 
   it('sends only what changed and the rules allow', () => {
@@ -191,6 +247,8 @@ describe('transaction detail: view', () => {
         transferDirection: 'out',
         category: null,
         transferCounterpart: {
+          transferId: 'tr-1',
+          converted: true,
           transactionId: 't-2',
           accountId: 'acc-2',
           accountName: 'Mi tarjeta',
@@ -207,8 +265,18 @@ describe('transaction detail: view', () => {
       es,
     );
     assert.deepEqual(view.counterpart, {
+      transferId: 'tr-1',
+      converted: true,
       href: '/transactions/t-2',
       label: 'Hacia Mi tarjeta',
+    });
+    assert.equal(view.convertSource, null);
+    assert.deepEqual(toTransactionDetailView(tx(), today, es).convertSource, {
+      id: 't-1',
+      type: 'expense',
+      accountId: 'acc-1',
+      currency: 'MXN',
+      amount: 80,
     });
     assert.deepEqual(view.recurring, {
       href: '/recurring?date=2026-10-05',

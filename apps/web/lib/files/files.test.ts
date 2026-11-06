@@ -28,6 +28,21 @@ describe('matchFileRoute', () => {
     );
   });
 
+  it("forwards the user's profile photo, cacheable when downloaded", () => {
+    assert.deepEqual(matchFileRoute('POST', ['me', 'avatar']), {
+      kind: 'upload',
+      upstreamPath: '/me/avatar',
+    });
+    assert.deepEqual(matchFileRoute('GET', ['me', 'avatar']), {
+      kind: 'download',
+      upstreamPath: '/me/avatar',
+      cacheable: true,
+    });
+    assert.equal(matchFileRoute('DELETE', ['me', 'avatar']), null);
+    assert.equal(matchFileRoute('GET', ['me', 'other']), null);
+    assert.equal(matchFileRoute('GET', ['me', 'avatar', 'x']), null);
+  });
+
   it('forwards downloads of each kind by id', () => {
     for (const kind of ['statements', 'attachments', 'receipts']) {
       assert.deepEqual(matchFileRoute('GET', [kind, ID, 'file']), {

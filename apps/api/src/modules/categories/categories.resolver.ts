@@ -15,6 +15,7 @@ import {
   CategoryUsage,
   CategoryUsageArgs,
   SuggestCategoryInput,
+  CategoryReferences,
 } from './dto/category.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -27,6 +28,9 @@ import {
   type LocaleRequest,
 } from '../translation/locale';
 import { CategoryI18nLoader } from './category-names';
+
+/** Per request: the ids of the categories the user hid (one query). */
+const hiddenByRequest = new WeakMap<object, Promise<Set<string>>>();
 
 @Resolver(() => Category)
 @UseGuards(JwtAuthGuard)
@@ -67,14 +71,69 @@ export class CategoriesResolver {
     return category.originalName ?? category.name;
   }
 
-  @Query(() => [Category])
-  async categories(@CurrentUser() user: User): Promise<Category[]> {
-    return this.categoriesService.findAll(user.id);
+  @ResolveField('hidden', () => Boolean, {
+    description: 'Whether the user hid it from their pickers',
+  })
+  async hidden(
+    @Parent() category: Category,
+    @CurrentUser() user: User,
+    @Context('req') req: object,
+  ): Promise<boolean> {
+    if (category.hidden !== undefined) return category.hidden;
+    let ids = hiddenByRequest.get(req);
+    if (!ids) {
+      ids = this.categoriesService.hiddenIds(user.id);
+      hiddenByRequest.set(req, ids);
+    }
+    return (await ids).has(category.id);
+  }
+
+  @ResolveField('editable', () => Boolean, {
+    description: "The user's own category (the catalog's are read-only)",
+  })
+  editable(@Parent() category: Category): boolean {
+    return !category.isDefault && Boolean(category.userId);
+  }
+
+  @Query(() => [Category], {
+    description:
+      "The catalog and the user's own categories; with includeHidden, also the ones they hid",
+  })
+  async categories(
+    @CurrentUser() user: User,
+    @Args('includeHidden', {
+      type: () => Boolean,
+      nullable: true,
+      defaultValue: false,
+    })
+    includeHidden: boolean,
+  ): Promise<Category[]> {
+    return this.categoriesService.findAll(user.id, { includeHidden });
   }
 
   @Query(() => [Category])
-  async rootCategories(@CurrentUser() user: User): Promise<Category[]> {
-    return this.categoriesService.findRootCategories(user.id);
+  async rootCategories(
+    @CurrentUser() user: User,
+    @Args('includeHidden', {
+      type: () => Boolean,
+      nullable: true,
+      defaultValue: false,
+    })
+    includeHidden: boolean,
+  ): Promise<Category[]> {
+    return this.categoriesService.findRootCategories(user.id, {
+      includeHidden,
+    });
+  }
+
+  @Query(() => CategoryReferences, {
+    description: "What uses one of the user's categories (before deleting it)",
+  })
+  async categoryReferences(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<CategoryReferences> {
+    return this.categoriesService.references(user.id, id);
   }
 
   @Query(() => Category)
@@ -106,8 +165,33 @@ export class CategoriesResolver {
   async deleteCategory(
     @CurrentUser() user: User,
     @Args('id') id: string,
+    @Args('moveToId', {
+      type: () => String,
+      nullable: true,
+      description:
+        'Where its movements, budgets, rules and subcategories go (required when in use)',
+    })
+    moveToId: string | null,
   ): Promise<boolean> {
-    return this.categoriesService.delete(id, user.id);
+    return this.categoriesService.delete(id, user.id, moveToId);
+  }
+
+  @Mutation(() => Boolean, {
+    description: 'Hides a category and its subcategories from the pickers',
+  })
+  async hideCategory(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<boolean> {
+    return this.categoriesService.hide(user.id, id);
+  }
+
+  @Mutation(() => Boolean)
+  async showCategory(
+    @CurrentUser() user: User,
+    @Args('id') id: string,
+  ): Promise<boolean> {
+    return this.categoriesService.show(user.id, id);
   }
 
   @Query(() => [CategoryUsage])
@@ -135,9 +219,11 @@ export class CategoriesResolver {
     );
   }
 
-  @Mutation(() => Boolean)
-  async createDefaultCategories(@CurrentUser() user: User): Promise<boolean> {
-    await this.categoriesService.createDefaultCategories(user.id);
+  @Mutation(() => Boolean, {
+    deprecationReason:
+      'Default categories are a global catalog every user already sees',
+  })
+  createDefaultCategories(): boolean {
     return true;
   }
 }

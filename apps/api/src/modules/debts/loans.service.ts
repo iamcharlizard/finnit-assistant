@@ -71,6 +71,7 @@ import {
   totalOwedOf,
 } from './debt-ledger';
 import { LoanTermsError, resolveLoanTerms } from './loan-math';
+import { visibleCategoryWhere } from '../categories/category-scope';
 
 type Tx = Prisma.TransactionClient;
 
@@ -292,7 +293,7 @@ export class LoansService {
 
     const categoryId =
       input.categoryId ??
-      (await this.paymentCategoryId(userId, loanType)) ??
+      (await this.paymentCategoryId(loanType)) ??
       fromSuggestion?.categoryId;
     const purposeCategoryId = await this.purposeCategoryId(
       userId,
@@ -820,7 +821,7 @@ export class LoansService {
         amount: 0,
         isVariableAmount: true,
         currency: 'MXN',
-        categoryId: await this.paymentCategoryId(userId, debt.loanType),
+        categoryId: await this.paymentCategoryId(debt.loanType),
         debtId: debt.id,
       },
     });
@@ -902,7 +903,7 @@ export class LoansService {
           input.categoryId ??
           debt.recurringExpense?.categoryId ??
           (debt.kind === DebtKind.loan
-            ? await this.paymentCategoryId(userId, debt.loanType)
+            ? await this.paymentCategoryId(debt.loanType)
             : undefined),
         type: TransactionType.expense,
         amount: input.amount,
@@ -1407,12 +1408,10 @@ export class LoansService {
 
   /** Loan Payments, or Installment Payments for purchase financing. */
   private paymentCategoryId(
-    userId: string,
     loanType: LoanType | null,
   ): Promise<string | undefined> {
     return defaultCategoryId(
       this.prisma,
-      userId,
       debtPaymentCategoryKey(
         loanType === LoanType.purchase_financing ? 'installment' : 'loan',
       ),
@@ -1426,7 +1425,7 @@ export class LoansService {
   ): Promise<string | null> {
     if (!id) return null;
     const category = await this.prisma.category.findFirst({
-      where: { id, OR: [{ userId }, { userId: null, isDefault: true }] },
+      where: { id, ...visibleCategoryWhere(userId) },
       select: { id: true },
     });
     if (!category) throw new NotFoundError('Category not found');

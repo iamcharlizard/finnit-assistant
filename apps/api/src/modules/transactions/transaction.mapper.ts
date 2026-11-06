@@ -125,6 +125,9 @@ export function mapCategory(
     parentId: category.parentId || undefined,
     name: category.name,
     isDefault: category.isDefault,
+    kind: category.kind,
+    icon: category.icon,
+    color: category.color,
     sortOrder: category.sortOrder || undefined,
     createdAt: category.createdAt,
   };

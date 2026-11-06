@@ -8,6 +8,7 @@ import {
   Landmark,
   PiggyBank,
   Scale,
+  Tags,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -24,6 +25,7 @@ const ICONS: Record<NotificationType, LucideIcon> = {
   debt_due: Landmark,
   summary: Bell,
   balance_mismatch: Scale,
+  uncategorized: Tags,
 };
 
 /** A notification; unread ones are highlighted. Clicking marks it read and opens what it's about. */

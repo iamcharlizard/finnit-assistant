@@ -19,6 +19,7 @@ import {
   recomputeAliasesSql,
   regexCheckSql,
 } from './merchant-alias.sql';
+import { visibleCategoryWhere } from '../categories/category-scope';
 
 /** Aliases per user (each recompute evaluates all of them per movement). */
 export const MAX_ALIASES_PER_USER = 200;
@@ -37,6 +38,7 @@ interface ValidAlias {
   isPrivate: boolean;
   priority: number;
   active: boolean;
+  transferAccountId: string | null;
 }
 
 const aliasInclude = {
@@ -200,11 +202,18 @@ export class MerchantAliasesService {
       const category = await this.prisma.category.findFirst({
         where: {
           id: input.categoryId,
-          OR: [{ userId }, { userId: null, isDefault: true }],
+          ...visibleCategoryWhere(userId),
         },
         select: { id: true },
       });
       if (!category) throw new NotFoundError('Category not found');
+    }
+    if (input.transferAccountId && !preview) {
+      const account = await this.prisma.account.findFirst({
+        where: { id: input.transferAccountId, userId },
+        select: { id: true },
+      });
+      if (!account) throw new NotFoundError('Account not found');
     }
     if (input.matchType === AliasMatchType.regex) {
       await this.checkRegex(pattern);
@@ -217,6 +226,7 @@ export class MerchantAliasesService {
       isPrivate: input.isPrivate ?? false,
       priority: input.priority ?? 0,
       active: input.active ?? true,
+      transferAccountId: input.transferAccountId || null,
     };
   }
 
@@ -291,6 +301,7 @@ export class MerchantAliasesService {
       isPrivate: row.isPrivate,
       priority: row.priority,
       active: row.active,
+      transferAccountId: row.transferAccountId,
       matchCount: row._count.transactions,
       createdAt: row.createdAt,
     };

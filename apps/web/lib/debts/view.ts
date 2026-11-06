@@ -15,11 +15,12 @@ import type { ApiDebt, DebtKind } from './types';
  * card per debt (paid-off ones last).
  */
 export const DEBTS_PATH = '/planning/debts';
-export const LOANS_PATH = '/planning/loans';
+/** The loans tab of Deudas (loans used to have their own page). */
+export const LOANS_PATH = '/planning/debts?tab=loans';
 
-/** A debt's own page: loans live under Préstamos, the rest under Deudas. */
+/** A debt's own page (loans too: they live in Deudas). */
 export function debtHref(debt: Pick<ApiDebt, 'id' | 'kind'>): string {
-  return `${debt.kind === 'loan' ? LOANS_PATH : DEBTS_PATH}/${debt.id}`;
+  return `${DEBTS_PATH}/${debt.id}`;
 }
 
 export interface DebtTotals {

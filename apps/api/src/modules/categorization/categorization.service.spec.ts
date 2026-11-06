@@ -17,6 +17,7 @@ import {
 } from '../ai/ai-models.service';
 import { CategorizationService } from './categorization.service';
 import { MerchantRulesService } from './merchant-rules.service';
+import { MerchantAliasesService } from './merchant-aliases.service';
 
 const userId = 'user-1';
 
@@ -72,6 +73,7 @@ describe('CategorizationService', () => {
   let tx: DeepMockProxy<Prisma.TransactionClient>;
   let rules: DeepMockProxy<MerchantRulesService>;
   let ai: DeepMockProxy<AiModelsService>;
+  let aliases: DeepMockProxy<MerchantAliasesService>;
   let service: CategorizationService;
 
   beforeEach(() => {
@@ -79,6 +81,7 @@ describe('CategorizationService', () => {
     tx = mockDeep<Prisma.TransactionClient>();
     rules = mockDeep<MerchantRulesService>();
     ai = mockDeep<AiModelsService>();
+    aliases = mockDeep<MerchantAliasesService>();
     prisma.$transaction.mockImplementation((arg: unknown) =>
       typeof arg === 'function'
         ? Promise.resolve((arg as (c: unknown) => unknown)(tx))
@@ -86,7 +89,7 @@ describe('CategorizationService', () => {
     );
     rules.match.mockResolvedValue(new Map());
     prisma.category.findMany.mockResolvedValue(categories as never);
-    service = new CategorizationService(prisma, rules, ai);
+    service = new CategorizationService(prisma, rules, ai, aliases);
   });
 
   describe('categorizeTransactions', () => {
@@ -357,6 +360,125 @@ describe('CategorizationService', () => {
         },
         data: { suggestedCategoryId: null, suggestedBy: null },
       });
+    });
+  });
+
+  describe('suggestUncategorized', () => {
+    it('asks for suggestions in batches of 100 and counts the ones that got one', async () => {
+      prisma.transaction.findMany.mockResolvedValueOnce(
+        Array.from({ length: 150 }, (_, i) => ({ id: `t${i}` })) as never,
+      );
+      const suggest = jest.spyOn(service, 'suggest').mockImplementation(
+        async (_user, ids) =>
+          ids.map((id, i) => ({
+            id,
+            suggestedCategory: i % 2 === 0 ? { id: 'c1' } : null,
+          })) as never,
+      );
+
+      await expect(service.suggestUncategorized('user-1')).resolves.toBe(75);
+      expect(suggest.mock.calls.map(([, ids]) => ids.length)).toEqual([
+        100, 50,
+      ]);
+      expect(prisma.transaction.findMany.mock.calls[0][0]).toMatchObject({
+        where: {
+          userId: 'user-1',
+          categoryId: null,
+          suggestedCategoryId: null,
+        },
+        take: 300,
+      });
+    });
+  });
+
+  describe('autoCategorize', () => {
+    const pending = [
+      {
+        id: 'r1',
+        type: TransactionType.expense,
+        merchantName: 'OXXO GAS 12',
+        description: null,
+      },
+      {
+        id: 'a1',
+        type: TransactionType.expense,
+        merchantName: 'NETFLIX',
+        description: null,
+      },
+      {
+        id: 'h1',
+        type: TransactionType.expense,
+        merchantName: 'UBER TRIP',
+        description: null,
+      },
+      {
+        id: 'n1',
+        type: TransactionType.expense,
+        merchantName: 'UNKNOWN SHOP',
+        description: null,
+      },
+    ];
+
+    it('uses rules, then aliases, then the history, and counts what is left', async () => {
+      prisma.transaction.findMany
+        // the uncategorized movements
+        .mockResolvedValueOnce(pending as never)
+        // still uncategorized after the rules
+        .mockResolvedValueOnce([
+          { id: 'a1' },
+          { id: 'h1' },
+          { id: 'n1' },
+        ] as never)
+        // after the aliases (NETFLIX got its alias's category)
+        .mockResolvedValueOnce([{ id: 'h1' }, { id: 'n1' }] as never)
+        // past categorizations
+        .mockResolvedValueOnce([
+          {
+            type: TransactionType.expense,
+            merchantName: 'UBER TRIP 991',
+            description: null,
+            categoryId: 'transport',
+          },
+          {
+            type: TransactionType.expense,
+            merchantName: 'Uber Trip',
+            description: null,
+            categoryId: 'transport',
+          },
+        ] as never);
+      rules.match.mockResolvedValue(
+        new Map([['OXXO GAS 12', { ruleId: 'rule-1', categoryId: 'fuel' }]]),
+      );
+      prisma.transaction.updateMany.mockResolvedValue({ count: 1 });
+      prisma.transaction.count.mockResolvedValue(1);
+
+      await expect(service.autoCategorize(userId)).resolves.toEqual({
+        categorized: 3,
+        remaining: 1,
+      });
+      expect(prisma.transaction.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['r1'] }, categoryId: null },
+        data: expect.objectContaining({
+          categoryId: 'fuel',
+          categorySource: CategorySource.rule,
+        }),
+      });
+      expect(aliases.applyTo).toHaveBeenCalledWith(userId, ['a1', 'h1', 'n1']);
+      expect(prisma.transaction.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['h1'] }, categoryId: null },
+        data: expect.objectContaining({ categoryId: 'transport' }),
+      });
+      expect(ai.extractFromText).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when every movement has a category', async () => {
+      prisma.transaction.findMany.mockResolvedValueOnce([] as never);
+      prisma.transaction.count.mockResolvedValue(0);
+      await expect(service.autoCategorize(userId)).resolves.toEqual({
+        categorized: 0,
+        remaining: 0,
+      });
+      expect(prisma.transaction.updateMany).not.toHaveBeenCalled();
     });
   });
 });

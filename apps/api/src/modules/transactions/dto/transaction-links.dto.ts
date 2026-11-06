@@ -8,6 +8,15 @@ import { Field, ID, ObjectType } from '@nestjs/graphql';
 @ObjectType({ description: 'The other side of a transfer' })
 export class TransferCounterpart {
   @Field(() => ID)
+  transferId: string;
+
+  @Field({
+    description:
+      'Made by turning an expense/income into a transfer: it can be undone',
+  })
+  converted: boolean;
+
+  @Field(() => ID)
   transactionId: string;
 
   @Field(() => ID)

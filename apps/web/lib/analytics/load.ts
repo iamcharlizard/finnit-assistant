@@ -45,7 +45,7 @@ export async function loadAnalytics(
   >(
     `query Analytics($monthsAhead: Int!) {
   ${reports}
-  categories { ${CATEGORY_FIELDS} }
+  categories(includeHidden: true) { ${CATEGORY_FIELDS} }
   cashFlowProjection(monthsAhead: $monthsAhead) { date projectedBalance }
   accounts(first: 1, archived: false) { totalCount }
 }`,

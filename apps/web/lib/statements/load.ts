@@ -71,7 +71,7 @@ export async function loadStatement(id: string): Promise<StatementReviewData> {
     `query StatementReview($id: ID!) {
       statementImport(id: $id) { ${STATEMENT_DETAIL_FIELDS} }
       accounts(first: 100) { edges { node { ${STATEMENT_ACCOUNT_FIELDS} } } }
-      categories { id name parentId key }
+      categories { id name parentId key kind icon }
     }`,
     { id },
   ).catch((error: unknown) => {

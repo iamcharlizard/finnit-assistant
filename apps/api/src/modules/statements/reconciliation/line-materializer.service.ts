@@ -53,6 +53,8 @@ export class LineMaterializerService {
     balanceChange: number;
     /** What settling "en proceso" movements changed in their effects. */
     settledChange: number;
+    /** The movements it created. */
+    createdIds: string[];
   }> {
     let created = 0;
     let balanceChange = 0;
@@ -163,7 +165,7 @@ export class LineMaterializerService {
         data: { balanceCurrent: { increment: balanceChange } },
       });
     }
-    return { created, balanceChange, settledChange };
+    return { created, balanceChange, settledChange, createdIds };
   }
 
   /** Returns how much the movement's effect on the balance changed. */

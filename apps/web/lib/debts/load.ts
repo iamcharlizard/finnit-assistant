@@ -33,14 +33,27 @@ const DEBTS_PAGE = 100;
 const DEBTS_QUERY = `query Debts($first: Int!) {
   debts(first: $first) { edges { node { ${DEBT_FIELDS} } } }
   debtInsights { ${DEBT_INSIGHTS_FIELDS} }
+  loanInsights: debtInsights(loansOnly: true) { ${DEBT_INSIGHTS_FIELDS} }
   accounts(first: 100) { edges { node { ${ACCOUNT_FIELDS} } } }
-  categories { id name parentId key }
+  categories { id name parentId key kind icon }
 }`;
+
+/** Tabs of Deudas; the URL's ?tab= picks one. */
+export const DEBT_TABS = ['summary', 'loans', 'other'] as const;
+export type DebtTab = (typeof DEBT_TABS)[number];
+
+export function parseDebtTab(value: unknown): DebtTab {
+  return DEBT_TABS.find((tab) => tab === value) ?? 'summary';
+}
 
 export interface DebtsScreenData {
   view: DebtsView;
+  /** Loans only (the Préstamos tab's totals). */
+  loansView: DebtsView;
   /** Raw figures: the charts build their view on the client (MSI toggle). */
   insights: ApiDebtInsights;
+  /** The loans' charts (no cards, other debts or card MSI). */
+  loanInsights: ApiDebtInsights;
   categories: BudgetCategory[];
   /** The plan with no extra payment; null without debts to pay. */
   plan: PayoffComparison | null;
@@ -58,16 +71,17 @@ export async function loadDebts(): Promise<DebtsScreenData> {
     serverGraphql<{
       debts: Connection<ApiDebt>;
       debtInsights: ApiDebtInsights;
+      loanInsights: ApiDebtInsights;
       accounts: Connection<ApiAccount>;
       categories: BudgetCategory[];
     }>(DEBTS_QUERY, { first: DEBTS_PAGE }),
     getLocalizer(),
   ]);
-  const view = buildDebtsView(
-    {
-      debts: data.debts.edges.map((e) => e.node),
-      accounts: data.accounts.edges.map((e) => e.node),
-    },
+  const debts = data.debts.edges.map((e) => e.node);
+  const accounts = data.accounts.edges.map((e) => e.node);
+  const view = buildDebtsView({ debts, accounts }, { today }, l);
+  const loansView = buildDebtsView(
+    { debts: debts.filter((d) => d.kind === 'loan'), accounts },
     { today },
     l,
   );
@@ -81,7 +95,9 @@ export async function loadDebts(): Promise<DebtsScreenData> {
       : null;
   return {
     view,
+    loansView,
     insights: data.debtInsights,
+    loanInsights: data.loanInsights,
     categories: data.categories,
     plan,
   };
@@ -91,7 +107,7 @@ const DEBT_DETAIL_QUERY = `query DebtDetail($id: String!, $debtId: ID!) {
   debt(id: $id) { ${DEBT_DETAIL_FIELDS} }
   loanSchedule(debtId: $debtId) { ${LOAN_SCHEDULE_FIELDS} }
   accounts(first: 100) { edges { node { ${ACCOUNT_FIELDS} } } }
-  categories { id name parentId key }
+  categories { id name parentId key kind icon }
 }`;
 
 export interface LoanDetailData {
@@ -128,45 +144,6 @@ export async function loadDebtDetail(id: string): Promise<LoanDetailData> {
       l,
     ),
     accounts: data.accounts.edges.map((e) => e.node),
-    categories: data.categories,
-  };
-}
-
-const LOANS_QUERY = `query Loans($first: Int!) {
-  debts(first: $first, kind: loan) { edges { node { ${DEBT_FIELDS} } } }
-  debtInsights(loansOnly: true) { ${DEBT_INSIGHTS_FIELDS} }
-  accounts(first: 100) { edges { node { ${ACCOUNT_FIELDS} } } }
-  categories { id name parentId key }
-}`;
-
-export interface LoansScreenData {
-  view: DebtsView;
-  insights: ApiDebtInsights;
-  categories: BudgetCategory[];
-}
-
-/** Loans only, with their charts (no cards, other debts or card MSI). */
-export async function loadLoans(): Promise<LoansScreenData> {
-  const today = todayKey();
-  const [data, l] = await Promise.all([
-    serverGraphql<{
-      debts: Connection<ApiDebt>;
-      debtInsights: ApiDebtInsights;
-      accounts: Connection<ApiAccount>;
-      categories: BudgetCategory[];
-    }>(LOANS_QUERY, { first: DEBTS_PAGE }),
-    getLocalizer(),
-  ]);
-  return {
-    view: buildDebtsView(
-      {
-        debts: data.debts.edges.map((e) => e.node),
-        accounts: data.accounts.edges.map((e) => e.node),
-      },
-      { today },
-      l,
-    ),
-    insights: data.debtInsights,
     categories: data.categories,
   };
 }

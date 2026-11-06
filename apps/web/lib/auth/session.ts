@@ -39,7 +39,7 @@ export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
       accessToken,
     ).catch(() => null);
 
-  let result = await me(`${ME_FIELDS} locale`);
+  let result = await me(`${ME_FIELDS} locale avatar { source url version }`);
   if (!result?.data?.me && lacksLocaleField(result?.errors)) {
     result = await me(ME_FIELDS);
   }

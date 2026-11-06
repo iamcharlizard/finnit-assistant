@@ -23,12 +23,21 @@ export type IconKey =
   | 'card'
   | 'income'
   | 'transfer'
+  | 'travel'
+  | 'family'
+  | 'pets'
+  | 'gift'
+  | 'fees'
+  | 'business'
+  | 'savings'
   | 'other';
 
 export interface CategoryNode {
   id: string;
   name: string;
   parentId: string | null;
+  /** The icon chosen for it; without one it is picked by name. */
+  icon?: string | null;
 }
 
 /**
@@ -98,8 +107,24 @@ export const ICON_COLORS: Record<IconKey, string> = {
   card: '#6c72cb',
   income: '#00a86b',
   transfer: '#64748b',
+  travel: '#0284c7',
+  family: '#e11d48',
+  pets: '#c2410c',
+  gift: '#db2777',
+  fees: '#475569',
+  business: '#0f766e',
+  savings: '#16a34a',
   other: '#94a3b8',
 };
+
+/** Icon keys a user can pick for a category, in the picker's order. */
+export const PICKABLE_ICON_KEYS = Object.keys(ICON_COLORS).filter(
+  (key) => key !== 'transfer' && key !== 'card',
+) as IconKey[];
+
+export function isIconKey(value: unknown): value is IconKey {
+  return typeof value === 'string' && value in ICON_COLORS;
+}
 
 export type CategoryIndex = ReadonlyMap<string, CategoryNode>;
 
@@ -124,13 +149,19 @@ export function rootCategory(
   return node ?? null;
 }
 
-/** Icon of a category: its own name first, then its top-level category's. */
+/**
+ * Icon of a category: the one chosen for it, else one from its name, else
+ * its top-level category's (chosen, then by name).
+ */
 export function categoryIconKey(
   index: CategoryIndex,
   id: string | null | undefined,
 ): IconKey {
   const own = id ? index.get(id) : undefined;
+  if (isIconKey(own?.icon)) return own.icon;
   const key = iconKeyForName(own?.name);
   if (key !== 'other') return key;
-  return iconKeyForName(rootCategory(index, id)?.name);
+  const root = rootCategory(index, id);
+  if (isIconKey(root?.icon)) return root.icon;
+  return iconKeyForName(root?.name);
 }

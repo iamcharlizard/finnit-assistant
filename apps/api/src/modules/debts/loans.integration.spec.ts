@@ -31,7 +31,7 @@ import {
   DebtOverpaymentError,
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
-import { createDefaultCategories } from '../auth/default-categories';
+import { syncCategoryCatalog } from '../auth/default-categories';
 
 const d = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 const iso = (date: Date) => date.toISOString().slice(0, 10);
@@ -836,11 +836,11 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
     const owner = await prisma.user.create({
       data: { name: 'Categories', email: `loan-cats-${Date.now()}@test.local` },
     });
-    await createDefaultCategories(prisma, owner.id);
+    await syncCategoryCatalog(prisma);
     const categoryId = async (key: string) =>
       (
         await prisma.category.findFirstOrThrow({
-          where: { userId: owner.id, key },
+          where: { userId: null, key },
         })
       ).id;
     const loanPayments = await categoryId('categories.debts.loan_payments');

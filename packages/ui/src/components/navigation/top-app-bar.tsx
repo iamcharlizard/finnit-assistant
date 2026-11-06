@@ -19,6 +19,8 @@ interface TopAppBarProps {
   notificationCount?: number;
   onNotificationsClick?: () => void;
   onAvatarClick?: () => void;
+  /** Replaces the avatar button (e.g. a profile menu). */
+  profile?: React.ReactNode;
   /** Icon buttons before the bell, e.g. the light/dark toggle. Always visible. */
   tools?: React.ReactNode;
   /** Extra leading content, e.g. a menu button on small screens. */
@@ -43,6 +45,7 @@ function TopAppBar({
   notificationCount = 0,
   onNotificationsClick,
   onAvatarClick,
+  profile,
   tools,
   leading,
   notificationsLabel = defaultNotificationsLabel,
@@ -101,7 +104,9 @@ function TopAppBar({
             ) : null}
           </button>
 
-          {avatarSrc || avatarFallback ? (
+          {profile !== undefined ? (
+            profile
+          ) : avatarSrc || avatarFallback ? (
             <button
               type="button"
               onClick={onAvatarClick}

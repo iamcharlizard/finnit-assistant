@@ -4,57 +4,132 @@ import { describe, it } from 'node:test';
 import {
   hasFilters,
   historyQuery,
+  monthLinks,
+  moreFiltersCount,
   parseHistoryFilters,
   toApiFilters,
+  withPeriod,
 } from './filters';
 import { testLocalizer } from '@/lib/i18n/testing';
-import { accountOptions, categoryOptions } from './view';
+import { accountOptions, categoryOptions, dayNet } from './view';
 
 describe('history filters', () => {
+  const today = '2026-11-05';
+  const november = { year: 2026, month: 11 };
+
   it('reads valid filters from the URL and drops the rest', () => {
     assert.deepEqual(
-      parseHistoryFilters({
-        type: 'expense',
-        account: 'acc-1',
-        category: 'bad id!',
-        from: '2026-10-01',
-        to: '2026-02-30',
-        q: '  oxxo ',
-      }),
+      parseHistoryFilters(
+        {
+          type: 'expense',
+          account: 'acc-1',
+          category: 'bad id!',
+          from: '2026-10-01',
+          to: '2026-02-30',
+          q: '  oxxo ',
+        },
+        today,
+      ),
       {
         type: 'expense',
         accountId: 'acc-1',
         from: '2026-10-01',
         search: 'oxxo',
+        period: november,
       },
     );
-    assert.deepEqual(parseHistoryFilters({ type: 'all' }), {});
-    assert.ok(!hasFilters({}));
+    assert.deepEqual(parseHistoryFilters({ type: 'all' }, today), {
+      period: november,
+    });
+    assert.deepEqual(parseHistoryFilters({ month: '2026-09' }, today).period, {
+      year: 2026,
+      month: 9,
+    });
+    assert.equal(parseHistoryFilters({ month: 'all' }, today).period, 'all');
+    assert.ok(!hasFilters({ period: november }));
   });
 
-  it('round-trips through the URL', () => {
+  it('round-trips through the URL, leaving this month out', () => {
     const filters = {
       type: 'income' as const,
-      from: '2026-10-01',
       search: 'nómina',
+      period: { year: 2026, month: 9 },
     };
-    const query = historyQuery(filters);
-    assert.equal(query, '?type=income&from=2026-10-01&q=n%C3%B3mina');
+    const query = historyQuery(filters, today);
+    assert.equal(query, '?type=income&q=n%C3%B3mina&month=2026-09');
     assert.deepEqual(
-      parseHistoryFilters(Object.fromEntries(new URLSearchParams(query))),
+      parseHistoryFilters(
+        Object.fromEntries(new URLSearchParams(query)),
+        today,
+      ),
       filters,
     );
-    assert.equal(historyQuery({}), '');
+    assert.equal(historyQuery({ period: november }, today), '');
+    assert.equal(historyQuery({ period: 'all' }, today), '?month=all');
+    // A range replaces the month.
+    assert.equal(
+      historyQuery(
+        { from: '2026-11-03', to: '2026-11-03', period: november },
+        today,
+      ),
+      '?from=2026-11-03&to=2026-11-03',
+    );
   });
 
-  it('turns days into whole-day API dates', () => {
+  it('asks the API for the month, the range or everything', () => {
+    assert.deepEqual(toApiFilters({ categoryId: 'c', period: november }), {
+      categoryId: 'c',
+      startDate: '2026-11-01T00:00:00.000Z',
+      endDate: '2026-11-30T23:59:59.999Z',
+    });
     assert.deepEqual(
-      toApiFilters({ from: '2026-10-01', to: '2026-10-31', categoryId: 'c' }),
+      toApiFilters({ from: '2026-10-01', to: '2026-10-31', period: november }),
       {
-        categoryId: 'c',
         startDate: '2026-10-01T00:00:00.000Z',
         endDate: '2026-10-31T23:59:59.999Z',
       },
+    );
+    assert.deepEqual(toApiFilters({ period: 'all' }), {});
+  });
+
+  it('moves between months, never into the future', () => {
+    assert.deepEqual(monthLinks({ period: november }, today), {
+      prev: { year: 2026, month: 10 },
+      next: null,
+    });
+    assert.deepEqual(
+      monthLinks({ period: { year: 2026, month: 9 } }, today)?.next,
+      { year: 2026, month: 10 },
+    );
+    assert.equal(monthLinks({ period: 'all' }, today), null);
+    assert.deepEqual(
+      withPeriod(
+        { from: '2026-11-01', accountId: 'a', period: 'all' },
+        november,
+      ),
+      { accountId: 'a', period: november },
+    );
+    assert.equal(
+      moreFiltersCount({ accountId: 'a', from: '2026-11-01', period: 'all' }),
+      2,
+    );
+  });
+
+  it("adds up a day's income and spending in one currency", () => {
+    assert.deepEqual(
+      dayNet([
+        { net: 1200, currency: 'MXN' },
+        { net: -80.5, currency: 'MXN' },
+        { net: 0, currency: 'MXN' },
+      ]),
+      { amount: 1119.5, currency: 'MXN' },
+    );
+    assert.equal(
+      dayNet([
+        { net: 10, currency: 'MXN' },
+        { net: 10, currency: 'USD' },
+      ]),
+      null,
     );
   });
 

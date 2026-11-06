@@ -183,8 +183,7 @@ export class RecurringExpensesService {
       isVariableAmount: input.isVariableAmount ?? false,
       currency: (input.currency ?? 'MXN').toUpperCase(),
       accountId: input.accountId,
-      categoryId:
-        input.categoryId ?? (await this.debtCategoryId(userId, input)),
+      categoryId: input.categoryId ?? (await this.debtCategoryId(input)),
       debtId: input.debtId,
       merchantPattern: this.normalizePattern(input.merchantPattern),
       installmentsTotal: input.installmentsTotal,
@@ -665,21 +664,16 @@ export class RecurringExpensesService {
   }
 
   /** MSI plans and loans without a category get the Loans & Debts one. */
-  private debtCategoryId(
-    userId: string,
-    input: { kind: RecurringExpenseKind },
-  ): Promise<string | undefined> | undefined {
+  private debtCategoryId(input: {
+    kind: RecurringExpenseKind;
+  }): Promise<string | undefined> | undefined {
     if (
       input.kind !== RecurringExpenseKind.installment &&
       input.kind !== RecurringExpenseKind.loan
     ) {
       return undefined;
     }
-    return defaultCategoryId(
-      this.prisma,
-      userId,
-      debtPaymentCategoryKey(input.kind),
-    );
+    return defaultCategoryId(this.prisma, debtPaymentCategoryKey(input.kind));
   }
 
   /** MSI plans and fixed-term loans count paid installments. */

@@ -40,6 +40,7 @@ import {
   LoanSuggestionDraft,
   RecurringSuggestion,
 } from './recurring-suggestion.dto';
+import { pickableCategoryWhere } from '../../categories/category-scope';
 
 /** Suggestions classified per AI call; the rest wait for the next request. */
 export const MAX_AI_BATCH = 30;
@@ -631,7 +632,7 @@ export class RecurringSuggestionsService {
   /** The user's own categories plus the global defaults. */
   private userCategories(userId: string): Promise<CategoryRow[]> {
     return this.prisma.category.findMany({
-      where: { OR: [{ userId }, { userId: null, isDefault: true }] },
+      where: pickableCategoryWhere(userId),
       include: { translations: { select: { locale: true, name: true } } },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });
@@ -706,6 +707,9 @@ export class RecurringSuggestionsService {
       parentId: row.parentId ?? undefined,
       sortOrder: row.sortOrder ?? undefined,
       isDefault: row.isDefault,
+      kind: row.kind,
+      icon: row.icon,
+      color: row.color,
       userId: row.userId ?? undefined,
       createdAt: row.createdAt,
       translations: Object.fromEntries(

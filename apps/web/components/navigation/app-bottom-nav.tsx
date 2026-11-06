@@ -10,6 +10,7 @@ import {
   Ellipsis,
   Plus,
   ScanLine,
+  Settings,
   Smartphone,
   type LucideIcon,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ import { cn } from '@finnit/ui/lib/utils';
 import type { NewEntryAction } from '@/components/new-entry/new-entry-flow';
 import {
   BOTTOM_NAV_KEYS,
+  SETTINGS_HREF,
   isBottomNavKey,
   type BottomNavKey,
   type NavEntry,
@@ -450,6 +452,17 @@ export function AppBottomNav({
                 </li>
               );
             })}
+            {/* Settings also opens from the header's profile menu. */}
+            <li className="mt-1 border-t border-outline/60 pt-2">
+              <Link
+                href={SETTINGS_HREF}
+                onClick={() => setMoreOpen(false)}
+                className="flex min-h-12 items-center gap-3 rounded-chip px-3 text-base font-medium text-on-surface-variant outline-none transition-[background-color,color,transform] duration-200 hover:bg-accent hover:text-on-background focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.98]"
+              >
+                <Settings aria-hidden className="size-5" />
+                {t('settings')}
+              </Link>
+            </li>
           </ul>
         </SheetContent>
       </Sheet>

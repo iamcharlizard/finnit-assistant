@@ -1,4 +1,10 @@
-import { ObjectType, Field } from '@nestjs/graphql';
+import { ObjectType, Field, registerEnumType } from '@nestjs/graphql';
+import { CategoryKind } from '@finnit/database';
+
+registerEnumType(CategoryKind, {
+  name: 'CategoryKind',
+  description: "Spending or income (subcategories share their parent's)",
+});
 
 @ObjectType()
 export class Category {
@@ -33,8 +39,26 @@ export class Category {
   @Field({ nullable: true })
   sortOrder?: number;
 
-  @Field()
+  @Field({
+    description:
+      'Part of the global catalog: shared by every user, nobody edits it (users hide it)',
+  })
   isDefault: boolean;
+
+  @Field(() => CategoryKind)
+  kind: CategoryKind;
+
+  @Field(() => String, {
+    nullable: true,
+    description: "Icon key the clients know; null: the parent's, or by name",
+  })
+  icon?: string | null;
+
+  @Field(() => String, {
+    nullable: true,
+    description: "Color key the clients know; null: the icon's",
+  })
+  color?: string | null;
 
   @Field({ nullable: true })
   userId?: string;
@@ -47,4 +71,7 @@ export class Category {
    * field). Without it, the `name` field resolver batches a lookup.
    */
   translations?: Partial<Record<string, string>>;
+
+  /** Whether the current user hid it, when the query already knows (not a GraphQL field). */
+  hidden?: boolean;
 }

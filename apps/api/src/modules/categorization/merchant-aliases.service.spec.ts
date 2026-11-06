@@ -24,6 +24,7 @@ const aliasRow = (overrides: Record<string, unknown> = {}) => ({
   isPrivate: false,
   priority: 0,
   active: true,
+  transferAccountId: null,
   createdAt: new Date('2026-10-01'),
   updatedAt: new Date('2026-10-01'),
   _count: { transactions: 3 },
@@ -70,6 +71,7 @@ describe('MerchantAliasesService', () => {
         isPrivate: false,
         priority: 0,
         active: true,
+        transferAccountId: null,
       });
     });
 

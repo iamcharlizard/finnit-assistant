@@ -207,6 +207,7 @@ export class TransfersService {
       toTxnId: string;
       amount: number;
       createdAt: Date;
+      convertedAt?: Date | null;
       fromTxn: {
         id: string;
         userId: string;
@@ -284,6 +285,7 @@ export class TransfersService {
       toTxnId: t.toTxnId,
       amount: Number(t.amount),
       createdAt: t.createdAt,
+      convertedAt: t.convertedAt ?? null,
       fromTxn: {
         id: t.fromTxn.id,
         userId: t.fromTxn.userId,

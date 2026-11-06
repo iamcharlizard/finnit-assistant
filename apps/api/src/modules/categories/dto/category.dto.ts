@@ -7,18 +7,53 @@ import {
   Float,
   Int,
 } from '@nestjs/graphql';
-import { IsString, IsOptional, IsNumber, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsDateString,
+  IsEnum,
+  MaxLength,
+  Matches,
+} from 'class-validator';
+import { CategoryKind } from '@finnit/database';
+
+/** Icon / color keys: short lowercase identifiers the clients know. */
+const STYLE_KEY = /^[a-z][a-z0-9_]{0,31}$/;
 
 @InputType()
 export class CreateCategoryInput {
-  @Field({ nullable: true })
+  @Field({
+    nullable: true,
+    description: 'A main category (catalog or own) to hang it from',
+  })
   @IsOptional()
   @IsString()
   parentId?: string;
 
   @Field()
   @IsString()
+  @MaxLength(60)
   name: string;
+
+  @Field(() => CategoryKind, {
+    nullable: true,
+    description:
+      "Main categories only (a subcategory takes its parent's); defaults to expense",
+  })
+  @IsOptional()
+  @IsEnum(CategoryKind)
+  kind?: CategoryKind;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @Matches(STYLE_KEY)
+  icon?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @Matches(STYLE_KEY)
+  color?: string | null;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -28,15 +63,34 @@ export class CreateCategoryInput {
 
 @InputType()
 export class UpdateCategoryInput {
-  @Field({ nullable: true })
+  @Field(() => String, {
+    nullable: true,
+    description: 'New main category; null makes it a main category',
+  })
   @IsOptional()
   @IsString()
-  parentId?: string;
+  parentId?: string | null;
 
   @Field({ nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(60)
   name?: string;
+
+  @Field(() => CategoryKind, { nullable: true })
+  @IsOptional()
+  @IsEnum(CategoryKind)
+  kind?: CategoryKind;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @Matches(STYLE_KEY)
+  icon?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @Matches(STYLE_KEY)
+  color?: string | null;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -80,4 +134,25 @@ export class SuggestCategoryInput {
   @Field()
   @IsString()
   merchantName: string;
+}
+
+@ObjectType({ description: 'What uses a category (deleting it moves these)' })
+export class CategoryReferences {
+  @Field(() => Int)
+  transactions: number;
+
+  @Field(() => Int)
+  children: number;
+
+  @Field(() => Int)
+  budgetCaps: number;
+
+  @Field(() => Int)
+  rules: number;
+
+  @Field(() => Int)
+  aliases: number;
+
+  @Field(() => Int)
+  recurring: number;
 }

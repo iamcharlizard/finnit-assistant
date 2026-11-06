@@ -88,9 +88,11 @@ export interface ApiCategory {
   id: string;
   name: string;
   parentId: string | null;
+  /** Icon key chosen for it (catalog or user); null: by name. */
+  icon?: string | null;
 }
 
-export const CATEGORY_FIELDS = 'id name parentId';
+export const CATEGORY_FIELDS = 'id name parentId icon';
 
 export interface Connection<T> {
   totalCount: number;

@@ -22,6 +22,9 @@ export interface TransactionDetail extends ApiTransaction {
   categorySource: CategorySource | null;
   attachments: ApiAttachment[] | null;
   transferCounterpart: {
+    transferId: string;
+    /** Made from an expense/income: it can be undone. */
+    converted: boolean;
     transactionId: string;
     accountId: string;
     accountName: string;
@@ -35,7 +38,7 @@ export interface TransactionDetail extends ApiTransaction {
   } | null;
 }
 
-export const TRANSACTION_DETAIL_FIELDS = `${TRANSACTION_FIELDS} originalDescription categorySource attachments { id fileName fileType fileSize downloadPath uploadedAt } transferCounterpart { transactionId accountId accountName direction } recurringPayment { occurrenceId recurringExpenseId name dueDate }`;
+export const TRANSACTION_DETAIL_FIELDS = `${TRANSACTION_FIELDS} originalDescription categorySource attachments { id fileName fileType fileSize downloadPath uploadedAt } transferCounterpart { transferId converted transactionId accountId accountName direction } recurringPayment { occurrenceId recurringExpenseId name dueDate }`;
 
 /** A category for the edit form's picker (key orders the income group). */
 export interface DetailCategory {
@@ -47,5 +50,5 @@ export interface DetailCategory {
 
 export const TRANSACTION_DETAIL_QUERY = `query TransactionDetail($id: String!) {
   transaction(id: $id) { ${TRANSACTION_DETAIL_FIELDS} }
-  categories { id name parentId key }
+  categories { id name parentId key kind icon }
 }`;

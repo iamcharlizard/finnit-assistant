@@ -54,6 +54,64 @@ export class NotificationsService {
   }
 
   /**
+   * A notification that stays current instead of piling up: while the
+   * user hasn't read it, it is updated (and moves to the top); once read, a
+   * new one is created. Keyed by type, `relatedEntityType` and
+   * `relatedEntityId`.
+   */
+  async upsertLive(
+    input: NotifyInput,
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<void> {
+    const now = new Date();
+    const unread = await client.notification.findFirst({
+      where: {
+        userId: input.userId,
+        type: input.type,
+        relatedEntityType: input.relatedEntityType,
+        relatedEntityId: input.relatedEntityId,
+        status: { in: UNREAD_STATUSES },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
+    });
+    if (unread) {
+      await client.notification.update({
+        where: { id: unread.id },
+        data: {
+          title: input.title,
+          message: input.message,
+          createdAt: now,
+          sentAt: now,
+        },
+      });
+      return;
+    }
+    await client.notification.create({
+      data: { ...input, status: NotificationStatus.sent, sentAt: now },
+    });
+  }
+
+  /** Marks a live notification as read: what it reported is resolved. */
+  async clearLive(
+    userId: string,
+    type: NotificationType,
+    relatedEntityType: string,
+    relatedEntityId: string,
+  ): Promise<void> {
+    await this.prisma.notification.updateMany({
+      where: {
+        userId,
+        type,
+        relatedEntityType,
+        relatedEntityId,
+        status: { in: UNREAD_STATUSES },
+      },
+      data: { status: NotificationStatus.read },
+    });
+  }
+
+  /**
    * Newest first, keyset-paginated on (createdAt, id) through the cursor row,
    * so pages never skip or repeat notifications. One extra row tells whether
    * another page exists.

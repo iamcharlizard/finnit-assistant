@@ -85,7 +85,7 @@ export function CategorizeList({
     [rows, today, locale],
   );
   const pickerOptions = React.useMemo(
-    () => categoryOptions(categories, 'expense', locale),
+    () => categoryOptions(categories, 'any', locale),
     [categories, locale],
   );
   // Rows that left the list (after a reload) can't stay selected.

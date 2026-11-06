@@ -37,6 +37,9 @@ function userRow(overrides: Partial<UserRow> = {}): UserRow {
     disabledAt: null,
     lastLoginAt: null,
     tokenVersion: 3,
+    googlePictureUrl: null,
+    avatarKey: null,
+    avatarUpdatedAt: null,
     locale: 'es',
     invitedById: null,
     createdAt: new Date('2024-01-01'),
@@ -53,6 +56,7 @@ const expectedUserModel = (user: UserRow) => ({
   isMaster: user.isMaster,
   hasPassword: Boolean(user.passwordHash),
   hasGoogle: Boolean(user.googleSubject),
+  avatar: null,
   locale: user.locale,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
@@ -305,9 +309,32 @@ describe('AuthService', () => {
       });
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: 'user-1' },
-        data: { googleSubject: 'google-sub' },
+        data: { googleSubject: 'google-sub', googlePictureUrl: null },
       });
       expect(result.user.hasGoogle).toBe(true);
+    });
+
+    it('keeps the Google picture current and shows it as the avatar', async () => {
+      const picture = 'https://lh3.googleusercontent.com/a/photo';
+      google.verify.mockResolvedValue({ ...identity, picture });
+      prismaService.user.findUnique.mockResolvedValue(
+        userRow({ googleSubject: 'google-sub' }),
+      );
+
+      const result = await service.signInWithGoogle(input);
+
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: {
+          googleSubject: 'google-sub',
+          googlePictureUrl: picture,
+          avatarUpdatedAt: expect.any(Date),
+        },
+      });
+      expect(result.user.avatar).toMatchObject({
+        source: 'google',
+        url: picture,
+      });
     });
 
     it('never creates users: unknown people get ForbiddenError', async () => {

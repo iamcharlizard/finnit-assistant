@@ -58,3 +58,16 @@ export const Profile: Story = {
     />
   ),
 };
+
+/** With a photo; a broken URL falls back to the initials. */
+export const ProfileWithPhoto: Story = {
+  args: { title: '', icon: ShieldCheck, iconColor: '', children: null },
+  render: () => (
+    <ProfileCard
+      name="Alex Neumann"
+      email="alex@finnit.com"
+      avatarSrc="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' fill='%236c72cb'/><circle cx='48' cy='38' r='18' fill='white'/><rect x='18' y='62' width='60' height='34' rx='17' fill='white'/></svg>"
+      isVerified
+    />
+  ),
+};

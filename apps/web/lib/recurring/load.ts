@@ -27,7 +27,7 @@ const RECURRING_QUERY = `query Recurring($from: DateTime!, $to: DateTime!, $firs
   paused: recurringExpenses(first: $first, active: false) { edges { node { ${RECURRING_EXPENSE_FIELDS} } } }
   recurringExpensesSummary { totals { currency monthlyCost } }
   accounts(first: 100) { edges { node { ${ACCOUNT_FIELDS} } } }
-  categories { id name parentId key }
+  categories { id name parentId key kind icon }
 }`;
 
 /**

@@ -18,7 +18,7 @@ export interface AliasesData {
 const ALIASES_QUERY = `query Aliases {
   merchantAliases { ${MERCHANT_ALIAS_FIELDS} }
   merchantRules { ${MERCHANT_RULE_FIELDS} }
-  categories { id name parentId key }
+  categories { id name parentId key kind icon }
 }`;
 
 /** Every alias rule, the learned category rules and the category picker. */

@@ -4,10 +4,13 @@ import { describe, it } from 'node:test';
 import {
   BOTTOM_NAV_KEYS,
   NAV_SECTIONS,
+  activeGroupKey,
   activeNavHref,
+  isNavGroup,
   visibleSections,
 } from './sections';
 import { matchRoute, pageTitleKey } from './titles';
+import { openGroupsCookieValue, parseOpenGroups } from './sidebar';
 
 describe('nav sections', () => {
   it('hides empty sections and, for non-admins, Administración', () => {
@@ -15,12 +18,9 @@ describe('nav sections', () => {
     assert.deepEqual(keys(false), [
       'home',
       'transactions',
-      'recurring',
       'accounts',
       'planning',
       'analytics',
-      'statements',
-      'settings',
     ]);
     assert.equal(keys(true).at(-1), 'admin');
     const empty = { key: 'planning' as const, items: [] };
@@ -30,6 +30,29 @@ describe('nav sections', () => {
       ),
       [],
     );
+  });
+
+  it('groups movements and planning, each with its own icon', () => {
+    const groups = NAV_SECTIONS.filter(isNavGroup);
+    assert.deepEqual(
+      groups.map((g) => [g.key, g.items.map((i) => i.key)]),
+      [
+        ['transactions', ['history', 'categorize', 'recurring', 'statements']],
+        ['planning', ['budgets', 'debts', 'goals', 'simulator']],
+      ],
+    );
+    for (const group of groups) assert.ok(group.icon, group.key);
+    // Settings lives in the profile menu, loans inside Debts.
+    const hrefs = NAV_SECTIONS.flatMap((s) => s.items.map((i) => i.href));
+    assert.ok(!hrefs.includes('/settings'));
+    assert.ok(!hrefs.includes('/planning/loans'));
+  });
+
+  it('knows the group of the current page', () => {
+    assert.equal(activeGroupKey(NAV_SECTIONS, '/recurring'), 'transactions');
+    assert.equal(activeGroupKey(NAV_SECTIONS, '/planning/debts'), 'planning');
+    assert.equal(activeGroupKey(NAV_SECTIONS, '/dashboard'), null);
+    assert.equal(activeGroupKey(NAV_SECTIONS, null), null);
   });
 
   it('keeps the bottom bar to screens that exist', () => {
@@ -47,6 +70,20 @@ describe('nav sections', () => {
     assert.equal(
       activeNavHref(tx, '/transactions/categorize'),
       '/transactions/categorize',
+    );
+  });
+});
+
+describe('open sidebar groups (cookie)', () => {
+  it('reads only plain keys and writes them back once each', () => {
+    assert.deepEqual(parseOpenGroups('transactions. planning.<x>.'), [
+      'transactions',
+      'planning',
+    ]);
+    assert.deepEqual(parseOpenGroups(undefined), []);
+    assert.equal(
+      openGroupsCookieValue(['planning', 'planning', 'transactions']),
+      'planning.transactions',
     );
   });
 });

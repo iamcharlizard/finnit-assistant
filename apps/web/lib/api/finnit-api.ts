@@ -78,6 +78,15 @@ export interface AuthUser {
   isMaster: boolean;
   /** Preferred language ('es' | 'en'); null when unset or not supported by the API yet. */
   locale?: string | null;
+  /** Profile photo (uploaded or Google's); null: initials. */
+  avatar?: UserAvatar | null;
+}
+
+export interface UserAvatar {
+  source: 'uploaded' | 'google';
+  /** Google only; an uploaded photo is GET /api/files/me/avatar. */
+  url: string | null;
+  version: string;
 }
 
 export async function apiSignIn(

@@ -165,7 +165,7 @@ const INSTALLMENT_MARKERS = [
  */
 const RFC = /(?:\s[A-Z&]{3,4}|[A-Z&]{3})\s?\d{6}[A-Z0-9]{3}(?:MX)?(?=\s|$)/g;
 
-function upperAscii(value: string): string {
+export function upperAscii(value: string): string {
   return value.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
 }
 

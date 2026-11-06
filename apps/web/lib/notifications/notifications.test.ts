@@ -41,6 +41,10 @@ describe('notifications', () => {
       ),
       '/accounts?account=acc-1',
     );
+    assert.equal(
+      notificationHref(n({ type: 'uncategorized', relatedEntityId: 'u-1' })),
+      '/transactions/categorize?month=all',
+    );
   });
 
   it('unread means scheduled or sent', () => {

@@ -118,12 +118,20 @@ export class AuthService {
       }));
     if (!user || user.disabledAt) throw new ForbiddenError(NO_ACCESS_MESSAGE);
 
-    const linked = user.googleSubject
-      ? user
-      : await this.prisma.user.update({
-          where: { id: user.id },
-          data: { googleSubject: identity.subject },
-        });
+    // Links the account on first use and keeps its picture current.
+    const picture = identity.picture ?? null;
+    const linked =
+      user.googleSubject && user.googlePictureUrl === picture
+        ? user
+        : await this.prisma.user.update({
+            where: { id: user.id },
+            data: {
+              googleSubject: identity.subject,
+              googlePictureUrl: picture,
+              ...(user.googlePictureUrl !== picture &&
+                !user.avatarKey && { avatarUpdatedAt: new Date() }),
+            },
+          });
     return this.startSession(linked);
   }
 

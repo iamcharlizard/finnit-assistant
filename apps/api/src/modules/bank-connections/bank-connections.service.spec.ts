@@ -18,6 +18,7 @@ import {
 } from '../../common/exceptions/graphql-error.exception';
 import { BankConnectionsService } from './bank-connections.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { SyncReviewService } from './sync-review.service';
 import {
   SyncfyClient,
   SyncfyCredential,
@@ -83,6 +84,7 @@ describe('BankConnectionsService', () => {
   let reconciliation: DeepMockProxy<ReconciliationService>;
   let materializer: DeepMockProxy<LineMaterializerService>;
   let notifications: DeepMockProxy<NotificationsService>;
+  let syncReview: DeepMockProxy<SyncReviewService>;
   let service: BankConnectionsService;
 
   beforeEach(() => {
@@ -99,14 +101,17 @@ describe('BankConnectionsService', () => {
       created: 0,
       balanceChange: 0,
       settledChange: 0,
+      createdIds: [],
     });
     notifications = mockDeep<NotificationsService>();
+    syncReview = mockDeep<SyncReviewService>();
     service = new BankConnectionsService(
       prisma,
       syncfy,
       reconciliation,
       materializer,
       notifications,
+      syncReview,
     );
   });
 
@@ -312,6 +317,7 @@ describe('BankConnectionsService', () => {
         created: 1,
         balanceChange: -448,
         settledChange: 0,
+        createdIds: ['t-new'],
       });
 
       const result = await service.sync('conn-1', userId, {

@@ -11,7 +11,15 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type FileRoute =
   | { kind: 'upload'; upstreamPath: string }
-  | { kind: 'download'; upstreamPath: string };
+  | {
+      kind: 'download';
+      upstreamPath: string;
+      /** The URL is versioned (?v=), so the browser may keep it privately. */
+      cacheable?: boolean;
+    };
+
+/** The signed-in user's profile photo. */
+const AVATAR_PATH = ['me', 'avatar'] as const;
 
 /** Kinds of stored file that can be downloaded by id. */
 const DOWNLOADS = [
@@ -32,6 +40,7 @@ export function isUuid(value: unknown): value is string {
  * - POST statements | receipts | screenshots
  * - POST transactions/{uuid}/attachments
  * - GET  statements|attachments|receipts|screenshots/{uuid}/file
+ * - POST, GET me/avatar
  */
 export function matchFileRoute(
   method: string,
@@ -39,6 +48,17 @@ export function matchFileRoute(
 ): FileRoute | null {
   const [first, id, last, ...extra] = segments;
   if (extra.length) return null;
+
+  const isAvatar =
+    segments.length === 2 && first === AVATAR_PATH[0] && id === AVATAR_PATH[1];
+  if (isAvatar) {
+    if (method === 'POST')
+      return { kind: 'upload', upstreamPath: '/me/avatar' };
+    if (method === 'GET' || method === 'HEAD') {
+      return { kind: 'download', upstreamPath: '/me/avatar', cacheable: true };
+    }
+    return null;
+  }
 
   if (method === 'POST') {
     if (

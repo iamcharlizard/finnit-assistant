@@ -4,6 +4,10 @@ import { categoryLabel } from '@/lib/finance/categories';
 import { dayKeyOf, longDate, timeOf, type DayKey } from '@/lib/finance/dates';
 import { formatMoney } from '@/lib/finance/money';
 import { direction, transactionTitle } from '@/lib/finance/transactions';
+import {
+  canConvertToTransfer,
+  type ConvertSource,
+} from '@/lib/transfers/convert';
 import type { ApiAttachment, TransactionDetail } from './types';
 
 /** Where a movement came from, as the detail names it. */
@@ -26,9 +30,11 @@ export function sourceKind(source: string): SourceKind {
 
 /**
  * What the edit form may change. The API only edits movements created by
- * hand; from bank or statement ones only the category (their name changes
- * with an alias). A transfer keeps its amount and date (both sides must
+ * hand; bank or statement ones keep the bank's data, and the user gives
+ * them their own description (an alias that never replaces the original)
+ * and a category. A transfer keeps its amount and date (both sides must
  * agree) and adjustments their amount (the API can't tell their direction).
+ * Any movement can be made private.
  */
 export interface EditRules {
   amount: boolean;
@@ -36,6 +42,9 @@ export interface EditRules {
   merchant: boolean;
   description: boolean;
   category: boolean;
+  /** Own description over the bank's text (setTransactionAlias). */
+  alias: boolean;
+  privacy: boolean;
 }
 
 export function editRules(
@@ -49,6 +58,8 @@ export function editRules(
       merchant: false,
       description: false,
       category: categorizable,
+      alias: true,
+      privacy: true,
     };
   }
   return {
@@ -57,6 +68,8 @@ export function editRules(
     merchant: true,
     description: true,
     category: categorizable,
+    alias: false,
+    privacy: true,
   };
 }
 
@@ -145,7 +158,15 @@ export interface TransactionDetailView {
   /** "En proceso": counted, the bank hasn't applied it yet. */
   inProcess: boolean;
   /** The other side of a transfer, linked. */
-  counterpart: { href: string; label: string } | null;
+  counterpart: {
+    href: string;
+    label: string;
+    transferId: string;
+    /** Made from an expense/income: "Deshacer transferencia". */
+    converted: boolean;
+  } | null;
+  /** An expense/income that can become a transfer; null otherwise. */
+  convertSource: ConvertSource | null;
   /** The recurring payment it paid, linked. */
   recurring: { href: string; label: string } | null;
   attachments: AttachmentView[];
@@ -201,6 +222,8 @@ export function toTransactionDetailView(
     inProcess: Boolean(tx.inProcess),
     counterpart: counterpart
       ? {
+          transferId: counterpart.transferId,
+          converted: Boolean(counterpart.converted),
           href: `/transactions/${counterpart.transactionId}`,
           label: t(
             counterpart.direction === 'out'
@@ -223,6 +246,16 @@ export function toTransactionDetailView(
     attachments: (tx.attachments ?? []).map((a) =>
       toAttachmentView(a, t('transaction.attachments.unnamed')),
     ),
+    convertSource:
+      canConvertToTransfer(tx) && !counterpart
+        ? {
+            id: tx.id,
+            type: tx.type,
+            accountId: tx.accountId,
+            currency: tx.currency,
+            amount: Math.abs(tx.amount),
+          }
+        : null,
     rules: editRules(tx),
     deleteBlock: deleteBlock(tx),
   };

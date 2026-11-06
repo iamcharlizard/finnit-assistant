@@ -59,6 +59,12 @@ export class MerchantAlias {
   @Field()
   active: boolean;
 
+  @Field(() => ID, {
+    nullable: true,
+    description: 'Matching bank movements are suggested as a transfer to it',
+  })
+  transferAccountId?: string | null;
+
   @Field(() => Int, { description: 'Movements currently using this alias' })
   matchCount: number;
 
@@ -103,6 +109,15 @@ export class MerchantAliasInput {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  @Field(() => ID, {
+    nullable: true,
+    description:
+      'One of your accounts: matching bank movements are suggested as a transfer to it',
+  })
+  @IsOptional()
+  @IsString()
+  transferAccountId?: string | null;
 }
 
 @ObjectType()

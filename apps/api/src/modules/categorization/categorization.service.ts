@@ -18,11 +18,44 @@ import {
   mapTransaction,
   presentTransaction,
 } from '../transactions/transaction.mapper';
-import { MerchantRulesService, ruleText } from './merchant-rules.service';
+import {
+  MerchantRulesService,
+  ruleKey,
+  ruleText,
+} from './merchant-rules.service';
+import { MerchantAliasesService } from './merchant-aliases.service';
+import { buildHistoryIndex, categoryFromHistory } from './history-category';
+import { addDays, localToday } from '../../common/utils/local-date.util';
+import {
+  visibleCategoryWhere,
+  pickableCategoryWhere,
+} from '../categories/category-scope';
 
 export const MAX_CATEGORIZE_IDS = 500;
 export const MAX_SUGGEST_IDS = 100;
 export const AI_TIMEOUT_MS = 20_000;
+/** Past categorizations considered when categorizing on our own. */
+const HISTORY_DAYS = 365;
+/** Uncategorized movements looked at per run (newest first). */
+const AUTO_CATEGORIZE_LIMIT = 2_000;
+/** Movements sent to the AI in one "Clasificar automáticamente" (in batches of MAX_SUGGEST_IDS). */
+export const AI_SUGGEST_PER_RUN = 300;
+const HISTORY_SAMPLE_LIMIT = 5_000;
+
+/** Movements waiting for a category, leaving out possible transfers. */
+export function uncategorizedWhere(
+  userId: string,
+): Prisma.TransactionWhereInput {
+  return {
+    userId,
+    categoryId: null,
+    type: { in: CATEGORIZABLE_TYPES },
+    OR: [
+      { transferSuggestion: { is: null } },
+      { transferSuggestion: { status: { not: 'pending' } } },
+    ],
+  };
+}
 
 /** Movement types that take a category. */
 const CATEGORIZABLE_TYPES: TransactionType[] = [
@@ -85,7 +118,154 @@ export class CategorizationService {
     private readonly prisma: PrismaService,
     private readonly rules: MerchantRulesService,
     private readonly aiModels: AiModelsService,
+    private readonly aliases: MerchantAliasesService,
   ) {}
+
+  /**
+   * Gives a category to the movements that have none, from what the user
+   * did before: their merchant rules, their aliases' categories, then the
+   * category they gave the same merchant in the last year (when it is
+   * clear). Never uses AI. Returns how many were categorized and how many
+   * are still waiting.
+   */
+  async autoCategorize(
+    userId: string,
+  ): Promise<{ categorized: number; remaining: number }> {
+    const where = uncategorizedWhere(userId);
+    let pending = await this.prisma.transaction.findMany({
+      where,
+      select: { id: true, type: true, merchantName: true, description: true },
+      orderBy: { txnDate: 'desc' },
+      take: AUTO_CATEGORIZE_LIMIT,
+    });
+    let categorized = 0;
+
+    // 1. Merchant rules.
+    if (pending.length > 0) {
+      const matches = await this.rules.match(
+        userId,
+        pending.map((row) => ruleText(row)),
+      );
+      const byCategory = new Map<string, string[]>();
+      for (const row of pending) {
+        const text = ruleText(row);
+        const match = text ? matches.get(text) : undefined;
+        if (!match) continue;
+        byCategory.set(match.categoryId, [
+          ...(byCategory.get(match.categoryId) ?? []),
+          row.id,
+        ]);
+      }
+      categorized += await this.assign(byCategory);
+    }
+
+    // 2. Aliases with a category (they only fill an empty one).
+    pending = await this.stillUncategorized(
+      pending.map((row) => row.id),
+      pending,
+    );
+    if (pending.length > 0) {
+      await this.aliases.applyTo(
+        userId,
+        pending.map((row) => row.id),
+      );
+      const before = pending.length;
+      pending = await this.stillUncategorized(
+        pending.map((row) => row.id),
+        pending,
+      );
+      categorized += before - pending.length;
+    }
+
+    // 3. The category the user gave the same merchant before.
+    if (pending.length > 0) {
+      const samples = await this.prisma.transaction.findMany({
+        where: {
+          userId,
+          categoryId: { not: null },
+          type: { in: CATEGORIZABLE_TYPES },
+          txnDate: { gte: addDays(localToday(), -HISTORY_DAYS) },
+          OR: [
+            { categorySource: null },
+            {
+              categorySource: {
+                in: [CategorySource.manual, CategorySource.rule],
+              },
+            },
+          ],
+        },
+        select: {
+          type: true,
+          merchantName: true,
+          description: true,
+          categoryId: true,
+        },
+        orderBy: { txnDate: 'desc' },
+        take: HISTORY_SAMPLE_LIMIT,
+      });
+      const index = buildHistoryIndex(
+        samples.flatMap((row) => {
+          const key = ruleKey(ruleText(row));
+          return key && row.categoryId
+            ? [{ key, type: row.type, categoryId: row.categoryId }]
+            : [];
+        }),
+      );
+      const byCategory = new Map<string, string[]>();
+      for (const row of pending) {
+        const categoryId = categoryFromHistory(
+          index,
+          row.type,
+          ruleKey(ruleText(row)),
+        );
+        if (!categoryId) continue;
+        byCategory.set(categoryId, [
+          ...(byCategory.get(categoryId) ?? []),
+          row.id,
+        ]);
+      }
+      categorized += await this.assign(byCategory);
+    }
+
+    const remaining = await this.prisma.transaction.count({ where });
+    return { categorized, remaining };
+  }
+
+  /** How many movements wait for a category (possible transfers apart). */
+  uncategorizedCount(userId: string): Promise<number> {
+    return this.prisma.transaction.count({ where: uncategorizedWhere(userId) });
+  }
+
+  /** Sets each group's category, only where there is none yet. */
+  private async assign(byCategory: Map<string, string[]>): Promise<number> {
+    let count = 0;
+    for (const [categoryId, ids] of byCategory) {
+      const result = await this.prisma.transaction.updateMany({
+        where: { id: { in: ids }, categoryId: null },
+        data: {
+          categoryId,
+          categorySource: CategorySource.rule,
+          suggestedCategoryId: null,
+          suggestedBy: null,
+        },
+      });
+      count += result.count;
+    }
+    return count;
+  }
+
+  private async stillUncategorized<T extends { id: string }>(
+    ids: string[],
+    rows: T[],
+  ): Promise<T[]> {
+    if (ids.length === 0) return [];
+    const left = await this.prisma.transaction.findMany({
+      where: { id: { in: ids }, categoryId: null },
+      select: { id: true },
+    });
+    const keep = new Set(left.map((row) => row.id));
+    return rows.filter((row) => keep.has(row.id));
+  }
 
   /** Moves the user's movements to a category; returns how many changed. */
   async categorize(
@@ -98,7 +278,7 @@ export class CategorizationService {
     const category = await this.prisma.category.findFirst({
       where: {
         id: categoryId,
-        OR: [{ userId }, { userId: null, isDefault: true }],
+        ...visibleCategoryWhere(userId),
       },
       select: { id: true },
     });
@@ -190,6 +370,33 @@ export class CategorizationService {
 
     const updated = await this.load(userId, unique);
     return updated.map((row) => mapTransaction(row));
+  }
+
+  /**
+   * Suggests a category for the newest uncategorized movements that have no
+   * suggestion yet (up to AI_SUGGEST_PER_RUN, in batches): merchant rules,
+   * then the AI. Nothing is applied; the user accepts or rejects each
+   * suggestion. Returns how many got one.
+   */
+  async suggestUncategorized(
+    userId: string,
+    limit = AI_SUGGEST_PER_RUN,
+  ): Promise<number> {
+    const rows = await this.prisma.transaction.findMany({
+      where: { ...uncategorizedWhere(userId), suggestedCategoryId: null },
+      select: { id: true },
+      orderBy: [{ txnDate: 'desc' }, { id: 'desc' }],
+      take: limit,
+    });
+    let suggested = 0;
+    for (let i = 0; i < rows.length; i += MAX_SUGGEST_IDS) {
+      const batch = rows.slice(i, i + MAX_SUGGEST_IDS).map((row) => row.id);
+      const updated = await this.suggest(userId, batch);
+      suggested += updated.filter(
+        (row) => !row.category && row.suggestedCategory,
+      ).length;
+    }
+    return suggested;
   }
 
   /** Applies the pending suggestions and learns a merchant rule for each. */
@@ -340,7 +547,7 @@ export class CategorizationService {
   /** The user's own categories plus the global defaults. */
   private userCategories(userId: string): Promise<CategoryRow[]> {
     return this.prisma.category.findMany({
-      where: { OR: [{ userId }, { userId: null, isDefault: true }] },
+      where: pickableCategoryWhere(userId),
       include: { translations: { select: { locale: true, name: true } } },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });

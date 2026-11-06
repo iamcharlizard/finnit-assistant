@@ -12,6 +12,7 @@ import {
   LogOut,
   Moon,
   Paintbrush,
+  Shapes,
   ShieldCheck,
   Tags,
   Text,
@@ -27,6 +28,8 @@ import { Switch } from '@finnit/ui/components/ui/switch';
 
 import { signOut } from '@/app/login/actions';
 import { useSessionUser } from '@/components/session-provider';
+import { ProfileDialog } from '@/components/settings/profile-dialog';
+import { avatarSrc } from '@/lib/profile/avatar';
 import { LanguageSelect } from '@/components/settings/language-select';
 import { ModeSegmented } from '@/components/mode-segmented';
 import { ThemeSelect } from '@/components/settings/theme-select';
@@ -35,6 +38,7 @@ export function SettingsScreen() {
   const user = useSessionUser();
   const t = useTranslations('settings');
   const tu = useTranslations('ui.profile');
+  const [editingProfile, setEditingProfile] = React.useState(false);
   const [toggles, setToggles] = React.useState({
     biometrics: true,
     transactions: true,
@@ -46,6 +50,8 @@ export function SettingsScreen() {
       <ProfileCard
         name={user.name}
         email={user.email}
+        avatarSrc={avatarSrc(user.avatar)}
+        onEditClick={() => setEditingProfile(true)}
         isPremium
         isVerified
         editLabel={tu('edit')}
@@ -81,6 +87,21 @@ export function SettingsScreen() {
         icon={Tags}
         iconColor="var(--highlight)"
       >
+        <Link
+          href="/settings/categories"
+          className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+        >
+          <SettingRow
+            label={t('categories')}
+            description={t('categoriesDescription')}
+            icon={Shapes}
+          >
+            <ChevronRight
+              aria-hidden
+              className="size-4 text-on-surface-variant"
+            />
+          </SettingRow>
+        </Link>
         <Link
           href="/settings/aliases"
           className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -229,6 +250,9 @@ export function SettingsScreen() {
       <p className="text-center text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">
         {t('version')}
       </p>
+      {editingProfile ? (
+        <ProfileDialog onClose={() => setEditingProfile(false)} />
+      ) : null}
     </div>
   );
 }

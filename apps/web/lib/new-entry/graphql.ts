@@ -27,11 +27,14 @@ export interface EntryCategory {
   parentId: string | null;
   /** i18n key of a default category (e.g. 'categories.income.salary'). */
   key: string | null;
+  /** Spending or income (an older API doesn't send it). */
+  kind?: 'expense' | 'income';
+  icon?: string | null;
 }
 
 export const NEW_ENTRY_DATA_QUERY = `query NewEntryData {
   accounts(first: 100, archived: false) { edges { node { id name type currency balanceCurrent archived metadata { nickname bank last4 } } } }
-  categories { id name parentId key }
+  categories { id name parentId key kind icon }
 }`;
 
 export interface NewEntryData {

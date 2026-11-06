@@ -29,14 +29,28 @@ RUN pnpm --filter @finnit/database db:generate \
  && pnpm --filter @finnit/database build \
  && pnpm --filter @finnit/api build
 
-# 3. Runtime. Keeps the Prisma CLI so the entrypoint can apply migrations.
+# 3. Production dependencies only (no TypeScript, Nest CLI, Jest, ESLint...).
+#    The Prisma CLI is a dependency of @finnit/database, so `migrate deploy`
+#    keeps working.
+FROM base AS prod-deps
+COPY --from=pruner /repo/out/json/ ./
+COPY --from=pruner /repo/out/pnpm-lock.yaml ./pnpm-lock.yaml
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --prod --frozen-lockfile --filter "@finnit/api..."
+
+# 4. Runtime: production node_modules plus the build output, nothing else.
 FROM base AS runner
 # Links the GHCR package to the repository (permissions and visibility).
 LABEL org.opencontainers.image.source="https://github.com/iamcharlizard/finnit-assistant" \
       org.opencontainers.image.description="Finnit GraphQL API"
 ENV NODE_ENV=production \
     PORT=3000
-COPY --from=builder --chown=node:node /repo ./
+COPY --from=prod-deps --chown=node:node /repo ./
+COPY --from=builder --chown=node:node /repo/packages/database/dist ./packages/database/dist
+COPY --from=builder --chown=node:node /repo/packages/database/generated ./packages/database/generated
+COPY --from=builder --chown=node:node /repo/packages/database/prisma ./packages/database/prisma
+COPY --from=builder --chown=node:node /repo/packages/database/prisma.config.ts ./packages/database/prisma.config.ts
+COPY --from=builder --chown=node:node /repo/apps/api/dist ./apps/api/dist
 COPY --chown=node:node apps/api/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 USER node
 EXPOSE 3000

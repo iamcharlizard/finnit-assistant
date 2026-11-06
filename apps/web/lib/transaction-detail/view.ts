@@ -33,8 +33,8 @@ export function sourceKind(source: string): SourceKind {
  * What the edit form may change. The API only edits movements created by
  * hand; bank or statement ones keep the bank's data and only take a
  * category. A transfer keeps its amount and date (both sides must agree)
- * and adjustments their amount (the API can't tell their direction). The
- * name and privacy of any movement live in "Nombre y privacidad".
+ * and adjustments their amount (the API can't tell their direction).
+ * Notes, the name and privacy are the user's on every movement.
  */
 export interface EditRules {
   amount: boolean;
@@ -42,6 +42,7 @@ export interface EditRules {
   merchant: boolean;
   description: boolean;
   category: boolean;
+  notes: boolean;
 }
 
 export function editRules(
@@ -55,6 +56,7 @@ export function editRules(
       merchant: false,
       description: false,
       category: categorizable,
+      notes: true,
     };
   }
   return {
@@ -63,11 +65,9 @@ export function editRules(
     merchant: true,
     description: true,
     category: categorizable,
+    notes: true,
   };
 }
-
-export const canEditAnything = (rules: EditRules) =>
-  Object.values(rules).some(Boolean);
 
 /** Why the movement can't be deleted here, or null when it can. */
 export type DeleteBlock = 'imported' | 'transfer' | 'adjustment' | null;
@@ -139,7 +139,7 @@ export interface TransactionDetailView {
   original: string | null;
   /** The bank text is behind the privacy PIN ("Ver original" asks for it). */
   originalLocked: boolean;
-  /** What "Nombre y privacidad" starts from. */
+  /** What the editor's name section starts from. */
   name: NameSubject;
   /** Signed like the lists: "-$80.00", "+$1,200.00". */
   amount: string;
@@ -154,9 +154,11 @@ export interface TransactionDetailView {
   pending: boolean;
   /** "En proceso": counted, the bank hasn't applied it yet. */
   inProcess: boolean;
-  /** The other side of a transfer, linked. */
+  /** The user's notes ("" when none; hidden with the bank text when private). */
+  notes: string;
+  /** The other side of a transfer (opens its detail). */
   counterpart: {
-    href: string;
+    transactionId: string;
     label: string;
     transferId: string;
     /** Made from an expense/income: "Deshacer transferencia". */
@@ -219,11 +221,12 @@ export function toTransactionDetailView(
     sourceKind: sourceKind(tx.source),
     pending: tx.isPending,
     inProcess: Boolean(tx.inProcess),
+    notes: tx.notes?.trim() ?? '',
     counterpart: counterpart
       ? {
           transferId: counterpart.transferId,
           converted: Boolean(counterpart.converted),
-          href: `/transactions/${counterpart.transactionId}`,
+          transactionId: counterpart.transactionId,
           label: t(
             counterpart.direction === 'out'
               ? 'transaction.counterpartTo'

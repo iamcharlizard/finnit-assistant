@@ -6,7 +6,6 @@
 export type PageTitleKey =
   | 'app'
   | 'history'
-  | 'transaction'
   | 'categorize'
   | 'recurring'
   | 'cards'
@@ -30,7 +29,6 @@ export const PAGE_TITLES: ReadonlyArray<
   ['/dashboard', 'app'],
   ['/history', 'history'],
   ['/transactions/categorize', 'categorize'],
-  ['/transactions/[id]', 'transaction'],
   ['/recurring', 'recurring'],
   ['/recurring/[...rest]', 'recurring'],
   // Redirects to /recurring; kept for the moment before the redirect.

@@ -6,8 +6,8 @@ import { GraphqlRequestError } from '@/lib/graphql/client';
 import { transactionErrorMessage } from './api';
 import { buildUpdateInput, detailFormOf, validateDetailForm } from './form';
 import type { TransactionDetail } from './types';
+import { ownNameUpdate, shownSuggestion } from './edit';
 import {
-  canEditAnything,
   deleteBlock,
   editRules,
   formatFileSize,
@@ -40,6 +40,7 @@ const tx = (over: Partial<TransactionDetail> = {}): TransactionDetail => ({
   aliasId: null,
   hasOwnAlias: false,
   originalDescription: 'La Fonda',
+  notes: null,
   categorySource: 'manual',
   attachments: [],
   transferCounterpart: null,
@@ -58,11 +59,12 @@ describe('transaction detail: what can change', () => {
       merchant: true,
       description: true,
       category: true,
+      notes: true,
     });
     assert.equal(deleteBlock(tx()), null);
   });
 
-  it('bank and statement movements: only the category, no delete', () => {
+  it('bank and statement movements: only the category and notes, no delete', () => {
     for (const source of ['imported', 'statement']) {
       assert.deepEqual(editRules(tx({ source })), {
         amount: false,
@@ -70,14 +72,16 @@ describe('transaction detail: what can change', () => {
         merchant: false,
         description: false,
         category: true,
+        notes: true,
       });
       assert.equal(deleteBlock(tx({ source })), 'imported');
     }
-    // A bank adjustment has nothing to edit (its name lives apart).
+    // A bank adjustment still takes notes (and its name).
     const adjustment = editRules(
       tx({ source: 'imported', type: 'adjustment' }),
     );
-    assert.equal(canEditAnything(adjustment), false);
+    assert.equal(adjustment.category, false);
+    assert.equal(adjustment.notes, true);
   });
 
   it('transfers keep amount, date and category; adjustments keep the amount', () => {
@@ -108,7 +112,9 @@ describe('transaction detail: the edit form', () => {
       categoryId: 'cat-food',
       merchantName: 'La Fonda',
       description: 'Cena',
+      notes: '',
     });
+    assert.equal(detailFormOf(tx({ notes: 'Con Ana' })).notes, 'Con Ana');
   });
 
   it('sends only what changed and the rules allow', () => {
@@ -130,6 +136,23 @@ describe('transaction detail: the edit form', () => {
         importedRules,
       ),
       { categoryId: 'cat-2' },
+    );
+    // Notes go on any movement; emptied ones are sent as "" (cleared).
+    assert.deepEqual(
+      buildUpdateInput(
+        { ...initial, notes: '  Con Ana ' },
+        initial,
+        importedRules,
+      ),
+      { notes: 'Con Ana' },
+    );
+    assert.deepEqual(
+      buildUpdateInput(
+        { ...initial, notes: ' ' },
+        { ...initial, notes: 'Con Ana' },
+        rules,
+      ),
+      { notes: '' },
     );
     // An emptied category isn't sent (the API can't clear it).
     assert.equal(
@@ -211,7 +234,7 @@ describe('transaction detail: view', () => {
     assert.deepEqual(view.counterpart, {
       transferId: 'tr-1',
       converted: true,
-      href: '/transactions/t-2',
+      transactionId: 't-2',
       label: 'Hacia Mi tarjeta',
     });
     assert.equal(view.convertSource, null);
@@ -283,5 +306,70 @@ describe('transaction detail: view', () => {
       /transferencias/i,
     );
     assert.match(msg('Transaction not found'), /ya no existe/);
+  });
+});
+
+describe('transaction detail: the editor', () => {
+  const options = [
+    { value: 'cat-food', label: 'Comida', group: 'Comida', keywords: [] },
+    { value: 'cat-fun', label: 'Diversión', group: 'Diversión', keywords: [] },
+  ];
+
+  it('suggests a category only when it differs and the picker has it', () => {
+    const similar = {
+      categoryId: 'cat-fun',
+      source: 'history' as const,
+      count: 4,
+    };
+    assert.deepEqual(shownSuggestion(similar, 'cat-food', options), {
+      ...similar,
+      label: 'Diversión',
+    });
+    assert.equal(shownSuggestion(similar, 'cat-fun', options), null);
+    assert.equal(
+      shownSuggestion({ ...similar, categoryId: 'hidden' }, '', options),
+      null,
+    );
+    assert.equal(shownSuggestion(null, '', options), null);
+  });
+
+  it('drops the own name once an automatic name is created', () => {
+    const input = { displayName: 'Cena', isPrivate: true };
+    assert.deepEqual(
+      ownNameUpdate({
+        ruleCreated: true,
+        hasOwnAlias: true,
+        changed: false,
+        input,
+      }),
+      { displayName: null, isPrivate: true },
+    );
+    assert.equal(
+      ownNameUpdate({
+        ruleCreated: true,
+        hasOwnAlias: false,
+        changed: false,
+        input,
+      }),
+      null,
+    );
+    assert.deepEqual(
+      ownNameUpdate({
+        ruleCreated: false,
+        hasOwnAlias: false,
+        changed: true,
+        input,
+      }),
+      input,
+    );
+    assert.equal(
+      ownNameUpdate({
+        ruleCreated: false,
+        hasOwnAlias: true,
+        changed: false,
+        input,
+      }),
+      null,
+    );
   });
 });

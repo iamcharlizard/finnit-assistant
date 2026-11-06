@@ -21,10 +21,15 @@ import {
 import {
   MerchantRulesService,
   ruleKey,
+  rulePattern,
   ruleText,
 } from './merchant-rules.service';
 import { MerchantAliasesService } from './merchant-aliases.service';
 import { buildHistoryIndex, categoryFromHistory } from './history-category';
+import {
+  SimilarCategory,
+  SimilarCategorySource,
+} from './dto/similar-category.dto';
 import { addDays, localToday } from '../../common/utils/local-date.util';
 import {
   visibleCategoryWhere,
@@ -41,6 +46,26 @@ const AUTO_CATEGORIZE_LIMIT = 2_000;
 /** Movements sent to the AI in one "Clasificar automáticamente" (in batches of MAX_SUGGEST_IDS). */
 export const AI_SUGGEST_PER_RUN = 300;
 const HISTORY_SAMPLE_LIMIT = 5_000;
+/** Past movements read when suggesting a category for one movement. */
+const SIMILAR_SAMPLE_LIMIT = 500;
+
+/** Categorizations that count as the user's own (not pending, not the AI's). */
+const OWN_CATEGORY_SOURCES: Prisma.TransactionWhereInput['OR'] = [
+  { categorySource: null },
+  { categorySource: { in: [CategorySource.manual, CategorySource.rule] } },
+];
+
+/**
+ * The longest word of a merchant's normalized text: a cheap SQL filter
+ * before comparing keys ("OXXO GAS SUC 123" → "OXXO"). Null when none
+ * is long enough to narrow anything.
+ */
+export function longestWord(text: string | null): string | null {
+  const pattern = rulePattern(text);
+  if (!pattern) return null;
+  const words = pattern.split(/\s+/).filter((word) => word.length >= 3);
+  return words.sort((a, b) => b.length - a.length)[0] ?? null;
+}
 
 /** Movements waiting for a category, leaving out possible transfers. */
 export function uncategorizedWhere(
@@ -229,6 +254,89 @@ export class CategorizationService {
 
     const remaining = await this.prisma.transaction.count({ where });
     return { categorized, remaining };
+  }
+
+  /**
+   * The category the user's own patterns give a movement, for the edit
+   * form's "Sugerida" pill: a learned merchant rule, else the category of
+   * the automatic name that names it, else the clear favourite among the
+   * same merchant's categorized movements of the last year. Never AI.
+   * Null when nothing points to a category, or for movements that take
+   * none (transfers, adjustments).
+   */
+  async similarCategory(
+    userId: string,
+    transactionId: string,
+  ): Promise<SimilarCategory | null> {
+    const tx = await this.prisma.transaction.findFirst({
+      where: { id: transactionId, userId },
+      select: {
+        id: true,
+        type: true,
+        merchantName: true,
+        description: true,
+        alias: { select: { categoryId: true, active: true } },
+      },
+    });
+    if (!tx) throw new NotFoundError('Transaction not found');
+    if (!CATEGORIZABLE_TYPES.includes(tx.type)) return null;
+
+    const text = ruleText(tx);
+    const ruleCategory = await this.rules.categoryFor(userId, text);
+    if (ruleCategory) {
+      return {
+        categoryId: ruleCategory,
+        source: SimilarCategorySource.rule,
+        count: 0,
+      };
+    }
+    if (tx.alias?.active && tx.alias.categoryId) {
+      return {
+        categoryId: tx.alias.categoryId,
+        source: SimilarCategorySource.automatic_name,
+        count: 0,
+      };
+    }
+
+    const key = ruleKey(text);
+    const word = longestWord(text);
+    if (!key || !word) return null;
+    const contains = { contains: word, mode: 'insensitive' as const };
+    const samples = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        id: { not: tx.id },
+        type: tx.type,
+        categoryId: { not: null },
+        txnDate: { gte: addDays(localToday(), -HISTORY_DAYS) },
+        AND: [
+          { OR: OWN_CATEGORY_SOURCES },
+          { OR: [{ merchantName: contains }, { description: contains }] },
+        ],
+      },
+      select: {
+        type: true,
+        merchantName: true,
+        description: true,
+        categoryId: true,
+      },
+      orderBy: { txnDate: 'desc' },
+      take: SIMILAR_SAMPLE_LIMIT,
+    });
+    const index = buildHistoryIndex(
+      samples.flatMap((row) =>
+        row.categoryId && ruleKey(ruleText(row)) === key
+          ? [{ key, type: row.type, categoryId: row.categoryId }]
+          : [],
+      ),
+    );
+    const categoryId = categoryFromHistory(index, tx.type, key);
+    if (!categoryId) return null;
+    return {
+      categoryId,
+      source: SimilarCategorySource.history,
+      count: index.get(`${tx.type}:${key}`)?.get(categoryId) ?? 0,
+    };
   }
 
   /** How many movements wait for a category (possible transfers apart). */

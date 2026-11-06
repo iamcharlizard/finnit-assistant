@@ -78,6 +78,7 @@ export const mockTransactionData: Transaction = {
   txnDate: new Date('2024-01-01'),
   description: 'Test transaction',
   merchantName: null,
+  notes: null,
   isPending: false,
   inProcess: false,
   isRecurringInstance: false,

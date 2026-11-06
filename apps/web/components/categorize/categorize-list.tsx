@@ -237,6 +237,8 @@ export function CategorizeList({
                     );
                     pages.merge([updated]);
                   }}
+                  // A movement categorized there leaves the list (filters apply again).
+                  onDetailChange={() => void pages.reload()}
                 />
               ))}
             </div>

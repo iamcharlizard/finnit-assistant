@@ -56,7 +56,6 @@
     "app": "Finnit",
     "dashboard": "Inicio",
     "history": "Movimientos",
-    "transaction": "Movimiento",
     "categorize": "Clasificar movimientos",
     "recurring": "Pagos recurrentes",
     "cards": "Cuentas y tarjetas",
@@ -2318,7 +2317,6 @@
   "transaction": {
     "markApplied": "Marcar como aplicado",
     "markedApplied": "Marcado como aplicado por el banco",
-    "back": "Volver",
     "viewDetail": "Ver detalle",
     "types": {
       "income": "Ingreso",
@@ -2337,7 +2335,8 @@
       "description": "Descripción",
       "original": "Texto original",
       "transfer": "Transferencia",
-      "recurring": "Pago recurrente"
+      "recurring": "Pago recurrente",
+      "notes": "Notas"
     },
     "sources": {
       "manual": "Registrado a mano",
@@ -2356,8 +2355,8 @@
     "edit": "Editar",
     "delete": "Eliminar",
     "editTitle": "Editar movimiento",
-    "editDescription": "Cambia los datos de este movimiento. El saldo de la cuenta se ajusta solo.",
-    "editImported": "Viene del banco o de un estado de cuenta: sus datos no cambian. Aquí eliges su categoría; su nombre está en «Nombre y privacidad».",
+    "editDescription": "Cambia los datos, el nombre y las notas de este movimiento. El saldo de la cuenta se ajusta solo.",
+    "editImported": "Viene del banco o de un estado de cuenta: su monto, fecha y texto no cambian. Aquí cambias su nombre, su categoría y tus notas.",
     "editTransfer": "En una transferencia el monto y la fecha no cambian; si están mal, elimínala desde la otra cuenta y vuelve a crearla.",
     "form": {
       "amount": "Monto",
@@ -2369,8 +2368,17 @@
       "noResults": "Sin resultados",
       "merchant": "Comercio",
       "merchantPlaceholder": "Ej. Oxxo",
-      "description": "Notas",
-      "descriptionPlaceholder": "Notas sobre el movimiento",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Qué fue, si no hay comercio",
+      "notes": "Notas",
+      "notesPlaceholder": "Algo que quieras recordar de este movimiento",
+      "suggested": "Sugerida: {category}",
+      "suggestedApply": "Usar la categoría sugerida {category}",
+      "suggestedBy": {
+        "rule": "por tu regla de comercio",
+        "automatic_name": "por su nombre automático",
+        "history": "{count, plural, one {como # movimiento parecido} other {como # movimientos parecidos}}"
+      },
       "save": "Guardar",
       "saving": "Guardando…"
     },
@@ -2425,8 +2433,6 @@
       "notFound": "Este movimiento ya no existe."
     },
     "name": {
-      "title": "Nombre del movimiento",
-      "description": "Cambia solo cómo se ve. El texto del banco nunca se modifica.",
       "bankText": "Texto del banco",
       "bankTextHidden": "Oculto en las listas; míralo en el detalle.",
       "automatic": "Nombre automático",
@@ -2442,10 +2448,9 @@
       "privateByProtectedRule": "Es privado y está protegido con PIN por el nombre automático «{name}».",
       "makeRule": "Usar un nombre automático para los parecidos",
       "makeRuleHint": "Pone el mismo nombre a este y a todos los movimientos con un texto del banco parecido, pasados y futuros.",
-      "save": "Guardar",
-      "saving": "Guardando…"
+      "ruleDropsOwn": "Al guardar, este movimiento usará el nombre automático y se quita su nombre propio.",
+      "ruleCategory": "El nombre automático usa la categoría que elijas abajo para este movimiento."
     },
-    "nameAction": "Nombre y privacidad",
     "originalLocked": "Su nombre automático está protegido con PIN.",
     "unlockOriginal": "Escribe tu PIN para ver el texto del banco de este movimiento.",
     "facts": {
@@ -2456,8 +2461,7 @@
     "nameInput": "Nombre de este movimiento (vacío: el original)",
     "drawer": {
       "title": "Detalle del movimiento",
-      "description": "Datos, nombre, categoría y archivos del movimiento.",
-      "openPage": "Abrir en página completa",
+      "description": "Datos, nombre, categoría, notas y archivos del movimiento.",
       "notFound": "Este movimiento ya no existe.",
       "failed": "No pudimos cargar el movimiento. Intenta de nuevo."
     }

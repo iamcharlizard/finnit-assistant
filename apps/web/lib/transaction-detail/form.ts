@@ -9,12 +9,16 @@ export interface DetailForm {
   date: DayKey;
   categoryId: string;
   merchantName: string;
-  /** Notes of a movement made by hand. */
+  /** What a movement made by hand was (its title when there's no merchant). */
   description: string;
+  /** The user's notes, on any movement. */
+  notes: string;
 }
 
 export const MERCHANT_MAX = 120;
 export const DESCRIPTION_MAX = 500;
+/** Same limit as the API (MAX_TRANSACTION_NOTES). */
+export const NOTES_MAX = 1000;
 
 export type DetailFormError =
   | 'amountRequired'
@@ -34,6 +38,7 @@ export function detailFormOf(tx: TransactionDetail): DetailForm {
     categoryId: tx.category?.id ?? '',
     merchantName: tx.merchantName ?? '',
     description: tx.description ?? '',
+    notes: tx.notes ?? '',
   };
 }
 
@@ -62,6 +67,8 @@ export interface UpdateTransactionPayload {
   categoryId?: string;
   merchantName?: string;
   description?: string;
+  /** "" clears them. */
+  notes?: string;
   /** false: the bank already applied it ("Marcar como aplicado"). */
   inProcess?: boolean;
 }
@@ -69,7 +76,8 @@ export interface UpdateTransactionPayload {
 /**
  * updateTransaction's input: only fields the rules allow and the user
  * changed (null when nothing changed). The API can't clear a category or
- * a text field: an emptied field is sent as "" (text) or left out (category).
+ * a text field: an emptied field is sent as "" (text; for notes it clears
+ * them) or left out (category).
  */
 export function buildUpdateInput(
   form: DetailForm,
@@ -96,6 +104,9 @@ export function buildUpdateInput(
   }
   if (rules.description && form.description.trim() !== initial.description) {
     input.description = form.description.trim();
+  }
+  if (rules.notes && form.notes.trim() !== initial.notes.trim()) {
+    input.notes = form.notes.trim();
   }
   return Object.keys(input).length > 0 ? input : null;
 }

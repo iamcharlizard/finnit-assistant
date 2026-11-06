@@ -1,12 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ExternalLink, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
-import { Button } from '@finnit/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -29,31 +27,40 @@ import { useLocalizer } from '@/lib/i18n/client';
 import { DetailHostProvider, type DetailHost } from './detail-host';
 import { TransactionDetailScreen } from './transaction-detail-screen';
 
+export interface OpenOptions {
+  /**
+   * Called after the movement changed (edited, deleted, converted…), for
+   * lists that keep their rows on the client (e.g. Clasificar reloads
+   * them, so a movement that got a category leaves the list).
+   */
+  onChange?: () => void;
+}
+
 interface DrawerApi {
   /** Shows the movement's detail without leaving the list. */
-  open: (id: string) => void;
+  open: (id: string, options?: OpenOptions) => void;
 }
 
 const DrawerContext = React.createContext<DrawerApi | null>(null);
 
 /**
  * Opens a movement from a list: a drawer on the right when the sidebar
- * shows (lg), a modal below. Falls back to the movement's page outside
- * the provider.
+ * shows (lg), a modal below. Movements have no page of their own.
  */
 export function useTransactionDrawer(): DrawerApi {
   const drawer = React.use(DrawerContext);
-  const router = useRouter();
-  return React.useMemo(
-    () => drawer ?? { open: (id) => router.push(`/transactions/${id}`) },
-    [drawer, router],
-  );
+  if (!drawer) {
+    throw new Error(
+      'useTransactionDrawer must be used inside TransactionDrawerProvider',
+    );
+  }
+  return drawer;
 }
 
 /**
- * Holds the open movement and renders its detail (the same screen as its
- * page) in a drawer or a modal. Changes made there reload the detail and
- * the page behind it.
+ * Holds the open movement and renders its detail in a drawer or a modal.
+ * Changes made there reload the detail, the server-rendered page behind
+ * it and, through `onChange`, the list that opened it.
  */
 export function TransactionDrawerProvider({
   children,
@@ -68,6 +75,7 @@ export function TransactionDrawerProvider({
   const [result, setResult] = React.useState<DetailResult | null>(null);
   const [loading, startLoading] = React.useTransition();
   const request = React.useRef(0);
+  const onChange = React.useRef<(() => void) | undefined>(undefined);
 
   const load = React.useCallback((target: string) => {
     const current = ++request.current;
@@ -79,7 +87,8 @@ export function TransactionDrawerProvider({
 
   const api = React.useMemo<DrawerApi>(
     () => ({
-      open: (target) => {
+      open: (target, options) => {
+        onChange.current = options?.onChange;
         setId(target);
         setResult(null);
         load(target);
@@ -95,14 +104,23 @@ export function TransactionDrawerProvider({
 
   const host = React.useMemo<DetailHost>(
     () => ({
-      mode: 'drawer',
+      // Another movement (a transfer's other side), for the same list.
+      show: (target) => {
+        setId(target);
+        setResult(null);
+        load(target);
+      },
       refresh: () => {
         if (id) load(id);
         router.refresh();
+        onChange.current?.();
       },
       close: ({ deleted } = {}) => {
         close();
-        if (deleted) router.refresh();
+        if (deleted) {
+          router.refresh();
+          onChange.current?.();
+        }
       },
     }),
     [id, load, router, close],
@@ -126,14 +144,6 @@ export function TransactionDrawerProvider({
       </p>
     );
 
-  const fullPage = id ? (
-    <Button variant="ghost" size="sm" asChild className="self-start">
-      <Link href={`/transactions/${id}`} onClick={close}>
-        <ExternalLink aria-hidden /> {t('openPage')}
-      </Link>
-    </Button>
-  ) : null;
-
   return (
     <DrawerContext value={api}>
       {children}
@@ -148,7 +158,6 @@ export function TransactionDrawerProvider({
             <SheetDescription className="sr-only">
               {t('description')}
             </SheetDescription>
-            {fullPage}
             {body}
           </SheetContent>
         </Sheet>
@@ -162,7 +171,6 @@ export function TransactionDrawerProvider({
             <DialogDescription className="sr-only">
               {t('description')}
             </DialogDescription>
-            {fullPage}
             {body}
           </DialogContent>
         </Dialog>

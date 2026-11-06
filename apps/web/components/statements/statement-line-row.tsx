@@ -22,6 +22,7 @@ import {
 } from '@finnit/ui/components/ui/dropdown-menu';
 import { cn } from '@finnit/ui/lib/utils';
 
+import { useTransactionDrawer } from '@/components/transaction-detail/transaction-drawer';
 import type { PickerOption } from '@/lib/new-entry/options';
 import type { LineStatus } from '@/lib/statements/types';
 import type { StatementLineView } from '@/lib/statements/view';
@@ -62,6 +63,7 @@ export function StatementLineRow({
   onUnlink: () => void;
 }) {
   const t = useTranslations('statements');
+  const drawer = useTransactionDrawer();
   const ignored = line.status === 'ignored';
   const showCategory = line.kind !== 'payment';
 
@@ -104,16 +106,17 @@ export function StatementLineRow({
         </div>
       </div>
 
-      {line.recurring || line.matchedTransactionHref ? (
+      {line.recurring || line.matchedTransactionId ? (
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-          {line.matchedTransactionHref ? (
-            <Link
-              href={line.matchedTransactionHref}
+          {line.matchedTransactionId ? (
+            <button
+              type="button"
+              onClick={() => drawer.open(line.matchedTransactionId!)}
               className="inline-flex items-center gap-1 font-medium text-brand-ink underline-offset-4 hover:underline"
             >
               <Link2 aria-hidden className="size-3.5" />
               {t('lines.viewTransaction')}
-            </Link>
+            </button>
           ) : null}
           {line.recurring ? (
             <Link

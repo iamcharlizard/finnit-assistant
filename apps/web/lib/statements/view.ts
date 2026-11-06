@@ -171,7 +171,8 @@ export interface StatementLineView {
   statusLabel: string;
   categoryId: string | null;
   categoryLabel: string | null;
-  matchedTransactionHref: string | null;
+  /** The movement it was linked to or created as (opens its detail). */
+  matchedTransactionId: string | null;
   recurring: { href: string; label: string } | null;
   /** Raw values the linking dialog searches with. */
   rawAmount: number;
@@ -219,9 +220,7 @@ export function toLineView(
       : debit
         ? categoryLabel(null, t)
         : null,
-    matchedTransactionHref: line.matchedTransactionId
-      ? `/transactions/${line.matchedTransactionId}`
-      : null,
+    matchedTransactionId: line.matchedTransactionId ?? null,
     recurring: recurring
       ? {
           href: `/recurring?date=${dayKeyOf(recurring.dueDate)}`,

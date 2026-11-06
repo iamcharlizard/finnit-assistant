@@ -14,7 +14,11 @@ const SIMILAR_MAX_RESULTS = 5;
 const MAX_CATEGORY_DEPTH = 5;
 const toCents = (value: number) => Math.round(value * 100) / 100;
 /** What the user may change on a bank or statement movement. */
-const USER_EDITABLE_ON_IMPORTED = new Set<string>(['categoryId', 'inProcess']);
+const USER_EDITABLE_ON_IMPORTED = new Set<string>([
+  'categoryId',
+  'inProcess',
+  'notes',
+]);
 import { PrismaService } from '../../services/prisma.service';
 import {
   CreateTransactionInput,
@@ -281,8 +285,8 @@ export class TransactionsService {
     }
 
     // Movements from the bank or a statement keep the bank's data; only the
-    // category and "en proceso" are the user's (the name is changed with an
-    // alias).
+    // category, the notes and "en proceso" are the user's (the name is
+    // changed with an alias).
     if (existingTransaction.source !== TransactionSource.manual) {
       const changed = (
         Object.keys(input) as (keyof UpdateTransactionInput)[]
@@ -292,7 +296,7 @@ export class TransactionsService {
       );
       if (changed.length > 0) {
         throw new ValidationError(
-          'Cannot modify imported transactions; only the category can change',
+          'Cannot modify imported transactions; only the category and notes can change',
         );
       }
     }
@@ -343,6 +347,9 @@ export class TransactionsService {
         where: { id },
         data: {
           ...input,
+          ...(input.notes !== undefined && {
+            notes: input.notes.trim() || null,
+          }),
           balanceEffect: newEffect,
           ...(input.txnDate && { txnDate: toLocalDateOnly(input.txnDate) }),
           // A category chosen by the user replaces any pending suggestion.

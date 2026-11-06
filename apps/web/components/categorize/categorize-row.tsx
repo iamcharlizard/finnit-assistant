@@ -17,6 +17,7 @@ export function CategorizeRow({
   onSelectedChange,
   onReview,
   onRename,
+  onDetailChange,
 }: {
   row: Row;
   selected: boolean;
@@ -25,6 +26,8 @@ export function CategorizeRow({
   onReview: (action: 'accept' | 'reject') => void;
   /** Saves this movement's own name ("" removes it). */
   onRename: (name: string) => Promise<void>;
+  /** The movement changed in its detail (reload the list). */
+  onDetailChange: () => void;
 }) {
   const t = useTranslations();
   const source =
@@ -44,6 +47,7 @@ export function CategorizeRow({
       onSelectedChange={onSelectedChange}
       selectLabel={t('categorize.selectRow', { name: row.title })}
       rename={onRename}
+      onDetailChange={onDetailChange}
       footer={
         row.suggestion ? (
           <SuggestionChip

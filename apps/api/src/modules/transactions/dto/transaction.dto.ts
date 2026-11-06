@@ -17,8 +17,12 @@ import {
   IsDate,
   Min,
   Max,
+  MaxLength,
 } from 'class-validator';
 import { TransactionType, TransactionSource } from '@finnit/database';
+
+/** Longest notes a movement takes. */
+export const MAX_TRANSACTION_NOTES = 1000;
 
 registerEnumType(TransactionType, {
   name: 'TransactionType',
@@ -101,6 +105,15 @@ export class UpdateTransactionInput {
   @IsOptional()
   @IsString()
   merchantName?: string;
+
+  @Field(() => String, {
+    nullable: true,
+    description: 'Notes on any movement (also from the bank); "" clears them',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(MAX_TRANSACTION_NOTES)
+  notes?: string;
 
   @Field({ nullable: true })
   @IsOptional()

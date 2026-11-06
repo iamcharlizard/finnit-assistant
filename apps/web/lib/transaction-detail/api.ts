@@ -2,6 +2,7 @@ import type { GqlRunner } from '@/lib/accounts/api';
 import { requestErrorMessage } from '@/lib/graphql/client';
 import type { Translate } from '@/lib/i18n/translator';
 import type { UpdateTransactionPayload } from './form';
+import type { SimilarCategory } from './types';
 
 /** The detail's mutations, run from client components through /api/graphql. */
 
@@ -12,6 +13,20 @@ export const SET_ALIAS_MUTATION = `mutation SetTransactionAlias($id: ID!, $input
 export const DELETE_TRANSACTION_MUTATION = `mutation DeleteTransaction($id: String!) { deleteTransaction(id: $id) }`;
 
 export const REMOVE_ATTACHMENT_MUTATION = `mutation RemoveTransactionAttachment($id: String!) { removeTransactionAttachment(id: $id) }`;
+
+export const SIMILAR_CATEGORY_QUERY = `query SimilarCategory($id: ID!) { similarCategory(transactionId: $id) { categoryId source count } }`;
+
+/** The category the user's own patterns suggest (no AI), or null. */
+export async function similarCategory(
+  id: string,
+  run: GqlRunner,
+): Promise<SimilarCategory | null> {
+  const data = await run<{ similarCategory: SimilarCategory | null }>(
+    SIMILAR_CATEGORY_QUERY,
+    { id },
+  );
+  return data.similarCategory ?? null;
+}
 
 export async function updateTransaction(
   id: string,

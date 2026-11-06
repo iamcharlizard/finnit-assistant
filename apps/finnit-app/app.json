@@ -7,7 +7,6 @@
     "icon": "./assets/images/brand/finnit-icon-1024.png",
     "scheme": "finnitapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.karlhub.finnitapp"
@@ -17,8 +16,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/brand/finnit-adaptive-icon-1024.png",
         "backgroundColor": "#12131a"
-      },
-      "edgeToEdgeEnabled": true
+      }
     },
     "web": {
       "bundler": "metro",
@@ -39,7 +37,12 @@
             "backgroundColor": "#12131a"
           }
         }
-      ]
+      ],
+      "expo-font",
+      "expo-image",
+      "expo-secure-store",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -12,8 +12,8 @@
     "@finnit/ui": "workspace:*",
     "@fontsource/ubuntu": "^5.3.0",
     "lucide-react": "^1.55.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@finnit/typescript-config": "workspace:*",
@@ -22,8 +22,8 @@
     "@storybook/addon-themes": "^10.6.1",
     "@storybook/react-vite": "^10.6.1",
     "@tailwindcss/vite": "^4.3.3",
-    "@types/react": "19.2.15",
-    "@types/react-dom": "19.2.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "storybook": "^10.6.1",
     "tailwindcss": "^4.3.3",
     "typescript": "5.9.3",

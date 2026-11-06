@@ -47,7 +47,7 @@ Detalle en [api-error-resolution.md](./api-error-resolution.md).
 
 ### 🟡 STEP 2: MOBILE APP - REACT NATIVE + EXPO
 - [x] **Scaffold App**
-  - [x] Expo app con TypeScript (`apps/finnit-app`, Expo SDK 56, RN 0.85)
+  - [x] Expo app con TypeScript (`apps/finnit-app`, Expo SDK 58, RN 0.88)
   - [x] Navegación con Expo Router: grupo `(app)` + `BottomNavBar` y `TopAppBar` propios
   - [x] Styling con NativeWind v5 + Tailwind v4; componentes UI base (`button`, `input`, `typography`, `glass-view`)
   - [x] ThemeContext (dark/light)

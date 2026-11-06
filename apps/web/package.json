@@ -20,8 +20,8 @@
     "next": "^16.4.2",
     "next-intl": "^4.14.9",
     "next-themes": "^0.4.6",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "server-only": "^0.0.1"
   },
   "devDependencies": {
@@ -29,8 +29,8 @@
     "@finnit/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^25.9.1",
-    "@types/react": "19.2.15",
-    "@types/react-dom": "19.2.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "eslint": "^10.4.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.22.3",

@@ -54,7 +54,8 @@ Unit tests exist for auth (service + resolver), accounts, budgets, debts, goals,
 Feature-by-feature status (API / mobile / web), verified against the code: `docs/features.md`. Keep it updated when a feature lands; the PRD checkboxes follow it.
 
 ### 🟡 Mobile App — UI built, data mostly mocked
-`apps/finnit-app/` is an Expo Router app styled with NativeWind v5:
+`apps/finnit-app/` is an Expo Router app (Expo SDK 58, React Native 0.88, React 19.3) styled with NativeWind v5 (`5.0.0-rc.1` + `react-native-css@3.1.0-rc.1`, pinned exactly together):
+- Native projects are generated (CNG): `ios/` and `android/` are git-ignored; run `npx expo prebuild --clean` after changing native config (`pod install` needs `LANG=en_US.UTF-8`). Metro's monorepo setup is automatic (don't add `watchFolders`/`nodeModulesPaths`). pnpm installs are isolated (pnpm 11 ignores `node-linker` in `.npmrc`). React must be the same version (19.3.0) in every workspace; check with `pnpm why react`. The app lints with ESLint 9 (`eslint-plugin-react` doesn't support 10).
 - Routes: `app/login.tsx`, `app/(app)/` group (dashboard, history, cards, calendar, analytics, settings) with a custom `BottomNavBar`. Route files re-export screens from `screens/`.
 - Auth: `contexts/AuthContext.tsx` calls the `signIn` mutation via urql (`lib/graphql/client.ts`) and persists tokens in SecureStore. No signup, token refresh, or route guard yet.
 - Screens use hardcoded mock data (e.g. `MOCK_FINANCIAL_DATA` in `screens/dashboard.tsx`). The commented-out data hooks use React Query syntax, but the project's client is **urql** — write real queries with urql under `lib/graphql/`.
@@ -331,7 +332,7 @@ pnpm api:dev
 | ORM | Prisma | ^7.8.0 |
 | Database | PostgreSQL | 18 |
 | Auth | JWT + Passport | — |
-| Mobile | React Native 0.85 + Expo SDK 56 | — |
+| Mobile | React Native 0.88 + Expo SDK 58 | — |
 | Language | TypeScript (strict) | 5.9.3 |
 
 ## Workflow Requirements

@@ -6,10 +6,10 @@ import { todayKey } from '@finnit/core/finance/dates';
 import { parseHistoryFilters, type HistoryFilters as Filters } from '@finnit/core/history/filters';
 import { HISTORY_QUERY, buildHistoryData, historyVariables, type HistoryResult } from '@finnit/core/history/request';
 import { TwView } from '@finnit/ui-native/lib/tw';
-import { PopularCategoriesCard } from '@finnit/ui-native/components/finance/popular-categories-card';
 
 import { HistoryFilters } from '@/components/history/history-filters';
 import { HistoryList } from '@/components/history/history-list';
+import { TopCategoriesCard } from '@/components/history/top-categories-card';
 import { Screen } from '@/components/shell/screen';
 import { useView } from '@/lib/graphql/use-view';
 import { historyParams } from '@/lib/history/params';
@@ -62,7 +62,7 @@ export function HistoryScreen() {
             onFiltersChange={apply}
           />
           {view.topCategories.rows.length > 0 ? (
-            <PopularCategoriesCard title={view.topCategories.title} categories={view.topCategories.rows} />
+            <TopCategoriesCard data={view.topCategories} />
           ) : null}
         </TwView>
       ) : null}

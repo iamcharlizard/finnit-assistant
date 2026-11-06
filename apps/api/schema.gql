@@ -2976,6 +2976,11 @@ type Transaction {
   For transfers: "out" on the source account, "in" on the destination; null otherwise
   """
   transferDirection: String
+
+  """
+  For transfers: the transfer both sides share (batched; lists use it to group them)
+  """
+  transferId: ID
   txnDate: DateTime!
   type: String!
   updatedAt: DateTime!

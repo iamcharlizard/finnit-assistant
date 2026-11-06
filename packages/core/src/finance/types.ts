@@ -63,6 +63,8 @@ export interface ApiTransaction {
   source: string;
   /** Transfers only: 'out' on the source account, 'in' on the destination. */
   transferDirection?: 'in' | 'out' | null;
+  /** Transfers only: the transfer both sides share (lists group them by it). */
+  transferId?: string | null;
   accountId: string;
   account: {
     id: string;
@@ -91,7 +93,7 @@ export interface ApiTransaction {
 }
 
 export const TRANSACTION_FIELDS =
-  'id type amount balanceEffect currency txnDate description merchantName displayName isPrivate ownPrivate aliasId aliasRule { id displayName isPrivate isProtected } hasOwnAlias isPending inProcess source transferDirection accountId account { id name type metadata { nickname } } category { id name parentId }';
+  'id type amount balanceEffect currency txnDate description merchantName displayName isPrivate ownPrivate aliasId aliasRule { id displayName isPrivate isProtected } hasOwnAlias isPending inProcess source transferDirection transferId accountId account { id name type metadata { nickname } } category { id name parentId }';
 
 export type CategorySource = 'manual' | 'rule' | 'ai' | 'bank';
 

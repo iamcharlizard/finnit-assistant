@@ -365,7 +365,21 @@
     "emptyMonthTitle": "No movements this month",
     "emptyMonthDescription": "There are no movements recorded this month.",
     "aliasFilter": "Automatic name: {name}",
-    "clearAlias": "Remove the automatic name filter"
+    "clearAlias": "Remove the automatic name filter",
+    "transfer": {
+      "title": "Transfer",
+      "from": "Out of {account}",
+      "to": "Into {account}",
+      "sides": "Transfer movements"
+    },
+    "otherCategories": "Other categories",
+    "topView": {
+      "label": "Show as",
+      "list": "List",
+      "chart": "Chart"
+    },
+    "chartTotal": "Spent",
+    "chartSummary": "This month's spending by category: {items}"
   },
   "cards": {
     "count": "{count, plural, one {# card} other {# cards}}",

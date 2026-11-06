@@ -78,6 +78,22 @@ export class TransactionsResolver {
     return this.transferDirections.load(req, transaction.id);
   }
 
+  @ResolveField('transferId', () => ID, {
+    nullable: true,
+    description:
+      'For transfers: the transfer both sides share (batched; lists use it to group them)',
+  })
+  async transferId(
+    @Parent() transaction: Transaction,
+    @Context('req') req: object,
+  ): Promise<string | null> {
+    if (transaction.type !== 'transfer') return null;
+    return (
+      (await this.transferDirections.loadSide(req, transaction.id))
+        ?.transferId ?? null
+    );
+  }
+
   @ResolveField('transferCounterpart', () => TransferCounterpart, {
     nullable: true,
     description:

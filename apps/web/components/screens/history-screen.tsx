@@ -1,11 +1,12 @@
 'use client';
 
+import * as React from 'react';
 import { useTranslations } from 'next-intl';
-
-import { PopularCategoriesCard } from '@finnit/ui/components/finance/popular-categories-card';
 
 import { HistoryFilters } from '@/components/history/history-filters';
 import { HistoryList } from '@/components/history/history-list';
+import { TopCategoriesCard } from '@/components/history/top-categories-card';
+import { useStickyTops } from '@/components/history/use-sticky-tops';
 import { PageHeader } from '@/components/page-header';
 import {
   historyQuery,
@@ -21,8 +22,10 @@ export function HistoryScreen({
   filters: Filters;
 }) {
   const t = useTranslations('history');
+  const root = React.useRef<HTMLDivElement>(null);
+  useStickyTops(root);
   return (
-    <div className="flex flex-col gap-6">
+    <div ref={root} className="flex flex-col gap-6">
       <PageHeader title={t('title')} subtitle={t('subtitle')} />
       <div className="grid gap-6 @3xl:grid-cols-3">
         <div className="min-w-0 @3xl:col-span-2">
@@ -45,11 +48,8 @@ export function HistoryScreen({
         </div>
 
         {data.topCategories.rows.length > 0 ? (
-          <aside className="flex flex-col gap-4 @3xl:sticky @3xl:top-24 @3xl:self-start">
-            <PopularCategoriesCard
-              title={data.topCategories.title}
-              categories={data.topCategories.rows}
-            />
+          <aside className="flex flex-col gap-4 @3xl:sticky @3xl:top-[var(--history-top,6rem)] @3xl:self-start">
+            <TopCategoriesCard data={data.topCategories} />
           </aside>
         ) : null}
       </div>

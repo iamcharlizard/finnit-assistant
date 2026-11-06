@@ -1,4 +1,6 @@
-import { useRouter, type Href } from 'expo-router';
+import { useRouter } from 'expo-router';
+
+import { appHref } from '@/lib/nav/app-href';
 import { useTranslations } from 'use-intl';
 import { Link2 } from 'lucide-react-native';
 
@@ -59,7 +61,7 @@ export function TransactionFacts({
         const link = fact.transactionId
           ? () => router.push({ pathname: '/transaction/[id]', params: { id: fact.transactionId! } })
           : fact.href
-            ? () => router.push(fact.href as Href)
+            ? () => router.push(appHref(fact.href!))
             : null;
         return (
           <TwView key={fact.label} className={cn('gap-0.5 py-2.5', index > 0 && 'border-t border-glass-border')}>

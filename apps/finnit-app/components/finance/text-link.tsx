@@ -1,4 +1,6 @@
-import { useRouter, type Href } from 'expo-router';
+import { useRouter } from 'expo-router';
+
+import { appHref } from '@/lib/nav/app-href';
 
 import { TwPressable } from '@finnit/ui-native/lib/tw';
 import { Text } from '@finnit/ui-native/components/ui/text';
@@ -9,7 +11,7 @@ export function TextLink({ href, label, onPress }: { href?: string; label: strin
   return (
     <TwPressable
       accessibilityRole="link"
-      onPress={onPress ?? (() => href && router.push(href as Href))}
+      onPress={onPress ?? (() => href && router.push(appHref(href)))}
       className="min-h-11 justify-center"
     >
       <Text weight="medium" className="text-sm text-income">

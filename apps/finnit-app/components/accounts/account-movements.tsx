@@ -1,4 +1,4 @@
-import { useRouter, type Href } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
 import { ArrowRight, Inbox } from 'lucide-react-native';
 
@@ -11,6 +11,7 @@ import { Icon } from '@finnit/ui-native/components/ui/icon';
 import { Text } from '@finnit/ui-native/components/ui/text';
 
 import { TransactionListCard } from '@/components/finance/transaction-card';
+import { appHref } from '@/lib/nav/app-href';
 
 /** The account's (or all accounts') latest movements, with "Ver todos". */
 export function AccountMovements({ rows, historyHref }: { rows: TransactionRow[]; historyHref: string }) {
@@ -29,7 +30,7 @@ export function AccountMovements({ rows, historyHref }: { rows: TransactionRow[]
             size="sm"
             label={t('seeAll')}
             trailing={<Icon icon={ArrowRight} size={14} color="--brand-ink" />}
-            onPress={() => router.navigate(historyHref as Href)}
+            onPress={() => router.navigate(appHref(historyHref))}
           />
         ) : null}
       </TwView>

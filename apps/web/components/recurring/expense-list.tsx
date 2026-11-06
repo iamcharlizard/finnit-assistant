@@ -1,26 +1,27 @@
 'use client';
 
 import * as React from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Plus, Repeat, SearchX } from 'lucide-react';
 
-import { FilterChipGroup } from '@finnit/ui/components/finance/filter-chip-group';
 import { Button } from '@finnit/ui/components/ui/button';
 
 import { EmptyState } from '@/components/finance/empty-state';
 import {
-  filterExpenses,
-  kindFilterOptions,
-  type StatusFilter,
+  accountOptions,
+  applyExpenseFilters,
+  kindOptions,
+  type ExpenseFilters,
 } from '@finnit/core/recurring/filters';
 import type { ExpenseItem } from '@finnit/core/recurring/view';
 import { ExpenseCard } from './expense-card';
+import { ExpenseFiltersBar } from './expense-filters';
 
-const STATUS_FILTERS: StatusFilter[] = ['active', 'paused', 'all'];
-
-/** "Mis pagos recurrentes" tab: every expense, filtered by kind and status. */
+/** "Mis pagos" tab: every expense, behind the filter bar. */
 export function ExpenseList({
   expenses,
+  filters,
+  onFiltersChange,
   busyId,
   onCreate,
   onEdit,
@@ -28,6 +29,8 @@ export function ExpenseList({
   onDelete,
 }: {
   expenses: ExpenseItem[];
+  filters: ExpenseFilters;
+  onFiltersChange: (next: ExpenseFilters) => void;
   busyId: string | null;
   onCreate: () => void;
   onEdit: (item: ExpenseItem) => void;
@@ -35,15 +38,16 @@ export function ExpenseList({
   onDelete: (item: ExpenseItem) => void;
 }) {
   const t = useTranslations();
-  const [kind, setKind] = React.useState('all');
-  const [status, setStatus] = React.useState<StatusFilter>('active');
-
-  const kinds = kindFilterOptions(expenses);
-  // A kind filter whose last expense is gone falls back to all.
-  const activeKind =
-    kind === 'all' || (kinds as string[]).includes(kind) ? kind : 'all';
-  const shown = filterExpenses(expenses, { kind: activeKind, status });
-
+  const locale = useLocale();
+  const kinds = kindOptions(expenses, (kind) =>
+    t(`finance.recurringKinds.${kind}`),
+  );
+  const accounts = accountOptions(
+    expenses,
+    t('calendar.summary.noAccount'),
+    locale,
+  );
+  const shown = applyExpenseFilters(expenses, filters, locale);
   return (
     <div className="flex flex-col gap-4">
       {expenses.length === 0 ? (
@@ -60,33 +64,13 @@ export function ExpenseList({
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-2">
-            <FilterChipGroup
-              aria-label={t('recurring.list.filterStatus')}
-              items={STATUS_FILTERS.map((value) => ({
-                value,
-                label: t(`recurring.list.status.${value}`),
-              }))}
-              activeValue={status}
-              onSelect={(value) => setStatus(value as StatusFilter)}
-            />
-            {kinds.length > 1 ? (
-              <FilterChipGroup
-                aria-label={t('recurring.list.filterKind')}
-                items={[
-                  { value: 'all', label: t('recurring.list.allKinds') },
-                  ...kinds.map((value) => ({
-                    value,
-                    label: t(
-                      `finance.recurringKinds.${value as ExpenseItem['kind']}`,
-                    ),
-                  })),
-                ]}
-                activeValue={activeKind}
-                onSelect={setKind}
-              />
-            ) : null}
-          </div>
+          <ExpenseFiltersBar
+            filters={filters}
+            onChange={onFiltersChange}
+            kinds={kinds}
+            accounts={accounts}
+            count={shown.length}
+          />
           {shown.length === 0 ? (
             <EmptyState
               icon={SearchX}

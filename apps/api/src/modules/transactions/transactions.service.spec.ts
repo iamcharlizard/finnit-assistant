@@ -1512,6 +1512,31 @@ describe('TransactionsService', () => {
       });
     });
 
+    it('leaves transfers out of the movements that can take a category', async () => {
+      jest.restoreAllMocks();
+      prismaService.transaction.findMany.mockResolvedValue([]);
+      prismaService.transaction.count.mockResolvedValue(0);
+
+      await service.findMany(mockUserId, {
+        filters: { uncategorized: true, categorizable: true, search: 'oxxo' },
+      });
+
+      const { where } = prismaService.transaction.count.mock.calls[0][0] as {
+        where: Record<string, unknown>;
+      };
+      expect(where.AND).toEqual([
+        {
+          type: { in: ['expense', 'income'] },
+          OR: [
+            { transferSuggestion: { is: null } },
+            { transferSuggestion: { status: { not: 'pending' } } },
+          ],
+        },
+      ]);
+      // The search keeps its own OR.
+      expect(where.OR).toBeDefined();
+    });
+
     describe('setTransactionAlias', () => {
       beforeEach(() => {
         prismaService.transaction.findFirst.mockResolvedValue({

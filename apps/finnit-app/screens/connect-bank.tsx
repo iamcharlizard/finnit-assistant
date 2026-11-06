@@ -101,7 +101,8 @@ export function ConnectBankScreen() {
           <DoneStep
             institution={current.bank.institution}
             linked={current.linked}
-            onFinish={() => router.replace('/settings')}
+            // Back where it was opened from (Cuentas or Configuración).
+            onFinish={leave}
           />
         );
       case 'needsWidget':

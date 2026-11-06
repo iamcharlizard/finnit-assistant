@@ -51,9 +51,10 @@ Expo SDK 58 (React Native 0.88, React 19.3) con NativeWind v5 (`5.0.0-rc.1`). La
 | Nuevo movimiento: gasto, ingreso, transferencia / pago de tarjeta, duplicados | ✅ | Adjuntar comprobante al crear. |
 | Escanear ticket (cámara/galería → gasto prellenado) | ✅ | Tickets pendientes, "¿es este?" con coincidencias del ticket. |
 | Importar captura del banco | ⏳ | Todo. |
-| Cuentas y tarjetas (pila de tarjetas, detalle con cifras y movimientos) | 🟡 | Alta, edición, archivado, "Actualizar saldo", gráfica de saldo diario. |
+| Cuentas y tarjetas (pila de tarjetas, detalle con cifras y movimientos; "Nueva cuenta": conectar el banco con Syncfy o alta manual) | 🟡 | Diseño de la tarjeta al darla de alta, edición, archivado, "Actualizar saldo", gráfica de saldo diario. |
 | Análisis | ✅ | — |
-| Pagos recurrentes (resumen, calendario mensual, pagar/omitir/reabrir, pausar) | 🟡 | Vistas día/semana, crear y editar recurrentes, pestaña de sugeridos. |
+| Calendario de pagos (calendario mensual con fechas de tarjetas, pagar/omitir/reabrir; Resumen con tarjetas y 4 gráficas) | 🟡 | Vistas día/semana, editar el pago desde el calendario. |
+| Pagos recurrentes (Mis pagos con filtros; Sugeridos: agregar o descartar) | 🟡 | Crear y editar recurrentes, ajustar una sugerencia antes de agregarla, guardarla como préstamo. |
 | Notificaciones | ✅ | — |
 | Presupuestos (crear, editar, copiar, eliminar, sugerencias) | ✅ | — |
 | Deudas (resumen, préstamos, otras; detalle con calendario y pagos) | 🟡 | Registrar pagos, agregar dinero, alta y edición de deudas, plan de pago. |
@@ -89,7 +90,8 @@ Expo SDK 58 (React Native 0.88, React 19.3) con NativeWind v5 (`5.0.0-rc.1`). La
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| CRUD de cuentas (efectivo, débito, crédito, ahorro, e-wallet) | ✅ | 🟡 | ✅ | Web: `/accounts` (Cuentas y tarjetas) con alta manual, edición y archivado; Inicio muestra disponible, deuda en tarjetas y patrimonio neto. Móvil: ver «App móvil». |
+| CRUD de cuentas (efectivo, débito, crédito, ahorro, e-wallet) | ✅ | 🟡 | ✅ | Web: `/accounts` (Cuentas y tarjetas): **Nueva cuenta** pregunta primero si conectar el banco (el flujo de Syncfy dentro del mismo modal; `?add=bank`) o agregarla a mano (`?add=1`); edición y archivado; Inicio muestra disponible, deuda en tarjetas y patrimonio neto. Móvil: ver «App móvil». |
+| Cuenta de efectivo de cada usuario | ✅ | ✅ | ✅ | Todo usuario tiene una cuenta **Efectivo** ("Cash" en inglés) que no se puede eliminar, archivar ni cambiar de tipo (`Account.isDefaultCash`, índice único parcial por usuario). Se crea al dar de alta al usuario y, por si falta, al iniciar sesión (`ensureDefaultCashAccount`); la migración marcó la cuenta de efectivo más antigua de cada usuario o creó una. Se puede renombrar. Insignia "Tu efectivo". |
 | Ajuste de saldo sin ingreso/gasto falso | ✅ | ⏳ | ✅ | `setAccountBalance`: el usuario escribe el saldo real (tarjetas: lo que debe) y la diferencia se guarda como ajuste con signo, fechado hoy. Web: botón **Actualizar saldo** en `/accounts`. Los ajustes no se pueden eliminar (los antiguos no guardan su dirección): se corrige el saldo otra vez. `adjustAccountBalance` (delta) sigue disponible. |
 | Términos de tarjeta de crédito (corte, pago, tasa) | ✅ | 🟡 | ✅ | Modelo `CreditCardTerms`; `accounts` ya los incluye. Web: se capturan al dar de alta o editar la tarjeta; próximo corte y fecha de pago en Cuentas y en el Calendario. `setCreditCardTerms` / `removeCreditCardTerms`. |
 | Efecto de cada movimiento en el saldo | ✅ | — | ✅ | `Transaction.balanceEffect`: lo que sumó (+) o restó (−) al saldo, con signo; los pendientes lo guardan pero no cuentan. Todas las rutas que mueven saldos lo escriben (`common/utils/balance-effect.util.ts`). La web lo usa para la dirección de ajustes y transferencias. Ajustes antiguos sin dirección quedan en `null`. |
@@ -183,7 +185,7 @@ Belvo dejó de ofrecer datos bancarios de México (solo Brasil), por eso se usa 
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Conectar banco con formulario propio (headless) | ✅ | ⏳ | ✅ | Paquete `@finnit/bank-connect` (web y React Native): formulario del banco, token, captcha, imágenes, opciones y QR; los datos van del dispositivo a Syncfy, nunca a Finnit. Probado contra el sandbox (8/8 casos). Respaldo con el widget de Syncfy para sitios no soportados. API: `createBankConnectSession` + `registerBankConnection`. |
+| Conectar banco con formulario propio (headless) | ✅ | ⏳ | ✅ | Desde Cuentas y tarjetas → **Nueva cuenta** → "Conectar mi banco" (web: en el mismo modal, `ConnectBankSteps`; móvil: abre la pantalla de conexión) y desde Configuración → Bancos. Paquete `@finnit/bank-connect` (web y React Native): formulario del banco, token, captcha, imágenes, opciones y QR; los datos van del dispositivo a Syncfy, nunca a Finnit. Probado contra el sandbox (8/8 casos). Respaldo con el widget de Syncfy para sitios no soportados. API: `createBankConnectSession` + `registerBankConnection`. |
 | Ligar cuentas del banco a cuentas de Finnit | ✅ | ⏳ | ✅ | `linkBankAccount` (existente o nueva); importa 90 días. Saldo, límite y crédito disponible desde el banco. |
 | Importar movimientos y crear transacciones | ✅ | ⏳ | ⏳ | Incremental, sin duplicados; ignora autorizaciones pendientes y conversiones a meses sin intereses. |
 | Conciliación banco ↔ estado de cuenta PDF | ✅ | — | — | El estado de cuenta empata los movimientos ya importados del banco (probado: 105 de 105). |
@@ -246,7 +248,8 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Calendario día / semana / mes con la lista de pagos del periodo | ✅ | ⏳ | ✅ | `/recurring` (sustituye a `/calendar`): resumen, calendario y lista del día o periodo. |
+| Calendario día / semana / mes con la lista de pagos del periodo | ✅ | 🟡 | ✅ | Pantalla propia **Calendario** (`/calendar`, en el menú): pestañas Calendario (calendario, pagos y fechas de corte y pago de tarjetas; pagar, omitir, editar) y **Resumen** (por pagar, pagado y gasto fijo del mes; gráficas de los próximos 6 meses por serie —recurrentes, préstamos y pago de tarjetas estimado con la deuda de hoy—, avance del mes, gasto fijo por tipo y por cuenta; `@finnit/core/calendar/summary`). Los enlaces viejos `/recurring?tab=calendar|view|date|month` redirigen. Móvil: solo vista mensual. |
+| Pagos recurrentes: Mis pagos y Sugeridos | ✅ | 🟡 | ✅ | `/recurring` solo con los recurrentes: barra de filtros (buscar, estado, tipo y cuenta con casillas, orden por próximo pago, monto o nombre; chips quitables) en la URL (`?q=&status=&kind=&account=&sort=`, `@finnit/core/recurring/filters`). |
 | Alta, edición, pausa y baja; marcar pagado u omitido | ✅ | ⏳ | ✅ | |
 | Sugerencias detectadas en los movimientos sincronizados | ✅ | ⏳ | ✅ | `recurringSuggestions` (sin IA): mismo comercio, monto parecido (±15%, variable hasta ±50%) e intervalo regular; 3 apariciones; bastan 2 si caen el mismo día del mes (± 1 día, fines de mes como el mismo día) aunque el monto varíe, o si el monto es fijo en pagos mensuales a trimestrales, o si es semestral/anual. `acceptRecurringSuggestion` crea el pago y marca pagados los cargos de la evidencia; `dismissRecurringSuggestion`. |
 | Clasificación de la sugerencia con IA (tipo, categoría, nombre) | ✅ | — | ✅ | Funcionalidad `recurring_classification`, en lote y guardada en `RecurringSuggestionState`; solo se envía comercio, monto y frecuencia. El usuario siempre confirma. |
@@ -255,7 +258,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Lista por cuenta y periodo, primero los sin categoría | ✅ | ⏳ | ✅ | `/transactions/categorize`; filtros `uncategorized` y `hasSuggestion`. |
+| Lista por cuenta y periodo, primero los sin categoría | ✅ | ✅ | ✅ | `/transactions/categorize`; filtros `uncategorized`, `hasSuggestion` y `categorizable` (solo gastos e ingresos sin transferencia pendiente: las transferencias y ajustes no se pueden clasificar, así que no salen; la misma condición que el conteo, `categorizableWhere`). |
 | Sugerencia de categoría con IA, aceptar una por una o todas | ✅ | ⏳ | ✅ | `suggestTransactionCategories` (primero reglas, el resto en un lote de IA `transaction_categorization`; solo nombre mostrado, monto y tipo), `acceptCategorySuggestions` / `rejectCategorySuggestions`. |
 | Mover uno o varios movimientos a otra categoría | ✅ | ⏳ | ✅ | `categorizeTransactions` (hasta 500), con "Recordar para este comercio". |
 | Reglas de comercio que aprenden de las correcciones | ✅ | — | ✅ | `MerchantRule`; se aplican al crear, importar del banco y de estados de cuenta, antes que la sugerencia por frecuencia. Lista y borrado en Ajustes → Alias. |
@@ -291,7 +294,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Alta manual de débito y crédito | ✅ | ⏳ | ✅ | `createAccount` (nombre repetido → `CONFLICT`); también efectivo y ahorro. Liga desde Bancos conectados: "¿Tu banco no aparece?". |
+| Alta manual de débito y crédito | ✅ | ✅ | ✅ | `createAccount` (nombre repetido → `CONFLICT`); también efectivo y ahorro. Liga desde Bancos conectados: "¿Tu banco no aparece?". |
 | Corte, fecha de pago y tasa de la tarjeta | ✅ | ⏳ | ✅ | `setCreditCardTerms`. |
 | Saldo inicial sin contarlo como ingreso o gasto | ✅ | — | — | Se registra como ajuste ("Initial balance") en la misma transacción de BD. |
 | Ligar después una cuenta manual a una conexión bancaria | 🟡 | ⏳ | ⏳ | `linkBankAccount` ya acepta una cuenta existente. |
@@ -310,7 +313,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 | Temas Finnit, Glass, Suave y Mono (claro y oscuro) | — | ⏳ | ✅ | Una paleta para todo el sitio (`FINNIT_THEME`), rendereada en `<html data-theme>` (sin parpadeo). Los usuarios solo eligen claro / oscuro / sistema (`next-themes`). Los administradores tienen "Vista previa de tema" en el menú de perfil: cambia solo su navegador (cookie `finnit-theme-preview`). |
 | Header de vidrio con saludo | — | ⏳ | ✅ | Barra flotante siempre en vidrio; el inicio muestra "Hola, {nombre}" y la fecha. |
 | Detalle desde las listas | — | ⏳ | ✅ | Toda la card de un movimiento (`TransactionCard` de `@finnit/ui`; sugerencia de categoría dentro) abre su detalle: drawer a la derecha cuando se ve el menú lateral (lg), modal abajo de eso; cargado con una server action (`loadTransactionDetailAction`). Los movimientos no tienen página propia: también la línea de un estado de cuenta y el otro lado de una transferencia abren el detalle ahí. Lo que cambia en el detalle recarga la lista que lo abrió (`open(id, { onChange })`): en Clasificar, el que ya tiene categoría sale de la lista. Sin menú de tres puntos. |
-| Menú lateral colapsable | — | — | ✅ | Rail flotante de vidrio que pasa de 256 px a solo íconos (con tooltips) con animación; ⌘B / Ctrl+B; estado en la cookie `finnit-sidebar`. Submenús **Movimientos** (Historial, Clasificar, Recurrentes, Estados de cuenta) y **Planeación** (Presupuestos, Deudas, Metas, Simulador): se despliegan en su lugar (cookie `finnit-nav-groups`; el del módulo actual se abre solo) y, colapsado, abren un menú flotante al lado. |
+| Menú lateral colapsable | — | — | ✅ | Rail flotante de vidrio que pasa de 256 px a solo íconos (con tooltips) con animación; ⌘B / Ctrl+B; estado en la cookie `finnit-sidebar`. Ítem **Calendario** propio; submenús **Movimientos** (Historial, Clasificar, Recurrentes, Estados de cuenta) y **Planeación** (Presupuestos, Deudas, Metas, Simulador): se despliegan en su lugar (cookie `finnit-nav-groups`; el del módulo actual se abre solo) y, colapsado, abren un menú flotante al lado. |
 | Perfil y foto | ✅ | ⏳ | ✅ | Perfil fijo abajo del menú lateral (en el header por debajo de lg) con menú: claro / oscuro / sistema, vista previa de tema (admins), Configuración y cerrar sesión. Foto: la subida por el usuario (`POST/GET /me/avatar`, S3 privado, recortada a 256 px en el navegador; `removeMyAvatar`), si no la de Google (claim `picture`, se actualiza al entrar con Google), si no las iniciales. Configuración → Editar perfil cambia foto y nombre. |
 
 ### 21. Landing pública y lista de espera *(nuevo)*

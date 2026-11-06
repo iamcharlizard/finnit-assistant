@@ -101,7 +101,10 @@ export function daysOf(range: DayRange): DayKey[] {
   return days;
 }
 
-export function recurringHref({
+/** The payments calendar ("Calendario"), its own screen. */
+export const CALENDAR_PATH = '/calendar';
+
+export function calendarHref({
   view,
   date,
 }: {
@@ -111,7 +114,7 @@ export function recurringHref({
   const params = new URLSearchParams();
   if (view !== DEFAULT_VIEW) params.set('view', view);
   params.set('date', date);
-  return `/recurring?${params.toString()}`;
+  return `${CALENDAR_PATH}?${params.toString()}`;
 }
 
 /** "Octubre 2026", "12–18 oct" or "13 de octubre", for sentences and cards. */

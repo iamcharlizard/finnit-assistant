@@ -61,6 +61,7 @@ export const mockAccountData: Account = {
   balanceCurrent: new Prisma.Decimal(1000),
   metadata: null,
   archived: false,
+  isDefaultCash: false,
   bankDifferenceTransactionId: null,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),

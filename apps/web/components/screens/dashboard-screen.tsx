@@ -60,7 +60,7 @@ export function DashboardScreen({
               title={t('noAccountsTitle')}
               description={t('noAccountsDescription')}
               action={{
-                href: '/settings/banks/connect',
+                href: '/accounts?add=bank',
                 label: tc('connectBank'),
               }}
             />

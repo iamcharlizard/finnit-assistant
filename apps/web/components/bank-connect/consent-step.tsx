@@ -11,7 +11,14 @@ const POINTS = [
   { icon: Unplug, key: 'disconnect' },
 ] as const;
 
-export function ConsentStep({ onAccept }: { onAccept: () => void }) {
+export function ConsentStep({
+  onAccept,
+  onCancel,
+}: {
+  onAccept: () => void;
+  /** Inside a dialog; otherwise "Cancelar" goes back to the banks page. */
+  onCancel?: () => void;
+}) {
   const t = useTranslations();
   return (
     <div className="flex flex-col gap-6">
@@ -41,9 +48,15 @@ export function ConsentStep({ onAccept }: { onAccept: () => void }) {
       </BodyMd>
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <Button variant="outline" asChild>
-          <Link href="/settings/banks">{t('common.cancel')}</Link>
-        </Button>
+        {onCancel ? (
+          <Button variant="outline" onClick={onCancel}>
+            {t('common.cancel')}
+          </Button>
+        ) : (
+          <Button variant="outline" asChild>
+            <Link href="/settings/banks">{t('common.cancel')}</Link>
+          </Button>
+        )}
         <Button variant="secondary" onClick={onAccept}>
           {t('bankConnect.consent.accept')}
         </Button>

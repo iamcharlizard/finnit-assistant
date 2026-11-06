@@ -20,7 +20,10 @@ import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 import { Label } from '@finnit/ui/components/ui/label';
 import { Switch } from '@finnit/ui/components/ui/switch';
 
-import { accountErrorMessage, saveAccountChanges } from '@finnit/core/accounts/api';
+import {
+  accountErrorMessage,
+  saveAccountChanges,
+} from '@finnit/core/accounts/api';
 import { bankChoiceOf } from '@finnit/core/accounts/banks';
 import {
   NICKNAME_MAX_LENGTH,
@@ -273,14 +276,20 @@ export function EditAccountDialog({
           ) : null}
 
           <DialogFooter className="sm:justify-between">
-            <ArchiveAccountButton
-              accountId={account.id}
-              label={account.label}
-              archived={account.archived}
-              disabled={saving}
-              onDone={(archived) => exit.after(onSaved)({ archived })}
-              onError={setSubmitError}
-            />
+            {initial.defaultCash ? (
+              <p className="flex items-center gap-1.5 text-xs text-on-surface-variant">
+                {t('accounts.editDialog.defaultCashNote')}
+              </p>
+            ) : (
+              <ArchiveAccountButton
+                accountId={account.id}
+                label={account.label}
+                archived={account.archived}
+                disabled={saving}
+                onDone={(archived) => exit.after(onSaved)({ archived })}
+                onError={setSubmitError}
+              />
+            )}
             <div className="flex flex-col-reverse gap-2 sm:flex-row">
               <DialogClose asChild>
                 <Button type="button" variant="outline" disabled={saving}>

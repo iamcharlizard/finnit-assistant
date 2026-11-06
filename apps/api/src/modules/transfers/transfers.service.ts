@@ -239,6 +239,7 @@ export class TransfersService {
           balanceCurrent: number;
           metadata: Record<string, unknown> | null;
           archived: boolean;
+          isDefaultCash?: boolean;
           createdAt: Date;
           updatedAt: Date;
         } | null;
@@ -274,6 +275,7 @@ export class TransfersService {
           balanceCurrent: number;
           metadata: Record<string, unknown> | null;
           archived: boolean;
+          isDefaultCash?: boolean;
           createdAt: Date;
           updatedAt: Date;
         } | null;
@@ -315,6 +317,7 @@ export class TransfersService {
               balanceCurrent: Number(t.fromTxn.account.balanceCurrent),
               metadata: t.fromTxn.account.metadata || undefined,
               archived: t.fromTxn.account.archived,
+              isDefaultCash: t.fromTxn.account.isDefaultCash ?? false,
               createdAt: t.fromTxn.account.createdAt,
               updatedAt: t.fromTxn.account.updatedAt,
             }
@@ -349,6 +352,7 @@ export class TransfersService {
               balanceCurrent: Number(t.toTxn.account.balanceCurrent),
               metadata: t.toTxn.account.metadata || undefined,
               archived: t.toTxn.account.archived,
+              isDefaultCash: t.toTxn.account.isDefaultCash ?? false,
               createdAt: t.toTxn.account.createdAt,
               updatedAt: t.toTxn.account.updatedAt,
             }

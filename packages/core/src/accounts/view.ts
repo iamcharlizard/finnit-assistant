@@ -71,6 +71,8 @@ export interface AccountSummary {
   /** Imported from a bank connection ("Conectada") or added by hand. */
   linked: boolean;
   archived: boolean;
+  /** The user's cash account ("Efectivo"): can't be archived or deleted. */
+  defaultCash: boolean;
   currency: string;
   /** Debit/cash/savings: money in the account. Credit: what is owed. */
   balance: string;
@@ -194,6 +196,7 @@ export function buildAccounts(
       secondaryColor: design?.secondaryColor ?? null,
       linked: Boolean(bank),
       archived: account.archived,
+      defaultCash: Boolean(account.isDefaultCash),
       currency: account.currency,
       balance: formatMoney(
         isCredit ? credit!.owed : account.balanceCurrent,
@@ -209,6 +212,7 @@ export function buildAccounts(
         type: account.type,
         linked: Boolean(bank),
         archived: account.archived,
+        defaultCash: Boolean(account.isDefaultCash),
         nickname: account.metadata?.nickname ?? null,
         design,
         bank: account.metadata?.bank ?? null,

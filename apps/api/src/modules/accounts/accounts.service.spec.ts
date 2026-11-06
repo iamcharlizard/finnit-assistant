@@ -38,6 +38,7 @@ describe('AccountsService', () => {
     balanceCurrent: 1000.0,
     metadata: { test: 'data' },
     archived: false,
+    isDefaultCash: false,
     bankDifferenceTransactionId: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -141,6 +142,7 @@ describe('AccountsService', () => {
         balanceCurrent: Number(expectedAccount.balanceCurrent),
         metadata: expectedAccount.metadata,
         archived: expectedAccount.archived,
+        isDefaultCash: false,
         createdAt: expectedAccount.createdAt,
         updatedAt: expectedAccount.updatedAt,
       });
@@ -363,6 +365,7 @@ describe('AccountsService', () => {
         balanceCurrent: Number(mockAccount.balanceCurrent),
         metadata: mockAccount.metadata,
         archived: mockAccount.archived,
+        isDefaultCash: false,
         createdAt: mockAccount.createdAt,
         updatedAt: mockAccount.updatedAt,
       });
@@ -390,6 +393,28 @@ describe('AccountsService', () => {
   });
 
   describe('update', () => {
+    it('never archives the cash account, but renames it', async () => {
+      prismaService.account.findFirst.mockResolvedValue({
+        ...mockAccount,
+        isDefaultCash: true,
+      } as any);
+
+      await expect(
+        service.update(mockAccount.id, mockUserId, { archived: true }),
+      ).rejects.toThrow('The cash account cannot be archived');
+      expect(prismaService.account.update).not.toHaveBeenCalled();
+
+      prismaService.account.update.mockResolvedValue({
+        ...mockAccount,
+        isDefaultCash: true,
+        name: 'Billetera',
+      } as any);
+      const renamed = await service.update(mockAccount.id, mockUserId, {
+        name: 'Billetera',
+      });
+      expect(renamed).toMatchObject({ name: 'Billetera', isDefaultCash: true });
+    });
+
     const updateInput = {
       name: 'Updated Account',
       metadata: { nickname: 'Daily card' },
@@ -863,6 +888,19 @@ describe('AccountsService', () => {
       expect(result).toBe(true);
     });
 
+    it('never deletes the cash account', async () => {
+      prismaService.account.findFirst.mockResolvedValue({
+        ...mockAccount,
+        isDefaultCash: true,
+        transactions: [],
+      } as any);
+
+      await expect(service.delete(mockAccount.id, mockUserId)).rejects.toThrow(
+        'The cash account cannot be deleted',
+      );
+      expect(prismaService.account.delete).not.toHaveBeenCalled();
+    });
+
     it('should throw ValidationError when account has transactions', async () => {
       // Arrange
       const accountWithTransactions = {
@@ -923,6 +961,7 @@ describe('AccountsService', () => {
         balanceCurrent: Number(mockAccount.balanceCurrent),
         metadata: mockAccount.metadata,
         archived: mockAccount.archived,
+        isDefaultCash: false,
         createdAt: mockAccount.createdAt,
         updatedAt: mockAccount.updatedAt,
       });

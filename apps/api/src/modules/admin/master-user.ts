@@ -4,6 +4,7 @@ import {
   hashPassword,
 } from '../../common/utils/password.util';
 import { syncCategoryCatalog } from '../auth/default-categories';
+import { ensureDefaultCashAccount } from '../accounts/default-cash';
 
 export interface MasterUserOptions {
   email: string;
@@ -88,6 +89,7 @@ export async function setMasterUser(
         isMaster: true,
       },
     });
+    await ensureDefaultCashAccount(tx, created.id, created.locale);
     // A fresh environment may not have started the API yet.
     await syncCategoryCatalog(tx);
     return { id: created.id, created: true };

@@ -12,11 +12,24 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     // "Mis tarjetas" became "Cuentas y tarjetas"; the query (?card=…) is kept.
-    // The payments calendar became "Pagos recurrentes"; /recurring reads
-    // the old ?month=YYYY-MM.
+    // The payments calendar has its own screen again (/calendar): old
+    // /recurring links to the calendar (its tab, a view or a day) go there,
+    // with their query.
+    const toCalendar = ['view', 'date', 'month'].map((key) => ({
+      source: '/recurring',
+      has: [{ type: 'query' as const, key }],
+      destination: '/calendar',
+      permanent: false,
+    }));
     return [
       { source: '/cards', destination: '/accounts', permanent: false },
-      { source: '/calendar', destination: '/recurring', permanent: false },
+      {
+        source: '/recurring',
+        has: [{ type: 'query', key: 'tab', value: 'calendar' }],
+        destination: '/calendar',
+        permanent: false,
+      },
+      ...toCalendar,
     ];
   },
 };

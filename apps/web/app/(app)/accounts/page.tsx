@@ -21,7 +21,7 @@ export default async function AccountsPage({
         showArchived: archived === '1',
         day,
       })}
-      openWizard={add === '1'}
+      openWizard={add === '1' ? 'manual' : add === 'bank' ? 'bank' : null}
     />
   );
 }

@@ -1,5 +1,6 @@
 import {
   ArrowLeftRight,
+  CalendarDays,
   Calculator,
   ChartLine,
   ClipboardList,
@@ -26,6 +27,7 @@ export const NAV_ITEM_ICONS: Record<NavItemKey, LucideIcon> = {
   recurring: Repeat,
   statements: FileText,
   cards: CreditCard,
+  calendar: CalendarDays,
   budgets: PiggyBank,
   debts: Landmark,
   goals: Target,

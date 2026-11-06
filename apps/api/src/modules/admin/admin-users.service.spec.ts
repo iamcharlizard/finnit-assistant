@@ -232,6 +232,12 @@ describe('AdminUsersService', () => {
       expect(tx.user.create).toHaveBeenCalled();
       // The global catalog is shared: nothing to copy per user.
       expect(tx.category.create).not.toHaveBeenCalled();
+      // Every user starts with their cash account.
+      expect(tx.account.create.mock.calls[0][0].data).toMatchObject({
+        userId: 'new-user',
+        type: 'cash',
+        isDefaultCash: true,
+      });
     });
 
     it('rejects a duplicate email, case-insensitively', async () => {

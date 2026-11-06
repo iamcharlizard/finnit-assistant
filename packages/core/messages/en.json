@@ -27,7 +27,8 @@
       "accounts": "Accounts & cards",
       "planning": "Planning",
       "analytics": "Analytics",
-      "admin": "Administration"
+      "admin": "Administration",
+      "calendar": "Calendar"
     },
     "items": {
       "dashboard": "Home",
@@ -41,12 +42,14 @@
       "debts": "Debts",
       "goals": "Goals",
       "simulator": "Simulator",
-      "statements": "Statements"
+      "statements": "Statements",
+      "calendar": "Calendar"
     },
     "short": {
       "dashboard": "Home",
       "history": "Transactions",
-      "cards": "Accounts"
+      "cards": "Accounts",
+      "calendar": "Calendar"
     },
     "collapse": "Collapse menu",
     "expand": "Expand menu",
@@ -77,7 +80,8 @@
     "notifications": "Notifications",
     "categories": "Categories",
     "privacyReset": "New privacy PIN",
-    "adminWaitlist": "Waitlist · Admin"
+    "adminWaitlist": "Waitlist · Admin",
+    "calendar": "Payments calendar"
   },
   "newEntry": {
     "title": "New transaction",
@@ -459,7 +463,8 @@
     "status": {
       "linked": "Connected",
       "manual": "Manual",
-      "archived": "Archived"
+      "archived": "Archived",
+      "defaultCash": "Your cash"
     },
     "cardBalance": "Balance",
     "manualLink": {
@@ -571,7 +576,8 @@
       "hasTerms": "Track statement and payment",
       "hasTermsHint": "Turn it off to remove this card's statement and payment days.",
       "save": "Save",
-      "saving": "Saving…"
+      "saving": "Saving…",
+      "defaultCashNote": "Your cash account always exists: it can’t be archived or deleted."
     },
     "archive": {
       "archive": "Archive",
@@ -616,11 +622,24 @@
       "statement": "Statement",
       "movements": "Transactions",
       "seeAll": "See all"
+    },
+    "addChoice": {
+      "description": "Choose how to add it.",
+      "bankDescription": "Connect your bank with Syncfy to import your accounts and movements.",
+      "bank": {
+        "title": "Connect my bank",
+        "description": "Your accounts, balances and movements arrive on their own, through Syncfy.",
+        "badge": "Automatic"
+      },
+      "manual": {
+        "title": "Add it manually",
+        "description": "For banks we can't connect, cash, or if you'd rather record your movements by hand."
+      }
     }
   },
   "recurring": {
     "title": "Recurring payments",
-    "subtitle": "Your subscriptions, utilities and monthly fees: when each one is due and what you've already paid.",
+    "subtitle": "Your subscriptions, services and monthly payments, and the ones Finnit detects in your movements.",
     "new": "New recurring payment",
     "summary": {
       "toPay": "To pay",
@@ -868,6 +887,24 @@
       "calendar": "Calendar",
       "list": "My payments",
       "suggestions": "Suggested"
+    },
+    "filters": {
+      "search": "Search payments",
+      "searchLabel": "Search by name, account or category",
+      "status": "Status",
+      "kind": "Type",
+      "account": "Account",
+      "sort": "Sort",
+      "sorts": {
+        "next": "Next payment",
+        "amount": "Monthly amount",
+        "name": "Name"
+      },
+      "clear": "Clear filters",
+      "remove": "Remove filter {name}",
+      "results": "{count, plural, =1 {1 payment} other {# payments}}",
+      "statusValue": "Status: {value}",
+      "sortValue": "Sort: {value}"
     }
   },
   "budgets": {
@@ -1762,7 +1799,8 @@
       "linked": "{count, plural, one {We imported # account.} other {We imported # accounts.}} We'll sync your transactions twice a day.",
       "noneLinked": "We didn't import any account. You can link them later from Connected banks.",
       "connectedBanks": "Connected banks",
-      "seeMovements": "See transactions"
+      "seeMovements": "See transactions",
+      "seeAccounts": "Done"
     },
     "error": {
       "title": "We couldn't connect your bank",
@@ -3512,6 +3550,44 @@
       "haveInvite": "Already invited?",
       "signIn": "Sign in",
       "rights": "© {year} Finnit"
+    }
+  },
+  "calendar": {
+    "title": "Payments calendar",
+    "subtitle": "When each payment is due, what you already paid and how much goes to fixed expenses.",
+    "tabs": {
+      "label": "Calendar sections",
+      "calendar": "Calendar",
+      "summary": "Summary"
+    },
+    "summary": {
+      "noAccount": "No account",
+      "monthsTitle": "Next {count} months",
+      "monthsHint": "Scheduled recurring payments and loans. Cards count today’s debt on their next due date; the months after don’t include it.",
+      "series": {
+        "recurring": "Recurring",
+        "loans": "Loans and installments",
+        "cards": "Card payments"
+      },
+      "byKindTitle": "Fixed spending by type",
+      "byAccountTitle": "Fixed spending by account",
+      "perMonthHint": "Monthly cost of your active payments.",
+      "progressTitle": "{month} so far",
+      "parts": {
+        "paid": "Paid",
+        "pending": "To pay",
+        "overdue": "Overdue"
+      },
+      "partCount": "{count, plural, =1 {1 payment} other {# payments}}",
+      "progressEmpty": "No payments this month.",
+      "empty": "No payments to show yet.",
+      "count": "{count, plural, =1 {1 payment} other {# payments}}",
+      "seeTable": "See as a table",
+      "month": "Month",
+      "total": "Total",
+      "name": "Name",
+      "amount": "Per month",
+      "monthLabel": "{month}: {amount}"
     }
   }
 }

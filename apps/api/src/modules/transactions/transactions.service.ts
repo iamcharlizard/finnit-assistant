@@ -65,6 +65,7 @@ import {
   mapTransaction,
 } from './transaction.mapper';
 import { visibleCategoryWhere } from '../categories/category-scope';
+import { categorizableWhere } from '../categorization/categorizable';
 
 @Injectable()
 export class TransactionsService {
@@ -984,6 +985,11 @@ export class TransactionsService {
     if (filters.uncategorized !== undefined && filters.uncategorized !== null) {
       // Overrides categoryId: "uncategorized" means no category at all.
       where.categoryId = filters.uncategorized ? null : { not: null };
+    }
+
+    if (filters.categorizable) {
+      // AND, so it never clashes with the search's OR.
+      where.AND = [categorizableWhere()];
     }
 
     if (filters.hasSuggestion !== undefined && filters.hasSuggestion !== null) {

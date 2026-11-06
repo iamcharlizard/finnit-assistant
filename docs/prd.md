@@ -300,10 +300,12 @@ Detailed, verified status per feature and platform: [features.md](./features.md)
 
 **Not implemented:** CSV export, email delivery, weekly reconciliation review.
 
-### 🟡 **MOBILE APP (Expo) — UI with mock data**
-- Expo Router app (`apps/finnit-app`) with login, dashboard, history, analytics, calendar, cards and settings screens (NativeWind v5).
-- Login connected to the `signIn` mutation (urql + SecureStore).
-- Pending: replace mock data with GraphQL queries, signup, token refresh, route guard, create forms.
+### 🟡 **MOBILE APP (Expo) — real data, mirrors the web's mobile version**
+- `apps/finnit-app`: Expo SDK 58 (React Native 0.88, React 19.3), NativeWind v5; native projects generated with `expo prebuild` (CNG).
+- Shared code: `@finnit/core` (view builders, formatting, forms, GraphQL documents and `api.ts` runners, nav, messages) is used by the web and the app; `@finnit/ui-native` has the web's component names and props and its design tokens (4 palettes × light/dark, generated from `@finnit/ui`'s CSS, checked by a test).
+- Session with token refresh and a route guard, Spanish and English (account language, device fallback, localized permission prompts), light/dark/system, the admin palette preview.
+- Screens with real data: dashboard, movements (filters, pagination), movement detail and edit, new movement (expense, income, transfer, receipt scan), accounts, analytics, recurring payments, notifications, budgets, debts, goals, simulator, categorize, statements, settings, categories, automatic names.
+- Pending (see `docs/features.md` → App móvil): screenshot import, creating/editing recurring payments, debts and accounts, statement reconciliation, categories and automatic names editors, profile editing; not yet tested signed in on a device.
 
 ### 🟡 **WEB APP (Next.js) — UI with mock data**
 - `apps/web`: Next.js 16 App Router with the same screens as mobile (`/login`, `/dashboard`, `/history`, `/analytics`, `/calendar`, `/cards`, `/settings`), responsive layout (sidebar on desktop, bottom nav on small screens) and light/dark theme.

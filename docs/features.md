@@ -2,7 +2,7 @@
 
 Inventario de funcionalidades y su estado **real**, verificado contra el código. Es la fuente de verdad del avance; [prd.md](./prd.md) describe el alcance y [user-stories.md](./user-stories.md) los criterios de aceptación.
 
-**Última revisión:** 5 de noviembre de 2026
+**Última revisión:** 6 de noviembre de 2026
 
 **Leyenda:** ✅ hecho · 🟡 parcial · ⏳ pendiente · — no aplica
 
@@ -13,29 +13,60 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 
 | Área | API | Móvil | Web |
 |---|---|---|---|
-| 1. Autenticación y seguridad | 🟡 | 🟡 | 🟡 |
+| 1. Autenticación y seguridad | 🟡 | ✅ | 🟡 |
 | 2. Cuentas y balances | ✅ | 🟡 | 🟡 |
-| 3. Transacciones | 🟡 | 🟡 | 🟡 |
-| 4. Categorías | ✅ | ⏳ | ✅ |
-| 5. Presupuestos | ✅ | ⏳ | ✅ |
-| 6. Deudas y tarjetas | ✅ | ⏳ | ✅ |
-| 7. Metas y ahorro | ✅ | ⏳ | ✅ |
-| 8. Reportes e insights | 🟡 | 🟡 | 🟡 |
-| 9. Integración bancaria (Syncfy) | ✅ | ⏳ | 🟡 |
-| 10. Flujo de caja y proyecciones | ✅ | 🟡 | ✅ |
-| 11. Notificaciones | 🟡 | ⏳ | 🟡 |
-| 12. Gastos recurrentes *(nuevo)* | ✅ | ⏳ | 🟡 |
-| 13. Estados de cuenta y conciliación *(nuevo)* | 🟡 | ⏳ | ✅ |
+| 3. Transacciones | 🟡 | ✅ | 🟡 |
+| 4. Categorías | ✅ | 🟡 | ✅ |
+| 5. Presupuestos | ✅ | ✅ | ✅ |
+| 6. Deudas y tarjetas | ✅ | 🟡 | ✅ |
+| 7. Metas y ahorro | ✅ | ✅ | ✅ |
+| 8. Reportes e insights | 🟡 | ✅ | 🟡 |
+| 9. Integración bancaria (Syncfy) | ✅ | 🟡 | 🟡 |
+| 10. Flujo de caja y proyecciones | ✅ | ✅ | ✅ |
+| 11. Notificaciones | 🟡 | ✅ | 🟡 |
+| 12. Gastos recurrentes *(nuevo)* | ✅ | 🟡 | 🟡 |
+| 13. Estados de cuenta y conciliación *(nuevo)* | 🟡 | 🟡 | ✅ |
 | 14. Panel administrativo *(nuevo)* | ✅ | — | ✅ |
-| 15. Pantalla de pagos recurrentes y sugerencias *(nuevo)* | ✅ | ⏳ | ✅ |
-| 16. Clasificación de movimientos *(nuevo)* | ✅ | ⏳ | ✅ |
-| 17. Alias de movimientos *(nuevo)* | ✅ | ⏳ | ✅ |
-| 18. Personalización de cuentas y tarjetas *(nuevo)* | ✅ | ⏳ | ✅ |
-| 19. Flujo para crear movimientos *(nuevo)* | ✅ | ⏳ | ✅ |
+| 15. Pantalla de pagos recurrentes y sugerencias *(nuevo)* | ✅ | 🟡 | ✅ |
+| 16. Clasificación de movimientos *(nuevo)* | ✅ | ✅ | ✅ |
+| 17. Alias de movimientos *(nuevo)* | ✅ | 🟡 | ✅ |
+| 18. Personalización de cuentas y tarjetas *(nuevo)* | ✅ | 🟡 | ✅ |
+| 19. Flujo para crear movimientos *(nuevo)* | ✅ | 🟡 | ✅ |
 | 20. Cuentas y tarjetas manuales *(nuevo)* | ✅ | ⏳ | ✅ |
 | 21. Landing pública y lista de espera *(nuevo)* | ✅ | — | ✅ |
 
 ## Detalle
+
+## App móvil (`apps/finnit-app`)
+
+Expo SDK 58 (React Native 0.88, React 19.3) con NativeWind v5 (`5.0.0-rc.1`). Las pantallas usan datos reales y la misma lógica que la web: los mappers, formatos, formularios, consultas y mutaciones viven en `@finnit/core` (`packages/core`) y los componentes en `@finnit/ui-native` (`packages/ui-native`, mismos nombres y props que `@finnit/ui`). Español e inglés con los mismos mensajes que la web; los 4 temas (finnit, glass, suave, mono) en claro y oscuro, generados de los tokens de la web. Probado: tipos, lint, bundle completo de iOS y build en simulador; el login y los temas se vieron en el simulador. **Las pantallas con sesión no se han probado en un dispositivo o simulador con datos** (falta iniciar sesión con un usuario real).
+
+| Pantalla | Estado | Qué falta frente a la web |
+|---|---|---|
+| Login (contraseña, Google, "Mantener sesión iniciada") | ✅ | Google requiere *development build* con `EXPO_PUBLIC_GOOGLE_*`; sin probar en dispositivo. |
+| Sesión: renovación del token, guardia de rutas, idioma de la cuenta | ✅ | — |
+| Inicio (saldo, mes, presupuesto, próximos pagos, deudas) | ✅ | — |
+| Movimientos (búsqueda, tipo, mes, filtros, por día, "Cargar más") | ✅ | — |
+| Detalle y edición de un movimiento, PIN de privacidad | ✅ | Convertir en transferencia, adjuntos, crear nombre automático desde el editor. |
+| Nuevo movimiento: gasto, ingreso, transferencia / pago de tarjeta, duplicados | ✅ | Adjuntar comprobante al crear. |
+| Escanear ticket (cámara/galería → gasto prellenado) | ✅ | Tickets pendientes, "¿es este?" con coincidencias del ticket. |
+| Importar captura del banco | ⏳ | Todo. |
+| Cuentas y tarjetas (pila de tarjetas, detalle con cifras y movimientos) | 🟡 | Alta, edición, archivado, "Actualizar saldo", gráfica de saldo diario. |
+| Análisis | ✅ | — |
+| Pagos recurrentes (resumen, calendario mensual, pagar/omitir/reabrir, pausar) | 🟡 | Vistas día/semana, crear y editar recurrentes, pestaña de sugeridos. |
+| Notificaciones | ✅ | — |
+| Presupuestos (crear, editar, copiar, eliminar, sugerencias) | ✅ | — |
+| Deudas (resumen, préstamos, otras; detalle con calendario y pagos) | 🟡 | Registrar pagos, agregar dinero, alta y edición de deudas, plan de pago. |
+| Metas (crear, editar, aportar, quitar aportación, eliminar) | ✅ | Proyección con aportación editable. |
+| Simulador | 🟡 | Gastos mensuales y movimientos únicos del escenario. |
+| Clasificar (mover, recordar comercio, IA, aceptar/rechazar) | ✅ | Filtros por cuenta y periodo; sugerencias de transferencia. |
+| Estados de cuenta (subir PDF, lista, líneas) | 🟡 | Conciliar líneas (ligar, ignorar, crear) y confirmar. |
+| Configuración (idioma, apariencia, PIN, cerrar sesión) | ✅ | Editar perfil y foto. |
+| Categorías (mostrar/ocultar) | 🟡 | Crear, editar y eliminar categorías propias. |
+| Nombres automáticos (activar, eliminar, desbloquear) | 🟡 | Crear y editar con vista previa y sugerencia de IA. |
+| Conectar banco | 🟡 | Pantalla anterior (sin migrar a `@finnit/ui-native`). |
+| Administración | — | Solo web. |
+
 
 ### 1. Autenticación y seguridad
 
@@ -45,7 +76,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Login con Google | ✅ | 🟡 | ✅ | `signInWithGoogle(idToken)`: solo entra si su correo de Google coincide con un usuario dado de alta; nunca crea cuentas. Web: OAuth con PKCE en el servidor (`/api/auth/google`). Móvil: `@react-native-google-signin`, requiere *development build*; sin probar en dispositivo. |
 | Usuarios desactivados y cierre de sesiones | ✅ | — | — | Desactivar a alguien o cambiarle la contraseña invalida sus tokens (`tokenVersion`), se revisa en cada petición y al refrescar. |
 | Login con email y contraseña (JWT) | ✅ | ✅ | ✅ | `signIn`; la contraseña la asigna un administrador. Móvil guarda tokens en SecureStore; web en cookies httpOnly (backend-for-frontend con Server Actions). |
-| Refresh token | ✅ | ⏳ | ✅ | Web: `proxy.ts` renueva el token antes de que expire. Móvil: pendiente. |
+| Refresh token | ✅ | ✅ | ✅ | Web: `proxy.ts` renueva el token antes de que expire. Móvil: `@urql/exchange-auth` renueva con `refreshToken` al recibir UNAUTHENTICATED y reintenta. |
 | Usuario actual / validar token | ✅ | ⏳ | ✅ | `me`, `validateToken`. Web: nombre e iniciales reales en la app. |
 | Protección de rutas según sesión | — | ⏳ | ✅ | Web: sin sesión, las páginas redirigen a `/login?next=…` (sin redirecciones abiertas) y `/api/*` responde 401; solo `/`, `/login`, robots, sitemap y la imagen OG son públicos (`lib/auth/route-access.ts`, con tests). |
 | Superficie pública de la API | ✅ | — | — | `auth-surface.spec.ts` falla si alguna query/mutación/ruta no tiene `JwtAuthGuard` y no está en la lista pública (auth + `joinWaitlist` + `/health`). Se quitó `user(id)` (dejaba leer el perfil de cualquier usuario) y el `updateUser` propio pasó a `updateMyProfile` (solo nombre). |
@@ -58,7 +89,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| CRUD de cuentas (efectivo, débito, crédito, ahorro, e-wallet) | ✅ | 🟡 | ✅ | Web: `/accounts` (Cuentas y tarjetas) con alta manual, edición y archivado; Inicio muestra disponible, deuda en tarjetas y patrimonio neto. Móvil: datos mock. |
+| CRUD de cuentas (efectivo, débito, crédito, ahorro, e-wallet) | ✅ | 🟡 | ✅ | Web: `/accounts` (Cuentas y tarjetas) con alta manual, edición y archivado; Inicio muestra disponible, deuda en tarjetas y patrimonio neto. Móvil: ver «App móvil». |
 | Ajuste de saldo sin ingreso/gasto falso | ✅ | ⏳ | ✅ | `setAccountBalance`: el usuario escribe el saldo real (tarjetas: lo que debe) y la diferencia se guarda como ajuste con signo, fechado hoy. Web: botón **Actualizar saldo** en `/accounts`. Los ajustes no se pueden eliminar (los antiguos no guardan su dirección): se corrige el saldo otra vez. `adjustAccountBalance` (delta) sigue disponible. |
 | Términos de tarjeta de crédito (corte, pago, tasa) | ✅ | 🟡 | ✅ | Modelo `CreditCardTerms`; `accounts` ya los incluye. Web: se capturan al dar de alta o editar la tarjeta; próximo corte y fecha de pago en Cuentas y en el Calendario. `setCreditCardTerms` / `removeCreditCardTerms`. |
 | Efecto de cada movimiento en el saldo | ✅ | — | ✅ | `Transaction.balanceEffect`: lo que sumó (+) o restó (−) al saldo, con signo; los pendientes lo guardan pero no cuentan. Todas las rutas que mueven saldos lo escriben (`common/utils/balance-effect.util.ts`). La web lo usa para la dirección de ajustes y transferencias. Ajustes antiguos sin dirección quedan en `null`. |
@@ -72,7 +103,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
 | Alta rápida (fecha, cuenta, monto, tipo, categoría) | ✅ | ⏳ | ✅ | Web: botón "+" (gasto, ingreso o transferencia), categoría sugerida por comercio y comprobante opcional. |
-| Listado con filtros y paginación por cursor | ✅ | 🟡 | ✅ | Web: Historial por mes (`?month=YYYY-MM`, el actual por omisión; `month=all` todo el historial; `from`/`to` un rango que reemplaza el mes), agrupado por día con el neto del día. Barra fija con búsqueda, tipo, "‹ mes ›" y "Filtros" (cuenta, categoría, rango, todo el historial); "Cargar más" dentro del mes y "Ver <mes anterior>" al final. Top categorías sigue el mes. Cada fila tiene "⋮": ver detalle, editar descripción y convertir en transferencia. Móvil: datos mock. |
+| Listado con filtros y paginación por cursor | ✅ | 🟡 | ✅ | Web: Historial por mes (`?month=YYYY-MM`, el actual por omisión; `month=all` todo el historial; `from`/`to` un rango que reemplaza el mes), agrupado por día con el neto del día. Barra fija con búsqueda, tipo, "‹ mes ›" y "Filtros" (cuenta, categoría, rango, todo el historial); "Cargar más" dentro del mes y "Ver <mes anterior>" al final. Top categorías sigue el mes. Cada fila tiene "⋮": ver detalle, editar descripción y convertir en transferencia. Móvil: ver «App móvil». |
 | Varias transacciones por cuenta en el mismo día | ✅ | — | — | Se quitó la restricción única `[userId, accountId, txnDate]` (migración `20261012120000`). |
 | Categorización sugerida por comercio | 🟡 | ⏳ | ⏳ | Busca por la primera palabra del comercio en transacciones previas; no aprende reglas. |
 | Categoría sugerida al editar | ✅ | ⏳ | ✅ | `similarCategory(transactionId)`, sin IA: la regla de comercio aprendida, si no la categoría del nombre automático (activo) que lo nombra, si no la favorita clara de los movimientos del mismo comercio del último año (`history-category.ts`). Web: pill "Sugerida: X · como N movimientos parecidos" debajo de la categoría en **Editar**; un clic la elige. Junto al selector, un botón con ícono pide la categoría a la IA (`suggestCategoryWithAi(transactionId, name)`: el nombre propio que se está escribiendo, si no el comercio/descripción de un manual, si no el texto del banco —nunca el de un nombre automático protegido sin PIN—, y el monto); la elige en el formulario sin guardar nada. |
@@ -105,7 +136,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
 | Presupuesto mensual y por categoría | ✅ | ⏳ | ✅ | `/planning/budgets`: crear, editar, copiar del mes anterior (`createBudgetFromTemplate`) y topes sugeridos del promedio de 3 meses. Un tope incluye sus subcategorías. |
-| Uso y resumen en tiempo real | ✅ | 🟡 | ✅ | Web: uso por categoría y tarjeta en Inicio. Móvil: datos mock. |
+| Uso y resumen en tiempo real | ✅ | 🟡 | ✅ | Web: uso por categoría y tarjeta en Inicio. Móvil: ver «App móvil». |
 | Alertas 80% / 100% | 🟡 | ⏳ | ✅ | Web: alertas en la pantalla de presupuestos. Aún no se envían como notificación. |
 
 ### 6. Deudas y tarjetas
@@ -142,7 +173,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
 | Resumen mensual (ingresos, gastos por categoría, neto) | ✅ | 🟡 | ✅ | `monthlyReport` (cuenta el mes completo en UTC). Web: Inicio (ingresos y gastos del mes), Analytics (gasto, tasa de ahorro y gastos por categoría agrupados en la categoría principal) e Historial (top categorías). |
-| Comparativa con el mes anterior y tendencias 3–6 meses | ⏳ | 🟡 | ✅ | Web: Analytics pide 6 `monthlyReport` en una consulta (cambio vs. mes anterior, ingresos vs. gastos de 6 meses). Móvil: datos mock. |
+| Comparativa con el mes anterior y tendencias 3–6 meses | ⏳ | 🟡 | ✅ | Web: Analytics pide 6 `monthlyReport` en una consulta (cambio vs. mes anterior, ingresos vs. gastos de 6 meses). Móvil: ver «App móvil». |
 | Insights (gastos inusuales, top categorías) | ⏳ | ⏳ | ⏳ | |
 | Exportar a CSV | ⏳ | ⏳ | ⏳ | |
 

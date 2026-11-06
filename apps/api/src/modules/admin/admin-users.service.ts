@@ -9,6 +9,7 @@ import {
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import { hashPassword } from '../../common/utils/password.util';
+import { pageSize } from '../../common/utils/pagination.util';
 import {
   AdminUser,
   AdminUserConnection,
@@ -54,7 +55,7 @@ export class AdminUsersService {
       }),
       ...(args.role && { role: args.role }),
     };
-    const first = args.first ?? 50;
+    const first = pageSize(args.first, 50);
     const [rows, totalCount] = await Promise.all([
       this.prisma.user.findMany({
         where,

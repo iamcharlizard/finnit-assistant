@@ -76,7 +76,8 @@
     "simulator": "Simulador ¿Y si…?",
     "notifications": "Notificaciones",
     "categories": "Categorías",
-    "privacyReset": "Nuevo PIN de privacidad"
+    "privacyReset": "Nuevo PIN de privacidad",
+    "adminWaitlist": "Lista de espera · Administración"
   },
   "newEntry": {
     "title": "Nuevo movimiento",
@@ -233,7 +234,8 @@
       "invalidCredentials": "Correo o contraseña incorrectos.",
       "google_no_access": "Tu cuenta de Google no tiene acceso a Finnit. Pide acceso al administrador.",
       "google_failed": "No pudimos iniciar sesión con Google. Intenta de nuevo.",
-      "google_unavailable": "El inicio de sesión con Google no está disponible."
+      "google_unavailable": "El inicio de sesión con Google no está disponible.",
+      "tooManyAttempts": "Demasiados intentos. Espera unos minutos y vuelve a intentarlo."
     }
   },
   "finance": {
@@ -1804,7 +1806,8 @@
     "tabsLabel": "Secciones de administración",
     "tabs": {
       "users": "Usuarios",
-      "ai": "IA"
+      "ai": "IA",
+      "waitlist": "Lista de espera"
     },
     "users": {
       "loading": "Cargando usuarios…",
@@ -2006,6 +2009,16 @@
       "conflict": "Ya existe.",
       "invalid": "Revisa los datos e intenta de nuevo.",
       "generic": "Ocurrió un error. Intenta de nuevo."
+    },
+    "waitlist": {
+      "summary": "{count, plural, =0 {Nadie se ha unido todavía.} one {# persona en la lista de espera.} other {# personas en la lista de espera.}}",
+      "empty": "Cuando alguien deje su correo en la página principal, aparecerá aquí.",
+      "columns": {
+        "email": "Correo",
+        "source": "Origen",
+        "locale": "Idioma",
+        "joinedAt": "Fecha"
+      }
     }
   },
   "ui": {
@@ -2050,8 +2063,6 @@
       "dark": "Oscuro"
     },
     "theme": {
-      "label": "Tema",
-      "change": "Cambiar tema",
       "names": {
         "finnit": "Finnit",
         "glass": "Glass",
@@ -2063,7 +2074,11 @@
         "glass": "Vidrio esmerilado sobre un fondo de color",
         "suave": "Grises suaves con relieve",
         "mono": "Solo grises; el dinero conserva su color"
-      }
+      },
+      "previewLabel": "Vista previa de tema",
+      "previewHint": "Solo cambia en tu navegador. El sitio usa {site}.",
+      "siteBadge": "del sitio",
+      "useSite": "Usar el del sitio"
     }
   },
   "categorize": {
@@ -3319,6 +3334,169 @@
       "invalidDescription": "Pide uno nuevo con «Olvidé mi PIN» en Configuración → Seguridad.",
       "doneTitle": "Listo, tienes un PIN nuevo",
       "doneDescription": "Úsalo para desbloquear lo que está protegido."
+    }
+  },
+  "landing": {
+    "meta": {
+      "title": "Finnit · Tu asistente de finanzas personales con IA",
+      "description": "Finnit usa inteligencia artificial para registrar tus gastos desde una foto, ordenar tus movimientos y anticipar tus pagos. Únete a la lista de espera."
+    },
+    "nav": {
+      "features": "Qué hace",
+      "how": "Cómo funciona",
+      "trust": "Privacidad",
+      "join": "Unirme",
+      "myAccount": "Ir a mi cuenta",
+      "darkMode": "Modo oscuro"
+    },
+    "hero": {
+      "eyebrow": "Próximamente · Finanzas personales con IA",
+      "titleAccent": "Finnit hace las cuentas.",
+      "stats": {
+        "receipts": "Tickets y facturas CFDI",
+        "screens": "Capturas de tu app bancaria",
+        "banks": "Bancos de México"
+      },
+      "slides": {
+        "photo": {
+          "title": "Le tomas foto.",
+          "lead": "Toma una foto de tu ticket o factura: Finnit lee el comercio, el total y el CFDI, y te deja el gasto listo para confirmar."
+        },
+        "screenshot": {
+          "title": "Subes una captura.",
+          "lead": "Comparte una captura de tu app bancaria y cada movimiento se vuelve un registro, incluso los que siguen en proceso."
+        },
+        "bank": {
+          "title": "Conectas tu banco.",
+          "lead": "Tus movimientos llegan solos y tu saldo cuadra con el del banco. Tus credenciales van directo al agregador, nunca a Finnit."
+        },
+        "ai": {
+          "title": "La IA lo ordena.",
+          "lead": "Categoriza tus gastos, reconoce a tus comercios, detecta transferencias entre tus cuentas y aprende de cada corrección. Tú solo decides."
+        }
+      },
+      "srTitle": "Le tomas foto a un ticket, subes una captura, conectas tu banco y la IA lo ordena: Finnit hace las cuentas.",
+      "slidesLabel": "Formas de registrar tus movimientos",
+      "showSlide": "Ver: {title}"
+    },
+    "demo": {
+      "label": "Así trabaja la IA de Finnit",
+      "receiptTitle": "Ticket",
+      "merchant": "Café La Esquina",
+      "item1": "Latte grande",
+      "item2": "Pan de elote",
+      "total": "Total",
+      "reading": "Leyendo ticket…",
+      "detected": "Gasto listo para confirmar",
+      "category": "Café y snacks",
+      "account": "Débito •••• 4821",
+      "suggested": "Sugerido por IA",
+      "confirm": "Confirmar"
+    },
+    "features": {
+      "eyebrow": "La IA como herramienta, no como adorno",
+      "title": "Todo lo tedioso de tus finanzas, resuelto.",
+      "lead": "Finnit hace el trabajo repetitivo para que tú veas el panorama completo.",
+      "receipts": {
+        "title": "Del ticket al gasto",
+        "body": "Toma una foto de tu ticket o factura. Finnit lee el CFDI, el comercio y el total, y te deja el gasto listo para confirmar."
+      },
+      "screenshots": {
+        "title": "Capturas de tu banco",
+        "body": "Comparte una captura de los movimientos de tu app bancaria y Finnit los convierte en registros, incluso los que siguen en proceso."
+      },
+      "categorize": {
+        "title": "Categorías que aprenden",
+        "body": "Cada corrección le enseña a Finnit. Reconoce a tus comercios de siempre y solo te pregunta por lo nuevo."
+      },
+      "banks": {
+        "title": "Conexión con tu banco",
+        "body": "Sincroniza tus cuentas de forma segura: tus credenciales van directo al agregador bancario, nunca a nuestros servidores."
+      },
+      "debts": {
+        "title": "Préstamos y tarjetas bajo control",
+        "body": "Calendario de pagos, intereses, meses sin intereses y cuánto te falta para liquidar cada deuda."
+      },
+      "reconcile": {
+        "title": "Saldos que cuadran",
+        "body": "Finnit compara tu saldo con el de tu banco y te señala la diferencia antes de que se vuelva un misterio."
+      }
+    },
+    "how": {
+      "eyebrow": "Cómo funciona",
+      "title": "Tres pasos. Cero capturas a mano.",
+      "step1": {
+        "title": "Conecta o captura",
+        "body": "Vincula tu banco, toma foto a un ticket o comparte una captura de tus movimientos."
+      },
+      "step2": {
+        "title": "La IA ordena",
+        "body": "Finnit identifica comercio, monto, cuenta y categoría, y detecta transferencias entre tus propias cuentas."
+      },
+      "step3": {
+        "title": "Decide con claridad",
+        "body": "Revisa, confirma y mira cuánto tienes, cuánto debes y qué pagos vienen."
+      }
+    },
+    "preview": {
+      "eyebrow": "Un vistazo",
+      "title": "Tu mes completo, en una pantalla.",
+      "lead": "Saldo real, próximos pagos y movimientos ya categorizados. Sin abrir cinco apps de bancos.",
+      "balanceLabel": "Disponible este mes",
+      "balanceDelta": "+12% vs. octubre",
+      "upcoming": "Próximo pago",
+      "upcomingValue": "Tarjeta Oro · 18 nov",
+      "tx1": "Supermercado del Barrio",
+      "tx1Category": "Despensa",
+      "tx2": "Nómina",
+      "tx2Category": "Ingresos",
+      "tx3": "Gasolinera Centro",
+      "tx3Category": "Transporte",
+      "today": "Hoy",
+      "yesterday": "Ayer",
+      "tipTitle": "Consejo de Finnit",
+      "tipBody": "Este mes gastaste",
+      "tipHighlight": "18% menos",
+      "tipAfter": "en comida fuera de casa. Vas bien para tu meta de ahorro."
+    },
+    "trust": {
+      "eyebrow": "Privacidad",
+      "title": "Tu información es tuya.",
+      "files": {
+        "title": "Archivos privados",
+        "body": "Tus tickets y estados de cuenta se guardan en almacenamiento privado y solo tú puedes verlos. Nunca hay enlaces públicos."
+      },
+      "credentials": {
+        "title": "Credenciales fuera de nuestro alcance",
+        "body": "Tu usuario y contraseña del banco no pasan por Finnit; van directo al agregador bancario."
+      },
+      "control": {
+        "title": "La IA sugiere, tú decides",
+        "body": "Nada se registra sin tu confirmación, y puedes corregir cualquier sugerencia."
+      }
+    },
+    "cta": {
+      "title": "Sé de los primeros en usar Finnit.",
+      "lead": "Estamos abriendo por invitación. Déjanos tu correo y te avisamos cuando sea tu turno."
+    },
+    "form": {
+      "label": "Correo electrónico",
+      "placeholder": "tu@correo.com",
+      "submit": "Unirme a la lista",
+      "submitting": "Enviando…",
+      "note": "Solo te escribiremos para avisarte. Sin spam.",
+      "success": "¡Listo! Te avisaremos en cuanto abramos.",
+      "errors": {
+        "invalid": "Escribe un correo válido.",
+        "tooMany": "Demasiados intentos. Inténtalo en unos minutos.",
+        "failed": "No pudimos guardar tu correo. Inténtalo de nuevo."
+      }
+    },
+    "footer": {
+      "tagline": "Finanzas personales con IA. Hecho en México.",
+      "haveInvite": "¿Ya tienes invitación?",
+      "signIn": "Inicia sesión",
+      "rights": "© {year} Finnit"
     }
   }
 }

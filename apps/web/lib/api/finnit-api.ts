@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { headers as requestHeaders } from 'next/headers';
+
 import type { SessionTokens } from '@/lib/auth/cookies';
 
 /**
@@ -29,19 +31,52 @@ export interface GraphqlResponse<T> {
 
 export class ApiUnavailableError extends Error {}
 
+/** The visitor's IP as the hosting platform reports it (Vercel sets these). */
+export function visitorIp(source: Headers): string | undefined {
+  const forwarded = source.get('x-forwarded-for')?.split(',')[0]?.trim();
+  return forwarded || source.get('x-real-ip')?.trim() || undefined;
+}
+
+/**
+ * Every API call comes from this server, so the API would rate-limit all
+ * visitors as one. These headers tell it the visitor's IP; it trusts them
+ * only with the shared FINNIT_BFF_SECRET. Outside a request (or without the
+ * secret) nothing is added.
+ */
+async function clientIpHeaders(
+  ip: string | undefined,
+): Promise<Record<string, string>> {
+  const secret = process.env.FINNIT_BFF_SECRET;
+  if (!secret) return {};
+  let address = ip;
+  if (!address) {
+    try {
+      address = visitorIp(await requestHeaders());
+    } catch {
+      // Not inside a request (build time, scripts): nothing to forward.
+    }
+  }
+  return address
+    ? { 'x-finnit-client-ip': address, 'x-finnit-bff-secret': secret }
+    : {};
+}
+
 export async function apiGraphql<T>(
   query: string,
   variables: Record<string, unknown> = {},
   accessToken?: string,
   headers: Record<string, string> = {},
+  clientIp?: string,
 ): Promise<GraphqlResponse<T>> {
   let response: Response;
+  const forwarded = await clientIpHeaders(clientIp);
   try {
     response = await fetch(`${apiUrl()}/graphql`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
         ...(accessToken && { authorization: `Bearer ${accessToken}` }),
+        ...forwarded,
         ...headers,
       },
       body: JSON.stringify({ query, variables }),
@@ -93,6 +128,14 @@ export interface UserAvatar {
   version: string;
 }
 
+/** The API's answer when a client or account made too many attempts. */
+export const TOO_MANY_REQUESTS = 'TOO_MANY_REQUESTS';
+
+export function isRateLimited(errors: GraphqlError[] | undefined): boolean {
+  return Boolean(errors?.some((e) => e.extensions?.code === TOO_MANY_REQUESTS));
+}
+
+/** null: wrong email or password. Throws ApiRequestError when rate-limited. */
 export async function apiSignIn(
   email: string,
   password: string,
@@ -103,6 +146,9 @@ export async function apiSignIn(
     `mutation SignIn($input: SignInInput!) { signIn(input: $input) { ${AUTH_FIELDS} } }`,
     { input: { email, password } },
   );
+  if (isRateLimited(result.errors)) {
+    throw new ApiRequestError('Too many attempts', TOO_MANY_REQUESTS);
+  }
   return result.data?.signIn ?? null;
 }
 
@@ -139,12 +185,17 @@ export async function apiSignInWithGoogle(
   );
 }
 
+/** `clientIp`: the visitor's, since the proxy runs outside next/headers. */
 export async function apiRefresh(
   refreshToken: string,
+  clientIp?: string,
 ): Promise<SessionTokens | null> {
   const result = await apiGraphql<{ refreshToken: SessionTokens }>(
     `mutation Refresh($input: RefreshTokenInput!) { refreshToken(input: $input) { accessToken refreshToken } }`,
     { input: { refreshToken } },
+    undefined,
+    {},
+    clientIp,
   );
   return result.data?.refreshToken ?? null;
 }

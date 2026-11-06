@@ -1,8 +1,8 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Mutation, Args } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { AvatarService } from './avatar.service';
-import { UpdateMyPreferencesInput, UpdateUserInput } from './dto/user.dto';
+import { UpdateMyPreferencesInput, UpdateMyProfileInput } from './dto/user.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../../common/types/models/user.model';
@@ -15,17 +15,14 @@ export class UsersResolver {
     private readonly avatars: AvatarService,
   ) {}
 
-  @Query(() => User)
-  async user(@Args('id') id: string): Promise<User> {
-    return this.usersService.findById(id);
-  }
-
-  @Mutation(() => User)
-  async updateUser(
+  @Mutation(() => User, {
+    description: "Updates the signed-in user's own profile (name).",
+  })
+  async updateMyProfile(
     @CurrentUser() currentUser: User,
-    @Args('input') input: UpdateUserInput,
+    @Args('input') input: UpdateMyProfileInput,
   ): Promise<User> {
-    return this.usersService.update(currentUser.id, input);
+    return this.usersService.updateProfile(currentUser.id, input);
   }
 
   @Mutation(() => User, {

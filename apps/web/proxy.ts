@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { apiRefresh } from '@/lib/api/finnit-api';
+import { apiRefresh, visitorIp } from '@/lib/api/finnit-api';
 import {
   ACCESS_COOKIE,
   REFRESH_COOKIE,
@@ -10,25 +10,18 @@ import {
   type SessionTokens,
 } from '@/lib/auth/cookies';
 import { isExpiring } from '@/lib/auth/jwt';
-
-/** Reachable without a session. Signed-in users are sent away only from /login. */
-const PUBLIC_PATHS = [
-  '/login',
-  '/api/auth/google',
-  '/api/auth/google/callback',
-];
+import { routeDecision } from '@/lib/auth/route-access';
 
 /**
  * Runs before every page and /api route:
  * - renews the access token with the refresh token when it is about to
  *   expire (15 min tokens), so pages and /api/graphql always get a fresh one;
- * - sends visitors without a session to /login, and signed-in users away
- *   from /login (the Google sign-in routes work either way).
+ * - sends visitors without a session to /login (pages) or answers 401
+ *   (/api), except on the public paths in lib/auth/route-access.ts (the
+ *   landing, sign-in); signed-in users are sent away only from /login.
  */
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const isPublic = PUBLIC_PATHS.includes(pathname);
-  const isApi = pathname.startsWith('/api/');
 
   let access = request.cookies.get(ACCESS_COOKIE)?.value;
   const refresh = request.cookies.get(REFRESH_COOKIE)?.value;
@@ -36,33 +29,30 @@ export async function proxy(request: NextRequest) {
   let refreshFailed = false;
 
   if (refresh && isExpiring(access)) {
-    renewed = await apiRefresh(refresh).catch(() => null);
+    renewed = await apiRefresh(refresh, visitorIp(request.headers)).catch(
+      () => null,
+    );
     if (renewed) access = renewed.accessToken;
     else refreshFailed = true;
   }
   const signedIn = Boolean(access) && !isExpiring(access, Date.now(), 0);
 
   let response: NextResponse;
-  if (!signedIn && !isPublic) {
-    if (isApi) {
-      response = NextResponse.json(
-        {
-          errors: [
-            {
-              message: 'Unauthorized',
-              extensions: { code: 'UNAUTHENTICATED' },
-            },
-          ],
-        },
-        { status: 401 },
-      );
-    } else {
-      const login = new URL('/login', request.url);
-      if (pathname !== '/')
-        login.searchParams.set('next', `${pathname}${search}`);
-      response = NextResponse.redirect(login);
-    }
-  } else if (signedIn && (pathname === '/login' || pathname === '/')) {
+  const decision = routeDecision({ pathname, search, signedIn });
+  if (decision.kind === 'unauthorized') {
+    response = NextResponse.json(
+      {
+        errors: [
+          { message: 'Unauthorized', extensions: { code: 'UNAUTHENTICATED' } },
+        ],
+      },
+      { status: 401 },
+    );
+  } else if (decision.kind === 'login') {
+    const login = new URL('/login', request.url);
+    if (decision.next) login.searchParams.set('next', decision.next);
+    response = NextResponse.redirect(login);
+  } else if (decision.kind === 'dashboard') {
     response = NextResponse.redirect(new URL('/dashboard', request.url));
   } else if (renewed) {
     // Hand the fresh token to this same request, not only to the browser.
@@ -86,8 +76,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except Next internals, static files and the web manifest.
+  // Everything except Next internals, static files, the web manifest and
+  // Vercel's own routes (Web Analytics script and beacons).
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:png|jpg|jpeg|svg|webp|ico|woff2?)$).*)',
+    '/((?!_next/static|_next/image|_vercel|favicon.ico|manifest.webmanifest|.*\\.(?:png|jpg|jpeg|svg|webp|ico|woff2?)$).*)',
   ],
 };

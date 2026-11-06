@@ -10,8 +10,13 @@ import './globals.css';
 
 import { AppThemeProvider } from '@/components/app-theme-provider';
 import { ThemeProvider } from '@/components/theme-provider';
+import { SiteAnalytics } from '@/components/web-analytics/site-analytics';
 import { intlLocale } from '@/lib/i18n/locales';
-import { THEME_COOKIE, parseAppTheme } from '@/lib/theme/app-theme';
+import {
+  PREVIEW_THEME_COOKIE,
+  resolveAppTheme,
+  siteTheme,
+} from '@/lib/theme/app-theme';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations();
@@ -53,8 +58,10 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const [locale, store] = await Promise.all([getLocale(), cookies()]);
-  // The palette comes from a cookie, so the first paint has it (no flash).
-  const theme = parseAppTheme(store.get(THEME_COOKIE)?.value);
+  // One palette for the site (FINNIT_THEME); an admin's preview cookie
+  // overrides it in their browser only. Rendered here, so no flash.
+  const site = siteTheme();
+  const theme = resolveAppTheme(store.get(PREVIEW_THEME_COOKIE)?.value, site);
   return (
     <html lang={intlLocale(locale)} data-theme={theme} suppressHydrationWarning>
       <body>
@@ -66,9 +73,12 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <AppThemeProvider initialTheme={theme}>{children}</AppThemeProvider>
+            <AppThemeProvider initialTheme={theme} siteTheme={site}>
+              {children}
+            </AppThemeProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
+        <SiteAnalytics />
       </body>
     </html>
   );

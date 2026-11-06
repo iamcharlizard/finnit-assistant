@@ -31,7 +31,7 @@ import {
   NotFoundError,
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
-import { PaginationUtil } from '../../common/utils/pagination.util';
+import { PaginationUtil, pageSize } from '../../common/utils/pagination.util';
 import { addDays, toLocalDateOnly } from '../../common/utils/local-date.util';
 import { TransactionSource, TransactionType } from '@finnit/database';
 import {
@@ -166,7 +166,7 @@ export class TransactionsService {
     // Keyset pagination in the list's order (newest first, id breaks ties),
     // so pages never skip or repeat rows. One extra row tells whether more
     // remain in the direction of travel.
-    const limit = args.first || args.last || 20;
+    const limit = pageSize(args.first || args.last);
     const backward = !args.first && !args.after && Boolean(args.before);
     const cursorId = args.after ?? args.before;
 

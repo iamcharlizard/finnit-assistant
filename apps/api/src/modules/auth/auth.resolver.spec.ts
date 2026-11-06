@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthResolver } from './auth.resolver';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { GqlThrottlerGuard } from '../../common/throttling/gql-throttler.guard';
 import { UserRole } from '@finnit/database';
 import {
   ForbiddenError,
@@ -79,6 +80,8 @@ describe('AuthResolver', () => {
     })
       .overrideGuard(JwtAuthGuard)
       .useValue(mockJwtAuthGuard)
+      .overrideGuard(GqlThrottlerGuard)
+      .useValue({ canActivate: () => true })
       .compile();
 
     resolver = module.get<AuthResolver>(AuthResolver);

@@ -4,7 +4,10 @@ import { describe, it } from 'node:test';
 import {
   APP_THEMES,
   DEFAULT_APP_THEME,
-  THEME_COOKIE,
+  PREVIEW_THEME_COOKIE,
+  expiredPreferenceCookie,
+  resolveAppTheme,
+  siteTheme,
   isAppTheme,
   parseAppTheme,
   preferenceCookie,
@@ -28,9 +31,25 @@ describe('app theme', () => {
 
   it('writes a lax, site-wide cookie that lasts a year', () => {
     assert.equal(
-      preferenceCookie(THEME_COOKIE, 'glass'),
-      'finnit-theme=glass; path=/; max-age=31536000; samesite=lax',
+      preferenceCookie(PREVIEW_THEME_COOKIE, 'glass'),
+      'finnit-theme-preview=glass; path=/; max-age=31536000; samesite=lax',
     );
+    assert.equal(
+      expiredPreferenceCookie(PREVIEW_THEME_COOKIE),
+      'finnit-theme-preview=; path=/; max-age=0; samesite=lax',
+    );
+  });
+
+  it('uses the site palette from FINNIT_THEME', () => {
+    assert.equal(siteTheme('suave'), 'suave');
+    assert.equal(siteTheme(undefined), 'finnit');
+    assert.equal(siteTheme('nope'), 'finnit');
+  });
+
+  it('lets a valid preview win over the site palette', () => {
+    assert.equal(resolveAppTheme('glass', 'mono'), 'glass');
+    assert.equal(resolveAppTheme(undefined, 'mono'), 'mono');
+    assert.equal(resolveAppTheme('ember', 'mono'), 'mono');
   });
 });
 

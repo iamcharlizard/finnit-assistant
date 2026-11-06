@@ -383,65 +383,6 @@
 			"description": "User management endpoints",
 			"item": [
 				{
-					"name": "Get User By ID",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test('Status code is 200', function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test('User data returned', function () {",
-									"    const response = pm.response.json();",
-									"    if (response.data && response.data.user) {",
-									"        pm.expect(response.data.user).to.have.property('id');",
-									"        pm.expect(response.data.user).to.have.property('name');",
-									"        pm.expect(response.data.user).to.have.property('email');",
-									"        pm.expect(response.data.user).to.have.property('createdAt');",
-									"        pm.expect(response.data.user).to.have.property('updatedAt');",
-									"    }",
-									"});",
-									"",
-									"pm.test('User ID parameter validation', function () {",
-									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
-									"    pm.expect(variables).to.have.property('id');",
-									"    pm.expect(variables.id).to.be.a('string').and.not.be.empty;",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							}
-						],
-						"body": {
-							"mode": "graphql",
-							"graphql": {
-								"query": "query GetUser($id: String!) {\n  user(id: $id) {\n    id\n    name\n    email\n    createdAt\n    updatedAt\n  }\n}",
-								"variables": "{\n  \"id\": \"{{user_id}}\"\n}"
-							}
-						},
-						"url": {
-							"raw": "{{base_url}}/graphql",
-							"host": ["{{base_url}}"],
-							"path": ["graphql"]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "Update User Profile",
 					"event": [
 						{
@@ -454,19 +395,17 @@
 									"",
 									"pm.test('User update successful', function () {",
 									"    const response = pm.response.json();",
-									"    if (response.data && response.data.updateUser) {",
-									"        pm.expect(response.data.updateUser).to.have.property('id');",
-									"        pm.expect(response.data.updateUser).to.have.property('name');",
-									"        pm.expect(response.data.updateUser).to.have.property('email');",
-									"        pm.expect(response.data.updateUser).to.have.property('updatedAt');",
+									"    if (response.data && response.data.updateMyProfile) {",
+									"        pm.expect(response.data.updateMyProfile).to.have.property('id');",
+									"        pm.expect(response.data.updateMyProfile).to.have.property('name');",
 									"    }",
 									"});",
 									"",
 									"pm.test('Updated fields reflect changes', function () {",
 									"    const response = pm.response.json();",
 									"    const variables = JSON.parse(pm.request.body.graphql.variables);",
-									"    if (response.data && response.data.updateUser && variables.input.name) {",
-									"        pm.expect(response.data.updateUser.name).to.equal(variables.input.name);",
+									"    if (response.data && response.data.updateMyProfile && variables.input.name) {",
+									"        pm.expect(response.data.updateMyProfile.name).to.equal(variables.input.name);",
 									"    }",
 									"});",
 									"",
@@ -493,8 +432,39 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "mutation UpdateUser($input: UpdateUserInput!) {\n  updateUser(input: $input) {\n    id\n    name\n    email\n    updatedAt\n  }\n}",
+								"query": "mutation UpdateMyProfile($input: UpdateMyProfileInput!) {\n  updateMyProfile(input: $input) {\n    id\n    name\n  }\n}",
 								"variables": "{\n  \"input\": {\n    \"name\": \"{{updated_user_name}}\"\n  }\n}"
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/graphql",
+							"host": ["{{base_url}}"],
+							"path": ["graphql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📝 Waitlist",
+			"description": "Public landing page waitlist. joinWaitlist needs no token and is rate-limited; waitlistEntries is admin-only.",
+			"item": [
+				{
+					"name": "Join Waitlist (public)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "mutation JoinWaitlist($input: JoinWaitlistInput!) {\n  joinWaitlist(input: $input) {\n    ok\n  }\n}",
+								"variables": "{\n  \"input\": {\n    \"email\": \"someone@example.com\",\n    \"locale\": \"es\",\n    \"source\": \"postman\"\n  }\n}"
 							}
 						},
 						"url": {

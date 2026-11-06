@@ -5,7 +5,8 @@ export interface TestUser {
   id: string;
   name: string;
   email: string;
-  passwordHash: string;
+  /** Null for users who only sign in with Google. */
+  passwordHash: string | null;
 }
 
 export interface TestAccount {

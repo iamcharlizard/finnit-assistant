@@ -3,7 +3,12 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { ApiUnavailableError, apiSignIn } from '@/lib/api/finnit-api';
+import {
+  ApiRequestError,
+  ApiUnavailableError,
+  TOO_MANY_REQUESTS,
+  apiSignIn,
+} from '@/lib/api/finnit-api';
 import { clearSession, writeSession } from '@/lib/auth/cookies';
 import { safeNextPath } from '@/lib/auth/redirect';
 
@@ -12,7 +17,8 @@ export type SignInError =
   | 'missingFields'
   | 'unavailable'
   | 'failed'
-  | 'invalidCredentials';
+  | 'invalidCredentials'
+  | 'tooManyAttempts';
 
 export type SignInState = { error?: SignInError; email?: string };
 
@@ -32,6 +38,9 @@ export async function signIn(
   try {
     session = await apiSignIn(email, password);
   } catch (error) {
+    if (error instanceof ApiRequestError && error.code === TOO_MANY_REQUESTS) {
+      return { error: 'tooManyAttempts', email };
+    }
     return {
       error: error instanceof ApiUnavailableError ? 'unavailable' : 'failed',
       email,

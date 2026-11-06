@@ -15,6 +15,7 @@
     "@finnit/bank-connect": "workspace:*",
     "@finnit/ui": "workspace:*",
     "@fontsource/ubuntu": "^5.3.0",
+    "@vercel/analytics": "^2.0.1",
     "lucide-react": "^1.55.0",
     "next": "^16.4.2",
     "next-intl": "^4.14.9",

@@ -1,5 +1,5 @@
 import { Connection, PaginationArgs } from '../types/pagination.types';
-import { PaginationUtil } from './pagination.util';
+import { PaginationUtil, pageSize } from './pagination.util';
 
 /**
  * Keyset pagination in the list's own order (e.g. newest first with `id` as
@@ -19,7 +19,7 @@ export class KeysetPage {
     private readonly args: PaginationArgs,
     defaultLimit = 20,
   ) {
-    this.limit = args.first || args.last || defaultLimit;
+    this.limit = pageSize(args.first || args.last, defaultLimit);
     this.backward = !args.first && !args.after && Boolean(args.before);
     this.cursorId = args.after ?? args.before;
   }

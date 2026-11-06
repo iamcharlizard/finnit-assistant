@@ -1,7 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql';
 import {
   IsString,
-  IsEmail,
   MinLength,
   MaxLength,
   IsOptional,
@@ -9,19 +8,16 @@ import {
 } from 'class-validator';
 import { APP_LOCALES, type AppLocale } from '../../translation/locale';
 
+/** What a user may change on their own profile. The email is not here:
+ * Google sign-in links accounts by email, so changing it is an admin task. */
 @InputType()
-export class UpdateUserInput {
+export class UpdateMyProfileInput {
   @Field({ nullable: true })
   @IsOptional()
   @IsString()
   @MinLength(2)
   @MaxLength(50)
   name?: string;
-
-  @Field({ nullable: true })
-  @IsOptional()
-  @IsEmail()
-  email?: string;
 }
 
 @InputType()

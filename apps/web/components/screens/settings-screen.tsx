@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Fingerprint,
   Landmark,
-  Lock,
   LogOut,
   Moon,
   Paintbrush,
@@ -33,7 +32,6 @@ import { PrivacySettings } from '@/components/privacy/privacy-settings';
 import { avatarSrc } from '@/lib/profile/avatar';
 import { LanguageSelect } from '@/components/settings/language-select';
 import { ModeSegmented } from '@/components/mode-segmented';
-import { ThemeSelect } from '@/components/settings/theme-select';
 
 export function SettingsScreen() {
   const user = useSessionUser();
@@ -186,7 +184,6 @@ export function SettingsScreen() {
         iconColor="var(--highlight)"
       >
         <LanguageSelect />
-        <ThemeSelect />
         <SettingRow label={t('colorMode')} icon={Moon} controlId="color-mode">
           <ModeSegmented id="color-mode" />
         </SettingRow>

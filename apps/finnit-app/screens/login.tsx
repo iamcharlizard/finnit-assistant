@@ -3,6 +3,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, useWindowDimensions 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Image } from 'expo-image';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useTranslations } from 'use-intl';
 import { ArrowRight, AtSign, Eye, EyeOff, Lock, Moon, Sun } from 'lucide-react-native';
 
@@ -26,6 +27,27 @@ const LOGO_LIGHT = require('../assets/images/brand/finnit-logo-light.png');
 const LOGO_DARK = require('../assets/images/brand/finnit-logo-dark.png');
 
 type Busy = 'password' | 'google' | null;
+
+/** The web's two blurred blobs (dark mode): soft radial glows. */
+function AmbientGlow() {
+  const glow = (id: string, color: string, opacity: number, style: object) => (
+    <Svg pointerEvents="none" width={420} height={420} style={[{ position: 'absolute' }, style]}>
+      <Defs>
+        <RadialGradient id={id} cx="50%" cy="50%" r="50%">
+          <Stop offset="0" stopColor={color} stopOpacity={opacity} />
+          <Stop offset="1" stopColor={color} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Circle cx={210} cy={210} r={210} fill={`url(#${id})`} />
+    </Svg>
+  );
+  return (
+    <>
+      {glow('glow-violet', '#6c72cb', 0.22, { top: -120, left: -110 })}
+      {glow('glow-cyan', '#00f5ff', 0.12, { bottom: -120, right: -110 })}
+    </>
+  );
+}
 
 /**
  * Sign in, like the web's /login: email and password or Google, and
@@ -76,12 +98,7 @@ export function LoginScreen() {
       style={{ flex: 1 }}
     >
       {/* Ambient glow in dark mode, as on the web. */}
-      {dark ? (
-        <>
-          <TwView pointerEvents="none" className="absolute -left-16 -top-20 size-[340px] rounded-full bg-[rgba(108,114,203,0.14)]" />
-          <TwView pointerEvents="none" className="absolute -bottom-20 -right-16 size-[340px] rounded-full bg-[rgba(0,245,255,0.08)]" />
-        </>
-      ) : null}
+      {dark ? <AmbientGlow /> : null}
 
       {/* Light / dark, top right (the web's ThemeSwitch). */}
       <TwView

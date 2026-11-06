@@ -4,6 +4,13 @@ import { serverGraphql } from '@/lib/api/server-graphql';
 import { todayKey, type DayKey } from '@/lib/finance/dates';
 import type { Connection } from '@/lib/finance/types';
 import type { EntryAccount } from '@/lib/new-entry/graphql';
+import { getLocalizer } from '@/lib/i18n/server';
+import {
+  TRANSFER_SUGGESTIONS_FIELDS,
+  toSuggestionView,
+  type ApiTransferSuggestion,
+  type TransferSuggestionView,
+} from '@/lib/transfers/suggestions';
 import { CATEGORIZE_CONNECTION, toPageData } from './api';
 import { pageVariables, type CategorizeFilters } from './filters';
 import type {
@@ -17,27 +24,40 @@ export interface CategorizeData {
   page: CategorizePageData;
   accounts: EntryAccount[];
   categories: CategorizeCategory[];
+  /** Bank movements that look like transfers between own accounts. */
+  transferSuggestions: { rows: TransferSuggestionView[]; total: number };
 }
 
 const CATEGORIZE_QUERY = `query Categorize($first: Int!, $after: String, $filters: TransactionFilters) {
   ${CATEGORIZE_CONNECTION}
   accounts(first: 100) { edges { node { id name type currency balanceCurrent archived metadata { nickname bank last4 } } } }
-  categories { id name parentId key }
+  categories { id name parentId key kind icon }
+  ${TRANSFER_SUGGESTIONS_FIELDS}
 }`;
 
 /** First page of the filtered movements plus the account and category pickers. */
 export async function loadCategorize(
   filters: CategorizeFilters,
 ): Promise<CategorizeData> {
-  const data = await serverGraphql<{
-    transactions: Connection<CategorizeTransaction>;
-    accounts: Connection<EntryAccount>;
-    categories: CategorizeCategory[];
-  }>(CATEGORIZE_QUERY, pageVariables(filters));
+  const [data, l] = await Promise.all([
+    serverGraphql<{
+      transactions: Connection<CategorizeTransaction>;
+      accounts: Connection<EntryAccount>;
+      categories: CategorizeCategory[];
+      transferSuggestions: Connection<ApiTransferSuggestion>;
+    }>(CATEGORIZE_QUERY, pageVariables(filters)),
+    getLocalizer(),
+  ]);
   return {
     today: todayKey(),
     page: toPageData(data.transactions),
     accounts: data.accounts.edges.map((e) => e.node),
     categories: data.categories,
+    transferSuggestions: {
+      rows: data.transferSuggestions.edges.map((e) =>
+        toSuggestionView(e.node, l),
+      ),
+      total: data.transferSuggestions.totalCount,
+    },
   };
 }

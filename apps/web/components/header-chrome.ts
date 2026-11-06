@@ -4,14 +4,13 @@ import * as React from 'react';
 
 import type { TopAppBarProps } from '@finnit/ui/components/navigation/top-app-bar';
 
-/** What every top bar shares (bell, avatar), provided by the app shell. */
+/** What every top bar shares (bell, profile menu), provided by the app shell. */
 export type HeaderChrome = Pick<
   TopAppBarProps,
   | 'notificationCount'
   | 'onNotificationsClick'
-  | 'avatarFallback'
   | 'notificationsLabel'
-  | 'profileLabel'
+  | 'profile'
   | 'tools'
 >;
 

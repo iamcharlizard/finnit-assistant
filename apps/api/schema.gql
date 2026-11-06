@@ -463,6 +463,31 @@ type AuthPayload {
 }
 
 """
+history: past categorizations (applied); ai: AI suggestions to review; both: history, then AI for the rest
+"""
+enum AutoCategorizeMode {
+  ai
+  both
+  history
+}
+
+type AutoCategorizeResult {
+  """Movements that got a category"""
+  categorized: Int!
+
+  """Movements still without a category"""
+  remaining: Int!
+
+  """Movements with a new suggestion to accept or reject"""
+  suggested: Int!
+}
+
+enum AvatarSource {
+  google
+  uploaded
+}
+
+"""
 Session to connect a bank from the device with @finnit/bank-connect (native form) or, as a fallback, Syncfy's widget. The bank login goes from the device to Syncfy; Finnit never sees it.
 """
 type BankConnectSession {
@@ -637,12 +662,29 @@ type CashFlowProjection {
 
 type Category {
   children: [Category!]
+
+  """Color key the clients know; null: the icon's"""
+  color: String
   createdAt: DateTime!
+
+  """The user's own category (the catalog's are read-only)"""
+  editable: Boolean!
+
+  """Whether the user hid it from their pickers"""
+  hidden: Boolean!
+
+  """Icon key the clients know; null: the parent's, or by name"""
+  icon: String
   id: String!
+
+  """
+  Part of the global catalog: shared by every user, nobody edits it (users hide it)
+  """
   isDefault: Boolean!
 
   """i18n key of a default category (e.g. categories.food.groceries)"""
   key: String
+  kind: CategoryKind!
 
   """Name in the request's locale (x-locale header, else the user's locale)"""
   name: String!
@@ -660,6 +702,22 @@ type CategoryExpense {
   categoryId: String!
   categoryName: String!
   percentage: Float!
+}
+
+"""Spending or income (subcategories share their parent's)"""
+enum CategoryKind {
+  expense
+  income
+}
+
+"""What uses a category (deleting it moves these)"""
+type CategoryReferences {
+  aliases: Int!
+  budgetCaps: Int!
+  children: Int!
+  recurring: Int!
+  rules: Int!
+  transactions: Int!
 }
 
 """Who set the category (or proposed a pending suggestion)"""
@@ -703,6 +761,17 @@ type Contact {
   name: String!
 }
 
+input ConvertToTransferInput {
+  """The account on the other side"""
+  counterpartAccountId: ID!
+
+  """
+  The movement already recorded in that account; without it, one is created
+  """
+  counterpartTransactionId: ID
+  transactionId: ID!
+}
+
 input CreateAccountInput {
   currency: String!
   initialBalance: Float!
@@ -730,7 +799,16 @@ input CreateBudgetInput {
 }
 
 input CreateCategoryInput {
+  color: String
+  icon: String
+
+  """
+  Main categories only (a subcategory takes its parent's); defaults to expense
+  """
+  kind: CategoryKind
   name: String!
+
+  """A main category (catalog or own) to hang it from"""
   parentId: String
   sortOrder: Float
 }
@@ -1428,6 +1506,9 @@ type MerchantAlias {
 
   """Higher wins when several aliases match"""
   priority: Int!
+
+  """Matching bank movements are suggested as a transfer to it"""
+  transferAccountId: ID
 }
 
 input MerchantAliasInput {
@@ -1442,6 +1523,11 @@ input MerchantAliasInput {
   """At most 200 characters"""
   pattern: String!
   priority: Int = 0
+
+  """
+  One of your accounts: matching bank movements are suggested as a transfer to it
+  """
+  transferAccountId: ID
 }
 
 """
@@ -1505,6 +1591,11 @@ type Mutation {
   adjustAccountBalance(input: AdjustBalanceInput!): Account!
 
   """
+  Categorizes the uncategorized movements: from past categorizations (merchant rules, aliases, history), with AI suggestions to review, or both; refreshes the to-review notification
+  """
+  autoCategorizeTransactions(mode: AutoCategorizeMode = history): AutoCategorizeResult!
+
+  """
   Moves movements (max 500) to a category; with createRule, learns a merchant rule per merchant. Returns how many changed
   """
   categorizeTransactions(categoryId: ID!, createRule: Boolean = true, ids: [ID!]!): Int!
@@ -1528,6 +1619,11 @@ type Mutation {
   Creates the pending movements as transactions and marks matched recurring payments as paid
   """
   confirmStatementImport(id: ID!): StatementImport!
+
+  """
+  Turns an expense/income into a transfer side, linking or creating the other side
+  """
+  convertToTransfer(input: ConvertToTransferInput!): Transfer!
   createAccount(input: CreateAccountInput!): Account!
 
   """Admin only"""
@@ -1549,7 +1645,7 @@ type Mutation {
   """
   createDebt(input: CreateDebtInput!): Debt!
   createDebtPayment(input: CreateDebtPaymentInput!): DebtPayment!
-  createDefaultCategories: Boolean!
+  createDefaultCategories: Boolean! @deprecated(reason: "Default categories are a global catalog every user already sees")
   createGoal(input: CreateGoalInput!): Goal!
 
   """Creates an alias and applies it to existing movements"""
@@ -1572,7 +1668,14 @@ type Mutation {
   """
   deleteBankConnection(id: ID!): Boolean!
   deleteBudget(id: String!): Boolean!
-  deleteCategory(id: String!): Boolean!
+  deleteCategory(
+    id: String!
+
+    """
+    Where its movements, budgets, rules and subcategories go (required when in use)
+    """
+    moveToId: String
+  ): Boolean!
   deleteDebt(id: String!): Boolean!
   deleteDebtCharge(id: ID!): Debt!
 
@@ -1600,6 +1703,9 @@ type Mutation {
   """Admin only"""
   enableUser(id: ID!): AdminUser!
 
+  """Hides a category and its subcategories from the pickers"""
+  hideCategory(id: String!): Boolean!
+
   """
   Links a bank account to a Finnit account (or creates one) and imports its last 90 days
   """
@@ -1626,6 +1732,11 @@ type Mutation {
   removeGoalContribution(id: ID!): Boolean!
 
   """
+  Removes the uploaded profile photo (back to the Google picture or initials)
+  """
+  removeMyAvatar: User!
+
+  """
   Deletes the attachment and its file. Upload with POST /transactions/:id/attachments
   """
   removeTransactionAttachment(id: String!): Boolean!
@@ -1647,6 +1758,7 @@ type Mutation {
   """
   rescheduleLoanPayment(dueDate: DateTime!, occurrenceId: ID!): Debt!
   resetPassword(input: ResetPasswordInput!): Boolean!
+  resolveTransferSuggestion(id: ID!, input: ResolveTransferSuggestionInput!): Boolean!
 
   """
   Sets the account's balance to the real one; the difference is an adjustment
@@ -1666,6 +1778,7 @@ type Mutation {
 
   """Admin only. Ends their open sessions."""
   setUserPassword(id: ID!, input: SetUserPasswordInput!): AdminUser!
+  showCategory(id: String!): Boolean!
   signIn(input: SignInInput!): AuthPayload!
 
   """
@@ -1683,6 +1796,9 @@ type Mutation {
   Imports new movements. refreshFromBank asks Syncfy to log in to the bank again (at most once an hour); its data arrives on the next sync.
   """
   syncBankConnection(id: ID!, refreshFromBank: Boolean! = false): BankSyncResult!
+
+  """Gives the movements of a converted transfer their type back"""
+  undoTransferConversion(transferId: ID!): Boolean!
   unlinkBankAccount(linkedAccountId: ID!): BankConnection!
 
   """Admin only"""
@@ -1762,6 +1878,7 @@ enum NotificationType {
   debt_due
   recurring
   summary
+  uncategorized
 }
 
 enum OccurrenceMatchSource {
@@ -1854,8 +1971,15 @@ type Query {
   cardMonthSummary(accountId: String!, month: Int!, year: Int!): CardMonthSummary!
   cashFlowBaseline: CashFlowBaseline!
   cashFlowProjection(monthsAhead: Int! = 6): [CashFlowProjection!]!
-  categories: [Category!]!
+
+  """
+  The catalog and the user's own categories; with includeHidden, also the ones they hid
+  """
+  categories(includeHidden: Boolean = false): [Category!]!
   category(id: String!): Category!
+
+  """What uses one of the user's categories (before deleting it)"""
+  categoryReferences(id: String!): CategoryReferences!
   categoryUsage(dateFrom: DateTime, dateTo: DateTime): [CategoryUsage!]!
 
   """By name"""
@@ -1958,7 +2082,7 @@ type Query {
   Recurring payments detected in the movements (not dismissed, not accepted yet), most confident first
   """
   recurringSuggestions(accountId: ID): [RecurringSuggestion!]!
-  rootCategories: [Category!]!
+  rootCategories(includeHidden: Boolean = false): [Category!]!
 
   """Poll it after uploading (POST /screenshots) to follow the status"""
   screenshotImport(id: ID!): ScreenshotImport!
@@ -1986,6 +2110,14 @@ type Query {
   transaction(id: String!): Transaction!
   transactions(after: String, before: String, filters: TransactionFilters, first: Int, last: Int): TransactionConnection!
   transfer(id: String!): Transfer!
+
+  """
+  Movements in other accounts that may be the other side of this expense/income, best first
+  """
+  transferCandidates(accountId: ID, transactionId: ID!): [Transaction!]!
+
+  """Bank movements that look like transfers, waiting for review"""
+  transferSuggestions(after: String, first: Int = 20): TransferSuggestionConnection!
   transfers: [Transfer!]!
   upcomingPayments(accountId: String, from: DateTime!, to: DateTime!): [UpcomingPayment!]!
   user(id: String!): User!
@@ -2248,6 +2380,27 @@ input RequestPasswordResetInput {
 input ResetPasswordInput {
   newPassword: String!
   token: String!
+}
+
+input ResolveTransferSuggestionInput {
+  """to_account: where it went"""
+  accountId: ID
+  action: TransferSuggestionAction!
+
+  """to_someone: its category"""
+  categoryId: ID
+
+  """to_account: the movement already recorded there"""
+  counterpartTransactionId: ID
+
+  """to_someone: what it was (shown instead of the bank text)"""
+  description: String
+
+  """remember: the text to recognize (defaults to suggestedPattern)"""
+  pattern: String
+
+  """Create an alias so future movements with this text get the same answer"""
+  remember: Boolean = false
 }
 
 """A screenshot of a bank app with movements"""
@@ -2614,6 +2767,9 @@ enum TransactionType {
 
 type Transfer {
   amount: Float!
+
+  """Made from an existing expense/income: it can be undone"""
+  convertedAt: DateTime
   createdAt: DateTime!
   fromTxn: Transaction!
   fromTxnId: String!
@@ -2629,9 +2785,57 @@ type TransferCounterpart {
   """The account's nickname, else its name"""
   accountName: String!
 
+  """Made by turning an expense/income into a transfer: it can be undone"""
+  converted: Boolean!
+
   """"out" when this movement is the source side"""
   direction: String!
   transactionId: ID!
+  transferId: ID!
+}
+
+"""A bank movement that looks like a transfer between the user's accounts"""
+type TransferSuggestion {
+  """The account it probably went to (or came from)"""
+  counterpartAccountId: ID
+
+  """The opposite movement found in another account"""
+  counterpartTransaction: Transaction
+  createdAt: DateTime!
+  id: ID!
+  reason: TransferSuggestionReason!
+
+  """
+  Text to remember it by (a "contains" alias pattern), editable by the user
+  """
+  suggestedPattern: String!
+  transaction: Transaction!
+}
+
+enum TransferSuggestionAction {
+  dismiss
+  to_account
+  to_someone
+}
+
+type TransferSuggestionConnection {
+  edges: [TransferSuggestionEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type TransferSuggestionEdge {
+  cursor: String!
+  node: TransferSuggestion!
+}
+
+"""
+pair: the opposite movement is in another own account; text: it reads like a transfer; rule: an alias says where it goes
+"""
+enum TransferSuggestionReason {
+  pair
+  rule
+  text
 }
 
 """
@@ -2672,7 +2876,12 @@ input UpdateBudgetInput {
 }
 
 input UpdateCategoryInput {
+  color: String
+  icon: String
+  kind: CategoryKind
   name: String
+
+  """New main category; null makes it a main category"""
   parentId: String
   sortOrder: Float
 }
@@ -2871,6 +3080,7 @@ input UpdateUserInput {
 }
 
 type User {
+  avatar: UserAvatar
   createdAt: DateTime!
   email: String!
 
@@ -2889,6 +3099,17 @@ type User {
   name: String!
   role: UserRole!
   updatedAt: DateTime!
+}
+
+"""Profile photo; without one, clients show initials"""
+type UserAvatar {
+  source: AvatarSource!
+
+  """Google only: the picture URL (an upload is GET /me/avatar)"""
+  url: String
+
+  """Changes when the photo does (cache busting)"""
+  version: String!
 }
 
 enum UserRole {

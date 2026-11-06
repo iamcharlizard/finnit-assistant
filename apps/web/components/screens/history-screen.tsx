@@ -30,11 +30,12 @@ export function HistoryScreen({
             filters={filters}
             accounts={data.accounts}
             categories={data.categoryOptions}
+            today={data.today}
           />
 
           {/* New filters → new first page from the server: start the list over. */}
           <HistoryList
-            key={historyQuery(filters)}
+            key={historyQuery(filters, data.today)}
             initial={data.page}
             filters={filters}
             categories={data.categories}
@@ -43,7 +44,7 @@ export function HistoryScreen({
         </div>
 
         {data.topCategories.rows.length > 0 ? (
-          <aside className="flex flex-col gap-4">
+          <aside className="flex flex-col gap-4 @3xl:sticky @3xl:top-24 @3xl:self-start">
             <PopularCategoriesCard
               title={data.topCategories.title}
               categories={data.topCategories.rows}

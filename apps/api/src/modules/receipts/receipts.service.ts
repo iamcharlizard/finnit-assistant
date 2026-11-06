@@ -53,6 +53,7 @@ import {
 } from './dto/receipt.dto';
 import { extractReceipt, receiptConfidence } from './receipt-rules';
 import { extractReceiptWithAi } from './receipt-ai';
+import { visibleCategoryWhere } from '../categories/category-scope';
 
 export const MAX_RECEIPT_BYTES = 10 * 1024 * 1024;
 export const RECEIPT_MIME_TYPES = new Set([
@@ -367,7 +368,7 @@ export class ReceiptsService {
     const category = await this.prisma.category.findFirst({
       where: {
         id: categoryId,
-        OR: [{ userId }, { userId: null, isDefault: true }],
+        ...visibleCategoryWhere(userId),
       },
       select: { id: true },
     });

@@ -35,6 +35,7 @@ import {
   syncDebtStatus,
   totalOwedOf,
 } from './debt-ledger';
+import { visibleCategoryWhere } from '../categories/category-scope';
 
 /** What every read of a debt loads. */
 export const DEBT_INCLUDE = {
@@ -304,7 +305,7 @@ export class DebtsService {
       const category = await this.prisma.category.findFirst({
         where: {
           id: input.purposeCategoryId,
-          OR: [{ userId }, { userId: null, isDefault: true }],
+          ...visibleCategoryWhere(userId),
         },
         select: { id: true },
       });

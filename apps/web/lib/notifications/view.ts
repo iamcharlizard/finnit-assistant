@@ -15,7 +15,8 @@ export type NotificationType =
   | 'debt_due'
   | 'recurring'
   | 'summary'
-  | 'balance_mismatch';
+  | 'balance_mismatch'
+  | 'uncategorized';
 export type NotificationStatus = 'scheduled' | 'sent' | 'read' | 'dismissed';
 
 export interface ApiNotification {
@@ -63,7 +64,8 @@ export function isUnread(status: NotificationStatus): boolean {
  * Where a notification takes you, when it's about something with a screen:
  * a recurring payment's reminder opens its day in /recurring, budgets and
  * debts their planning screens, a balance that doesn't match the bank its
- * account. Summaries have nowhere to go.
+ * account, movements left to review (uncategorized, possible transfers)
+ * "Clasificar movimientos" across every month. Summaries have nowhere to go.
  */
 export function notificationHref(
   n: Pick<ApiNotification, 'type' | 'relatedEntityId' | 'relatedEntityType'>,
@@ -85,6 +87,8 @@ export function notificationHref(
         ? `/accounts?account=${encodeURIComponent(account)}`
         : '/accounts';
     }
+    case 'uncategorized':
+      return '/transactions/categorize?month=all';
     default:
       return null;
   }

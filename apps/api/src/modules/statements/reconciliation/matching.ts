@@ -30,6 +30,8 @@ export interface CandidateTransaction {
   description: string | null;
   /** "En proceso" (e.g. from a screenshot): its amount may still change. */
   inProcess?: boolean;
+  /** Signed effect on the balance: tells a transfer's sides apart. */
+  balanceEffect?: number | null;
 }
 
 /** An "en proceso" movement may post up to this many days later… */
@@ -78,13 +80,24 @@ function similarity(a: string, b: string): number {
   return b.split(' ').filter((w) => w.length >= 3 && words.has(w)).length;
 }
 
-function typeMatches(kind: ImportedLineKind, type: TransactionType): boolean {
-  if (DEBIT_KINDS.has(kind)) return type === TransactionType.expense;
+function typeMatches(
+  kind: ImportedLineKind,
+  candidate: Pick<CandidateTransaction, 'type' | 'balanceEffect'>,
+): boolean {
+  const { type, balanceEffect } = candidate;
+  const effect = balanceEffect ?? null;
+  // A charge is an expense or the side a transfer leaves from.
+  if (DEBIT_KINDS.has(kind)) {
+    return (
+      type === TransactionType.expense ||
+      (type === TransactionType.transfer && effect !== null && effect < 0)
+    );
+  }
   // Payments and refunds increase the card balance.
   return (
     type === TransactionType.income ||
     type === TransactionType.adjustment ||
-    type === TransactionType.transfer
+    (type === TransactionType.transfer && (effect === null || effect > 0))
   );
 }
 
@@ -110,7 +123,7 @@ export function matchTransactions(
 
     for (const candidate of candidates) {
       if (!available.has(candidate.id)) continue;
-      if (!typeMatches(line.kind, candidate.type)) continue;
+      if (!typeMatches(line.kind, candidate)) continue;
       const days = daysBetween(candidate.txnDate, line.date);
       const score = similarity(
         text,

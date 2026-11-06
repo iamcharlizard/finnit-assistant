@@ -22,6 +22,9 @@ const userRow = (overrides: Partial<UserRow> = {}): UserRow => ({
   disabledAt: null,
   lastLoginAt: null,
   tokenVersion: 0,
+  googlePictureUrl: null,
+  avatarKey: null,
+  avatarUpdatedAt: null,
   locale: 'es',
   invitedById: 'admin-1',
   createdAt: new Date('2026-10-01'),
@@ -210,12 +213,11 @@ describe('AdminUsersService', () => {
       expect(result.hasPassword).toBe(false);
     });
 
-    it('creates the default categories inside the transaction', async () => {
+    it('creates the user inside a transaction, without copying categories', async () => {
       const tx = mockDeep<PrismaService>();
       tx.user.create.mockResolvedValue(
         withInviter(userRow({ id: 'new-user' })),
       );
-      tx.category.create.mockResolvedValue({ id: 'cat-1' } as never);
       prisma.$transaction.mockImplementation(
         (fn: unknown) => (fn as (tx: unknown) => unknown)(tx) as never,
       );
@@ -223,14 +225,9 @@ describe('AdminUsersService', () => {
       await service.create(admin, { name: 'Grace', email: 'g@example.com' });
 
       expect(prisma.user.create).not.toHaveBeenCalled();
-      expect(prisma.category.create).not.toHaveBeenCalled();
       expect(tx.user.create).toHaveBeenCalled();
-      expect(tx.category.create).toHaveBeenCalled();
-      expect(
-        tx.category.create.mock.calls.every(
-          ([args]) => args.data.userId === 'new-user',
-        ),
-      ).toBe(true);
+      // The global catalog is shared: nothing to copy per user.
+      expect(tx.category.create).not.toHaveBeenCalled();
     });
 
     it('rejects a duplicate email, case-insensitively', async () => {

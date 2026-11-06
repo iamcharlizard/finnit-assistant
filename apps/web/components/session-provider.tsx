@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 
+import type { UserAvatar } from '@/lib/api/finnit-api';
+
 export interface SessionUser {
   id: string;
   name: string;
@@ -9,6 +11,7 @@ export interface SessionUser {
   role: 'admin' | 'user';
   /** The master admin: the only one who names or removes admins. */
   isMaster: boolean;
+  avatar?: UserAvatar | null;
 }
 
 const SessionContext = React.createContext<SessionUser | null>(null);

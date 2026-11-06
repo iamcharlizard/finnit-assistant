@@ -23,29 +23,24 @@
     "sections": {
       "home": "Inicio",
       "transactions": "Movimientos",
-      "recurring": "Pagos recurrentes",
       "accounts": "Cuentas y tarjetas",
       "planning": "Planeación",
       "analytics": "Análisis",
-      "statements": "Estados de cuenta",
-      "settings": "Ajustes",
       "admin": "Administración"
     },
     "items": {
       "dashboard": "Inicio",
-      "history": "Movimientos",
-      "recurring": "Pagos recurrentes",
+      "history": "Historial",
+      "recurring": "Recurrentes",
       "cards": "Cuentas y tarjetas",
       "analytics": "Análisis",
-      "settings": "Ajustes",
       "admin": "Administración",
-      "categorize": "Clasificar movimientos",
+      "categorize": "Clasificar",
       "budgets": "Presupuestos",
       "debts": "Deudas",
       "goals": "Metas",
       "simulator": "Simulador",
-      "statements": "Estados de cuenta",
-      "loans": "Préstamos"
+      "statements": "Estados de cuenta"
     },
     "short": {
       "dashboard": "Inicio",
@@ -53,7 +48,9 @@
       "cards": "Cuentas"
     },
     "collapse": "Contraer menú",
-    "expand": "Expandir menú"
+    "expand": "Expandir menú",
+    "groupToggle": "Mostrar u ocultar {name}",
+    "settings": "Configuración"
   },
   "pageTitles": {
     "app": "Finnit",
@@ -78,7 +75,7 @@
     "goals": "Metas de ahorro",
     "simulator": "Simulador ¿Y si…?",
     "notifications": "Notificaciones",
-    "loans": "Préstamos"
+    "categories": "Categorías"
   },
   "newEntry": {
     "title": "Nuevo movimiento",
@@ -342,7 +339,20 @@
     "noResultsDescription": "Ningún movimiento coincide con estos filtros.",
     "emptyTitle": "Aún no tienes movimientos",
     "emptyDescription": "Conecta tu banco para importar tus movimientos automáticamente.",
-    "count": "{shown} de {total, plural, one {# movimiento} other {# movimientos}}"
+    "count": "{shown} de {total, plural, one {# movimiento} other {# movimientos}}",
+    "rowMenu": "Más acciones para {name}",
+    "moreFilters": "Filtros",
+    "moreFiltersLabel": "Más filtros ({count} activos)",
+    "range": "Rango de fechas",
+    "clearDate": "Quitar fecha",
+    "allTime": "Todo el historial",
+    "backToMonth": "Volver a ver por mes",
+    "rangeLabel": "{from} – {to}",
+    "previousMonth": "Ver {month}",
+    "searchOtherMonths": "No hay coincidencias en este mes. Puede que esté en otro.",
+    "searchAllTime": "Buscar en todo el historial",
+    "emptyMonthTitle": "Sin movimientos este mes",
+    "emptyMonthDescription": "No hay movimientos registrados en este mes."
   },
   "cards": {
     "count": "{count, plural, one {# tarjeta} other {# tarjetas}}",
@@ -1602,7 +1612,6 @@
       "installment": "{amount} por pago",
       "next": "Próximo: {date}"
     },
-    "loansLink": "{count, plural, one {Tienes # préstamo} other {Tienes # préstamos}} ({active, plural, =0 {todos liquidados} one {# activo} other {# activos}}). Están incluidos en los totales y en el plan; míralos en Préstamos.",
     "loanEditValidation": {
       "nameRequired": "Escribe un nombre.",
       "nameTooLong": "El nombre es demasiado largo.",
@@ -1625,6 +1634,15 @@
         "debit_card": "Su tarjeta de débito",
         "other": "Otro"
       }
+    },
+    "tabs": {
+      "summary": "Resumen",
+      "loans": "Préstamos ({count})",
+      "other": "Tarjetas y otras ({count})"
+    },
+    "otherEmpty": {
+      "title": "Sin tarjetas ni otras deudas",
+      "description": "Registra lo que debes en tarjetas, a tiendas o a alguien más para verlo junto a tus préstamos."
     }
   },
   "analytics": {
@@ -1690,7 +1708,9 @@
     "categorize": "Clasificar movimientos",
     "categorizeDescription": "Asigna categorías a varios a la vez",
     "theme": "Tema",
-    "colorMode": "Modo de color"
+    "colorMode": "Modo de color",
+    "categories": "Categorías",
+    "categoriesDescription": "Crea las tuyas y oculta las que no usas"
   },
   "banks": {
     "title": "Bancos conectados",
@@ -2093,19 +2113,19 @@
       "bank": "Banco"
     },
     "rowMenu": "Más acciones para {name}",
-    "rename": "Renombrar",
+    "rename": "Editar descripción",
     "renameDialog": {
-      "title": "Renombrar movimiento",
+      "title": "Editar descripción",
       "description": "Solo cambia cómo se ve este movimiento. El texto original del banco se conserva.",
-      "original": "Original: {text}",
-      "displayName": "Nombre a mostrar",
-      "displayNamePlaceholder": "Ej. Cena con Ana",
+      "original": "Del banco: {text}",
+      "displayName": "Descripción",
+      "displayNamePlaceholder": "Ej. Renta de noviembre",
       "private": "Privado",
       "privateHint": "En listas y búsquedas solo se verá este nombre; el original solo en el detalle.",
-      "remove": "Quitar nombre",
+      "remove": "Quitar descripción",
       "save": "Guardar",
       "saving": "Guardando…",
-      "required": "Escribe un nombre.",
+      "required": "Escribe una descripción.",
       "tooLong": "Máximo {max} caracteres."
     },
     "toasts": {
@@ -2113,8 +2133,8 @@
       "accepted": "{count, plural, one {# sugerencia aceptada} other {# sugerencias aceptadas}}",
       "rejected": "{count, plural, one {# sugerencia rechazada} other {# sugerencias rechazadas}}",
       "suggested": "{count, plural, one {# sugerencia nueva} other {# sugerencias nuevas}}",
-      "renamed": "Nombre guardado",
-      "aliasRemoved": "Se quitó el nombre"
+      "renamed": "Descripción guardada",
+      "aliasRemoved": "Se quitó la descripción"
     },
     "empty": {
       "uncategorizedTitle": "Todo clasificado 🎉",
@@ -2129,6 +2149,38 @@
       "tooMany": "Son demasiados movimientos a la vez.",
       "category": "Esa categoría ya no existe.",
       "notFound": "Algunos movimientos ya no existen. Recarga la página."
+    },
+    "categoriesLink": "Categorías",
+    "auto": {
+      "button": "Clasificar automáticamente",
+      "running": "Clasificando…",
+      "remaining": "{count, plural, =0 {Ya no quedan movimientos sin categoría.} one {Queda # sin categoría; prueba «Sugerir con IA».} other {Quedan # sin categoría; prueba «Sugerir con IA».}}",
+      "title": "¿Cómo quieres clasificar?",
+      "description": "Se aplica a todos tus movimientos sin categoría, de cualquier mes.",
+      "recommended": "Recomendado",
+      "modes": {
+        "history": {
+          "label": "Solo con mis clasificaciones anteriores",
+          "description": "Usa tus reglas, tus alias y la categoría que ya le diste al mismo comercio. Se aplica de inmediato."
+        },
+        "ai": {
+          "label": "Solo con IA",
+          "description": "La IA sugiere una categoría para cada movimiento; tú aceptas o rechazas cada sugerencia."
+        },
+        "both": {
+          "label": "Ambas",
+          "description": "Primero tus clasificaciones anteriores; para lo que quede, sugerencias de la IA."
+        }
+      },
+      "aiNote": "La IA revisa hasta 300 movimientos a la vez y puede tardar unos segundos. Sus sugerencias aparecen en «Con sugerencia».",
+      "confirm": "Clasificar",
+      "runningAi": "Consultando a la IA…",
+      "results": {
+        "categorizedAndSuggested": "{categorized, plural, one {Se clasificó # movimiento} other {Se clasificaron # movimientos}} y la IA sugirió {suggested, plural, one {# categoría} other {# categorías}}",
+        "categorized": "{categorized, plural, one {Se clasificó # movimiento} other {Se clasificaron # movimientos}}",
+        "suggested": "La IA sugirió {suggested, plural, one {# categoría} other {# categorías}}; revísalas en «Con sugerencia»",
+        "nothing": "No encontramos categorías para tus movimientos"
+      }
     }
   },
   "aliases": {
@@ -2274,11 +2326,10 @@
     "counterpartFrom": "Desde {account}",
     "recurringPaid": "{name} · vencía el {date}",
     "edit": "Editar",
-    "rename": "Renombrar",
     "delete": "Eliminar",
     "editTitle": "Editar movimiento",
     "editDescription": "Cambia los datos de este movimiento. El saldo de la cuenta se ajusta solo.",
-    "editImported": "Viene del banco o de un estado de cuenta: solo puedes cambiar su categoría. Para cambiar cómo se ve su nombre usa «Renombrar».",
+    "editImported": "Viene del banco o de un estado de cuenta: sus datos no cambian. Puedes darle una descripción propia y elegir su categoría.",
     "editTransfer": "En una transferencia el monto y la fecha no cambian; si están mal, elimínala desde la otra cuenta y vuelve a crearla.",
     "form": {
       "amount": "Monto",
@@ -2293,20 +2344,27 @@
       "description": "Descripción",
       "descriptionPlaceholder": "Notas sobre el movimiento",
       "save": "Guardar",
-      "saving": "Guardando…"
+      "saving": "Guardando…",
+      "alias": "Descripción",
+      "aliasPlaceholder": "Ej. Renta de noviembre",
+      "aliasHint": "Del banco: {text}. Si la dejas vacía se muestra este texto.",
+      "aliasHintEmpty": "Si la dejas vacía se muestra el texto del banco.",
+      "private": "Privado",
+      "privateHint": "En listas y búsquedas solo se verá su nombre."
     },
     "validation": {
       "amountRequired": "Escribe el monto.",
       "amountInvalid": "Escribe un monto mayor a cero.",
       "amountTooLarge": "El monto es demasiado grande.",
       "dateRequired": "Elige la fecha.",
-      "dateInFuture": "La fecha no puede ser futura."
+      "dateInFuture": "La fecha no puede ser futura.",
+      "aliasTooLong": "La descripción puede tener hasta {max} caracteres."
     },
     "toasts": {
       "saved": "Movimiento actualizado",
       "noChanges": "No hubo cambios",
-      "renamed": "Nombre actualizado",
-      "nameRemoved": "Se quitó el nombre",
+      "renamed": "Descripción guardada",
+      "nameRemoved": "Se quitó la descripción",
       "deleted": "Movimiento eliminado",
       "attachmentUploaded": "Archivo adjuntado",
       "attachmentRemoved": "Archivo eliminado"
@@ -2368,7 +2426,8 @@
       "budget": "Presupuesto",
       "debt_due": "Deuda",
       "recurring": "Pago recurrente",
-      "summary": "Resumen"
+      "summary": "Resumen",
+      "uncategorized": "Por revisar"
     }
   },
   "statements": {
@@ -2953,7 +3012,8 @@
     "tabs": {
       "analysis": "Análisis",
       "list": "Préstamos ({count})"
-    }
+    },
+    "listTitle": "Tus préstamos"
   },
   "contacts": {
     "placeholder": "Elige o escribe un nombre",
@@ -2961,5 +3021,203 @@
     "loading": "Cargando…",
     "empty": "Aún no tienes contactos. Escribe un nombre para agregarlo.",
     "add": "Agregar «{name}»"
+  },
+  "transfers": {
+    "convert": {
+      "title": "Convertir en transferencia",
+      "action": "Convertir en transferencia",
+      "descriptionOut": "Estos {amount} pasaron a otra de tus cuentas: dejan de contar como gasto y el saldo de esta cuenta no cambia.",
+      "descriptionIn": "Estos {amount} llegaron de otra de tus cuentas: dejan de contar como ingreso y el saldo de esta cuenta no cambia.",
+      "loading": "Buscando el otro movimiento…",
+      "noAccounts": "No tienes otra cuenta en la misma moneda.",
+      "toAccount": "Cuenta destino",
+      "fromAccount": "Cuenta de origen",
+      "accountPlaceholder": "Elige la cuenta",
+      "accountSearch": "Buscar cuenta",
+      "noResults": "Sin resultados",
+      "found": "Encontramos esto en {account}. ¿Es el mismo movimiento?",
+      "createInstead": "Ninguno de estos",
+      "createInsteadHint": "Registrar el movimiento en esa cuenta",
+      "willCreateIn": "No encontramos esta entrada en {account}: la registraremos por {amount}. Si después llega del banco, se liga sola.",
+      "willCreateOut": "No encontramos esta salida en {account}: la registraremos por {amount}. Si después llega del banco, se liga sola.",
+      "accountRequired": "Elige la cuenta.",
+      "submit": "Convertir",
+      "saving": "Convirtiendo…",
+      "done": "Ahora es una transferencia",
+      "remember": "Recordar para la próxima",
+      "rememberHint": "Los movimientos del banco con este texto se sugerirán como transferencia a {account}.",
+      "rememberHintNoAccount": "Los movimientos del banco con este texto se sugerirán como transferencia a la cuenta que elijas.",
+      "pattern": "Texto a reconocer"
+    },
+    "undo": {
+      "action": "Deshacer transferencia",
+      "title": "¿Deshacer la transferencia?",
+      "description": "Los movimientos vuelven a ser gasto e ingreso, sin categoría. Si al convertirla registramos uno nuevo, se elimina.",
+      "confirm": "Deshacer",
+      "done": "Transferencia deshecha"
+    },
+    "suggestions": {
+      "title": "Posibles transferencias",
+      "description": "Parecen dinero que moviste entre tus cuentas. Si lo son, dejan de contar como gasto o ingreso.",
+      "count": "{count, plural, one {# por revisar} other {# por revisar}}",
+      "pairOut": "Parece la entrada en {account} del {date}",
+      "pairIn": "Parece la salida de {account} del {date}",
+      "reasons": {
+        "pair": "Hay un movimiento igual en otra de tus cuentas",
+        "text": "Su descripción dice que es una transferencia",
+        "rule": "Lo marcaste antes como transferencia entre tus cuentas"
+      },
+      "toAccount": "A mi cuenta",
+      "fromAccount": "De mi cuenta",
+      "toSomeone": "A otra persona",
+      "fromSomeone": "De otra persona",
+      "dismiss": "Ignorar",
+      "dismissed": "Sugerencia descartada",
+      "more": "{count, plural, one {Y # más; aparecerá al resolver estas.} other {Y # más; aparecerán al resolver estas.}}"
+    },
+    "someone": {
+      "title": "Pago a otra persona",
+      "titleIn": "Dinero de otra persona",
+      "description": "Sigue contando como gasto. Dale una descripción y una categoría para saber qué fue.",
+      "descriptionIn": "Sigue contando como ingreso. Dale una descripción y una categoría para saber qué fue.",
+      "concept": "Concepto",
+      "conceptPlaceholder": "Ej. Renta a Juan",
+      "category": "Categoría",
+      "categoryPlaceholder": "Sin categoría",
+      "categorySearch": "Buscar categoría",
+      "noResults": "Sin resultados",
+      "rememberHint": "Los movimientos del banco con este texto tomarán este concepto y categoría.",
+      "required": "Escribe un concepto o elige una categoría.",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "done": "Guardado"
+    }
+  },
+  "profileMenu": {
+    "open": "Menú de tu perfil",
+    "systemMode": "Como el sistema",
+    "settings": "Configuración",
+    "signOut": "Cerrar sesión",
+    "signingOut": "Cerrando sesión…"
+  },
+  "categories": {
+    "title": "Categorías",
+    "subtitle": "Las predeterminadas son para todos; las tuyas solo las ves tú.",
+    "back": "Volver a Configuración",
+    "create": "Nueva categoría",
+    "tabs": {
+      "expense": "Gastos",
+      "income": "Ingresos"
+    },
+    "own": "Tuya",
+    "thisMonth": "{count, plural, =0 {Sin movimientos este mes} one {# movimiento este mes} other {# movimientos este mes}}",
+    "hiddenHint": "Oculta: no aparece al elegir categoría",
+    "subcategories": "{count, plural, =0 {Sin subcategorías} one {# subcategoría} other {# subcategorías}}",
+    "addSubcategory": "Agregar subcategoría en {name}",
+    "showOne": "Mostrar {name}",
+    "hideOne": "Ocultar {name}",
+    "actions": "Acciones de {name}",
+    "edit": "Editar",
+    "remove": "Eliminar",
+    "toasts": {
+      "created": "Categoría creada",
+      "saved": "Categoría guardada",
+      "deleted": "Categoría eliminada"
+    },
+    "errors": {
+      "duplicate": "Ya existe una categoría con ese nombre.",
+      "depth": "Las subcategorías van dentro de una categoría principal."
+    },
+    "form": {
+      "createTitle": "Nueva categoría",
+      "editTitle": "Editar categoría",
+      "description": "Escríbela en español o en inglés; la traducimos para el otro idioma.",
+      "name": "Nombre",
+      "namePlaceholder": "Ej. Mascotas, Gimnasio, Ahorro para viaje",
+      "kind": "Tipo",
+      "kinds": {
+        "expense": "Gasto",
+        "income": "Ingreso"
+      },
+      "parent": "Dentro de",
+      "noParent": "Ninguna (categoría principal)",
+      "searchParent": "Buscar categoría…",
+      "noParents": "Sin resultados.",
+      "mainHint": "Sin categoría principal, será una nueva categoría principal.",
+      "parentHint": "Será una subcategoría de {kind}.",
+      "icon": "Icono",
+      "iconAuto": "Automático (por el nombre)",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "errors": {
+        "nameRequired": "Escribe un nombre.",
+        "nameTooLong": "Máximo {max} caracteres."
+      },
+      "icons": {
+        "food": "Comida",
+        "groceries": "Supermercado",
+        "coffee": "Café",
+        "transport": "Transporte",
+        "fuel": "Gasolina",
+        "shopping": "Compras",
+        "bills": "Servicios",
+        "subscriptions": "Suscripciones",
+        "entertainment": "Entretenimiento",
+        "health": "Salud",
+        "insurance": "Seguros",
+        "education": "Educación",
+        "personal": "Cuidado personal",
+        "housing": "Vivienda",
+        "loan": "Préstamos",
+        "income": "Ingresos",
+        "travel": "Viajes",
+        "family": "Familia",
+        "pets": "Mascotas",
+        "gift": "Regalos",
+        "fees": "Comisiones",
+        "business": "Negocio",
+        "savings": "Ahorro",
+        "other": "Otro",
+        "card": "Tarjeta",
+        "transfer": "Transferencia"
+      }
+    },
+    "delete": {
+      "title": "¿Eliminar «{name}»?",
+      "notInUse": "Nada la usa todavía; se borrará sin más.",
+      "inUse": "La usan estos datos. Elige a qué categoría pasarlos antes de eliminarla.",
+      "uses": {
+        "transactions": "{count, plural, one {# movimiento} other {# movimientos}}",
+        "children": "{count, plural, one {# subcategoría} other {# subcategorías}}",
+        "budgetCaps": "{count, plural, one {# tope de presupuesto} other {# topes de presupuesto}}",
+        "rules": "{count, plural, one {# regla o alias} other {# reglas o alias}}",
+        "recurring": "{count, plural, one {# pago recurrente} other {# pagos recurrentes}}"
+      },
+      "moveTo": "Pasarlos a",
+      "moveToPlaceholder": "Elige una categoría",
+      "search": "Buscar categoría…",
+      "noTargets": "Sin resultados.",
+      "confirm": "Eliminar",
+      "moveAndDelete": "Mover y eliminar",
+      "deleting": "Eliminando…"
+    }
+  },
+  "profile": {
+    "title": "Editar perfil",
+    "description": "Tu foto y tu nombre se ven en el menú y en la barra de arriba.",
+    "changePhoto": "Cambiar foto",
+    "removePhoto": "Quitar foto",
+    "photoHint": "JPG, PNG o WEBP. La recortamos en cuadro.",
+    "afterRemove": "Al guardar se usará tu foto de Google, o tus iniciales.",
+    "photoType": "Elige una foto JPG, PNG o WEBP de menos de 15 MB.",
+    "photoUnreadable": "No pudimos leer esa imagen. Prueba con otra.",
+    "photoFailed": "No pudimos subir la foto. Intenta de nuevo.",
+    "name": "Nombre",
+    "nameLength": "Entre {min} y {max} caracteres.",
+    "email": "Correo",
+    "emailHint": "El correo no se cambia: es con el que te invitaron.",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "saved": "Perfil actualizado"
   }
 }

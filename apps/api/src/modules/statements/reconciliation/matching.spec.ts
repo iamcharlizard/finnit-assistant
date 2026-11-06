@@ -69,6 +69,26 @@ describe('matchTransactions', () => {
     ).toBe('txn-1');
   });
 
+  it('matches a charge to the side a transfer leaves from, not the one it arrives at', () => {
+    const outgoing = txn({
+      id: 'out',
+      type: TransactionType.transfer,
+      balanceEffect: -299,
+    });
+    const incoming = txn({
+      id: 'in',
+      type: TransactionType.transfer,
+      balanceEffect: 299,
+    });
+    expect(
+      matchTransactions([line()], [incoming, outgoing]).get('line-1'),
+    ).toBe('out');
+    const deposit = line({ kind: ImportedLineKind.deposit });
+    expect(
+      matchTransactions([deposit], [outgoing, incoming]).get('line-1'),
+    ).toBe('in');
+  });
+
   it('uses each transaction once and prefers the closest date', () => {
     const lines = [
       line({ id: 'l1', date: d('2026-09-10') }),

@@ -7,7 +7,12 @@ import { AppShell } from '@/components/app-shell';
 import { SessionProvider } from '@/components/session-provider';
 import { getCurrentUser } from '@/lib/auth/session';
 import { MONEY_COUNTRY } from '@/lib/finance/money';
-import { SIDEBAR_COOKIE, parseSidebarCollapsed } from '@/lib/nav/sidebar';
+import {
+  NAV_GROUPS_COOKIE,
+  SIDEBAR_COOKIE,
+  parseOpenGroups,
+  parseSidebarCollapsed,
+} from '@/lib/nav/sidebar';
 import { unreadNotificationCount } from '@/lib/notifications/unread';
 
 export default async function AppLayout({
@@ -24,6 +29,7 @@ export default async function AppLayout({
   const sidebarCollapsed = parseSidebarCollapsed(
     store.get(SIDEBAR_COOKIE)?.value,
   );
+  const openNavGroups = parseOpenGroups(store.get(NAV_GROUPS_COOKIE)?.value);
 
   return (
     <SessionProvider user={user}>
@@ -31,6 +37,7 @@ export default async function AppLayout({
         <AppShell
           notificationCount={unread}
           sidebarCollapsed={sidebarCollapsed}
+          openNavGroups={openNavGroups}
         >
           {children}
         </AppShell>

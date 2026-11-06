@@ -86,7 +86,10 @@ async function forward(request: NextRequest, { params }: Context) {
   }
 
   const responseHeaders = new Headers({
-    'cache-control': 'private, no-store',
+    'cache-control':
+      route.kind === 'download' && route.cacheable && upstream.ok
+        ? 'private, max-age=86400'
+        : 'private, no-store',
     'x-content-type-options': 'nosniff',
   });
   for (const name of FORWARDED_RESPONSE_HEADERS) {

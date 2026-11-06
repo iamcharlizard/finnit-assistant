@@ -75,7 +75,7 @@ export function AliasDialog({
   const [saving, setSaving] = React.useState(false);
   const preview = useAliasPreview(form);
   const categoryItems = React.useMemo(
-    () => categoryOptions(categories, 'expense', locale),
+    () => categoryOptions(categories, 'any', locale),
     [categories, locale],
   );
 

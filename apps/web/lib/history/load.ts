@@ -21,6 +21,7 @@ import {
 } from '@/lib/finance/types';
 import {
   HISTORY_PAGE_SIZE,
+  shownMonth,
   toApiFilters,
   type HistoryFilters,
 } from './filters';
@@ -49,7 +50,7 @@ export interface HistoryData {
 const HISTORY_QUERY = `query History($first: Int!, $after: String, $filters: TransactionFilters, $year: Int!, $month: Int!) {
   ${HISTORY_QUERY_FIELDS}
   accounts(first: 100) { edges { node { ${ACCOUNT_FIELDS} } } }
-  categories { ${CATEGORY_FIELDS} }
+  categories(includeHidden: true) { ${CATEGORY_FIELDS} }
   monthlyReport(year: $year, month: $month) { ${MONTHLY_REPORT_FIELDS} }
 }`;
 
@@ -58,7 +59,8 @@ export async function loadHistory(
   filters: HistoryFilters,
 ): Promise<HistoryData> {
   const today = todayKey();
-  const month = monthOf(today);
+  // Top categories follow the month on screen (this one otherwise).
+  const month = shownMonth(filters) ?? monthOf(today);
   const [data, l] = await Promise.all([
     serverGraphql<{
       transactions: Connection<ApiTransaction>;

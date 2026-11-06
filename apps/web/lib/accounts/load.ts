@@ -80,14 +80,14 @@ const ACCOUNTS_QUERY = `query Accounts {
 
 const ACCOUNT_DETAIL_QUERY = `query AccountDetail($accountId: String!, $recent: Int!, $from: DateTime!, $to: DateTime!, $dayStart: DateTime, $dayEnd: DateTime, $historyFrom: DateTime!, $historyTo: DateTime!) {
   recent: transactions(first: $recent, filters: { accountId: $accountId, startDate: $dayStart, endDate: $dayEnd }) { edges { node { ${TRANSACTION_FIELDS} } } }
-  categories { ${CATEGORY_FIELDS} }
+  categories(includeHidden: true) { ${CATEGORY_FIELDS} }
   upcomingPayments(from: $from, to: $to, accountId: $accountId) { ${PENDING_CHARGE_FIELDS} }
   accountBalanceHistory(accountId: $accountId, from: $historyFrom, to: $historyTo) { ${BALANCE_HISTORY_FIELDS} }
 }`;
 
 const OVERVIEW_QUERY = `query AccountsOverview($recent: Int!, $dayStart: DateTime, $dayEnd: DateTime, $historyFrom: DateTime!, $historyTo: DateTime!) {
   recent: transactions(first: $recent, filters: { startDate: $dayStart, endDate: $dayEnd }) { edges { node { ${TRANSACTION_FIELDS} } } }
-  categories { ${CATEGORY_FIELDS} }
+  categories(includeHidden: true) { ${CATEGORY_FIELDS} }
   accountsBalanceHistory(from: $historyFrom, to: $historyTo) { ${ALL_BALANCE_FIELDS} }
 }`;
 

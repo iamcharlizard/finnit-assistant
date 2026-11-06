@@ -1664,6 +1664,8 @@ describe('TransactionsService', () => {
 
     it('returns the other side of a transfer with its account nickname', async () => {
       prismaService.transfer.findFirst.mockResolvedValue({
+        id: 'tr-1',
+        convertedAt: null,
         fromTxnId: 't-out',
         fromTxn: side('t-out', 'acc-1', 'Debit'),
         toTxn: side('t-in', 'acc-2', 'Card', 'Mi tarjeta'),
@@ -1672,6 +1674,8 @@ describe('TransactionsService', () => {
       await expect(
         service.findTransferCounterpart('t-out', mockUserId),
       ).resolves.toEqual({
+        transferId: 'tr-1',
+        converted: false,
         transactionId: 't-in',
         accountId: 'acc-2',
         accountName: 'Mi tarjeta',

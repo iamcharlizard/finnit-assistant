@@ -43,6 +43,20 @@ enum NotificationType {
   recurring
   summary
   balance_mismatch
+  uncategorized
+}
+
+// Why a movement looks like a transfer between the user's own accounts.
+enum TransferSuggestionReason {
+  pair // the opposite movement, same amount, is in another own account
+  text // its description reads like a transfer (SPEI, traspaso, …)
+  rule // a merchant alias says it goes to one of the user's accounts
+}
+
+enum TransferSuggestionStatus {
+  pending
+  accepted
+  dismissed
 }
 
 enum NotificationStatus {
@@ -198,6 +212,12 @@ enum AiFeatureKey {
   screenshot_parsing
 }
 
+/// Whether a category is for spending or income (subcategories share their parent's).
+enum CategoryKind {
+  expense
+  income
+}
+
 /// Where a category name translation came from.
 enum TranslationSource {
   seed // default categories (migration / sign-up)
@@ -262,20 +282,23 @@ enum ReceiptConfidence {
 // ---------------------- Models -----------------------
 
 model User {
-  id            String    @id @default(uuid())
-  name          String
-  email         String    @unique
-  passwordHash  String? // null: signs in only with Google
-  role          UserRole  @default(user)
-  isMaster      Boolean   @default(false) // at most one (partial unique index in SQL)
-  googleSubject String?   @unique // Google account id ("sub"), linked on first Google sign-in
-  disabledAt    DateTime?
-  lastLoginAt   DateTime?
-  tokenVersion  Int       @default(0) // bumped to revoke every open session
-  locale        String    @default("es") @db.VarChar(5) // UI / data language: 'es' | 'en'
-  invitedById   String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id               String    @id @default(uuid())
+  name             String
+  email            String    @unique
+  passwordHash     String? // null: signs in only with Google
+  role             UserRole  @default(user)
+  isMaster         Boolean   @default(false) // at most one (partial unique index in SQL)
+  googleSubject    String?   @unique // Google account id ("sub"), linked on first Google sign-in
+  disabledAt       DateTime?
+  lastLoginAt      DateTime?
+  tokenVersion     Int       @default(0) // bumped to revoke every open session
+  locale           String    @default("es") @db.VarChar(5) // UI / data language: 'es' | 'en'
+  googlePictureUrl String? // "picture" of the Google account, refreshed on each Google sign-in
+  avatarKey        String? // uploaded profile photo (S3 key, users/<id>/avatars/…); wins over Google's
+  avatarUpdatedAt  DateTime? // when the photo last changed (cache-busting version)
+  invitedById      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   invitedBy      User?       @relation("UserInvitations", fields: [invitedById], references: [id], onDelete: SetNull)
   invitedUsers   User[]      @relation("UserInvitations")
@@ -301,7 +324,9 @@ model User {
   merchantRules             MerchantRule[]
   receiptImports            ReceiptImport[]
   screenshotImports         ScreenshotImport[]
+  transferSuggestions       TransferSuggestion[]
   merchantTaxIds            MerchantTaxId[]
+  hiddenCategories          CategoryHidden[]
 }
 
 model Account {
@@ -332,6 +357,8 @@ model Account {
   importedLines               ImportedTransaction[] @relation("imported_account")
   receiptSuggestions          ReceiptImport[]       @relation("receipt_suggested_account")
   screenshotImports           ScreenshotImport[]    @relation("screenshot_account")
+  transferAliases             MerchantAlias[]       @relation("alias_transfer_account")
+  transferSuggestions         TransferSuggestion[]  @relation("transfer_suggestion_account")
 
   @@unique([userId, name])
   @@index([userId])
@@ -350,15 +377,21 @@ model CreditCardTerms {
   account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
 }
 
+/// userId null + isDefault: the global catalog (default-categories.ts, synced on
+/// start; nobody edits it). Otherwise the user's own category, seen only by them.
+/// Global keys are unique through a partial index (Category_global_key_key).
 model Category {
-  id        String   @id @default(uuid())
-  userId    String? // null => default global
+  id        String       @id @default(uuid())
+  userId    String? // null => global catalog
   parentId  String?
   name      String // English original; localized names live in CategoryTranslation
-  key       String? // i18n key of a default category, e.g. categories.food.groceries
-  isDefault Boolean  @default(false)
+  key       String? // catalog key, e.g. categories.food.groceries
+  isDefault Boolean      @default(false)
+  kind      CategoryKind @default(expense)
+  icon      String? // icon key the clients know; null => the parent's / by name
+  color     String? // color key the clients know; null => the icon's
   sortOrder Int?
-  createdAt DateTime @default(now())
+  createdAt DateTime     @default(now())
 
   user              User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
   parent            Category?             @relation("category_to_self", fields: [parentId], references: [id], onDelete: SetNull)
@@ -376,11 +409,25 @@ model Category {
   merchantTaxIds            MerchantTaxId[]
   debtPurposes              Debt[]                     @relation("debt_purpose_category")
   debtChargePurposes        DebtCharge[]               @relation("debt_charge_purpose_category")
+  hiddenBy                  CategoryHidden[]
 
   @@unique([userId, name], name: "category_user_name_unique")
   @@unique([userId, key], name: "category_user_key_unique")
   @@index([userId])
   @@index([parentId])
+}
+
+/// A global category a user hid from their pickers (pivot).
+model CategoryHidden {
+  userId     String
+  categoryId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([userId, categoryId])
+  @@index([categoryId])
 }
 
 /// Category name per locale ('es' | 'en'). Child rows of Category (cascade).
@@ -431,6 +478,10 @@ model Transaction {
   categorySource      CategorySource?
   suggestedCategoryId String? // pending suggestion, not applied yet
   suggestedBy         CategorySource? // 'rule' | 'ai'
+  // A movement turned into a transfer side: the type it had, restored when
+  // the conversion is undone. Null otherwise (also for a side the conversion
+  // created, which undoing deletes).
+  originalType        TransactionType?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
@@ -444,17 +495,19 @@ model Transaction {
   transferFrom Transfer? @relation("transfer_from")
   transferTo   Transfer? @relation("transfer_to")
 
-  attachments       Attachment[]
-  debtPayment       DebtPayment?
-  debtCharge        DebtCharge?
-  debtDisbursement  Debt?                 @relation("debt_disbursement")
-  bankDifferenceOf  Account?              @relation("account_bank_difference")
-  goalContributions GoalContribution[] // <-- ahora 1–N (fix)
-  transactionTags   TransactionTag[]
-  importedMatches   ImportedTransaction[] @relation("imported_matched")
-  recurringPayment  RecurringOccurrence?
-  receiptImport     ReceiptImport?        @relation("receipt_transaction")
-  receiptMatches    ReceiptImport[]       @relation("receipt_matched_transaction")
+  attachments               Attachment[]
+  debtPayment               DebtPayment?
+  debtCharge                DebtCharge?
+  debtDisbursement          Debt?                 @relation("debt_disbursement")
+  bankDifferenceOf          Account?              @relation("account_bank_difference")
+  goalContributions         GoalContribution[] // <-- ahora 1–N (fix)
+  transactionTags           TransactionTag[]
+  importedMatches           ImportedTransaction[] @relation("imported_matched")
+  recurringPayment          RecurringOccurrence?
+  receiptImport             ReceiptImport?        @relation("receipt_transaction")
+  receiptMatches            ReceiptImport[]       @relation("receipt_matched_transaction")
+  transferSuggestion        TransferSuggestion?   @relation("transfer_suggestion_transaction")
+  transferSuggestionMatches TransferSuggestion[]  @relation("transfer_suggestion_counterpart")
 
   @@index([userId, txnDate(sort: Desc)])
   @@index([userId, accountId, txnDate(sort: Desc)])
@@ -468,24 +521,29 @@ model Transaction {
 /// (unaccent + lower, or ~* for regex) and is materialized in
 /// Transaction.aliasId.
 model MerchantAlias {
-  id          String         @id @default(uuid())
-  userId      String
-  matchType   AliasMatchType
-  pattern     String         @db.VarChar(200)
-  displayName String         @db.VarChar(80)
-  categoryId  String?
-  isPrivate   Boolean        @default(false)
-  priority    Int            @default(0)
-  active      Boolean        @default(true)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id                String         @id @default(uuid())
+  userId            String
+  matchType         AliasMatchType
+  pattern           String         @db.VarChar(200)
+  displayName       String         @db.VarChar(80)
+  categoryId        String?
+  isPrivate         Boolean        @default(false)
+  priority          Int            @default(0)
+  active            Boolean        @default(true)
+  // "These go to my account X": a matching synced movement is suggested as
+  // a transfer to it (never converted on its own).
+  transferAccountId String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  transactions Transaction[]
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category        Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  transferAccount Account?      @relation("alias_transfer_account", fields: [transferAccountId], references: [id], onDelete: SetNull)
+  transactions    Transaction[]
 
   @@index([userId, active])
   @@index([categoryId])
+  @@index([transferAccountId])
 }
 
 /// Learned merchant -> category (feature 16): created when the user
@@ -508,16 +566,44 @@ model MerchantRule {
 }
 
 model Transfer {
-  id        String   @id @default(uuid())
-  fromTxnId String   @unique
-  toTxnId   String   @unique
-  amount    Decimal  @db.Decimal(18, 2)
-  createdAt DateTime @default(now())
+  id          String    @id @default(uuid())
+  fromTxnId   String    @unique
+  toTxnId     String    @unique
+  amount      Decimal   @db.Decimal(18, 2)
+  // Made by turning an existing expense/income into a transfer (it can be
+  // undone); null for transfers registered as such.
+  convertedAt DateTime?
+  createdAt   DateTime  @default(now())
 
   fromTxn Transaction @relation("transfer_from", fields: [fromTxnId], references: [id], onDelete: Restrict)
   toTxn   Transaction @relation("transfer_to", fields: [toTxnId], references: [id], onDelete: Restrict)
 
   @@unique([fromTxnId, toTxnId])
+}
+
+/// A movement that looks like a transfer between the user's own accounts,
+/// found when bank movements arrive. The user confirms it (it becomes a
+/// transfer), says it went to someone else, or dismisses it; reviewed
+/// movements are never suggested again.
+model TransferSuggestion {
+  id                       String                   @id @default(uuid())
+  userId                   String
+  transactionId            String                   @unique
+  counterpartTransactionId String?
+  counterpartAccountId     String?
+  reason                   TransferSuggestionReason
+  status                   TransferSuggestionStatus @default(pending)
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  user                   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transaction            Transaction  @relation("transfer_suggestion_transaction", fields: [transactionId], references: [id], onDelete: Cascade)
+  counterpartTransaction Transaction? @relation("transfer_suggestion_counterpart", fields: [counterpartTransactionId], references: [id], onDelete: SetNull)
+  counterpartAccount     Account?     @relation("transfer_suggestion_account", fields: [counterpartAccountId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([counterpartTransactionId])
+  @@index([counterpartAccountId])
 }
 
 // Files live in the private S3 bucket (fileKey); they are only served by the

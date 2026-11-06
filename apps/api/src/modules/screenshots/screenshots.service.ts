@@ -51,6 +51,7 @@ import {
   type ShotMovement,
   type ShotReviewField,
 } from './screenshot-rules';
+import { visibleCategoryWhere } from '../categories/category-scope';
 
 const PROCESS_FAILED_MESSAGE = 'No se pudo procesar la captura';
 const NO_MOVEMENTS_MESSAGE = 'No encontramos movimientos en la captura';
@@ -632,7 +633,7 @@ export class ScreenshotsService {
     const category = await this.prisma.category.findFirst({
       where: {
         id: categoryId,
-        OR: [{ userId }, { userId: null, isDefault: true }],
+        ...visibleCategoryWhere(userId),
       },
       select: { id: true },
     });

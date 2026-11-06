@@ -12,13 +12,13 @@ export type PageTitleKey =
   | 'cards'
   | 'budgets'
   | 'debts'
-  | 'loans'
   | 'goals'
   | 'simulator'
   | 'notifications'
   | 'analytics'
   | 'statements'
   | 'settings'
+  | 'categories'
   | 'banks'
   | 'aliases'
   | 'connectBank'
@@ -39,8 +39,6 @@ export const PAGE_TITLES: ReadonlyArray<
   ['/planning/budgets', 'budgets'],
   ['/planning/debts', 'debts'],
   ['/planning/debts/[id]', 'debts'],
-  ['/planning/loans', 'loans'],
-  ['/planning/loans/[id]', 'loans'],
   ['/planning/goals', 'goals'],
   ['/planning/simulator', 'simulator'],
   ['/notifications', 'notifications'],
@@ -51,6 +49,7 @@ export const PAGE_TITLES: ReadonlyArray<
   ['/settings/banks', 'banks'],
   ['/settings/banks/connect', 'connectBank'],
   ['/settings/aliases', 'aliases'],
+  ['/settings/categories', 'categories'],
   ['/admin', 'admin'],
   ['/admin/[...rest]', 'admin'],
 ];

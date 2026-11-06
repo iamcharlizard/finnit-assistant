@@ -3,10 +3,13 @@
 import { BadgeCheck } from 'lucide-react';
 
 import { cn } from '../../lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 interface ProfileCardProps {
   name: string;
   email: string;
+  /** Profile photo; without it (or while it loads), the initials. */
+  avatarSrc?: string | null;
   isPremium?: boolean;
   isVerified?: boolean;
   onEditClick?: () => void;
@@ -30,6 +33,7 @@ function getInitials(name: string): string {
 function ProfileCard({
   name,
   email,
+  avatarSrc,
   isPremium = false,
   isVerified = false,
   onEditClick,
@@ -54,13 +58,22 @@ function ProfileCard({
 
       <div className="relative mt-2 mb-4">
         <div className="size-24 rounded-full bg-[linear-gradient(135deg,#6c72cb_0%,var(--highlight)_50%,var(--tertiary)_100%)] p-[3px]">
-          <div
+          <Avatar
             aria-label={avatarLabel(name)}
             role="img"
-            className="flex size-full items-center justify-center rounded-full bg-[#f0f0f8] text-3xl font-bold text-violet-ink dark:bg-[#1e1f26]"
+            className="size-full"
           >
-            {getInitials(name)}
-          </div>
+            {avatarSrc ? (
+              <AvatarImage
+                src={avatarSrc}
+                alt=""
+                referrerPolicy="no-referrer"
+              />
+            ) : null}
+            <AvatarFallback className="bg-[#f0f0f8] text-3xl text-violet-ink dark:bg-[#1e1f26]">
+              {getInitials(name)}
+            </AvatarFallback>
+          </Avatar>
         </div>
         {isVerified ? (
           <span className="absolute right-0 bottom-0 flex size-7 items-center justify-center rounded-full border-2 border-surface bg-tertiary shadow-[0_2px_8px_rgba(0,0,0,0.5)]">

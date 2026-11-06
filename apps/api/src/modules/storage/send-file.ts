@@ -8,7 +8,13 @@ import { StoredObject } from './s3-storage.service';
 export function sendFile(
   res: Response,
   file: StoredObject,
-  options: { fileName: string; contentType: string; inline?: boolean },
+  options: {
+    fileName: string;
+    contentType: string;
+    inline?: boolean;
+    /** Defaults to never caching; still always private. */
+    cacheControl?: `private, ${string}`;
+  },
 ): void {
   res.setHeader('Content-Type', options.contentType);
   if (file.contentLength !== undefined) {
@@ -18,7 +24,7 @@ export function sendFile(
     'Content-Disposition',
     `${options.inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(options.fileName)}`,
   );
-  res.setHeader('Cache-Control', 'private, no-store');
+  res.setHeader('Cache-Control', options.cacheControl ?? 'private, no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   file.body.on('error', () => res.destroy());
   file.body.pipe(res);

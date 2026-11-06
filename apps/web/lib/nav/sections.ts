@@ -1,15 +1,15 @@
 import {
+  ArrowLeftRight,
   Calculator,
   ChartLine,
+  ClipboardList,
   CreditCard,
   FileText,
-  HandCoins,
   History,
   House,
   Landmark,
   PiggyBank,
   Repeat,
-  Settings,
   ShieldCheck,
   Tags,
   Target,
@@ -21,18 +21,17 @@ import {
  * (`nav.sections.<key>`, `nav.items.<key>`); components translate them.
  *
  * A section with one screen shows as that screen's link; one with several
- * shows its name above them; empty sections (screens still to come) don't
- * show at all.
+ * is a group (a submenu with its own icon) that opens to show them; empty
+ * sections (screens still to come) don't show at all. Settings is not in
+ * the menu: it lives in the profile menu (sidebar footer, or the header's
+ * avatar on small screens).
  */
 export type NavSectionKey =
   | 'home'
   | 'transactions'
-  | 'recurring'
   | 'accounts'
   | 'planning'
   | 'analytics'
-  | 'statements'
-  | 'settings'
   | 'admin';
 
 export type NavItemKey =
@@ -40,15 +39,13 @@ export type NavItemKey =
   | 'history'
   | 'categorize'
   | 'recurring'
+  | 'statements'
   | 'cards'
   | 'budgets'
   | 'debts'
-  | 'loans'
   | 'goals'
   | 'simulator'
   | 'analytics'
-  | 'statements'
-  | 'settings'
   | 'admin';
 
 export interface NavEntry {
@@ -60,9 +57,13 @@ export interface NavEntry {
 export interface NavSection {
   key: NavSectionKey;
   items: NavEntry[];
+  /** A group's icon (its submenu button); single-screen sections use the screen's. */
+  icon?: LucideIcon;
   /** Only admins see it. */
   adminOnly?: boolean;
 }
+
+export const SETTINGS_HREF = '/settings';
 
 export const NAV_SECTIONS: ReadonlyArray<NavSection> = [
   {
@@ -71,14 +72,13 @@ export const NAV_SECTIONS: ReadonlyArray<NavSection> = [
   },
   {
     key: 'transactions',
+    icon: ArrowLeftRight,
     items: [
       { key: 'history', href: '/history', icon: History },
       { key: 'categorize', href: '/transactions/categorize', icon: Tags },
+      { key: 'recurring', href: '/recurring', icon: Repeat },
+      { key: 'statements', href: '/statements', icon: FileText },
     ],
-  },
-  {
-    key: 'recurring',
-    items: [{ key: 'recurring', href: '/recurring', icon: Repeat }],
   },
   {
     key: 'accounts',
@@ -86,10 +86,10 @@ export const NAV_SECTIONS: ReadonlyArray<NavSection> = [
   },
   {
     key: 'planning',
+    icon: ClipboardList,
     items: [
       { key: 'budgets', href: '/planning/budgets', icon: PiggyBank },
       { key: 'debts', href: '/planning/debts', icon: Landmark },
-      { key: 'loans', href: '/planning/loans', icon: HandCoins },
       { key: 'goals', href: '/planning/goals', icon: Target },
       { key: 'simulator', href: '/planning/simulator', icon: Calculator },
     ],
@@ -99,19 +99,29 @@ export const NAV_SECTIONS: ReadonlyArray<NavSection> = [
     items: [{ key: 'analytics', href: '/analytics', icon: ChartLine }],
   },
   {
-    key: 'statements',
-    items: [{ key: 'statements', href: '/statements', icon: FileText }],
-  },
-  {
-    key: 'settings',
-    items: [{ key: 'settings', href: '/settings', icon: Settings }],
-  },
-  {
     key: 'admin',
     adminOnly: true,
     items: [{ key: 'admin', href: '/admin', icon: ShieldCheck }],
   },
 ];
+
+/** Whether a section shows as a group (a submenu) rather than one link. */
+export function isNavGroup(section: NavSection): boolean {
+  return section.items.length > 1;
+}
+
+/** The group that holds the current page, if any. */
+export function activeGroupKey(
+  sections: ReadonlyArray<NavSection>,
+  activeHref: string | null,
+): NavSectionKey | null {
+  if (!activeHref) return null;
+  return (
+    sections.find(
+      (s) => isNavGroup(s) && s.items.some((i) => i.href === activeHref),
+    )?.key ?? null
+  );
+}
 
 /** The sections this user sees: no empty ones, admin only for admins. */
 export function visibleSections(

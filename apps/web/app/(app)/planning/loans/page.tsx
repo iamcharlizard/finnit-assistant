@@ -1,14 +1,8 @@
-import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
-import { LoansScreen } from '@/components/debts/loans-screen';
-import { loadLoans } from '@/lib/debts/load';
+import { LOANS_PATH } from '@/lib/debts/view';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations();
-  return { title: t('pageTitles.loans') };
-}
-
-export default async function LoansPage() {
-  return <LoansScreen data={await loadLoans()} />;
+/** Loans are a tab of Deudas now; old links land there. */
+export default function LoansPage() {
+  redirect(LOANS_PATH);
 }

@@ -32,6 +32,12 @@ export function useTransactionPages(
   categories: ReadonlyArray<ApiCategory>,
 ) {
   const [page, setPage] = React.useState(initial);
+  // A server refresh (after editing a row) brings a new first page.
+  const [seed, setSeed] = React.useState(initial);
+  if (seed !== initial) {
+    setSeed(initial);
+    setPage(initial);
+  }
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const index = React.useMemo(() => indexCategories(categories), [categories]);

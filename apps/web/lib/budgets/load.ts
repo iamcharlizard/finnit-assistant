@@ -63,7 +63,7 @@ export async function loadBudgets(selected: MonthRef): Promise<BudgetsView> {
       }
     >(`query Budgets {
   budgets { ${BUDGET_FIELDS} }
-  categories { ${BUDGET_CATEGORY_FIELDS} }
+  categories(includeHidden: true) { ${BUDGET_CATEGORY_FIELDS} }
   ${reports}
 }`),
     getLocalizer(),

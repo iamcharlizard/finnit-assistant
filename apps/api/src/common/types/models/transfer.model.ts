@@ -18,6 +18,12 @@ export class Transfer {
   @Field()
   createdAt: Date;
 
+  @Field(() => Date, {
+    nullable: true,
+    description: 'Made from an existing expense/income: it can be undone',
+  })
+  convertedAt?: Date | null;
+
   @Field(() => Transaction)
   fromTxn: Transaction;
 

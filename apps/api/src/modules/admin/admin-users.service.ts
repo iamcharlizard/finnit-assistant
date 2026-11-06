@@ -9,7 +9,6 @@ import {
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import { hashPassword } from '../../common/utils/password.util';
-import { createDefaultCategories } from '../auth/default-categories';
 import {
   AdminUser,
   AdminUserConnection,
@@ -101,7 +100,6 @@ export class AdminUsersService {
           },
           include: { invitedBy: { select: { name: true } } },
         });
-        await createDefaultCategories(tx, created.id);
         return created;
       })
       .catch((error: unknown) => {

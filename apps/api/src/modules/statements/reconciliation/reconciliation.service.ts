@@ -123,6 +123,8 @@ export class ReconciliationService {
         merchantName: t.merchantName,
         description: t.description,
         inProcess: t.inProcess,
+        balanceEffect:
+          t.balanceEffect === null ? null : Number(t.balanceEffect),
       })),
     );
     const occurrenceMatches = matchOccurrences(

@@ -7,6 +7,8 @@ export interface GoogleIdentity {
   email: string;
   emailVerified: boolean;
   nonce?: string;
+  /** Profile picture URL, when the account has one. */
+  picture?: string;
 }
 
 /** Thrown when the token is invalid, expired or for another app. */
@@ -51,6 +53,21 @@ export class GoogleIdTokenVerifier {
       email: payload.email.toLowerCase(),
       emailVerified: payload.email_verified === true,
       nonce: payload.nonce,
+      ...(isGooglePicture(payload.picture) && { picture: payload.picture }),
     };
+  }
+}
+
+/** Only https pictures from Google's own image hosts are kept. */
+export function isGooglePicture(url: string | undefined): url is string {
+  if (!url || url.length > 1000) return false;
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === 'https:' &&
+      parsed.hostname.endsWith('.googleusercontent.com')
+    );
+  } catch {
+    return false;
   }
 }

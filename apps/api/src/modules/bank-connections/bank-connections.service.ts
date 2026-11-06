@@ -25,6 +25,7 @@ import { LineMaterializerService } from '../statements/reconciliation/line-mater
 import { addDays, toDateOnly } from '../recurring-expenses/schedule.util';
 import { localToday } from '../../common/utils/local-date.util';
 import { NotificationsService } from '../notifications/notifications.service';
+import { SyncReviewService } from './sync-review.service';
 import { mismatchTexts, reconcileBalance } from './balance-reconciliation';
 import {
   BankConnection,
@@ -95,7 +96,25 @@ export class BankConnectionsService {
     private readonly reconciliation: ReconciliationService,
     private readonly materializer: LineMaterializerService,
     private readonly notifications: NotificationsService,
+    private readonly syncReview: SyncReviewService,
   ) {}
+
+  /**
+   * After a sync: possible transfers, categories from the user's history
+   * and the "to review" notification. Never fails the sync.
+   */
+  private async reviewAfterSync(
+    userId: string,
+    createdIds: string[],
+  ): Promise<void> {
+    try {
+      await this.syncReview.review(userId, createdIds);
+    } catch (error) {
+      this.logger.warn(
+        `Sync review failed for user ${userId}: ${(error as Error).message}`,
+      );
+    }
+  }
 
   async connectSession(userId: string): Promise<BankConnectSession> {
     this.requireConfigured();
@@ -308,6 +327,7 @@ export class BankConnectionsService {
 
       let imported = 0;
       let created = 0;
+      const createdIds: string[] = [];
       const linkedAccounts = await this.prisma.linkedAccount.findMany({
         where: { bankConnectionId: id, accountId: { not: null } },
       });
@@ -330,6 +350,7 @@ export class BankConnectionsService {
         );
         imported += result.imported;
         created += result.created;
+        createdIds.push(...result.createdIds);
         await this.reconcileBalance(linked.id, connection.userId);
         for (const t of transactions) {
           if (t.dt_refresh) {
@@ -354,6 +375,7 @@ export class BankConnectionsService {
           transactionsCursor: newCursor ?? new Date(),
         },
       });
+      await this.reviewAfterSync(connection.userId, createdIds);
       return this.result(id, imported, created, refreshRequested);
     } catch (error) {
       const message =
@@ -631,7 +653,7 @@ export class BankConnectionsService {
     userId: string,
     linked: LinkedAccountRow,
     transactions: SyncfyTransaction[],
-  ): Promise<{ imported: number; created: number }> {
+  ): Promise<{ imported: number; created: number; createdIds: string[] }> {
     const accountId = linked.accountId!;
     const account = {
       account_type: linked.type ?? 'Checking',
@@ -685,7 +707,7 @@ export class BankConnectionsService {
     const pending = await this.prisma.importedTransaction.findMany({
       where: { linkedAccountId: linked.id, status: ImportedLineStatus.pending },
     });
-    if (pending.length === 0) return { imported, created: 0 };
+    if (pending.length === 0) return { imported, created: 0, createdIds: [] };
 
     await this.reconciliation.reconcileLines(
       userId,
@@ -696,19 +718,20 @@ export class BankConnectionsService {
     const reconciled = await this.prisma.importedTransaction.findMany({
       where: { id: { in: pending.map((line) => line.id) } },
     });
-    const { created, settledChange } = await this.prisma.$transaction(
-      (tx) =>
-        this.materializer.materialize(tx, reconciled, {
-          userId,
-          accountId,
-          source: TransactionSource.imported,
-          matchedBy: OccurrenceMatchSource.bank,
-          adjustBalance: false,
-          externalId: (line) =>
-            line.providerTxnId ? `syncfy:${line.providerTxnId}` : undefined,
-        }),
-      { timeout: 60_000 },
-    );
+    const { created, settledChange, createdIds } =
+      await this.prisma.$transaction(
+        (tx) =>
+          this.materializer.materialize(tx, reconciled, {
+            userId,
+            accountId,
+            source: TransactionSource.imported,
+            matchedBy: OccurrenceMatchSource.bank,
+            adjustBalance: false,
+            externalId: (line) =>
+              line.providerTxnId ? `syncfy:${line.providerTxnId}` : undefined,
+          }),
+        { timeout: 60_000 },
+      );
     // A posted movement that settled an "en proceso" one changed an older
     // movement's effect: the next reconciliation must expect it too.
     if (settledChange !== 0) {
@@ -717,7 +740,7 @@ export class BankConnectionsService {
         data: { reconciledBalance: { increment: settledChange } },
       });
     }
-    return { imported, created };
+    return { imported, created, createdIds };
   }
 
   /**

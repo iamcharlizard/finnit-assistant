@@ -3,8 +3,15 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
+import { ChevronDown, PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@finnit/ui/components/ui/dropdown-menu';
 import {
   Tooltip,
   TooltipContent,
@@ -16,7 +23,12 @@ import { cn } from '@finnit/ui/lib/utils';
 import { BrandMark, BrandWordmark } from '@/components/brand/finnit-brand';
 import { withLayoutTransition } from '@/components/navigation/layout-transition';
 import { isEditable } from '@/components/navigation/use-sidebar-state';
-import type { NavEntry, NavSection } from '@/lib/nav/sections';
+import {
+  isNavGroup,
+  type NavEntry,
+  type NavSection,
+  type NavSectionKey,
+} from '@/lib/nav/sections';
 
 export const SIDEBAR_ID = 'app-sidebar';
 
@@ -92,10 +104,11 @@ function RowTooltip({
 }
 
 /**
- * Sidebar from lg up: a floating glass rail grouped by sections. A one-screen
- * section is a plain link named after the section; a bigger one gets a
- * heading above its links (a short divider when collapsed). Collapsed it
- * shows icons with tooltips; ⌘B / Ctrl+B toggles it.
+ * Sidebar from lg up: a floating glass rail. A one-screen section is a plain
+ * link named after the section; a bigger one is a group that opens and
+ * closes in place (a flyout menu when the rail is collapsed). The profile
+ * menu sits at the bottom. Collapsed it shows icons with tooltips; ⌘B /
+ * Ctrl+B toggles it.
  */
 export function AppSideNav({
   sections,
@@ -103,6 +116,9 @@ export function AppSideNav({
   onAddClick,
   collapsed: preferCollapsed,
   onToggle,
+  openGroups,
+  onToggleGroup,
+  footer,
   className,
 }: {
   sections: ReadonlyArray<NavSection>;
@@ -111,6 +127,11 @@ export function AppSideNav({
   /** The user's choice from lg up. */
   collapsed: boolean;
   onToggle: () => void;
+  /** Groups shown open (expanded rail). */
+  openGroups: ReadonlySet<NavSectionKey>;
+  onToggleGroup: (key: NavSectionKey) => void;
+  /** Pinned under the menu (the profile). */
+  footer?: React.ReactNode;
   className?: string;
 }) {
   const t = useTranslations('nav');
@@ -170,7 +191,7 @@ export function AppSideNav({
     'aria-keyshortcuts': 'Meta+B Control+B',
   };
 
-  const link = (entry: NavEntry, label: string) => {
+  const link = (entry: NavEntry, label: string, nested = false) => {
     const isActive = entry.href === activeHref;
     const Icon = entry.icon;
     return (
@@ -180,6 +201,7 @@ export function AppSideNav({
           aria-current={isActive ? 'page' : undefined}
           className={cn(
             ROW,
+            nested && 'min-h-10 pl-3',
             isActive
               ? 'bg-primary/15 text-on-background dark:bg-primary/20'
               : 'text-on-surface-variant hover:bg-accent hover:text-on-background',
@@ -187,11 +209,128 @@ export function AppSideNav({
         >
           <Icon
             aria-hidden
-            className={cn('size-5 shrink-0', isActive && 'text-brand-ink')}
+            className={cn(
+              'shrink-0',
+              nested ? 'size-[18px]' : 'size-5',
+              isActive && 'text-brand-ink',
+            )}
           />
           <RowLabel>{label}</RowLabel>
         </Link>
       </RowTooltip>
+    );
+  };
+
+  const group = (section: NavSection) => {
+    const label = t(`sections.${section.key}`);
+    const Icon = section.icon ?? section.items[0]!.icon;
+    const hasActive = section.items.some((i) => i.href === activeHref);
+    const panelId = `nav-group-${section.key}`;
+
+    if (collapsed) {
+      // A flyout with the group's screens beside the rail.
+      return (
+        <DropdownMenu key={section.key} modal={false}>
+          <RowTooltip collapsed={collapsed} label={label}>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={label}
+                className={cn(
+                  ROW,
+                  'w-full data-[state=open]:bg-accent',
+                  hasActive
+                    ? 'bg-primary/15 text-on-background dark:bg-primary/20'
+                    : 'text-on-surface-variant hover:bg-accent hover:text-on-background',
+                )}
+              >
+                <Icon
+                  aria-hidden
+                  className={cn(
+                    'size-5 shrink-0',
+                    hasActive && 'text-brand-ink',
+                  )}
+                />
+              </button>
+            </DropdownMenuTrigger>
+          </RowTooltip>
+          <DropdownMenuContent side="right" align="start" sideOffset={14}>
+            <DropdownMenuLabel>{label}</DropdownMenuLabel>
+            {section.items.map((entry) => {
+              const ItemIcon = entry.icon;
+              const isActive = entry.href === activeHref;
+              return (
+                <DropdownMenuItem key={entry.href} asChild>
+                  <Link
+                    href={entry.href}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={cn(isActive && 'bg-primary/15 font-medium')}
+                  >
+                    <ItemIcon
+                      aria-hidden
+                      className={cn(isActive && 'text-brand-ink!')}
+                    />
+                    {t(`items.${entry.key}`)}
+                  </Link>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    }
+
+    const open = openGroups.has(section.key);
+    return (
+      <div key={section.key} className="flex flex-col">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={() => onToggleGroup(section.key)}
+          className={cn(
+            ROW,
+            'w-full text-left',
+            hasActive && !open
+              ? 'bg-primary/15 text-on-background dark:bg-primary/20'
+              : 'text-on-surface-variant hover:bg-accent hover:text-on-background',
+          )}
+        >
+          <Icon
+            aria-hidden
+            className={cn('size-5 shrink-0', hasActive && 'text-brand-ink')}
+          />
+          <RowLabel>{label}</RowLabel>
+          <ChevronDown
+            aria-hidden
+            className={cn(
+              'ml-auto size-4 shrink-0 transition-transform duration-200',
+              EASE,
+              open && 'rotate-180',
+            )}
+          />
+        </button>
+        {/* Height animates through the grid row; closed, it's inert. */}
+        <div
+          id={panelId}
+          role="group"
+          aria-label={label}
+          inert={!open}
+          className={cn(
+            'grid transition-[grid-template-rows,opacity] duration-300',
+            EASE,
+            open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+          )}
+        >
+          <div className="flex min-h-0 flex-col gap-1 overflow-hidden">
+            <div className="ml-[24px] flex flex-col gap-1 border-l border-outline/60 pt-1 pl-1.5">
+              {section.items.map((entry) =>
+                link(entry, t(`items.${entry.key}`), true),
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -274,45 +413,17 @@ export function AppSideNav({
           >
             {sections.map((section) => {
               const [only] = section.items;
-              if (section.items.length === 1 && only) {
+              if (!isNavGroup(section) && only) {
                 return link(only, t(`sections.${section.key}`));
               }
-              const headingId = `nav-section-${section.key}`;
-              return (
-                <div
-                  key={section.key}
-                  role="group"
-                  aria-labelledby={headingId}
-                  className="mt-3 flex flex-col gap-1"
-                >
-                  {/* Heading (expanded) or a short divider (collapsed). */}
-                  <div
-                    className={cn(
-                      'grid grid-rows-[1fr] transition-[grid-template-rows,opacity] duration-300 rail-collapsed:grid-rows-[0fr] rail-collapsed:opacity-0',
-                      EASE,
-                    )}
-                  >
-                    <span
-                      id={headingId}
-                      className="overflow-hidden px-3 pb-1 text-[11px] font-medium tracking-[0.15em] whitespace-nowrap text-on-surface-variant uppercase"
-                    >
-                      {t(`sections.${section.key}`)}
-                    </span>
-                  </div>
-                  <span
-                    aria-hidden
-                    className={cn(
-                      'ml-[15px] h-px w-0 bg-outline opacity-0 transition-[width,opacity] duration-300 rail-collapsed:mb-1 rail-collapsed:w-5 rail-collapsed:opacity-100',
-                      EASE,
-                    )}
-                  />
-                  {section.items.map((entry) =>
-                    link(entry, t(`items.${entry.key}`)),
-                  )}
-                </div>
-              );
+              return group(section);
             })}
           </nav>
+          {footer ? (
+            <div className="-mx-1 shrink-0 border-t border-outline/60 px-1 pt-3">
+              {footer}
+            </div>
+          ) : null}
         </aside>
       </div>
     </TooltipProvider>

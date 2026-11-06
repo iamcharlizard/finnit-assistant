@@ -19,6 +19,9 @@ const userRow = (overrides: Partial<UserRow> = {}): UserRow => ({
   lastLoginAt: null,
   locale: 'es',
   tokenVersion: 0,
+  googlePictureUrl: null,
+  avatarKey: null,
+  avatarUpdatedAt: null,
   invitedById: null,
   createdAt: new Date('2026-10-01'),
   updatedAt: new Date('2026-10-01'),
@@ -46,9 +49,10 @@ describe('setMasterUser', () => {
       () => Promise.resolve(userRow({ id: 'new-master' })) as never,
     );
     prisma.category.create.mockResolvedValue({ id: 'cat-1' } as never);
+    prisma.category.findMany.mockResolvedValue([]);
   });
 
-  it('creates a new master with a password and default categories', async () => {
+  it('creates a new master with a password and makes sure the category catalog exists', async () => {
     given(null, null);
 
     const result = await setMasterUser(prisma, {
@@ -73,7 +77,8 @@ describe('setMasterUser', () => {
     ).resolves.toBe(true);
     expect(prisma.category.create).toHaveBeenCalled();
     expect(prisma.category.create.mock.calls[0][0].data).toMatchObject({
-      userId: 'new-master',
+      userId: null,
+      isDefault: true,
     });
   });
 

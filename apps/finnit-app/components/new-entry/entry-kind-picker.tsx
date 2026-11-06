@@ -6,7 +6,7 @@ import { TwPressable, TwView } from '@finnit/ui-native/lib/tw';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
 import { Text } from '@finnit/ui-native/components/ui/text';
 
-const KINDS: ReadonlyArray<{ kind: EntryKind; icon: LucideIcon; tone: `--${string}` }> = [
+const KINDS: readonly { kind: EntryKind; icon: LucideIcon; tone: `--${string}` }[] = [
   { kind: 'expense', icon: CircleArrowUp, tone: '--expense' },
   { kind: 'income', icon: CircleArrowDown, tone: '--income' },
   { kind: 'transfer', icon: ArrowLeftRight, tone: '--violet-ink' },

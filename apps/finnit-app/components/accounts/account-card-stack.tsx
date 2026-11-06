@@ -19,7 +19,7 @@ export function AccountCardStack({
   holderName,
   onSelect,
 }: {
-  accounts: ReadonlyArray<AccountSummary>;
+  accounts: readonly AccountSummary[];
   holderName: string;
   onSelect: (id: string) => void;
 }) {

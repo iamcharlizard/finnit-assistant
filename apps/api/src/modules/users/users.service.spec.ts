@@ -58,3 +58,35 @@ describe('UsersService.updatePreferences', () => {
     expect(prisma.user.update).not.toHaveBeenCalled();
   });
 });
+
+describe('UsersService.updateProfile', () => {
+  let prisma: DeepMockProxy<PrismaService>;
+  let service: UsersService;
+
+  beforeEach(() => {
+    prisma = mockDeep<PrismaService>();
+    service = new UsersService(prisma);
+  });
+
+  it('writes only the trimmed name', async () => {
+    prisma.user.update.mockResolvedValue({ ...userRow, name: 'Ada L' });
+
+    await service.updateProfile('user-1', {
+      name: '  Ada L ',
+      // Extra fields a client might send must never reach the database.
+      ...({ role: 'admin', email: 'x@y.z' } as object),
+    });
+
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { name: 'Ada L' },
+    });
+  });
+
+  it('rejects names that are too short', async () => {
+    await expect(
+      service.updateProfile('user-1', { name: ' a ' }),
+    ).rejects.toThrow(ValidationError);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+});

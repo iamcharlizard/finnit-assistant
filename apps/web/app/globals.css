@@ -52,3 +52,135 @@ html.vt-layout::view-transition-new(*) {
   height: auto;
   animation-duration: 500ms;
 }
+
+/*
+ * Landing page (app/page.tsx, components/landing/). Its geometry comes from
+ * the logo's facets: three tones that follow the palette, the lightest one
+ * turning neon cyan in dark mode, as in the dark logo. `--ai` marks what the
+ * AI does (glows, scan line); `--ai-ink` is its readable text color.
+ */
+:root {
+  --facet-1: #9aa0f0;
+  --facet-2: #6c72cb;
+  --facet-3: #5b61c2;
+  --ai: #00f5ff;
+  --ai-ink: #00696e;
+}
+.dark {
+  --facet-1: #00f5ff;
+  --ai-ink: #00f5ff;
+}
+[data-theme='mono']:not(.dark) {
+  --facet-1: #c4c4c4;
+  --facet-2: #8a8a8a;
+  --facet-3: #4a4a4a;
+  --ai: #111111;
+  --ai-ink: #111111;
+}
+[data-theme='mono'].dark {
+  --facet-1: #f2f2f2;
+  --facet-2: #9a9a9a;
+  --facet-3: #5a5a5a;
+  --ai: #f2f2f2;
+  --ai-ink: #f2f2f2;
+}
+
+@theme inline {
+  --color-facet-1: var(--facet-1);
+  --color-facet-2: var(--facet-2);
+  --color-facet-3: var(--facet-3);
+  --color-ai: var(--ai);
+  --color-ai-ink: var(--ai-ink);
+}
+
+/* Secondary text reads brighter on the dark landing: 80% of the main text
+   color over the background, so it still follows each palette. */
+.dark .landing {
+  --on-surface-variant: color-mix(
+    in oklab,
+    var(--on-background) 80%,
+    var(--background)
+  );
+}
+
+/* Entrance: children with `landing-rise` come up in order (style --i). */
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.landing-rise {
+  animation: landing-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+
+/* The AI reading the receipt: a cyan line sweeping down, then the result. */
+@keyframes landing-scan {
+  0% {
+    top: 8%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  70% {
+    top: 88%;
+    opacity: 1;
+  }
+  100% {
+    top: 88%;
+    opacity: 0;
+  }
+}
+.landing-scan {
+  animation: landing-scan 3.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translateY(-10px) rotate(var(--r, 0deg));
+  }
+}
+.landing-float {
+  animation: landing-float 9s ease-in-out infinite;
+}
+
+/* The hero's slide indicator filling up until the next slide. */
+@keyframes landing-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+.landing-progress {
+  animation: landing-progress linear both;
+}
+
+/* Sections fade in as they scroll into view, where the browser supports it. */
+@supports (animation-timeline: view()) {
+  .landing-reveal {
+    animation: landing-rise linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 40%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-rise,
+  .landing-scan,
+  .landing-float,
+  .landing-reveal {
+    animation: none !important;
+  }
+}

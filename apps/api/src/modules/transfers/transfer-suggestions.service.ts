@@ -12,7 +12,7 @@ import {
   NotFoundError,
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
-import { PaginationUtil } from '../../common/utils/pagination.util';
+import { PaginationUtil, pageSize } from '../../common/utils/pagination.util';
 import { effectOf } from '../../common/utils/balance-effect.util';
 import {
   TRANSACTION_PRESENTATION_INCLUDE,
@@ -170,7 +170,7 @@ export class TransferSuggestionsService {
     userId: string,
     args: TransferSuggestionsArgs,
   ): Promise<TransferSuggestionConnection> {
-    const limit = args.first ?? 20;
+    const limit = pageSize(args.first);
     const where = { userId, status: PENDING };
     const [rows, totalCount] = await Promise.all([
       this.prisma.transferSuggestion.findMany({

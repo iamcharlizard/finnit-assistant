@@ -2,7 +2,7 @@
 
 Inventario de funcionalidades y su estado **real**, verificado contra el código. Es la fuente de verdad del avance; [prd.md](./prd.md) describe el alcance y [user-stories.md](./user-stories.md) los criterios de aceptación.
 
-**Última revisión:** 30 de octubre de 2026
+**Última revisión:** 5 de noviembre de 2026
 
 **Leyenda:** ✅ hecho · 🟡 parcial · ⏳ pendiente · — no aplica
 
@@ -33,6 +33,7 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | 18. Personalización de cuentas y tarjetas *(nuevo)* | ✅ | ⏳ | ✅ |
 | 19. Flujo para crear movimientos *(nuevo)* | ✅ | ⏳ | ✅ |
 | 20. Cuentas y tarjetas manuales *(nuevo)* | ✅ | ⏳ | ✅ |
+| 21. Landing pública y lista de espera *(nuevo)* | ✅ | — | ✅ |
 
 ## Detalle
 
@@ -46,7 +47,9 @@ Inventario de funcionalidades y su estado **real**, verificado contra el código
 | Login con email y contraseña (JWT) | ✅ | ✅ | ✅ | `signIn`; la contraseña la asigna un administrador. Móvil guarda tokens en SecureStore; web en cookies httpOnly (backend-for-frontend con Server Actions). |
 | Refresh token | ✅ | ⏳ | ✅ | Web: `proxy.ts` renueva el token antes de que expire. Móvil: pendiente. |
 | Usuario actual / validar token | ✅ | ⏳ | ✅ | `me`, `validateToken`. Web: nombre e iniciales reales en la app. |
-| Protección de rutas según sesión | — | ⏳ | ✅ | Web: sin sesión redirige a `/login?next=…` (sin redirecciones abiertas). |
+| Protección de rutas según sesión | — | ⏳ | ✅ | Web: sin sesión, las páginas redirigen a `/login?next=…` (sin redirecciones abiertas) y `/api/*` responde 401; solo `/`, `/login`, robots, sitemap y la imagen OG son públicos (`lib/auth/route-access.ts`, con tests). |
+| Superficie pública de la API | ✅ | — | — | `auth-surface.spec.ts` falla si alguna query/mutación/ruta no tiene `JwtAuthGuard` y no está en la lista pública (auth + `joinWaitlist` + `/health`). Se quitó `user(id)` (dejaba leer el perfil de cualquier usuario) y el `updateUser` propio pasó a `updateMyProfile` (solo nombre). |
+| Límite de intentos | ✅ | — | ✅ | `@nestjs/throttler` en las operaciones públicas, por IP y por correo; responde `TOO_MANY_REQUESTS` y el login lo muestra. La web pasa la IP del visitante con `FINNIT_BFF_SECRET`. Listas paginadas con tope de 200. |
 | Recuperar contraseña por email | 🟡 | ⏳ | ⏳ | `requestPasswordReset`/`resetPassword` existen, pero **no se envía correo** (no hay servicio de email). |
 | Aislamiento de datos por usuario | ✅ | — | — | Todas las consultas filtran por `userId`. |
 | Validación de inputs | ⏳ | — | — | **Bug:** los DTOs tienen decoradores de `class-validator`, pero no hay `ValidationPipe`; se aceptan montos negativos, tasas > 100, etc. |
@@ -203,6 +206,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 | Dar y quitar acceso a usuarios | ✅ | — | ✅ | `/admin/users`: alta con contraseña opcional, asignar o quitar contraseña, desligar Google, desactivar y reactivar. No se borran usuarios. |
 | Modelos de IA | ✅ | — | ✅ | `/admin/ai`: activar, predeterminado, orden, alta y baja. |
 | Funcionalidades de IA | ✅ | — | ✅ | `aiFeatures` / `updateAiFeature`: hoy solo "Leer estados de cuenta en PDF"; se enciende o apaga, con modelo propio y respaldos opcionales. |
+| Lista de espera | ✅ | — | ✅ | `/admin/waitlist`: correos, origen (utm) e idioma (`waitlistEntries`, solo admins). |
 
 ### 15. Pantalla de pagos recurrentes y sugerencias *(nuevo)*
 
@@ -269,11 +273,20 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Temas Finnit, Glass, Suave y Mono (claro y oscuro) | — | ⏳ | ✅ | `data-theme` en `<html>` desde la cookie `finnit-theme` (sin parpadeo); el modo claro/oscuro sigue con `next-themes`. Selector en el header (paleta) y en Ajustes → Apariencia. Se guarda por navegador, no en la cuenta. |
+| Temas Finnit, Glass, Suave y Mono (claro y oscuro) | — | ⏳ | ✅ | Una paleta para todo el sitio (`FINNIT_THEME`), rendereada en `<html data-theme>` (sin parpadeo). Los usuarios solo eligen claro / oscuro / sistema (`next-themes`). Los administradores tienen "Vista previa de tema" en el menú de perfil: cambia solo su navegador (cookie `finnit-theme-preview`). |
 | Header de vidrio con saludo | — | ⏳ | ✅ | Barra flotante siempre en vidrio; el inicio muestra "Hola, {nombre}" y la fecha. |
 | Detalle desde las listas | — | ⏳ | ✅ | Toda la card de un movimiento (`TransactionCard` de `@finnit/ui`; sugerencia de categoría dentro) abre su detalle: drawer a la derecha cuando se ve el menú lateral (lg), modal abajo de eso; la misma pantalla que `/transactions/[id]`, cargada con una server action, con "Abrir en página completa". Sin menú de tres puntos. |
 | Menú lateral colapsable | — | — | ✅ | Rail flotante de vidrio que pasa de 256 px a solo íconos (con tooltips) con animación; ⌘B / Ctrl+B; estado en la cookie `finnit-sidebar`. Submenús **Movimientos** (Historial, Clasificar, Recurrentes, Estados de cuenta) y **Planeación** (Presupuestos, Deudas, Metas, Simulador): se despliegan en su lugar (cookie `finnit-nav-groups`; el del módulo actual se abre solo) y, colapsado, abren un menú flotante al lado. |
-| Perfil y foto | ✅ | ⏳ | ✅ | Perfil fijo abajo del menú lateral (en el header por debajo de lg) con menú: claro / oscuro / sistema, tema, Configuración y cerrar sesión. Foto: la subida por el usuario (`POST/GET /me/avatar`, S3 privado, recortada a 256 px en el navegador; `removeMyAvatar`), si no la de Google (claim `picture`, se actualiza al entrar con Google), si no las iniciales. Configuración → Editar perfil cambia foto y nombre. |
+| Perfil y foto | ✅ | ⏳ | ✅ | Perfil fijo abajo del menú lateral (en el header por debajo de lg) con menú: claro / oscuro / sistema, vista previa de tema (admins), Configuración y cerrar sesión. Foto: la subida por el usuario (`POST/GET /me/avatar`, S3 privado, recortada a 256 px en el navegador; `removeMyAvatar`), si no la de Google (claim `picture`, se actualiza al entrar con Google), si no las iniciales. Configuración → Editar perfil cambia foto y nombre. |
+
+### 21. Landing pública y lista de espera *(nuevo)*
+
+| Funcionalidad | API | Móvil | Web | Notas |
+|---|---|---|---|---|
+| Landing en `/` | — | — | ✅ | Qué es Finnit y cómo usa la IA (tickets, capturas del banco, categorías que aprenden, conexión bancaria, deudas, conciliación), vista previa con componentes reales, privacidad. Se ve con y sin sesión ("Ir a mi cuenta"). es/en, claro/oscuro y las 4 paletas. |
+| Lista de espera | ✅ | — | ✅ | `joinWaitlist` (público, con límite de intentos; siempre responde `ok`, no revela quién está). Guarda correo, idioma y `utm_source`/`ref`. Honeypot contra bots. |
+| SEO | — | — | ✅ | Metadata, OpenGraph/Twitter, imagen OG generada, `robots.txt` (solo `/`) y `sitemap.xml`. |
+| Vercel Web Analytics | — | — | ✅ | `@vercel/analytics` en el layout raíz; sin query strings, sin `/admin`; evento `waitlist_joined` (planes Pro). Activarlo en Vercel: [deployment.md](./deployment.md). |
 
 ## Plataforma
 

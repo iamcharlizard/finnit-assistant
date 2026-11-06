@@ -43,13 +43,13 @@ const MODES = [
   { value: 'system', icon: Monitor },
 ] as const;
 
-/** The menu's items: light/dark, theme, settings and sign out. */
+/** The menu's items: light/dark, the palette preview (admins), settings and sign out. */
 function ProfileMenuItems() {
   const t = useTranslations('profileMenu');
   const tm = useTranslations('ui.mode');
   const tt = useTranslations('ui.theme');
   const { theme: mode, setTheme: setMode } = useTheme();
-  const { theme, setTheme } = useAppTheme();
+  const { theme, siteTheme, previewTheme, resetTheme } = useAppTheme();
   const user = useSessionUser();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
@@ -82,33 +82,49 @@ function ProfileMenuItems() {
           </DropdownMenuRadioItem>
         ))}
       </DropdownMenuRadioGroup>
-      <DropdownMenuSub>
-        <DropdownMenuSubTrigger>
-          <Palette aria-hidden />
-          <span className="flex-1">{tt('label')}</span>
-          <span className="text-xs text-on-surface-variant">
-            {tt(`names.${theme}`)}
-          </span>
-        </DropdownMenuSubTrigger>
-        <DropdownMenuSubContent className="w-64">
-          <DropdownMenuRadioGroup
-            value={theme}
-            onValueChange={(value) => setTheme(value as AppTheme)}
-          >
-            {APP_THEMES.map((option) => (
-              <DropdownMenuRadioItem key={option} value={option}>
-                <ThemeSwatch theme={option} className="size-7" />
-                <span className="flex min-w-0 flex-col">
-                  <span>{tt(`names.${option}`)}</span>
-                  <span className="truncate text-xs text-on-surface-variant">
-                    {tt(`descriptions.${option}`)}
+      {user.role === 'admin' ? (
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Palette aria-hidden />
+            <span className="flex-1">{tt('previewLabel')}</span>
+            <span className="text-xs text-on-surface-variant">
+              {tt(`names.${theme}`)}
+            </span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-64">
+            <DropdownMenuLabel className="normal-case tracking-normal text-xs font-normal text-on-surface-variant">
+              {tt('previewHint', { site: tt(`names.${siteTheme}`) })}
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={theme}
+              onValueChange={(value) => previewTheme(value as AppTheme)}
+            >
+              {APP_THEMES.map((option) => (
+                <DropdownMenuRadioItem key={option} value={option}>
+                  <ThemeSwatch theme={option} className="size-7" />
+                  <span className="flex min-w-0 flex-col">
+                    <span>
+                      {tt(`names.${option}`)}
+                      {option === siteTheme ? ` · ${tt('siteBadge')}` : ''}
+                    </span>
+                    <span className="truncate text-xs text-on-surface-variant">
+                      {tt(`descriptions.${option}`)}
+                    </span>
                   </span>
-                </span>
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuSubContent>
-      </DropdownMenuSub>
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            {theme !== siteTheme ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={resetTheme}>
+                  {tt('useSite')}
+                </DropdownMenuItem>
+              </>
+            ) : null}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+      ) : null}
       <DropdownMenuSeparator />
       <DropdownMenuItem asChild>
         <Link href={SETTINGS_HREF}>

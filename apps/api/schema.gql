@@ -1366,6 +1366,23 @@ input HistoricalDebtPaymentInput {
   date: DateTime!
 }
 
+input JoinWaitlistInput {
+  email: String!
+
+  """Language the page was in: 'es' or 'en'"""
+  locale: String
+
+  """Campaign (utm_source or ref)"""
+  source: String
+}
+
+type JoinWaitlistResult {
+  """
+  Always true for a valid email, also when it was already on the list (it never tells who signed up).
+  """
+  ok: Boolean!
+}
+
 """
 How someone lent the money: cash, transfer, their credit or debit card, other
 """
@@ -1762,6 +1779,9 @@ type Mutation {
   """Hides a category and its subcategories from the pickers"""
   hideCategory(id: String!): Boolean!
 
+  """Public (no sign-in): adds an email to the waitlist. Rate-limited."""
+  joinWaitlist(input: JoinWaitlistInput!): JoinWaitlistResult!
+
   """
   Links a bank account to a Finnit account (or creates one) and imports its last 90 days
   """
@@ -1903,6 +1923,9 @@ type Mutation {
 
   """Saves the signed-in user's preferences (e.g. locale)."""
   updateMyPreferences(input: UpdateMyPreferencesInput!): User!
+
+  """Updates the signed-in user's own profile (name)."""
+  updateMyProfile(input: UpdateMyProfileInput!): User!
   updateReceiptImport(id: ID!, input: UpdateReceiptImportInput!): ReceiptImport!
   updateRecurringExpense(id: ID!, input: UpdateRecurringExpenseInput!): RecurringExpense!
   updateScreenshotLine(input: UpdateScreenshotLineInput!, lineId: ID!): ScreenshotImport!
@@ -2215,8 +2238,10 @@ type Query {
   transferSuggestions(after: String, first: Int = 20): TransferSuggestionConnection!
   transfers: [Transfer!]!
   upcomingPayments(accountId: String, from: DateTime!, to: DateTime!): [UpcomingPayment!]!
-  user(id: String!): User!
   validateToken(token: String!): TokenValidationResult!
+
+  """Admin only"""
+  waitlistEntries(after: String, first: Int = 50): WaitlistEntryConnection!
   whatIfScenario(input: WhatIfInput!): WhatIfResult!
 }
 
@@ -3146,6 +3171,10 @@ input UpdateMyPreferencesInput {
   locale: String
 }
 
+input UpdateMyProfileInput {
+  name: String
+}
+
 """Corrections while reviewing; null clears a field"""
 input UpdateReceiptImportInput {
   accountId: ID
@@ -3264,6 +3293,25 @@ enum UserRole {
 enum UserStatus {
   active
   disabled
+}
+
+type WaitlistEntry {
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  locale: String
+  source: String
+}
+
+type WaitlistEntryConnection {
+  edges: [WaitlistEntryEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type WaitlistEntryEdge {
+  cursor: String!
+  node: WaitlistEntry!
 }
 
 input WhatIfInput {

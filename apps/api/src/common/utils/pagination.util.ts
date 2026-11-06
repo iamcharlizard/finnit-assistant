@@ -5,6 +5,18 @@ import {
   PaginationArgs,
 } from '../types/pagination.types';
 
+/** Largest page any list returns, whatever `first`/`last` asks for. */
+export const MAX_PAGE_SIZE = 200;
+
+/** The page size to use: the requested one (or `fallback`), at most MAX_PAGE_SIZE. */
+export function pageSize(
+  requested: number | null | undefined,
+  fallback = 20,
+): number {
+  const size = requested && requested > 0 ? Math.floor(requested) : fallback;
+  return Math.min(size, MAX_PAGE_SIZE);
+}
+
 export class PaginationUtil {
   static createConnection<T>(
     items: T[],

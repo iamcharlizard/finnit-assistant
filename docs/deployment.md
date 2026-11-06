@@ -85,7 +85,10 @@ Repite estos pasos para cada ambiente, usando los valores de la tabla de abajo.
    GEMINI_API_KEY=<opcional>
    GOOGLE_CLIENT_IDS=<opcional: Client IDs de Google (web, iOS, Android) separados por comas; ver "Login con Google">
    SYNCFY_API_KEY=<opcional: conexión bancaria con Syncfy; ver "Conexión bancaria (Syncfy)">
+   FINNIT_BFF_SECRET=<openssl rand -hex 32, el mismo que en la web de este ambiente>
+   TRUST_PROXY_HOPS=<opcional; 1 por defecto: el proxy de Dokploy. 0 si la API se expone directo>
    ```
+   **Límite de intentos:** las operaciones públicas (`signIn`, `signInWithGoogle`, `refreshToken`, `requestPasswordReset`, `resetPassword`, `validateToken`, `joinWaitlist`) se limitan por IP y por correo (`@nestjs/throttler`, en memoria) y responden `TOO_MANY_REQUESTS`. Como la web llama a la API desde su servidor, manda la IP del visitante en `x-finnit-client-ip`; la API solo la cree si llega con `x-finnit-bff-secret` = `FINNIT_BFF_SECRET`. Sin el secreto en ambos lados, todos los visitantes de la web cuentan como una sola IP.
 4. **Domains**: el dominio de la tabla, *Path* `/`, *Container Port* `3000`, HTTPS con Let's Encrypt, *Strip Path* desactivado. Crea antes el registro **A** en el DNS (`api` o `api-test` → IPv4 del servidor).
 5. **Advanced → Resources**: límites según la tabla.
 6. Copia el `applicationId` (último segmento de la URL de la app en Dokploy).
@@ -340,7 +343,7 @@ Cada despliegue publica `sha-<commit>`. En Dokploy cambia la imagen de `finnit-o
 
 ## Web app
 
-La web (`apps/web`) se desplegará en **Vercel**, después de validar la API en testing. Mientras tanto se prueba en local contra la API de testing:
+La web (`apps/web`) se despliega en **Vercel**. Mientras tanto se prueba en local contra la API de testing:
 
 1. En `apps/web/.env.local`: `FINNIT_API_URL=https://api-test.<dominio>`
 2. `pnpm web:dev` y abre http://localhost:3001.
@@ -349,6 +352,23 @@ Solo el servidor de Next habla con la API: el navegador llama a `/api/graphql` d
 
 - `FINNIT_API_URL`: la API de su mismo ambiente (testing → `api-test`, production → `api`).
 - `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`: el cliente "Finnit Web" (ver "Login con Google"). Sin ellas, el botón de Google muestra que no está disponible.
+- `FINNIT_BFF_SECRET`: el mismo valor que en la API de su ambiente (límite de intentos por visitante, ver "Aplicación").
+- `FINNIT_THEME`: la paleta de todo el sitio: `finnit` (por defecto), `glass`, `suave` o `mono`. Los usuarios solo eligen claro u oscuro; los administradores pueden ver otra paleta en su navegador desde el menú de perfil → "Vista previa de tema" (cookie `finnit-theme-preview`, no cambia nada para los demás).
+- `FINNIT_SITE_URL`: el dominio público (p. ej. `https://finnit.app`) para el canonical, el sitemap y las vistas previas de enlaces. En Vercel, sin ella se usa el dominio de producción del proyecto.
+
+### Landing y Vercel Web Analytics
+
+`/` es la landing pública (qué es Finnit y lista de espera); la app sigue siendo solo por invitación. Los correos de la lista se ven en `/admin/waitlist`.
+
+Para contar visitas:
+
+1. En Vercel, proyecto de la web → **Analytics** → **Enable**. Agrega las rutas `/_vercel/insights/*` en el siguiente deploy (el `proxy.ts` ya las deja pasar).
+2. Redeploy. En el *Network* del navegador debe aparecer una petición `…/view` con 200, también sin sesión.
+3. Los datos salen en el dashboard del proyecto → **Analytics**: visitantes, páginas vistas, referrers, países, dispositivos y navegadores.
+
+El componente está en el layout raíz (`components/web-analytics/site-analytics.tsx`). Antes de enviar, quita el query string de las URLs (solo deja `utm_*`/`ref` en `/`) y no cuenta `/admin`. En desarrollo no envía nada, solo lo escribe en la consola.
+
+Planes: en **Hobby** hay 50,000 eventos al mes y un mes de historial, sin eventos personalizados ni UTM, y es solo para uso no comercial. En **Pro** cuentan los eventos personalizados (la landing manda `waitlist_joined` con `placement`) y hay 12 meses de historial. **Web Analytics Plus** (+10 USD al mes) agrega reportes por UTM y 24 meses.
 
 ## Copiar una base de producción o testing a local
 

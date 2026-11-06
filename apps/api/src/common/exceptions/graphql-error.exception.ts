@@ -14,6 +14,7 @@ export enum ErrorCode {
   GOAL_ALREADY_REACHED = 'GOAL_ALREADY_REACHED',
   DEBT_OVERPAYMENT = 'DEBT_OVERPAYMENT',
   PRIVACY_LOCKED = 'PRIVACY_LOCKED',
+  TOO_MANY_REQUESTS = 'TOO_MANY_REQUESTS',
 }
 
 export class FinnitGraphQLError extends GraphQLError {
@@ -102,5 +103,12 @@ export class DebtOverpaymentError extends FinnitGraphQLError {
 export class PrivacyLockedError extends FinnitGraphQLError {
   constructor(message = 'Enter your privacy PIN to continue') {
     super(message, ErrorCode.PRIVACY_LOCKED);
+  }
+}
+
+/** Too many attempts from the same client or for the same account. */
+export class TooManyRequestsError extends FinnitGraphQLError {
+  constructor(message = 'Too many attempts. Try again in a few minutes.') {
+    super(message, ErrorCode.TOO_MANY_REQUESTS);
   }
 }

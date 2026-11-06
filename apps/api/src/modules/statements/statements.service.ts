@@ -19,7 +19,7 @@ import {
   NotFoundError,
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
-import { PaginationUtil } from '../../common/utils/pagination.util';
+import { PaginationUtil, pageSize } from '../../common/utils/pagination.util';
 import {
   S3StorageService,
   type StoredObject,
@@ -271,7 +271,7 @@ export class StatementsService {
       userId,
       ...(args.accountId && { accountId: args.accountId }),
     };
-    const first = args.first ?? 20;
+    const first = pageSize(args.first);
     const [rows, totalCount] = await Promise.all([
       this.prisma.statementImport.findMany({
         where,

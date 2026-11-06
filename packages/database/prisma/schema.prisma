@@ -438,6 +438,21 @@ model PrivacyPinReset {
   @@index([userId])
 }
 
+/// People who asked to be told when Finnit opens (public landing page).
+/// Not users: access stays invitation-only.
+model WaitlistEntry {
+  id        String   @id @default(uuid())
+  /// Lowercased and trimmed.
+  email     String   @unique
+  /// Language the page was shown in ('es' | 'en').
+  locale    String?
+  /// Campaign that brought them (utm_source or ref), free text.
+  source    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 /// A global category a user hid from their pickers (pivot).
 model CategoryHidden {
   userId     String

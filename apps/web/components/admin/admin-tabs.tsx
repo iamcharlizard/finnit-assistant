@@ -3,13 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Sparkles, Users, type LucideIcon } from 'lucide-react';
+import { Mail, Sparkles, Users, type LucideIcon } from 'lucide-react';
 
 import { cn } from '@finnit/ui/lib/utils';
 
-const TABS: { href: string; tab: 'users' | 'ai'; icon: LucideIcon }[] = [
+const TABS: {
+  href: string;
+  tab: 'users' | 'ai' | 'waitlist';
+  icon: LucideIcon;
+}[] = [
   { href: '/admin/users', tab: 'users', icon: Users },
   { href: '/admin/ai', tab: 'ai', icon: Sparkles },
+  { href: '/admin/waitlist', tab: 'waitlist', icon: Mail },
 ];
 
 /** Sub-navigation of /admin (one route per tab). */

@@ -36,7 +36,7 @@ import {
   uploadAvatar,
 } from '@/lib/profile/photo';
 
-const UPDATE_NAME_MUTATION = `mutation UpdateMyName($input: UpdateUserInput!) { updateUser(input: $input) { id } }`;
+const UPDATE_NAME_MUTATION = `mutation UpdateMyName($input: UpdateMyProfileInput!) { updateMyProfile(input: $input) { id } }`;
 const REMOVE_AVATAR_MUTATION = `mutation RemoveMyAvatar { removeMyAvatar { id } }`;
 
 const NAME_MIN = 2;

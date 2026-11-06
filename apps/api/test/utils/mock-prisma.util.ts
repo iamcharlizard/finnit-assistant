@@ -1,11 +1,18 @@
-import { PrismaClient } from '@finnit/database';
+import {
+  Prisma,
+  PrismaClient,
+  type Account,
+  type Category,
+  type Transaction,
+  type User,
+} from '@finnit/database';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 
 export type MockPrismaService = DeepMockProxy<PrismaClient>;
 
 export const createMockPrismaService = (): MockPrismaService => {
   const mockPrisma = mockDeep<PrismaClient>();
-  
+
   // Set up default mock implementations
   mockPrisma.$connect.mockResolvedValue();
   mockPrisma.$disconnect.mockResolvedValue();
@@ -19,54 +26,84 @@ export const createMockPrismaService = (): MockPrismaService => {
   return mockPrisma;
 };
 
-// Common mock data factories
-export const mockUserData = {
+// Common mock data factories. Typed as the Prisma rows, so a schema change
+// that adds a required column fails here instead of drifting silently.
+export const mockUserData: User = {
   id: 'user-1',
   name: 'Test User',
   email: 'test@example.com',
   passwordHash: 'hashed-password',
+  role: 'user',
+  isMaster: false,
+  googleSubject: null,
+  disabledAt: null,
+  lastLoginAt: null,
+  tokenVersion: 0,
+  locale: 'es',
+  googlePictureUrl: null,
+  avatarKey: null,
+  avatarUpdatedAt: null,
+  privacyPinHash: null,
+  privacyPinVersion: 0,
+  privacyPinFailedAttempts: 0,
+  privacyPinLockedUntil: null,
+  invitedById: null,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
 };
 
-export const mockAccountData = {
+export const mockAccountData: Account = {
   id: 'account-1',
   userId: 'user-1',
-  type: 'cash' as const,
+  type: 'cash',
   name: 'Test Account',
   currency: 'USD',
-  balanceCurrent: 1000.00,
+  balanceCurrent: new Prisma.Decimal(1000),
   metadata: null,
   archived: false,
+  bankDifferenceTransactionId: null,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
 };
 
-export const mockTransactionData = {
+export const mockTransactionData: Transaction = {
   id: 'transaction-1',
   userId: 'user-1',
   accountId: 'account-1',
   categoryId: 'category-1',
-  type: 'expense' as const,
-  amount: 100.00,
+  type: 'expense',
+  amount: new Prisma.Decimal(100),
+  balanceEffect: new Prisma.Decimal(-100),
   currency: 'USD',
   txnDate: new Date('2024-01-01'),
   description: 'Test transaction',
   merchantName: null,
   isPending: false,
+  inProcess: false,
   isRecurringInstance: false,
-  source: 'manual' as const,
+  source: 'manual',
   externalId: null,
+  aliasId: null,
+  aliasName: null,
+  isPrivate: false,
+  categorySource: null,
+  suggestedCategoryId: null,
+  suggestedBy: null,
+  originalType: null,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
 };
 
-export const mockCategoryData = {
+export const mockCategoryData: Category = {
   id: 'category-1',
   userId: 'user-1',
   parentId: null,
   name: 'Food & Dining',
+  key: null,
   isDefault: false,
+  kind: 'expense',
+  icon: null,
+  color: null,
   sortOrder: 1,
   createdAt: new Date('2024-01-01'),
 };
@@ -77,7 +114,7 @@ export const mockBudgetData = {
   year: 2024,
   month: 1,
   currency: 'USD',
-  amountTotal: 2000.00,
+  amountTotal: 2000.0,
   createdAt: new Date('2024-01-01'),
 };
 
@@ -85,8 +122,8 @@ export const mockGoalData = {
   id: 'goal-1',
   userId: 'user-1',
   name: 'Emergency Fund',
-  targetAmount: 10000.00,
-  currentAmount: 3000.00,
+  targetAmount: 10000.0,
+  currentAmount: 3000.0,
   currency: 'USD',
   dueDate: new Date('2024-12-31'),
   createdAt: new Date('2024-01-01'),
@@ -97,9 +134,9 @@ export const mockDebtData = {
   userId: 'user-1',
   name: 'Credit Card',
   kind: 'card' as const,
-  principal: 5000.00,
+  principal: 5000.0,
   interestRateAnnual: 18.5,
-  minPaymentAmount: 150.00,
+  minPaymentAmount: 150.0,
   startDate: new Date('2024-01-01'),
   dueDate: new Date('2026-01-01'),
   linkedAccountId: null,
@@ -121,7 +158,9 @@ export const setupMockPrismaForAccounts = (mockPrisma: MockPrismaService) => {
   mockPrisma.account.count.mockResolvedValue(1);
 };
 
-export const setupMockPrismaForTransactions = (mockPrisma: MockPrismaService) => {
+export const setupMockPrismaForTransactions = (
+  mockPrisma: MockPrismaService,
+) => {
   mockPrisma.transaction.findFirst.mockResolvedValue(mockTransactionData);
   mockPrisma.transaction.findMany.mockResolvedValue([mockTransactionData]);
   mockPrisma.transaction.create.mockResolvedValue(mockTransactionData);

@@ -30,10 +30,7 @@ import type {
   CategorizeCategory,
   CategorizePageData,
 } from '@/lib/categorize/types';
-import {
-  toCategorizeRow,
-  type CategorizeRow as Row,
-} from '@/lib/categorize/view';
+import { toCategorizeRow } from '@/lib/categorize/view';
 import { indexCategories } from '@/lib/finance/categories';
 import type { DayKey } from '@/lib/finance/dates';
 import { groupByDay } from '@/lib/finance/transactions';

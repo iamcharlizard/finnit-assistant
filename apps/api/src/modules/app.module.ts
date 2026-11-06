@@ -2,6 +2,7 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
@@ -25,8 +26,10 @@ import { CategorizationModule } from './categorization/categorization.module';
 import { PrivacyModule } from './privacy/privacy.module';
 import { ReceiptsModule } from './receipts/receipts.module';
 import { ScreenshotsModule } from './screenshots/screenshots.module';
+import { WaitlistModule } from './waitlist/waitlist.module';
 import { PrismaService } from '../services/prisma.service';
 import { HealthController } from '../controllers/health.controller';
+import { THROTTLER_OPTIONS } from '../common/throttling/throttling';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -48,6 +51,7 @@ function envFlag(name: string, fallback: boolean): boolean {
       context: ({ req, res }) => ({ req, res }),
     }),
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot(THROTTLER_OPTIONS),
     AuthModule,
     UsersModule,
     AccountsModule,
@@ -69,6 +73,7 @@ function envFlag(name: string, fallback: boolean): boolean {
     PrivacyModule,
     ReceiptsModule,
     ScreenshotsModule,
+    WaitlistModule,
   ],
   controllers: [HealthController],
   providers: [PrismaService],

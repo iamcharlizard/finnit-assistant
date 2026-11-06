@@ -278,7 +278,9 @@ Detailed, verified status per feature and platform: [features.md](./features.md)
 - **Web screens**: transaction detail (edit, attachments, alias, reveal original), notifications panel and page, statement upload and review, budgets, debts (month-by-month payoff simulation), goals and the what-if simulator.
 - **Receipts (OCR)**: internal OCR service (RapidOCR), receipt upload with CFDI QR / OCR rules / AI-text fallback, review and confirm or attach to an existing movement; scanned statements read with OCR.
 - **i18n**: categories stored in English with es/en translations (Google Cloud Translation, AI fallback); user language preference.
-- **Web appearance**: four themes (Finnit, Glass, Suave, Mono) in light and dark, glass header with greeting, floating sidebar that collapses to icons with animation.
+- **Web appearance**: four palettes (Finnit, Glass, Suave, Mono) in light and dark; one site-wide palette (`FINNIT_THEME`), users pick light/dark only, admins can preview palettes in their own browser. Glass header with greeting, floating sidebar that collapses to icons with animation.
+- **Public landing & waitlist**: `/` explains Finnit and its AI features with a waitlist (public, rate-limited `joinWaitlist`; admin list at `/admin/waitlist`), SEO metadata, OG image, robots and sitemap; Vercel Web Analytics for visits.
+- **Security hardening**: removed `user(id)` (leaked other users' profiles), self-service profile update is `updateMyProfile` (name only), rate limits on public operations, page size cap, and a test that fails if any operation lacks a JWT guard outside the public allowlist.
 - **Fixes**: transaction dates stored as the local (Mexico City) day; opening balances as adjustments; consistent cursor pagination; credit card terms mutation; goals fully exposed; duplicate check (`similarTransactions`).
 - **Accounts**: multi-account support (cash, debit, credit, savings, e-wallet), balance adjustments, credit card terms.
 - **Transactions**: CRUD, merchant-based category suggestion, filtering, attachment records (URL only).

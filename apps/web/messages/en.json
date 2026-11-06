@@ -2380,7 +2380,12 @@
         "history": "{count, plural, one {like # similar movement} other {like # similar movements}}"
       },
       "save": "Save",
-      "saving": "Saving…"
+      "saving": "Saving…",
+      "aiSuggest": "Suggest a category with AI",
+      "aiSuggestHint": "Suggest a category with AI: sends the name (or the bank text) and the amount",
+      "aiPicked": "The AI picked {category}. Check it before saving.",
+      "aiNone": "The AI found no category that fits.",
+      "aiUnavailable": "The AI is not available right now."
     },
     "validation": {
       "amountRequired": "Enter the amount.",

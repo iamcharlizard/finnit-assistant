@@ -32,3 +32,18 @@ export class SimilarCategory {
   })
   count: number;
 }
+
+@ObjectType({
+  description:
+    "The AI's category for a movement being edited (not saved: the editor picks it)",
+})
+export class AiCategorySuggestion {
+  @Field(() => ID, {
+    nullable: true,
+    description: 'Null when no category fits',
+  })
+  categoryId: string | null;
+
+  @Field({ description: 'The AI is off or has no usable model' })
+  aiUnavailable: boolean;
+}

@@ -56,16 +56,7 @@ export const WithSuggestion: Story = {
       />
     ),
   },
-  render: (args) => {
-    const [selected, setSelected] = React.useState(false);
-    return (
-      <TransactionCard
-        {...args}
-        selected={selected}
-        onSelectedChange={setSelected}
-      />
-    );
-  },
+  render: (args) => <SelectableCard {...args} />,
 };
 
 /** Hover the name: the pencil edits it right in the card (Enter saves, Esc cancels). */
@@ -78,24 +69,7 @@ export const EditableName: Story = {
     icon: ShoppingCart,
     variant: 'expense',
   },
-  render: (args) => {
-    const [name, setName] = React.useState(args.merchant);
-    return (
-      <TransactionCard
-        {...args}
-        merchant={name}
-        rename={{
-          editLabel: 'Editar nombre',
-          inputLabel: 'Nombre del movimiento',
-          maxLength: 80,
-          onSave: async (next) => {
-            await new Promise((resolve) => setTimeout(resolve, 400));
-            setName(next || args.merchant);
-          },
-        }}
-      />
-    );
-  },
+  render: (args) => <RenamableCard {...args} />,
 };
 
 export const PrivatePending: Story = {
@@ -111,3 +85,35 @@ export const PrivatePending: Story = {
     status: { label: 'En proceso', variant: 'info' },
   },
 };
+
+type CardProps = React.ComponentProps<typeof TransactionCard>;
+
+function SelectableCard(args: CardProps) {
+  const [selected, setSelected] = React.useState(false);
+  return (
+    <TransactionCard
+      {...args}
+      selected={selected}
+      onSelectedChange={setSelected}
+    />
+  );
+}
+
+function RenamableCard(args: CardProps) {
+  const [name, setName] = React.useState(args.merchant);
+  return (
+    <TransactionCard
+      {...args}
+      merchant={name}
+      rename={{
+        editLabel: 'Editar nombre',
+        inputLabel: 'Nombre del movimiento',
+        maxLength: 80,
+        onSave: async (next) => {
+          await new Promise((resolve) => setTimeout(resolve, 400));
+          setName(next || args.merchant);
+        },
+      }}
+    />
+  );
+}

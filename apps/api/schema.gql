@@ -347,6 +347,17 @@ type AdminUserEdge {
   node: AdminUser!
 }
 
+"""
+The AI's category for a movement being edited (not saved: the editor picks it)
+"""
+type AiCategorySuggestion {
+  """The AI is off or has no usable model"""
+  aiUnavailable: Boolean!
+
+  """Null when no category fits"""
+  categoryId: ID
+}
+
 """Admin settings of one AI feature"""
 type AiFeature {
   """The feature's own model; null uses the catalog default"""
@@ -1876,6 +1887,11 @@ type Mutation {
   Proposes the pattern of an automatic name from some of the user's movements (AI, checked against them; else the words they share). Saves nothing
   """
   suggestAliasPattern(input: SuggestAliasPatternInput!): AliasPatternSuggestion!
+
+  """
+  Asks the AI for a movement's category from `name` (the name being typed; else its bank text) and its amount. Nothing is saved
+  """
+  suggestCategoryWithAi(name: String, transactionId: ID!): AiCategorySuggestion!
 
   """
   Suggests a category for uncategorized movements (max 100): merchant rules first, then one AI call. Returns them with suggestedCategory set; without AI only rule suggestions appear

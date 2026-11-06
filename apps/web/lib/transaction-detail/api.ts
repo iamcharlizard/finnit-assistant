@@ -28,6 +28,23 @@ export async function similarCategory(
   return data.similarCategory ?? null;
 }
 
+export const SUGGEST_CATEGORY_AI_MUTATION = `mutation SuggestCategoryWithAi($id: ID!, $name: String) { suggestCategoryWithAi(transactionId: $id, name: $name) { categoryId aiUnavailable } }`;
+
+/** The AI's category from a name (else the bank text) and the amount; not saved. */
+export async function suggestCategoryWithAi(
+  id: string,
+  name: string | null,
+  run: GqlRunner,
+): Promise<{ categoryId: string | null; aiUnavailable: boolean }> {
+  const data = await run<{
+    suggestCategoryWithAi: {
+      categoryId: string | null;
+      aiUnavailable: boolean;
+    };
+  }>(SUGGEST_CATEGORY_AI_MUTATION, { id, name });
+  return data.suggestCategoryWithAi;
+}
+
 export async function updateTransaction(
   id: string,
   input: UpdateTransactionPayload,

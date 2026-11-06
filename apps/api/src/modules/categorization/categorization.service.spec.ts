@@ -580,4 +580,81 @@ describe('CategorizationService', () => {
       expect(await service.similarCategory(userId, 't-1')).toBeNull();
     });
   });
+
+  describe('suggestCategoryWithAi', () => {
+    const answer = (categoryRef: string) =>
+      ai.extractFromText.mockResolvedValue({
+        model: {} as never,
+        data: { items: [{ ref: 't1', categoryRef }] },
+      });
+    const sentText = () =>
+      (
+        JSON.parse(ai.extractFromText.mock.calls[0][0].text) as {
+          movements: { text: string; amount: number }[];
+        }
+      ).movements[0];
+
+    it('uses the typed name and the amount, and saves nothing', async () => {
+      prisma.transaction.findMany.mockResolvedValue([
+        row('t1', { merchantName: 'KSK*VID 231020', amount: 99 }),
+      ] as never);
+      answer('c2');
+      expect(
+        await service.suggestCategoryWithAi(userId, 't1', ' Netflix ', false),
+      ).toEqual({ categoryId: 'coffee', aiUnavailable: false });
+      expect(sentText()).toMatchObject({ text: 'Netflix', amount: 99 });
+      expect(prisma.transaction.updateMany).not.toHaveBeenCalled();
+      expect(prisma.transaction.update).not.toHaveBeenCalled();
+    });
+
+    it('without a name, sends the bank text (even of a private one)', async () => {
+      prisma.transaction.findMany.mockResolvedValue([
+        row('t1', { merchantName: 'FARMACIA GDL', isPrivate: true }),
+      ] as never);
+      answer('c1');
+      await service.suggestCategoryWithAi(userId, 't1', '', false);
+      expect(sentText().text).toBe('FARMACIA GDL');
+    });
+
+    it('never sends the bank text of a locked protected rule', async () => {
+      prisma.transaction.findMany.mockResolvedValue([
+        row('t1', {
+          merchantName: 'SECRETO 123',
+          aliasId: 'a1',
+          alias: {
+            id: 'a1',
+            displayName: 'Suscripción',
+            isPrivate: true,
+            isProtected: true,
+            pattern: 'SECRETO',
+          },
+        }),
+      ] as never);
+      answer('c1');
+      await service.suggestCategoryWithAi(userId, 't1', null, false);
+      expect(sentText().text).toBe('Suscripción');
+    });
+
+    it('reports an AI that is off; rejects transfers and unknown ids', async () => {
+      prisma.transaction.findMany.mockResolvedValue([row('t1')] as never);
+      ai.extractFromText.mockRejectedValue(
+        new AiFeatureDisabledError(AiFeatureKey.transaction_categorization),
+      );
+      expect(
+        await service.suggestCategoryWithAi(userId, 't1', 'x', false),
+      ).toEqual({ categoryId: null, aiUnavailable: true });
+
+      prisma.transaction.findMany.mockResolvedValue([
+        row('t1', { type: TransactionType.transfer }),
+      ] as never);
+      await expect(
+        service.suggestCategoryWithAi(userId, 't1', 'x', false),
+      ).rejects.toThrow(ValidationError);
+
+      prisma.transaction.findMany.mockResolvedValue([]);
+      await expect(
+        service.suggestCategoryWithAi(userId, 'nope', 'x', false),
+      ).rejects.toThrow(NotFoundError);
+    });
+  });
 });

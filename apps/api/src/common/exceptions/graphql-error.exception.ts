@@ -13,6 +13,7 @@ export enum ErrorCode {
   BUDGET_EXCEEDED = 'BUDGET_EXCEEDED',
   GOAL_ALREADY_REACHED = 'GOAL_ALREADY_REACHED',
   DEBT_OVERPAYMENT = 'DEBT_OVERPAYMENT',
+  PRIVACY_LOCKED = 'PRIVACY_LOCKED',
 }
 
 export class FinnitGraphQLError extends GraphQLError {
@@ -95,5 +96,11 @@ export class GoalAlreadyReachedError extends FinnitGraphQLError {
 export class DebtOverpaymentError extends FinnitGraphQLError {
   constructor(message = 'Payment amount exceeds remaining debt') {
     super(message, ErrorCode.DEBT_OVERPAYMENT);
+  }
+}
+/** The privacy PIN must be entered (unlockPrivacy) before this. */
+export class PrivacyLockedError extends FinnitGraphQLError {
+  constructor(message = 'Enter your privacy PIN to continue') {
+    super(message, ErrorCode.PRIVACY_LOCKED);
   }
 }

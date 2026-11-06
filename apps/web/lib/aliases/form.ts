@@ -28,6 +28,10 @@ export interface AliasForm {
   /** Text while typing; a whole number when valid. */
   priority: string;
   active: boolean;
+  /** Kept as is (rules made from a transfer suggestion); not edited here. */
+  transferAccountId: string | null;
+  /** Needs the privacy PIN (always private). */
+  isProtected: boolean;
 }
 
 export type AliasFormErrorCode =
@@ -51,6 +55,8 @@ export function newAliasForm(initial: Partial<AliasForm> = {}): AliasForm {
     isPrivate: false,
     priority: String(DEFAULT_PRIORITY),
     active: true,
+    transferAccountId: null,
+    isProtected: false,
     ...initial,
   };
 }
@@ -58,18 +64,20 @@ export function newAliasForm(initial: Partial<AliasForm> = {}): AliasForm {
 export function formOfAlias(alias: ApiMerchantAlias): AliasForm {
   return {
     matchType: alias.matchType,
-    pattern: alias.pattern,
+    pattern: alias.pattern ?? '',
     displayName: alias.displayName,
     categoryId: alias.category?.id,
     isPrivate: alias.isPrivate,
     priority: String(alias.priority),
     active: alias.active,
+    transferAccountId: alias.transferAccountId,
+    isProtected: alias.isProtected,
   };
 }
 
 /**
- * Whether the browser can compile the pattern. The API checks again (its
- * engine may differ); its error is shown under the field too.
+ * Whether the browser can compile the pattern: only a first hint. The API
+ * (Postgres) decides; its error (from the preview) is the one that counts.
  */
 export function isValidRegex(pattern: string): boolean {
   try {
@@ -122,9 +130,12 @@ export function buildAliasInput(form: AliasForm): MerchantAliasInput {
     pattern: form.pattern.trim(),
     displayName: form.displayName.trim(),
     categoryId: form.categoryId ?? null,
-    isPrivate: form.isPrivate,
+    // A protected rule is always private.
+    isPrivate: form.isPrivate || form.isProtected,
     priority: parsePriority(form.priority) ?? DEFAULT_PRIORITY,
     active: form.active,
+    transferAccountId: form.transferAccountId,
+    isProtected: form.isProtected,
   };
 }
 
@@ -134,7 +145,7 @@ export function buildAliasInput(form: AliasForm): MerchantAliasInput {
  * the preview: the name (required by the input) is the pattern itself.
  */
 export function previewInput(
-  form: Pick<AliasForm, 'matchType' | 'pattern'>,
+  form: Pick<AliasForm, 'matchType' | 'pattern'> & { priority?: string },
 ): MerchantAliasInput | null {
   if (patternError(form.matchType, form.pattern)) return null;
   const pattern = form.pattern.trim();
@@ -144,14 +155,20 @@ export function previewInput(
     displayName: pattern.slice(0, DISPLAY_NAME_MAX),
     categoryId: null,
     isPrivate: false,
-    priority: DEFAULT_PRIORITY,
+    priority:
+      (form.priority !== undefined ? parsePriority(form.priority) : null) ??
+      DEFAULT_PRIORITY,
     active: true,
+    transferAccountId: null,
+    isProtected: false,
   };
 }
 
 /** Identifies a preview request: the same key needs no new request. */
 export function previewKey(input: MerchantAliasInput | null): string | null {
-  return input ? `${input.matchType}\u0000${input.pattern}` : null;
+  return input
+    ? `${input.matchType}\u0000${input.pattern}\u0000${input.priority}`
+    : null;
 }
 
 /** The full input of an existing alias with `active` changed (the switch). */
@@ -161,11 +178,13 @@ export function withActive(
 ): MerchantAliasInput {
   return {
     matchType: alias.matchType,
-    pattern: alias.pattern,
+    pattern: alias.pattern ?? '',
     displayName: alias.displayName,
     categoryId: alias.category?.id ?? null,
     isPrivate: alias.isPrivate,
     priority: alias.priority,
     active,
+    transferAccountId: alias.transferAccountId,
+    isProtected: alias.isProtected,
   };
 }

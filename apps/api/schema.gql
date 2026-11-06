@@ -364,6 +364,7 @@ type AiFeature {
 }
 
 enum AiFeatureKey {
+  alias_pattern
   receipt_parsing
   recurring_classification
   screenshot_parsing
@@ -415,12 +416,40 @@ enum AliasMatchType {
   starts_with
 }
 
+"""ai: proposed by the AI; heuristic: the words the examples share"""
+enum AliasPatternSource {
+  ai
+  heuristic
+}
+
+"""A proposed pattern for an automatic name"""
+type AliasPatternSuggestion {
+  """The AI could not be used (disabled, no model or it failed)"""
+  aiUnavailable: Boolean!
+
+  """It matches every example (and none of the excluded)"""
+  coversAll: Boolean!
+
+  """What it looks for, in the user's language (may be empty)"""
+  explanation: String!
+  matchType: AliasMatchType!
+  pattern: String!
+  preview: AliasPreview!
+  source: AliasPatternSource!
+}
+
 type AliasPreview {
   """Movements the alias would match"""
   count: Int!
 
   """Up to 20, newest first"""
   samples: [AliasPreviewSample!]!
+
+  """Of those, how many keep the name of a higher-priority rule"""
+  withOtherRule: Int!
+
+  """Of those, how many keep their one-off name"""
+  withOwnName: Int!
 }
 
 type AliasPreviewSample {
@@ -429,6 +458,15 @@ type AliasPreviewSample {
   date: DateTime!
   original: String!
   transactionId: ID!
+}
+
+"""What the movements an alias names add up to"""
+type AliasSpending {
+  count: Int!
+  currency: String!
+
+  """Spent minus received"""
+  total: Float!
 }
 
 type Attachment {
@@ -1499,13 +1537,26 @@ type MerchantAlias {
   id: ID!
   isPrivate: Boolean!
 
+  """Needs the privacy PIN to see or change it"""
+  isProtected: Boolean!
+
+  """Protected and not unlocked: pattern hidden, changes refused"""
+  locked: Boolean!
+
   """Movements currently using this alias"""
   matchCount: Int!
   matchType: AliasMatchType!
-  pattern: String!
+
+  """Null for a protected rule until the privacy PIN is entered"""
+  pattern: String
 
   """Higher wins when several aliases match"""
   priority: Int!
+
+  """
+  What the movements it names (no one-off name) add up to between two dates
+  """
+  spending(from: DateTime!, to: DateTime!): AliasSpending!
 
   """Matching bank movements are suggested as a transfer to it"""
   transferAccountId: ID
@@ -1518,6 +1569,11 @@ input MerchantAliasInput {
   """At most 80 characters"""
   displayName: String!
   isPrivate: Boolean = false
+
+  """
+  Needs the privacy PIN to see its pattern, change it or see its movements' bank text (always private)
+  """
+  isProtected: Boolean = false
   matchType: AliasMatchType!
 
   """At most 200 characters"""
@@ -1753,11 +1809,17 @@ type Mutation {
   reprocessStatementImport(id: ID!, parser: String): StatementImport!
   requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
 
+  """Emails a link to choose a new privacy PIN"""
+  requestPrivacyPinReset: Boolean!
+
   """
   Moves an open scheduled payment of a loan to another day (it keeps its schedule date)
   """
   rescheduleLoanPayment(dueDate: DateTime!, occurrenceId: ID!): Debt!
   resetPassword(input: ResetPasswordInput!): Boolean!
+
+  """Sets a new privacy PIN with the emailed link"""
+  resetPrivacyPin(pin: String!, token: String!): Boolean!
   resolveTransferSuggestion(id: ID!, input: ResolveTransferSuggestionInput!): Boolean!
 
   """
@@ -1767,6 +1829,9 @@ type Mutation {
 
   """Sets the billing terms of one of the user's credit accounts"""
   setCreditCardTerms(accountId: ID!, input: CreditCardTermsInput!): Account!
+
+  """Creates or changes the privacy PIN; ends every unlock"""
+  setPrivacyPin(input: SetPrivacyPinInput!): Boolean!
 
   """The account the screenshot is about; its lines start over"""
   setScreenshotAccount(accountId: String!, id: ID!): ScreenshotImport!
@@ -1788,6 +1853,11 @@ type Mutation {
   skipRecurringPayment(occurrenceId: ID!): RecurringOccurrence!
 
   """
+  Proposes the pattern of an automatic name from some of the user's movements (AI, checked against them; else the words they share). Saves nothing
+  """
+  suggestAliasPattern(input: SuggestAliasPatternInput!): AliasPatternSuggestion!
+
+  """
   Suggests a category for uncategorized movements (max 100): merchant rules first, then one AI call. Returns them with suggestedCategory set; without AI only rule suggestions appear
   """
   suggestTransactionCategories(ids: [ID!]!): [Transaction!]!
@@ -1803,6 +1873,11 @@ type Mutation {
 
   """Admin only"""
   unlinkUserGoogle(id: ID!): AdminUser!
+
+  """
+  Checks the privacy PIN; the token unlocks protected automatic names for a few minutes
+  """
+  unlockPrivacy(pin: String!): PrivacyUnlock!
   updateAccount(id: String!, input: UpdateAccountInput!): Account!
 
   """Admin only. Turn an AI feature on/off, pick its model and fallbacks"""
@@ -1907,6 +1982,21 @@ input PayoffStrategyInput {
   """Extra paid each month; 0 or more"""
   extraPayment: Float!
   strategy: String!
+}
+
+type PrivacyStatus {
+  """The user has a privacy PIN"""
+  hasPin: Boolean!
+
+  """This request carries a valid unlock (x-privacy-unlock header)"""
+  unlocked: Boolean!
+}
+
+type PrivacyUnlock {
+  expiresAt: DateTime!
+
+  """Send it in the x-privacy-unlock header until it expires"""
+  token: String!
 }
 
 type Query {
@@ -2052,7 +2142,12 @@ type Query {
   """
   Movements a candidate alias would match (count and up to 20, newest first), without saving
   """
-  previewMerchantAlias(input: MerchantAliasInput!): AliasPreview!
+  previewMerchantAlias(
+    """The rule being edited"""
+    aliasId: ID
+    input: MerchantAliasInput!
+  ): AliasPreview!
+  privacyStatus: PrivacyStatus!
 
   """Poll it after uploading (POST /receipts) to follow the status"""
   receiptImport(id: ID!): ReceiptImport!
@@ -2477,6 +2572,14 @@ input SetAccountBalanceInput {
   description: String
 }
 
+input SetPrivacyPinInput {
+  """Needed to change an existing PIN"""
+  currentPin: String
+
+  """4 to 8 digits"""
+  pin: String!
+}
+
 input SetUserPasswordInput {
   password: String!
 }
@@ -2617,6 +2720,14 @@ type Subscription {
   notificationAdded: Notification!
 }
 
+input SuggestAliasPatternInput {
+  """Movements that must not match"""
+  excludeTransactionIds: [ID!]
+
+  """Movements that should get the name (their bank text is used), 1 to 10"""
+  transactionIds: [ID!]!
+}
+
 input SuggestCategoryInput {
   merchantName: String!
 }
@@ -2632,6 +2743,9 @@ type Transaction {
 
   """Merchant alias rule matching this movement"""
   aliasId: ID
+
+  """The alias rule that names this movement (automatic name)"""
+  aliasRule: TransactionAliasRule
   amount: Float!
   attachments: [Attachment!]
 
@@ -2675,6 +2789,16 @@ type Transaction {
   originalDescription: String
 
   """
+  The bank text is hidden behind the privacy PIN (protected rule, request not unlocked)
+  """
+  originalLocked: Boolean!
+
+  """
+  The movement's own privacy flag; isPrivate is also true when its alias rule is private
+  """
+  ownPrivate: Boolean!
+
+  """
   The recurring payment this movement paid (one query per movement; for the detail, not lists)
   """
   recurringPayment: TransactionRecurringPayment
@@ -2708,6 +2832,21 @@ input TransactionAliasInput {
   isPrivate: Boolean
 }
 
+"""The alias rule that gives a movement its automatic name"""
+type TransactionAliasRule {
+  displayName: String!
+  id: ID!
+  isPrivate: Boolean!
+
+  """Needs the privacy PIN to see its pattern or the bank text"""
+  isProtected: Boolean!
+
+  """
+  What it looks for; null for private movements except in transaction(id), and for protected rules until unlocked
+  """
+  pattern: String
+}
+
 type TransactionConnection {
   edges: [TransactionEdge!]!
   pageInfo: PageInfo!
@@ -2721,6 +2860,11 @@ type TransactionEdge {
 
 input TransactionFilters {
   accountId: String
+
+  """
+  Only movements shown with this alias rule's automatic name (no one-off name)
+  """
+  aliasId: ID
   categoryId: String
   endDate: DateTime
 

@@ -33,6 +33,7 @@ export async function apiGraphql<T>(
   query: string,
   variables: Record<string, unknown> = {},
   accessToken?: string,
+  headers: Record<string, string> = {},
 ): Promise<GraphqlResponse<T>> {
   let response: Response;
   try {
@@ -41,6 +42,7 @@ export async function apiGraphql<T>(
       headers: {
         'content-type': 'application/json',
         ...(accessToken && { authorization: `Bearer ${accessToken}` }),
+        ...headers,
       },
       body: JSON.stringify({ query, variables }),
       cache: 'no-store',
@@ -80,6 +82,8 @@ export interface AuthUser {
   locale?: string | null;
   /** Profile photo (uploaded or Google's); null: initials. */
   avatar?: UserAvatar | null;
+  /** The privacy PIN: set, and unlocked in this browser right now. */
+  privacy?: { hasPin: boolean; unlocked: boolean };
 }
 
 export interface UserAvatar {

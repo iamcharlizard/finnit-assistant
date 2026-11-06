@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { apiUrl } from '@/lib/api/finnit-api';
 import { ACCESS_COOKIE } from '@/lib/auth/cookies';
+import { PRIVACY_COOKIE, privacyHeaders } from '@/lib/privacy/cookie';
 
 const MAX_BODY_BYTES = 100_000;
 
@@ -30,13 +31,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const accessToken = (await cookies()).get(ACCESS_COOKIE)?.value;
+  const store = await cookies();
+  const accessToken = store.get(ACCESS_COOKIE)?.value;
+  const unlock = store.get(PRIVACY_COOKIE)?.value;
   try {
     const upstream = await fetch(`${apiUrl()}/graphql`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
         ...(accessToken && { authorization: `Bearer ${accessToken}` }),
+        ...privacyHeaders(unlock),
       },
       body,
       cache: 'no-store',

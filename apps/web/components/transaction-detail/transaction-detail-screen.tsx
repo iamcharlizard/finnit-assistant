@@ -1,13 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   ArrowLeft,
   ArrowLeftRight,
   CheckCheck,
   PencilLine,
+  Tag,
   Trash2,
   Undo2,
 } from 'lucide-react';
@@ -25,12 +25,15 @@ import {
   deleteTransaction,
   transactionErrorMessage,
   updateTransaction,
+  SET_ALIAS_MUTATION,
 } from '@/lib/transaction-detail/api';
 import type { TransactionDetailData } from '@/lib/transaction-detail/load';
 import { canEditAnything } from '@/lib/transaction-detail/view';
 import { UNDO_TRANSFER_CONVERSION_MUTATION } from '@/lib/transfers/convert';
 import { ConvertTransferDialog } from '@/components/transfers/convert-transfer-dialog';
 import { AttachmentsCard } from './attachments-card';
+import { TransactionNameDialog } from './transaction-name-dialog';
+import { useDetailHost } from './detail-host';
 import { EditTransactionDialog } from './edit-transaction-dialog';
 import { TransactionFacts } from './transaction-facts';
 import { TransactionSummary } from './transaction-summary';
@@ -41,12 +44,14 @@ export function TransactionDetailScreen({
 }: {
   data: TransactionDetailData;
 }) {
-  const router = useRouter();
+  const host = useDetailHost();
   const { t } = useLocalizer();
   const tt = useTranslations('transaction');
   const tx = useTranslations('transfers');
   const { view } = data;
-  const [dialog, setDialog] = React.useState<'edit' | 'convert' | null>(null);
+  const [dialog, setDialog] = React.useState<
+    'edit' | 'convert' | 'name' | null
+  >(null);
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
   const [deleting, setDeleting] = React.useState(false);
   const [applying, setApplying] = React.useState(false);
@@ -57,7 +62,7 @@ export function TransactionDetailScreen({
     updateTransaction(view.id, { inProcess: false }, gql)
       .then(() => {
         toast.success(tt('markedApplied'));
-        router.refresh();
+        host.refresh();
       })
       .catch((error: unknown) => {
         toast.error(transactionErrorMessage(error, t));
@@ -77,7 +82,7 @@ export function TransactionDetailScreen({
         gql(UNDO_TRANSFER_CONVERSION_MUTATION, { transferId })
           .then(() => {
             toast.success(tx('undo.done'));
-            router.refresh();
+            host.refresh();
           })
           .catch((error: unknown) => {
             toast.error(transactionErrorMessage(error, t));
@@ -87,10 +92,7 @@ export function TransactionDetailScreen({
     });
   }
 
-  const back = () => {
-    if (window.history.length > 1) router.back();
-    else router.push('/history');
-  };
+  const back = () => host.close();
 
   function askDelete() {
     setConfirm({
@@ -104,8 +106,7 @@ export function TransactionDetailScreen({
         deleteTransaction(view.id, gql)
           .then(() => {
             toast.success(tt('toasts.deleted'));
-            router.replace('/history');
-            router.refresh();
+            host.close({ deleted: true });
           })
           .catch((error: unknown) => {
             toast.error(transactionErrorMessage(error, t));
@@ -117,9 +118,11 @@ export function TransactionDetailScreen({
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
-      <Button variant="ghost" size="sm" className="self-start" onClick={back}>
-        <ArrowLeft aria-hidden /> {tt('back')}
-      </Button>
+      {host.mode === 'page' ? (
+        <Button variant="ghost" size="sm" className="self-start" onClick={back}>
+          <ArrowLeft aria-hidden /> {tt('back')}
+        </Button>
+      ) : null}
 
       <TransactionSummary view={view} />
 
@@ -129,6 +132,9 @@ export function TransactionDetailScreen({
             <PencilLine aria-hidden /> {tt('edit')}
           </Button>
         ) : null}
+        <Button variant="outline" onClick={() => setDialog('name')}>
+          <Tag aria-hidden /> {tt('nameAction')}
+        </Button>
         {view.convertSource ? (
           <Button variant="outline" onClick={() => setDialog('convert')}>
             <ArrowLeftRight aria-hidden /> {tx('convert.action')}
@@ -181,7 +187,6 @@ export function TransactionDetailScreen({
           categories={data.categories}
           categoryKind={data.categoryKind}
           isTransfer={view.counterpart !== null}
-          original={view.original}
           onClose={() => setDialog(null)}
           onSaved={(changed) => {
             setDialog(null);
@@ -190,7 +195,30 @@ export function TransactionDetailScreen({
               return;
             }
             toast.success(tt('toasts.saved'));
-            router.refresh();
+            host.refresh();
+          }}
+        />
+      ) : null}
+      {dialog === 'name' ? (
+        <TransactionNameDialog
+          subject={view.name}
+          categories={data.categories}
+          submit={async (input) => {
+            await gql(SET_ALIAS_MUTATION, { id: view.id, input });
+          }}
+          onClose={() => setDialog(null)}
+          onSaved={(saved) => {
+            setDialog(null);
+            toast.success(
+              tt(
+                saved.kind === 'rule'
+                  ? 'toasts.ruleCreated'
+                  : saved.removed
+                    ? 'toasts.nameRemoved'
+                    : 'toasts.renamed',
+              ),
+            );
+            host.refresh();
           }}
         />
       ) : null}
@@ -201,7 +229,7 @@ export function TransactionDetailScreen({
           onConverted={() => {
             setDialog(null);
             toast.success(tx('convert.done'));
-            router.refresh();
+            host.refresh();
           }}
         />
       ) : null}

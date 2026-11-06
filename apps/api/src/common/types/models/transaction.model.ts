@@ -21,6 +21,32 @@ registerEnumType(CategorySource, {
   description: 'Who set the category (or proposed a pending suggestion)',
 });
 
+@ObjectType({
+  description: 'The alias rule that gives a movement its automatic name',
+})
+export class TransactionAliasRule {
+  @Field(() => ID)
+  id: string;
+
+  @Field()
+  displayName: string;
+
+  @Field()
+  isPrivate: boolean;
+
+  @Field({
+    description: 'Needs the privacy PIN to see its pattern or the bank text',
+  })
+  isProtected: boolean;
+
+  @Field(() => String, {
+    nullable: true,
+    description:
+      'What it looks for; null for private movements except in transaction(id), and for protected rules until unlocked',
+  })
+  pattern: string | null;
+}
+
 @ObjectType()
 export class Transaction {
   @Field()
@@ -120,6 +146,24 @@ export class Transaction {
 
   @Field({ description: 'A one-off display name is set on this movement' })
   hasOwnAlias: boolean;
+
+  @Field({
+    description:
+      "The movement's own privacy flag; isPrivate is also true when its alias rule is private",
+  })
+  ownPrivate: boolean;
+
+  @Field({
+    description:
+      'The bank text is hidden behind the privacy PIN (protected rule, request not unlocked)',
+  })
+  originalLocked: boolean;
+
+  @Field(() => TransactionAliasRule, {
+    nullable: true,
+    description: 'The alias rule that names this movement (automatic name)',
+  })
+  aliasRule?: TransactionAliasRule | null;
 
   @Field(() => CategorySource, { nullable: true })
   categorySource?: CategorySource | null;

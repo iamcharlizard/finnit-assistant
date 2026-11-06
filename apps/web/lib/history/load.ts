@@ -45,6 +45,8 @@ export interface HistoryData {
     title: string;
     rows: ReturnType<typeof topCategoryRows>;
   };
+  /** Name of the automatic name the list is filtered by. */
+  aliasName: string | null;
 }
 
 const HISTORY_QUERY = `query History($first: Int!, $after: String, $filters: TransactionFilters, $year: Int!, $month: Int!) {
@@ -52,6 +54,7 @@ const HISTORY_QUERY = `query History($first: Int!, $after: String, $filters: Tra
   accounts(first: 100) { edges { node { ${ACCOUNT_FIELDS} } } }
   categories(includeHidden: true) { ${CATEGORY_FIELDS} }
   monthlyReport(year: $year, month: $month) { ${MONTHLY_REPORT_FIELDS} }
+  merchantAliases { id displayName }
 }`;
 
 /** First page of the filtered history plus what the filters and aside need. */
@@ -67,6 +70,7 @@ export async function loadHistory(
       accounts: Connection<ApiAccount>;
       categories: ApiCategory[];
       monthlyReport: ApiMonthlyReport;
+      merchantAliases: { id: string; displayName: string }[];
     }>(HISTORY_QUERY, {
       first: HISTORY_PAGE_SIZE,
       after: null,
@@ -94,5 +98,9 @@ export async function loadHistory(
       title: t('history.topCategories', { month: monthLabel(month, locale) }),
       rows: topCategoryRows(data.monthlyReport, data.categories, t),
     },
+    aliasName: filters.aliasId
+      ? (data.merchantAliases.find((a) => a.id === filters.aliasId)
+          ?.displayName ?? null)
+      : null,
   };
 }

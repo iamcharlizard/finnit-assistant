@@ -12,6 +12,8 @@ export interface SessionUser {
   /** The master admin: the only one who names or removes admins. */
   isMaster: boolean;
   avatar?: UserAvatar | null;
+  /** The privacy PIN: set, and unlocked in this browser right now. */
+  privacy?: { hasPin: boolean; unlocked: boolean };
 }
 
 const SessionContext = React.createContext<SessionUser | null>(null);

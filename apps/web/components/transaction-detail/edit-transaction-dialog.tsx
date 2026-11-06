@@ -21,20 +21,16 @@ import { Input } from '@finnit/ui/components/ui/input';
 import { Textarea } from '@finnit/ui/components/ui/textarea';
 
 import { AmountField } from '@/components/new-entry/amount-field';
-import { SwitchField } from '@/components/finance/switch-field';
 import { todayKey } from '@/lib/finance/dates';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import { categoryOptions } from '@/lib/new-entry/options';
 import {
-  SET_ALIAS_MUTATION,
   transactionErrorMessage,
   updateTransaction,
 } from '@/lib/transaction-detail/api';
 import {
-  ALIAS_MAX,
   DESCRIPTION_MAX,
-  buildAliasInput,
   MERCHANT_MAX,
   buildUpdateInput,
   validateDetailForm,
@@ -56,7 +52,6 @@ export function EditTransactionDialog({
   categories,
   categoryKind,
   isTransfer,
-  original,
   onClose,
   onSaved,
 }: {
@@ -67,8 +62,6 @@ export function EditTransactionDialog({
   categories: DetailCategory[];
   categoryKind: 'expense' | 'income';
   isTransfer: boolean;
-  /** The bank's text, shown under the own description. */
-  original: string | null;
   onClose: () => void;
   /** `changed` is false when nothing was different. */
   onSaved: (changed: boolean) => void;
@@ -87,7 +80,7 @@ export function EditTransactionDialog({
     [categories, categoryKind, locale],
   );
   const today = todayKey();
-  const fromBank = rules.alias;
+  const fromBank = !rules.merchant;
 
   const update = (patch: Partial<DetailForm>) => {
     setForm((f) => ({ ...f, ...patch }));
@@ -95,7 +88,6 @@ export function EditTransactionDialog({
       const next = { ...e };
       if ('amount' in patch) delete next.amount;
       if ('date' in patch) delete next.date;
-      if ('aliasName' in patch) delete next.aliasName;
       return next;
     });
   };
@@ -106,18 +98,14 @@ export function EditTransactionDialog({
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     const input = buildUpdateInput(form, initial, rules);
-    const alias = buildAliasInput(form, initial, rules);
-    if (!input && !alias) {
+    if (!input) {
       exit.after(onSaved)(false);
       return;
     }
     setSaving(true);
     setSubmitError(null);
     try {
-      if (input) await updateTransaction(transactionId, input, gql);
-      if (alias) {
-        await gql(SET_ALIAS_MUTATION, { id: transactionId, input: alias });
-      }
+      await updateTransaction(transactionId, input, gql);
       exit.after(onSaved)(true);
     } catch (error) {
       setSubmitError(transactionErrorMessage(error, t));
@@ -148,31 +136,6 @@ export function EditTransactionDialog({
           </DialogHeader>
 
           <DialogBody>
-            {rules.alias ? (
-              <div className="flex flex-col gap-1.5">
-                <Input
-                  label={tf('alias')}
-                  value={form.aliasName}
-                  maxLength={ALIAS_MAX}
-                  autoComplete="off"
-                  autoFocus
-                  placeholder={tf('aliasPlaceholder')}
-                  onChange={(e) => update({ aliasName: e.target.value })}
-                  error={
-                    errors.aliasName
-                      ? t(`transaction.validation.${errors.aliasName}`, {
-                          max: ALIAS_MAX,
-                        })
-                      : undefined
-                  }
-                />
-                <p className="px-1 text-xs break-words text-on-surface-variant">
-                  {original
-                    ? tf('aliasHint', { text: original })
-                    : tf('aliasHintEmpty')}
-                </p>
-              </div>
-            ) : null}
             {rules.amount ? (
               <AmountField
                 value={form.amount}
@@ -232,15 +195,6 @@ export function EditTransactionDialog({
                 rows={3}
                 placeholder={tf('descriptionPlaceholder')}
                 onChange={(e) => update({ description: e.target.value })}
-              />
-            ) : null}
-
-            {rules.privacy ? (
-              <SwitchField
-                label={tf('private')}
-                hint={tf('privateHint')}
-                checked={form.isPrivate}
-                onCheckedChange={(isPrivate) => update({ isPrivate })}
               />
             ) : null}
 

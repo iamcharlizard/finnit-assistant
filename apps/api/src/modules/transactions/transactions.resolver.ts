@@ -24,11 +24,17 @@ import {
   TransactionConnection,
 } from '../../common/types/models/transaction.model';
 import { TransferDirectionLoader } from './transfer-direction.loader';
+import { PrivacyService } from '../privacy/privacy.service';
 import { TransactionAliasInput } from '../categorization/dto/merchant-alias.dto';
 import {
   TransactionRecurringPayment,
   TransferCounterpart,
 } from './dto/transaction-links.dto';
+import {
+  PRIVATE_FALLBACK_NAME,
+  PRIVATE_FALLBACK_NAMES,
+} from './transaction.mapper';
+import { resolveLocale, type LocaleRequest } from '../translation/locale';
 
 @Resolver(() => Transaction)
 @UseGuards(JwtAuthGuard)
@@ -36,7 +42,27 @@ export class TransactionsResolver {
   constructor(
     private readonly transactionsService: TransactionsService,
     private readonly transferDirections: TransferDirectionLoader,
+    private readonly privacy: PrivacyService,
   ) {}
+
+  @ResolveField('displayName', () => String, {
+    description:
+      'Name to show: one-off alias, else the matching alias rule, else (private) "Private movement", else merchantName, else description',
+  })
+  displayName(
+    @Parent() transaction: Transaction,
+    @Context('req') req: LocaleRequest,
+  ): string {
+    if (
+      transaction.isPrivate &&
+      transaction.displayName === PRIVATE_FALLBACK_NAME
+    ) {
+      return (
+        PRIVATE_FALLBACK_NAMES[resolveLocale(req)] ?? PRIVATE_FALLBACK_NAME
+      );
+    }
+    return transaction.displayName;
+  }
 
   @ResolveField('transferDirection', () => String, {
     nullable: true,
@@ -95,8 +121,13 @@ export class TransactionsResolver {
   async transaction(
     @CurrentUser() user: User,
     @Args('id') id: string,
+    @Context('req') req: object,
   ): Promise<Transaction> {
-    return this.transactionsService.findById(id, user.id);
+    return this.transactionsService.findById(
+      id,
+      user.id,
+      await this.privacy.isUnlocked(req, user.id),
+    );
   }
 
   @Query(() => [Transaction], {

@@ -1,3 +1,4 @@
+import { nameSubjectOf, type NameSubject } from './rename';
 import type { CategoryIndex } from '@/lib/finance/categories';
 import { categoryLabel } from '@/lib/finance/categories';
 import {
@@ -21,6 +22,8 @@ export interface CategorizeRow extends TransactionRow {
   hasOwnAlias: boolean;
   /** The bank's text, when the API sends it (not for private rows). */
   original: string | null;
+  /** What the name editor ("Editar nombre") starts from. */
+  name: NameSubject;
 }
 
 export function isCategorizable(tx: Pick<CategorizeTransaction, 'type'>) {
@@ -53,6 +56,7 @@ export function toCategorizeRow(
     displayName: tx.displayName ?? '',
     hasOwnAlias: Boolean(tx.hasOwnAlias),
     original: original?.trim() || null,
+    name: nameSubjectOf(tx),
   };
 }
 

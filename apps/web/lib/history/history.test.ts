@@ -14,6 +14,19 @@ import { testLocalizer } from '@/lib/i18n/testing';
 import { accountOptions, categoryOptions, dayNet } from './view';
 
 describe('history filters', () => {
+  it('filters by an automatic name (?alias=) and sends it to the API', () => {
+    const today = '2026-11-05' as const;
+    const filters = parseHistoryFilters({ alias: 'alias-1' }, today);
+    assert.equal(filters.aliasId, 'alias-1');
+    assert.equal(historyQuery(filters, today), '?alias=alias-1');
+    assert.equal(toApiFilters(filters).aliasId, 'alias-1');
+    assert.equal(hasFilters(filters), true);
+    assert.equal(
+      parseHistoryFilters({ alias: 'bad id!' }, today).aliasId,
+      undefined,
+    );
+  });
+
   const today = '2026-11-05';
   const november = { year: 2026, month: 11 };
 

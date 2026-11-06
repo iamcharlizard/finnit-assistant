@@ -69,13 +69,14 @@
     "adminUsers": "Users · Administration",
     "adminAi": "AI · Administration",
     "login": "Sign in",
-    "aliases": "Transaction aliases",
+    "aliases": "Automatic names",
     "budgets": "Budgets",
     "debts": "Debts",
     "goals": "Savings goals",
     "simulator": "What-if simulator",
     "notifications": "Notifications",
-    "categories": "Categories"
+    "categories": "Categories",
+    "privacyReset": "New privacy PIN"
   },
   "newEntry": {
     "title": "New transaction",
@@ -325,8 +326,8 @@
       "expense": "Expenses",
       "transfer": "Transfers"
     },
-    "searchPlaceholder": "Search by merchant or description",
-    "searchLabel": "Search transactions by merchant or description",
+    "searchPlaceholder": "Search by name",
+    "searchLabel": "Search movements by name (private ones only by their name)",
     "filterByType": "Filter by type",
     "account": "Account",
     "allAccounts": "All accounts",
@@ -340,7 +341,6 @@
     "emptyTitle": "You don't have any transactions yet",
     "emptyDescription": "Connect your bank to import your transactions automatically.",
     "count": "{shown} of {total, plural, one {# transaction} other {# transactions}}",
-    "rowMenu": "More actions for {name}",
     "moreFilters": "Filters",
     "moreFiltersLabel": "More filters ({count} on)",
     "range": "Date range",
@@ -352,7 +352,9 @@
     "searchOtherMonths": "Nothing matches this month. It may be in another one.",
     "searchAllTime": "Search the whole history",
     "emptyMonthTitle": "No movements this month",
-    "emptyMonthDescription": "There are no movements recorded this month."
+    "emptyMonthDescription": "There are no movements recorded this month.",
+    "aliasFilter": "Automatic name: {name}",
+    "clearAlias": "Remove the automatic name filter"
   },
   "cards": {
     "count": "{count, plural, one {# card} other {# cards}}",
@@ -1685,7 +1687,6 @@
     "adminDescription": "Users with access and AI models",
     "security": "Security",
     "biometrics": "Biometrics",
-    "changePin": "Change PIN",
     "appearance": "Appearance",
     "darkMode": "Dark mode",
     "font": "Font",
@@ -1703,8 +1704,8 @@
     "signOut": "Sign out",
     "version": "Finnit v1.0.0 • Built for the future",
     "movements": "Transactions",
-    "aliases": "Transaction aliases",
-    "aliasesDescription": "Rename transactions or make them private",
+    "aliases": "Automatic names",
+    "aliasesDescription": "One general name for similar movements; you can protect it with a PIN",
     "categorize": "Categorize transactions",
     "categorizeDescription": "Give many a category at once",
     "theme": "Theme",
@@ -2068,7 +2069,7 @@
   "categorize": {
     "title": "Categorize transactions",
     "subtitle": "Review your transactions and give them a category, one at a time or many at once.",
-    "aliasesLink": "Transaction aliases",
+    "aliasesLink": "Automatic names",
     "filters": {
       "account": "Account",
       "allAccounts": "All accounts",
@@ -2112,29 +2113,14 @@
       "ai": "AI",
       "bank": "Bank"
     },
-    "rowMenu": "More actions for {name}",
-    "rename": "Edit description",
-    "renameDialog": {
-      "title": "Edit description",
-      "description": "Only changes how this transaction shows. The bank's original text is kept.",
-      "original": "From the bank: {text}",
-      "displayName": "Description",
-      "displayNamePlaceholder": "E.g. November rent",
-      "private": "Private",
-      "privateHint": "Lists and searches show only this name; the original only in the detail.",
-      "remove": "Remove description",
-      "save": "Save",
-      "saving": "Saving…",
-      "required": "Enter a description.",
-      "tooLong": "Up to {max} characters."
-    },
+    "rename": "Edit name",
     "toasts": {
       "categorized": "{count, plural, one {# transaction categorized} other {# transactions categorized}}",
       "accepted": "{count, plural, one {# suggestion accepted} other {# suggestions accepted}}",
       "rejected": "{count, plural, one {# suggestion rejected} other {# suggestions rejected}}",
       "suggested": "{count, plural, one {# new suggestion} other {# new suggestions}}",
-      "renamed": "Description saved",
-      "aliasRemoved": "Description removed"
+      "renamed": "Name saved",
+      "aliasRemoved": "Own name removed"
     },
     "empty": {
       "uncategorizedTitle": "Everything is categorized 🎉",
@@ -2184,12 +2170,12 @@
     }
   },
   "aliases": {
-    "title": "Transaction aliases",
-    "subtitle": "Show a different name on matching transactions: rename cryptic bank descriptions or keep a payment private.",
-    "new": "New alias",
-    "count": "{count, plural, one {# alias} other {# aliases}}",
-    "emptyTitle": "No aliases yet",
-    "emptyDescription": "Create one to rename transactions like “CLIP MX*TACOS 2231”.",
+    "title": "Automatic names",
+    "subtitle": "Give one general name to movements that look alike (e.g. everything that says “KSK*VID”). It applies to past and future movements; the bank text never changes.",
+    "new": "New automatic name",
+    "count": "{count, plural, one {# automatic name} other {# automatic names}}",
+    "emptyTitle": "No automatic names yet",
+    "emptyDescription": "Create one to show “Digital subscription” instead of “KSK*VID ONLYFANSFPA 231020BF8MX”.",
     "matchTypes": {
       "contains": "Contains",
       "starts_with": "Starts with",
@@ -2204,19 +2190,19 @@
     },
     "private": "Private",
     "inactive": "Inactive",
-    "activeLabel": "Enable alias {name}",
+    "activeLabel": "Turn on the automatic name {name}",
     "matches": "{count, plural, =0 {No matches} one {# match} other {# matches}}",
     "priority": "Priority {priority}",
     "noCategory": "Category unchanged",
     "edit": "Edit",
-    "editLabel": "Edit alias {name}",
+    "editLabel": "Edit the automatic name {name}",
     "delete": "Delete",
-    "deleteLabel": "Delete alias {name}",
+    "deleteLabel": "Delete the automatic name {name}",
     "categorizeLink": "Categorize transactions",
     "form": {
-      "createTitle": "New alias",
-      "editTitle": "Edit alias",
-      "description": "Applies to your current and future transactions. The original text is never changed.",
+      "createTitle": "New automatic name",
+      "editTitle": "Edit automatic name",
+      "description": "It applies to your past movements and to the ones that arrive. The bank text is never changed, and a movement's own name wins over it.",
       "matchType": "How to match",
       "matchTypeHints": {
         "contains": "The text appears anywhere. E.g. “uber” finds “UBER *TRIP 8812”.",
@@ -2224,23 +2210,36 @@
         "exact": "The whole text is the same, ignoring case and accents. E.g. “netflix.com”.",
         "regex": "For advanced users. E.g. “^oxxo (gas|tienda)” or “spei.*nomina”."
       },
-      "pattern": "Text to match",
+      "pattern": "Bank text to look for",
       "patternHint": "Case and accents don't matter.",
-      "displayName": "Display name",
-      "displayNamePlaceholder": "E.g. Tacos Don Güero",
+      "displayName": "Name to show",
+      "displayNamePlaceholder": "E.g. Digital subscription",
       "category": "Category (optional)",
       "categoryPlaceholder": "Keep the category",
       "searchCategory": "Search category…",
       "noCategories": "No results.",
       "private": "Private",
-      "privateHint": "Lists and searches show only the alias; the original name only in the detail.",
+      "privateHint": "Lists and searches only show the name; the bank text shows only in the detail.",
       "advanced": "Advanced options",
       "priority": "Priority",
       "priorityHint": "When several rules match a transaction, the highest priority wins.",
       "active": "Active",
       "save": "Save",
-      "create": "Create alias",
-      "saving": "Saving…"
+      "create": "Create automatic name",
+      "saving": "Saving…",
+      "protected": "Protect with PIN",
+      "protectedHint": "Without your privacy PIN nobody can see what it looks for, change it or see its movements' bank text. It's always private.",
+      "protectedNoPin": "To protect this name with a PIN, first create your privacy PIN.",
+      "protectedCreatePin": "Go to Settings → Security",
+      "createCategory": "Create a new category",
+      "suggestion": {
+        "button": "Suggest with AI",
+        "running": "Finding the pattern…",
+        "privacy": "Sends the example movements' bank text to the AI.",
+        "ai": "The AI proposed this pattern; check the preview.",
+        "heuristic": "We used the words the examples share; check the preview.",
+        "noAi": "The AI isn't available; we used the words the examples share."
+      }
     },
     "validation": {
       "patternRequired": "Enter the text to match.",
@@ -2256,11 +2255,13 @@
       "loading": "Looking for matches…",
       "count": "{count, plural, =0 {Matches no transactions} one {Matches # transaction} other {Matches # transactions}}",
       "more": "Showing {shown} of {count}.",
-      "failed": "We couldn't compute the preview."
+      "failed": "We couldn't compute the preview.",
+      "keptOwn": "{count, plural, one {# keeps its own name} other {# keep their own name}}.",
+      "keptOther": "{count, plural, one {# uses a higher-priority automatic name} other {# use a higher-priority automatic name}}."
     },
     "deleteDialog": {
-      "title": "Delete the alias “{name}”?",
-      "description": "Transactions will show their original name again.",
+      "title": "Delete the automatic name “{name}”?",
+      "description": "Its movements will show the bank text again (or another rule's name). The categories it set stay.",
       "confirm": "Delete"
     },
     "rules": {
@@ -2274,17 +2275,29 @@
       "confirm": "Delete"
     },
     "toasts": {
-      "created": "Alias “{name}” created",
-      "updated": "Alias “{name}” saved",
-      "deleted": "Alias deleted",
-      "activated": "Alias enabled",
-      "deactivated": "Alias disabled",
+      "created": "Automatic name “{name}” created",
+      "updated": "Automatic name “{name}” saved",
+      "deleted": "Automatic name deleted",
+      "activated": "Automatic name turned on",
+      "deactivated": "Automatic name turned off",
       "ruleDeleted": "Rule deleted"
     },
     "errors": {
-      "duplicate": "You already have an alias with that text.",
-      "notFound": "That alias no longer exists.",
-      "category": "That category no longer exists."
+      "duplicate": "You already have an automatic name with that text.",
+      "notFound": "That automatic name no longer exists.",
+      "category": "That category no longer exists.",
+      "locked": "Enter your privacy PIN to continue.",
+      "noPin": "First create your privacy PIN in Settings → Security."
+    },
+    "protected": "Protected",
+    "lockedPattern": "Pattern protected by PIN",
+    "unlock": "Unlock",
+    "unlockReason": "Enter your PIN to see and change protected automatic names.",
+    "transferTo": "Goes to my account {account}",
+    "spending": {
+      "month": "This month {amount} · {count, plural, =0 {no movements} one {# movement} other {# movements}}",
+      "year": "This year {amount}",
+      "view": "See movements"
     }
   },
   "transaction": {
@@ -2329,7 +2342,7 @@
     "delete": "Delete",
     "editTitle": "Edit movement",
     "editDescription": "Change this movement's details. The account balance updates on its own.",
-    "editImported": "It comes from the bank or a statement: its data stays as it is. You can give it your own description and pick its category.",
+    "editImported": "It comes from the bank or a statement: its data stays as it is. Pick its category here; its name is in “Name and privacy”.",
     "editTransfer": "A transfer's amount and date don't change; if they're wrong, delete it from the other account and create it again.",
     "form": {
       "amount": "Amount",
@@ -2341,33 +2354,27 @@
       "noResults": "No results",
       "merchant": "Merchant",
       "merchantPlaceholder": "E.g. Oxxo",
-      "description": "Description",
+      "description": "Notes",
       "descriptionPlaceholder": "Notes about the movement",
       "save": "Save",
-      "saving": "Saving…",
-      "alias": "Description",
-      "aliasPlaceholder": "E.g. November rent",
-      "aliasHint": "From the bank: {text}. Leave it empty to show this text.",
-      "aliasHintEmpty": "Leave it empty to show the bank's text.",
-      "private": "Private",
-      "privateHint": "Lists and searches only show its name."
+      "saving": "Saving…"
     },
     "validation": {
       "amountRequired": "Enter the amount.",
       "amountInvalid": "Enter an amount above zero.",
       "amountTooLarge": "The amount is too large.",
       "dateRequired": "Pick the date.",
-      "dateInFuture": "The date can't be in the future.",
-      "aliasTooLong": "The description can have up to {max} characters."
+      "dateInFuture": "The date can't be in the future."
     },
     "toasts": {
       "saved": "Movement updated",
       "noChanges": "Nothing changed",
-      "renamed": "Description saved",
-      "nameRemoved": "Description removed",
+      "renamed": "Name saved",
+      "nameRemoved": "Own name removed",
       "deleted": "Movement deleted",
       "attachmentUploaded": "File attached",
-      "attachmentRemoved": "File deleted"
+      "attachmentRemoved": "File deleted",
+      "ruleCreated": "Automatic name created; it already applies to similar movements"
     },
     "deleteTitle": "Delete this movement?",
     "deleteDescription": "It will be removed from your movements and the balance of {account} will be adjusted. This can't be undone.",
@@ -2401,6 +2408,43 @@
       "category": "That category no longer exists. Pick another one.",
       "attachmentNotFound": "That file no longer exists.",
       "notFound": "This movement no longer exists."
+    },
+    "name": {
+      "title": "Movement name",
+      "description": "Only changes how it shows. The bank text is never changed.",
+      "bankText": "Bank text",
+      "bankTextHidden": "Hidden in lists; see it in the detail.",
+      "automatic": "Automatic name",
+      "seeRules": "See automatic names",
+      "ownName": "Own name (optional)",
+      "ownNamePlaceholder": "E.g. November rent",
+      "ownNameHint": "For this movement only. Empty: the bank text shows.",
+      "ownNameHintRule": "For this movement only; it wins over the automatic name. Empty: the automatic one is used.",
+      "tooLong": "At most {max} characters.",
+      "private": "Private",
+      "privateHint": "Lists and searches only show the name; the bank text shows only in the detail.",
+      "privateByRule": "It's private because of the automatic name “{name}”. To change it, edit that automatic name.",
+      "privateByProtectedRule": "It's private and PIN-protected by the automatic name “{name}”.",
+      "makeRule": "Use an automatic name for similar ones",
+      "makeRuleHint": "Gives the same name to this and every movement with a similar bank text, past and future.",
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "nameAction": "Name and privacy",
+    "originalLocked": "Its automatic name is protected by a PIN.",
+    "unlockOriginal": "Enter your PIN to see this movement's bank text.",
+    "facts": {
+      "original": "Bank text"
+    },
+    "openDetail": "See details of {name}",
+    "editName": "Edit the name of {name}",
+    "nameInput": "Name of this movement (empty: the original)",
+    "drawer": {
+      "title": "Movement details",
+      "description": "The movement's data, name, category and files.",
+      "openPage": "Open as a full page",
+      "notFound": "This movement no longer exists.",
+      "failed": "We couldn't load the movement. Try again."
     }
   },
   "notifications": {
@@ -3219,5 +3263,62 @@
     "save": "Save",
     "saving": "Saving…",
     "saved": "Profile updated"
+  },
+  "privacy": {
+    "unlock": {
+      "title": "Privacy PIN",
+      "description": "Enter your PIN to see what's protected. It stays open for 10 minutes in this browser.",
+      "pin": "PIN",
+      "confirm": "Unlock",
+      "checking": "Checking…",
+      "errors": {
+        "invalid": "The PIN has 4 to 8 digits.",
+        "wrong": "Wrong PIN.",
+        "paused": "Too many attempts. Wait a few minutes.",
+        "noPin": "You don't have a privacy PIN yet; create it in Settings → Security.",
+        "failed": "We couldn't check the PIN. Try again."
+      }
+    },
+    "forgot": {
+      "button": "I forgot my PIN",
+      "sending": "Sending…",
+      "sent": "We sent you an email",
+      "sentHint": "Open the link within 30 minutes to choose a new PIN."
+    },
+    "pinDialog": {
+      "createTitle": "Create a privacy PIN",
+      "changeTitle": "Change your privacy PIN",
+      "description": "{min} to {max} digits. It protects the automatic names you mark and their movements' bank text.",
+      "current": "Current PIN",
+      "new": "New PIN",
+      "repeat": "Repeat the new PIN",
+      "save": "Save",
+      "saving": "Saving…",
+      "created": "Privacy PIN created",
+      "changed": "Privacy PIN updated",
+      "errors": {
+        "length": "The PIN has {min} to {max} digits.",
+        "mismatch": "The new PINs don't match.",
+        "current": "Enter your current PIN.",
+        "wrongCurrent": "The current PIN is wrong.",
+        "link": "This link no longer works. Ask for a new one with “I forgot my PIN”."
+      }
+    },
+    "settings": {
+      "create": "Create a privacy PIN",
+      "change": "Change privacy PIN",
+      "hint": "Protects automatic names and their movements' bank text",
+      "lockNow": "Lock now"
+    },
+    "reset": {
+      "title": "New privacy PIN",
+      "back": "Back to Settings",
+      "description": "Choose a new PIN. The old one stops working.",
+      "choose": "Choose a new PIN",
+      "invalidTitle": "Invalid link",
+      "invalidDescription": "Ask for a new one with “I forgot my PIN” in Settings → Security.",
+      "doneTitle": "Done, you have a new PIN",
+      "doneDescription": "Use it to unlock what's protected."
+    }
   }
 }

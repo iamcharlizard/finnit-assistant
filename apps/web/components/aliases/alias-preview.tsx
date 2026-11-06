@@ -22,12 +22,22 @@ export function AliasPreview({ state }: { state: AliasPreviewState }) {
   } else if (state.status === 'error') {
     body = <p className="text-expense">{state.regexError ?? t('failed')}</p>;
   } else {
-    const { count, samples } = state.preview;
+    const { count, samples, withOwnName, withOtherRule } = state.preview;
     body = (
       <>
         <p className="font-medium text-on-background">
           {t('count', { count })}
         </p>
+        {withOwnName > 0 ? (
+          <p className="text-xs text-on-surface-variant">
+            {t('keptOwn', { count: withOwnName })}
+          </p>
+        ) : null}
+        {withOtherRule > 0 ? (
+          <p className="text-xs text-on-surface-variant">
+            {t('keptOther', { count: withOtherRule })}
+          </p>
+        ) : null}
         {samples.length > 0 ? (
           <ul className="mt-2 flex max-h-56 flex-col divide-y divide-outline overflow-y-auto">
             {samples.map((s) => (

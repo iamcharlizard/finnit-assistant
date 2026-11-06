@@ -9,14 +9,11 @@ export interface DetailForm {
   date: DayKey;
   categoryId: string;
   merchantName: string;
+  /** Notes of a movement made by hand. */
   description: string;
-  /** The user's own description of a bank movement ("" = the bank's). */
-  aliasName: string;
-  isPrivate: boolean;
 }
 
 export const MERCHANT_MAX = 120;
-export const ALIAS_MAX = 80;
 export const DESCRIPTION_MAX = 500;
 
 export type DetailFormError =
@@ -24,11 +21,10 @@ export type DetailFormError =
   | 'amountInvalid'
   | 'amountTooLarge'
   | 'dateRequired'
-  | 'dateInFuture'
-  | 'aliasTooLong';
+  | 'dateInFuture';
 
 export type DetailFormErrors = Partial<
-  Record<'amount' | 'date' | 'aliasName', DetailFormError>
+  Record<'amount' | 'date', DetailFormError>
 >;
 
 export function detailFormOf(tx: TransactionDetail): DetailForm {
@@ -38,8 +34,6 @@ export function detailFormOf(tx: TransactionDetail): DetailForm {
     categoryId: tx.category?.id ?? '',
     merchantName: tx.merchantName ?? '',
     description: tx.description ?? '',
-    aliasName: tx.hasOwnAlias ? tx.displayName : '',
-    isPrivate: tx.isPrivate,
   };
 }
 
@@ -59,29 +53,7 @@ export function validateDetailForm(
     if (!isDayKey(form.date)) errors.date = 'dateRequired';
     else if (form.date > today) errors.date = 'dateInFuture';
   }
-  if (rules.alias && form.aliasName.trim().length > ALIAS_MAX) {
-    errors.aliasName = 'aliasTooLong';
-  }
   return errors;
-}
-
-/**
- * setTransactionAlias's input when the own description or privacy changed
- * (null otherwise). An emptied description goes back to the bank's text.
- */
-export function buildAliasInput(
-  form: DetailForm,
-  initial: DetailForm,
-  rules: EditRules,
-): { displayName?: string | null; isPrivate?: boolean } | null {
-  const input: { displayName?: string | null; isPrivate?: boolean } = {};
-  if (rules.alias && form.aliasName.trim() !== initial.aliasName.trim()) {
-    input.displayName = form.aliasName.trim() || null;
-  }
-  if (rules.privacy && form.isPrivate !== initial.isPrivate) {
-    input.isPrivate = form.isPrivate;
-  }
-  return Object.keys(input).length > 0 ? input : null;
 }
 
 export interface UpdateTransactionPayload {

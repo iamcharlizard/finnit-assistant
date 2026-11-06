@@ -8,12 +8,9 @@ import { CalendarSearch, Inbox, SearchX } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import { LabelSm } from '@finnit/ui/components/ui/typography';
-import { toast } from '@finnit/ui/components/ui/toaster';
 import { cn } from '@finnit/ui/lib/utils';
 
 import { EmptyState } from '@/components/finance/empty-state';
-import { TransactionAliasDialog } from '@/components/transaction-detail/transaction-alias-dialog';
-import { ConvertTransferDialog } from '@/components/transfers/convert-transfer-dialog';
 import { useTransactionPages } from '@/hooks/use-transaction-pages';
 import { monthName, type DayKey } from '@/lib/finance/dates';
 import { formatMoney } from '@/lib/finance/money';
@@ -26,11 +23,7 @@ import {
   withPeriod,
   type HistoryFilters,
 } from '@/lib/history/filters';
-import {
-  dayNet,
-  type HistoryRow as Row,
-  type TransactionPage,
-} from '@/lib/history/view';
+import { dayNet, type TransactionPage } from '@/lib/history/view';
 import { HistoryRow } from './history-row';
 
 /** Transactions grouped by day, with "Cargar más" and the row actions. */
@@ -50,8 +43,6 @@ export function HistoryList({
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
-  const [renaming, setRenaming] = React.useState<Row | null>(null);
-  const [converting, setConverting] = React.useState<Row | null>(null);
   const groups = React.useMemo(
     () => groupByDay(rows, today, locale),
     [rows, today, locale],
@@ -65,41 +56,6 @@ export function HistoryList({
         }),
       }
     : null;
-
-  const dialogs = (
-    <>
-      {renaming ? (
-        <TransactionAliasDialog
-          transactionId={renaming.id}
-          current={renaming.alias}
-          original={renaming.original}
-          onClose={() => setRenaming(null)}
-          onSaved={(removed) => {
-            setRenaming(null);
-            toast.success(
-              t(
-                removed
-                  ? 'transaction.toasts.nameRemoved'
-                  : 'transaction.toasts.renamed',
-              ),
-            );
-            router.refresh();
-          }}
-        />
-      ) : null}
-      {converting?.convert ? (
-        <ConvertTransferDialog
-          source={converting.convert}
-          onClose={() => setConverting(null)}
-          onConverted={() => {
-            setConverting(null);
-            toast.success(t('transfers.convert.done'));
-            router.refresh();
-          }}
-        />
-      ) : null}
-    </>
-  );
 
   if (rows.length === 0) {
     if (filters.search && filters.period !== 'all') {
@@ -184,8 +140,7 @@ export function HistoryList({
                 <HistoryRow
                   key={row.id}
                   row={row}
-                  onRename={() => setRenaming(row)}
-                  onConvert={() => setConverting(row)}
+                  onRenamed={() => router.refresh()}
                 />
               ))}
             </div>
@@ -211,7 +166,6 @@ export function HistoryList({
           <Link href={previous.href}>{previous.label}</Link>
         </Button>
       ) : null}
-      {dialogs}
     </div>
   );
 }

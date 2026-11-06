@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { ACCESS_COOKIE } from '@/lib/auth/cookies';
+import { PRIVACY_COOKIE, privacyHeaders } from '@/lib/privacy/cookie';
 import { apiGraphql, isUnauthenticated } from './finnit-api';
 
 /**
@@ -15,10 +16,16 @@ export async function serverGraphql<T>(
   query: string,
   variables: Record<string, unknown> = {},
 ): Promise<T> {
-  const accessToken = (await cookies()).get(ACCESS_COOKIE)?.value;
+  const store = await cookies();
+  const accessToken = store.get(ACCESS_COOKIE)?.value;
   if (!accessToken) redirect('/login');
 
-  const result = await apiGraphql<T>(query, variables, accessToken);
+  const result = await apiGraphql<T>(
+    query,
+    variables,
+    accessToken,
+    privacyHeaders(store.get(PRIVACY_COOKIE)?.value),
+  );
   if (isUnauthenticated(result.errors)) redirect('/login');
   if (!result.data || result.errors?.length) {
     throw new Error(result.errors?.[0]?.message ?? 'The API returned no data');

@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, LockKeyhole, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import { Combobox } from '@finnit/ui/components/ui/combobox';
@@ -23,7 +24,13 @@ import { NumberInput } from '@finnit/ui/components/ui/number-input';
 import { SwitchField } from '@/components/finance/switch-field';
 import { SelectField } from '@/components/recurring/select-field';
 import { useAliasPreview } from '@/hooks/use-alias-preview';
-import { aliasErrorMessage, regexErrorOf, saveAlias } from '@/lib/aliases/api';
+import {
+  aliasErrorMessage,
+  regexErrorOf,
+  saveAlias,
+  suggestAliasPattern,
+} from '@/lib/aliases/api';
+import { useSessionUser } from '@/components/session-provider';
 import {
   DISPLAY_NAME_MAX,
   PATTERN_MAX,
@@ -51,12 +58,18 @@ import { AliasPreview } from './alias-preview';
 export function AliasDialog({
   alias,
   categories,
+  initial,
+  exampleIds,
   onClose,
   onSaved,
 }: {
   /** Null to create one. */
   alias: ApiMerchantAlias | null;
   categories: CategorizeCategory[];
+  /** Starting values for a new one (e.g. made from a movement). */
+  initial?: Partial<AliasForm>;
+  /** Movements the AI uses as examples ("Sugerir con IA"). */
+  exampleIds?: string[];
   onClose: () => void;
   onSaved: (saved: ApiMerchantAlias, created: boolean) => void;
 }) {
@@ -65,15 +78,18 @@ export function AliasDialog({
   const { t, locale } = useLocalizer();
   const tf = useTranslations('aliases.form');
   const [form, setForm] = React.useState<AliasForm>(() =>
-    alias ? formOfAlias(alias) : newAliasForm(),
+    alias ? formOfAlias(alias) : newAliasForm(initial),
   );
+  const { privacy } = useSessionUser();
+  const [suggesting, setSuggesting] = React.useState(false);
+  const [suggestion, setSuggestion] = React.useState<string | null>(null);
   const [errors, setErrors] = React.useState<AliasFormErrors>({});
   const [patternApiError, setPatternApiError] = React.useState<string | null>(
     null,
   );
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
-  const preview = useAliasPreview(form);
+  const preview = useAliasPreview(form, alias?.id ?? null);
   const categoryItems = React.useMemo(
     () => categoryOptions(categories, 'any', locale),
     [categories, locale],
@@ -108,6 +124,35 @@ export function AliasDialog({
       return next;
     });
     if ('pattern' in patch || 'matchType' in patch) setPatternApiError(null);
+  }
+
+  // Examples for the AI: the movements given, else what the preview found.
+  const examples = exampleIds?.length
+    ? exampleIds
+    : preview.status === 'ready'
+      ? preview.preview.samples.slice(0, 10).map((s) => s.transactionId)
+      : [];
+
+  /** Asks the API (AI first) for a pattern that covers the example movements. */
+  async function suggestPattern() {
+    if (!examples.length) return;
+    setSuggesting(true);
+    setSuggestion(null);
+    try {
+      const found = await suggestAliasPattern(examples, gql);
+      update({ matchType: found.matchType, pattern: found.pattern });
+      setSuggestion(
+        found.aiUnavailable
+          ? tf('suggestion.noAi')
+          : found.source === 'ai'
+            ? found.explanation || tf('suggestion.ai')
+            : tf('suggestion.heuristic'),
+      );
+    } catch (error) {
+      setSuggestion(aliasErrorMessage(error, t));
+    } finally {
+      setSuggesting(false);
+    }
   }
 
   async function submit(event: React.FormEvent) {
@@ -181,6 +226,31 @@ export function AliasDialog({
               <p className="px-1 text-xs text-on-surface-variant">
                 {tf('patternHint')}
               </p>
+              {examples.length ? (
+                <div className="flex flex-col gap-1 px-1 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="self-start"
+                    disabled={suggesting}
+                    onClick={suggestPattern}
+                  >
+                    <Sparkles aria-hidden />
+                    {suggesting
+                      ? tf('suggestion.running')
+                      : tf('suggestion.button')}
+                  </Button>
+                  <p className="text-[11px] text-on-surface-variant">
+                    {tf('suggestion.privacy')}
+                  </p>
+                  {suggestion ? (
+                    <p role="status" className="text-xs text-on-background">
+                      {suggestion}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
             <AliasPreview state={preview} />
@@ -205,13 +275,42 @@ export function AliasDialog({
               emptyText={tf('noCategories')}
               clearable
             />
+            <Link
+              href="/settings/categories"
+              className="-mt-3 self-start px-1 text-xs font-medium text-brand-ink underline-offset-4 hover:underline"
+            >
+              {tf('createCategory')}
+            </Link>
 
             <SwitchField
               label={tf('private')}
               hint={tf('privateHint')}
-              checked={form.isPrivate}
+              checked={form.isPrivate || form.isProtected}
+              disabled={form.isProtected}
               onCheckedChange={(isPrivate) => update({ isPrivate })}
             />
+
+            {privacy?.hasPin ? (
+              <SwitchField
+                label={tf('protected')}
+                hint={tf('protectedHint')}
+                checked={form.isProtected}
+                onCheckedChange={(isProtected) => update({ isProtected })}
+              />
+            ) : (
+              <p className="flex items-start gap-2 rounded-input bg-track p-3 text-xs text-on-surface-variant">
+                <LockKeyhole aria-hidden className="mt-0.5 size-4 shrink-0" />
+                <span>
+                  {tf('protectedNoPin')}{' '}
+                  <Link
+                    href="/settings"
+                    className="font-medium text-brand-ink underline-offset-4 hover:underline"
+                  >
+                    {tf('protectedCreatePin')}
+                  </Link>
+                </span>
+              </p>
+            )}
 
             <details className="group rounded-input border border-outline px-3 py-2">
               <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between text-sm font-medium text-on-background">

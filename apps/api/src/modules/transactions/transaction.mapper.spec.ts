@@ -56,6 +56,9 @@ describe('presentTransaction', () => {
     expect(shown).toEqual({
       displayName: 'Regalo',
       isPrivate: true,
+      ownPrivate: false,
+      originalLocked: false,
+      aliasRule: null,
       hasOwnAlias: false,
       originalDescription: null,
       merchantName: null,
@@ -79,6 +82,51 @@ describe('presentTransaction', () => {
   });
 });
 
+describe('protected rules (privacy PIN)', () => {
+  const protectedAlias = {
+    id: 'alias-1',
+    displayName: 'Suscripción digital',
+    isPrivate: false,
+    isProtected: true,
+    pattern: 'ONLYFANS',
+  };
+
+  it('are always private and keep the bank text and pattern behind the PIN', () => {
+    const detail = presentTransaction({ ...base, alias: protectedAlias }, true);
+    expect(detail.isPrivate).toBe(true);
+    expect(detail.originalLocked).toBe(true);
+    expect(detail.originalDescription).toBeNull();
+    expect(detail.merchantName).toBeNull();
+    expect(detail.aliasRule).toEqual({
+      id: 'alias-1',
+      displayName: 'Suscripción digital',
+      isPrivate: true,
+      isProtected: true,
+      pattern: null,
+    });
+  });
+
+  it('reveal both once unlocked', () => {
+    const detail = presentTransaction(
+      { ...base, alias: protectedAlias },
+      true,
+      true,
+    );
+    expect(detail.originalLocked).toBe(false);
+    expect(detail.originalDescription).toBe('PAYPAL *FARMACIA 123');
+    expect(detail.aliasRule?.pattern).toBe('ONLYFANS');
+  });
+
+  it('never reveal in lists, unlocked or not', () => {
+    const list = presentTransaction(
+      { ...base, alias: protectedAlias },
+      false,
+      true,
+    );
+    expect(list.originalDescription).toBeNull();
+  });
+});
+
 describe('presentationFields', () => {
   it('works for rows that did not load the alias relation', () => {
     expect(
@@ -90,6 +138,9 @@ describe('presentationFields', () => {
     ).toEqual({
       displayName: 'X',
       isPrivate: false,
+      ownPrivate: false,
+      originalLocked: false,
+      aliasRule: null,
       originalDescription: 'X',
       aliasId: 'alias-1',
       hasOwnAlias: false,

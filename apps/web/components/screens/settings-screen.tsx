@@ -29,6 +29,7 @@ import { Switch } from '@finnit/ui/components/ui/switch';
 import { signOut } from '@/app/login/actions';
 import { useSessionUser } from '@/components/session-provider';
 import { ProfileDialog } from '@/components/settings/profile-dialog';
+import { PrivacySettings } from '@/components/privacy/privacy-settings';
 import { avatarSrc } from '@/lib/profile/avatar';
 import { LanguageSelect } from '@/components/settings/language-select';
 import { ModeSegmented } from '@/components/mode-segmented';
@@ -176,16 +177,7 @@ export function SettingsScreen() {
             }
           />
         </SettingRow>
-        <button
-          type="button"
-          className="flex min-h-[52px] items-center justify-between rounded-xl bg-track px-3 text-on-surface-variant outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
-        >
-          <span className="flex items-center gap-3 text-base">
-            <Lock aria-hidden className="size-5" />
-            {t('changePin')}
-          </span>
-          <ChevronRight aria-hidden className="size-4" />
-        </button>
+        <PrivacySettings />
       </SettingsSection>
 
       <SettingsSection

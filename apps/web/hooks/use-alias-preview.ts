@@ -24,13 +24,18 @@ export type AliasPreviewState =
  * once the match type and pattern stop changing for a moment. Only the
  * latest answer is kept.
  */
-export function useAliasPreview({
-  matchType,
-  pattern,
-}: Pick<AliasForm, 'matchType' | 'pattern'>): AliasPreviewState {
+export function useAliasPreview(
+  {
+    matchType,
+    pattern,
+    priority,
+  }: Pick<AliasForm, 'matchType' | 'pattern' | 'priority'>,
+  /** The rule being edited (its own movements aren't "another rule"). */
+  aliasId: string | null = null,
+): AliasPreviewState {
   const input = React.useMemo(
-    () => previewInput({ matchType, pattern }),
-    [matchType, pattern],
+    () => previewInput({ matchType, pattern, priority }),
+    [matchType, pattern, priority],
   );
   const key = previewKey(input);
   const debounced = useDebouncedValue(input, PREVIEW_DEBOUNCE_MS);
@@ -43,7 +48,7 @@ export function useAliasPreview({
     const requestKey = previewKey(debounced);
     if (!debounced || !requestKey) return;
     let cancelled = false;
-    previewAlias(debounced, gql)
+    previewAlias(debounced, gql, aliasId)
       .then((preview) => {
         if (!cancelled) {
           setResult({ key: requestKey, state: { status: 'ready', preview } });
@@ -60,7 +65,7 @@ export function useAliasPreview({
     return () => {
       cancelled = true;
     };
-  }, [debounced]);
+  }, [debounced, aliasId]);
 
   if (!key) return { status: 'idle' };
   if (result?.key === key) return result.state;

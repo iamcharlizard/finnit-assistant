@@ -12,7 +12,8 @@ import {
 const text = (sql: Prisma.Sql) => sql.text.replace(/\s+/g, ' ');
 
 const NORM_TEXT = String.raw`regexp_replace(btrim(unaccent(lower(coalesce(nullif(btrim(t."merchantName"), ''), t."description", '')))), '\s+', ' ', 'g')`;
-const NORM_PARAM = String.raw`regexp_replace(btrim(unaccent(lower($2))), '\s+', ' ', 'g')`;
+// $1 priority, $2 the edited alias, $3 user, $4 pattern (see previewAliasSql).
+const NORM_PARAM = String.raw`regexp_replace(btrim(unaccent(lower($4))), '\s+', ' ', 'g')`;
 const ESCAPED_PARAM = String.raw`replace(replace(replace(${NORM_PARAM}, '\', '\\'), '%', '\%'), '_', '\_')`;
 
 describe('merchant alias SQL', () => {
@@ -29,7 +30,15 @@ describe('merchant alias SQL', () => {
         `${NORM_TEXT} LIKE '%' || ${ESCAPED_PARAM} || '%' ESCAPE '\\'`,
       );
       // The pattern is a bound parameter, never interpolated.
-      expect(sql.values).toEqual(['user-1', '50%_off', ALIAS_PREVIEW_SAMPLES]);
+      expect(sql.values).toEqual([
+        0,
+        null,
+        'user-1',
+        '50%_off',
+        false,
+        null,
+        ALIAS_PREVIEW_SAMPLES,
+      ]);
       expect(sql.sql).not.toContain('50%_off');
     });
 
@@ -48,7 +57,7 @@ describe('merchant alias SQL', () => {
     it('regex: Postgres ~* on the unaccented text', () => {
       const sql = previewAliasSql('u', AliasMatchType.regex, '^uber\\s');
       expect(text(sql)).toContain(
-        `unaccent(coalesce(nullif(btrim(t."merchantName"), ''), t."description", '')) ~* unaccent($2)`,
+        `unaccent(coalesce(nullif(btrim(t."merchantName"), ''), t."description", '')) ~* unaccent($4)`,
       );
       expect(sql.sql).not.toContain('LIKE');
     });
@@ -56,10 +65,27 @@ describe('merchant alias SQL', () => {
     it('returns the newest samples with the total count of matches', () => {
       const sql = text(previewAliasSql('u', AliasMatchType.contains, 'x'));
       expect(sql).toContain('count(*) OVER () AS total');
-      expect(sql).toContain('WHERE t."userId" = $1 AND');
+      expect(sql).toContain('WHERE t."userId" = $3 AND');
       expect(sql).toContain(
-        'ORDER BY t."txnDate" DESC, t."createdAt" DESC, t."id" DESC LIMIT $3',
+        'ORDER BY t."txnDate" DESC, t."createdAt" DESC, t."id" DESC LIMIT $7',
       );
+    });
+
+    it("counts what keeps another name, and hides protected rules' movements", () => {
+      const sql = previewAliasSql('u', AliasMatchType.contains, 'x', {
+        priority: 5,
+        aliasId: 'a1',
+        hideProtected: true,
+      });
+      const body = text(sql);
+      expect(body).toContain('AS own_named');
+      expect(body).toContain('o."priority" > $1');
+      expect(body).toContain(
+        '($5 OR p."isProtected" IS NOT TRUE OR p."id" = $6)',
+      );
+      // $5 is "show protected": false while locked.
+      expect(sql.values.slice(0, 2)).toEqual([5, 'a1']);
+      expect(sql.values[4]).toBe(false);
     });
   });
 
@@ -88,7 +114,7 @@ describe('merchant alias SQL', () => {
       );
       expect(flat).toContain('a."userId" = t2."userId" AND a."active" AND');
       expect(flat).toContain(
-        'ORDER BY a."priority" DESC, a."createdAt" DESC, a."id" DESC LIMIT 1',
+        'ORDER BY a."isProtected" DESC, a."priority" DESC, a."createdAt" DESC, a."id" DESC LIMIT 1',
       );
       expect(flat).toContain('WHERE t2."userId" = $1');
       expect(flat).not.toContain('ANY(');

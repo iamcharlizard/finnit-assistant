@@ -1,3 +1,4 @@
+import { nameSubjectOf, type NameSubject } from '@/lib/categorize/rename';
 import type { Localizer } from '@/lib/i18n/translator';
 import { accountLabel } from '@/lib/finance/accounts';
 import { categoryLabel } from '@/lib/finance/categories';
@@ -30,11 +31,10 @@ export function sourceKind(source: string): SourceKind {
 
 /**
  * What the edit form may change. The API only edits movements created by
- * hand; bank or statement ones keep the bank's data, and the user gives
- * them their own description (an alias that never replaces the original)
- * and a category. A transfer keeps its amount and date (both sides must
- * agree) and adjustments their amount (the API can't tell their direction).
- * Any movement can be made private.
+ * hand; bank or statement ones keep the bank's data and only take a
+ * category. A transfer keeps its amount and date (both sides must agree)
+ * and adjustments their amount (the API can't tell their direction). The
+ * name and privacy of any movement live in "Nombre y privacidad".
  */
 export interface EditRules {
   amount: boolean;
@@ -42,9 +42,6 @@ export interface EditRules {
   merchant: boolean;
   description: boolean;
   category: boolean;
-  /** Own description over the bank's text (setTransactionAlias). */
-  alias: boolean;
-  privacy: boolean;
 }
 
 export function editRules(
@@ -58,8 +55,6 @@ export function editRules(
       merchant: false,
       description: false,
       category: categorizable,
-      alias: true,
-      privacy: true,
     };
   }
   return {
@@ -68,8 +63,6 @@ export function editRules(
     merchant: true,
     description: true,
     category: categorizable,
-    alias: false,
-    privacy: true,
   };
 }
 
@@ -144,6 +137,10 @@ export interface TransactionDetailView {
   hasOwnAlias: boolean;
   /** The original text ("Ver original"); null when there's none to reveal. */
   original: string | null;
+  /** The bank text is behind the privacy PIN ("Ver original" asks for it). */
+  originalLocked: boolean;
+  /** What "Nombre y privacidad" starts from. */
+  name: NameSubject;
   /** Signed like the lists: "-$80.00", "+$1,200.00". */
   amount: string;
   variant: 'income' | 'expense' | 'neutral';
@@ -200,6 +197,8 @@ export function toTransactionDetailView(
       original && original !== title && (tx.isPrivate || tx.type !== 'transfer')
         ? original
         : null,
+    originalLocked: Boolean(tx.originalLocked),
+    name: nameSubjectOf(tx),
     amount: formatMoney(
       dir === 'out' ? -Math.abs(tx.amount) : Math.abs(tx.amount),
       tx.currency,

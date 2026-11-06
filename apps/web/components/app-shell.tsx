@@ -23,6 +23,7 @@ import { NewEntrySheet } from '@/components/new-entry/new-entry-sheet';
 import { NotificationsSheet } from '@/components/notifications/notifications-sheet';
 import { useSessionUser } from '@/components/session-provider';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { TransactionDrawerProvider } from '@/components/transaction-detail/transaction-drawer';
 import {
   SETTINGS_HREF,
   activeGroupKey,
@@ -88,74 +89,76 @@ export function AppShell({
 
   return (
     // No background here: the body's (with Glass's backdrop) shows through.
-    <div className="flex min-h-dvh">
-      <AppSideNav
-        sections={sections}
-        activeHref={activeHref}
-        onAddClick={() => handleAdd()}
-        collapsed={sidebar.collapsed}
-        onToggle={sidebar.toggle}
-        openGroups={groups.open}
-        onToggleGroup={groups.toggle}
-        footer={
-          <ProfileMenu
-            variant="sidebar"
-            collapsed={sidebar.collapsed}
-            active={inSettings}
-          />
-        }
-        className="sticky top-3 z-40 my-3 ml-3 hidden h-[calc(100dvh-1.5rem)] shrink-0 lg:block"
-      />
+    <TransactionDrawerProvider>
+      <div className="flex min-h-dvh">
+        <AppSideNav
+          sections={sections}
+          activeHref={activeHref}
+          onAddClick={() => handleAdd()}
+          collapsed={sidebar.collapsed}
+          onToggle={sidebar.toggle}
+          openGroups={groups.open}
+          onToggleGroup={groups.toggle}
+          footer={
+            <ProfileMenu
+              variant="sidebar"
+              collapsed={sidebar.collapsed}
+              active={inSettings}
+            />
+          }
+          className="sticky top-3 z-40 my-3 ml-3 hidden h-[calc(100dvh-1.5rem)] shrink-0 lg:block"
+        />
 
-      {/*
+        {/*
         Header and page share the column width, so the floating bar lines up
         with the content. Screens with their own heading render <PageHeader>
         (class "page-header"); then the generic bar is hidden with :has(), which
         works from the first server render.
       */}
-      <HeaderChromeContext.Provider value={chrome}>
-        {/*
+        <HeaderChromeContext.Provider value={chrome}>
+          {/*
           The column is the container for the screens' @-queries: they lay
           out by the width left by the sidebar (expanded or collapsed), not
           by the window.
         */}
-        <div className="group/shell @container mx-auto flex w-full max-w-[100rem] min-w-0 flex-1 flex-col px-4 pt-3 sm:px-6 lg:px-8">
-          <TopAppBar
-            {...chrome}
-            title={t(pageTitleKey(pathname))}
-            className={cn(
-              'group-has-[.page-header]/shell:hidden',
-              HEADER_TRANSITION_CLASS,
-            )}
-          />
-          <main className="w-full flex-1 pt-5 pb-40 group-has-[.page-header]/shell:pt-0 lg:pb-10">
-            {children}
-          </main>
-        </div>
-      </HeaderChromeContext.Provider>
+          <div className="group/shell @container mx-auto flex w-full max-w-[100rem] min-w-0 flex-1 flex-col px-4 pt-3 sm:px-6 lg:px-8">
+            <TopAppBar
+              {...chrome}
+              title={t(pageTitleKey(pathname))}
+              className={cn(
+                'group-has-[.page-header]/shell:hidden',
+                HEADER_TRANSITION_CLASS,
+              )}
+            />
+            <main className="w-full flex-1 pt-5 pb-40 group-has-[.page-header]/shell:pt-0 lg:pb-10">
+              {children}
+            </main>
+          </div>
+        </HeaderChromeContext.Provider>
 
-      <AppBottomNav
-        sections={sections}
-        activeHref={activeHref}
-        onAdd={handleAdd}
-        className="lg:hidden"
-      />
-      <NewEntrySheet
-        open={adding !== null}
-        onOpenChange={(open) => {
-          if (!open) setAdding(null);
-        }}
-        initialAction={adding?.action}
-      />
-      <NotificationsSheet
-        open={notificationsOpen}
-        onOpenChange={setNotificationsOpen}
-        unreadCount={notificationCount}
-      />
-      <Toaster
-        position={wide ? 'bottom-right' : 'top-center'}
-        closeButton={false}
-      />
-    </div>
+        <AppBottomNav
+          sections={sections}
+          activeHref={activeHref}
+          onAdd={handleAdd}
+          className="lg:hidden"
+        />
+        <NewEntrySheet
+          open={adding !== null}
+          onOpenChange={(open) => {
+            if (!open) setAdding(null);
+          }}
+          initialAction={adding?.action}
+        />
+        <NotificationsSheet
+          open={notificationsOpen}
+          onOpenChange={setNotificationsOpen}
+          unreadCount={notificationCount}
+        />
+        <Toaster
+          position={wide ? 'bottom-right' : 'top-center'}
+          closeButton={false}
+        />
+      </div>
+    </TransactionDrawerProvider>
   );
 }

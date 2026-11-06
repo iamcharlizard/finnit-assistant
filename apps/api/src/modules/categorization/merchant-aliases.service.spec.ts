@@ -3,6 +3,7 @@ import { AliasMatchType, Prisma } from '@finnit/database';
 import { PrismaService } from '../../services/prisma.service';
 import {
   NotFoundError,
+  PrivacyLockedError,
   ValidationError,
 } from '../../common/exceptions/graphql-error.exception';
 import {
@@ -25,6 +26,7 @@ const aliasRow = (overrides: Record<string, unknown> = {}) => ({
   priority: 0,
   active: true,
   transferAccountId: null,
+  isProtected: false,
   createdAt: new Date('2026-10-01'),
   updatedAt: new Date('2026-10-01'),
   _count: { transactions: 3 },
@@ -72,6 +74,7 @@ describe('MerchantAliasesService', () => {
         priority: 0,
         active: true,
         transferAccountId: null,
+        isProtected: false,
       });
     });
 
@@ -198,7 +201,7 @@ describe('MerchantAliasesService', () => {
       );
       expect(prisma.merchantAlias.findFirst).toHaveBeenCalledWith({
         where: { id: 'alias-9', userId },
-        select: { id: true },
+        select: { id: true, isProtected: true },
       });
       expect(prisma.$transaction).not.toHaveBeenCalled();
     });
@@ -222,6 +225,8 @@ describe('MerchantAliasesService', () => {
           amount: new Prisma.Decimal('120.5'),
           currency: 'MXN',
           total: BigInt(42),
+          own_named: BigInt(3),
+          other_rule: BigInt(1),
         },
       ]);
 
@@ -229,6 +234,8 @@ describe('MerchantAliasesService', () => {
 
       expect(preview).toEqual({
         count: 42,
+        withOwnName: 3,
+        withOtherRule: 1,
         samples: [
           {
             transactionId: 't1',
@@ -250,6 +257,8 @@ describe('MerchantAliasesService', () => {
       tx.$queryRaw.mockResolvedValue([]);
       await expect(service.preview(userId, input())).resolves.toEqual({
         count: 0,
+        withOwnName: 0,
+        withOtherRule: 0,
         samples: [],
       });
     });
@@ -294,6 +303,87 @@ describe('MerchantAliasesService', () => {
       await service.applyTo(userId, ['t1']);
       expect(prisma.$transaction).toHaveBeenCalledTimes(1);
       expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('protected rules (privacy PIN)', () => {
+    it('refuse changes until the PIN is entered', async () => {
+      prisma.merchantAlias.findFirst.mockResolvedValue({
+        id: 'alias-1',
+        isProtected: true,
+      } as never);
+      await expect(service.update(userId, 'alias-1', input())).rejects.toThrow(
+        PrivacyLockedError,
+      );
+      await expect(service.delete(userId, 'alias-1')).rejects.toThrow(
+        PrivacyLockedError,
+      );
+      await expect(service.preview(userId, input(), 'alias-1')).rejects.toThrow(
+        PrivacyLockedError,
+      );
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('need a privacy PIN to exist, and are always private', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        privacyPinHash: null,
+      } as never);
+      await expect(
+        service.validate(userId, input({ isProtected: true })),
+      ).rejects.toThrow('Create your privacy PIN first');
+
+      prisma.user.findUnique.mockResolvedValue({
+        privacyPinHash: 'x:y',
+      } as never);
+      await expect(
+        service.validate(
+          userId,
+          input({ isProtected: true, isPrivate: false }),
+        ),
+      ).resolves.toMatchObject({ isProtected: true, isPrivate: true });
+    });
+  });
+
+  it('adds up spending per rule, in the currency most of its movements use', async () => {
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        aliasId: 'a1',
+        currency: 'MXN',
+        count: BigInt(5),
+        spent: '1300',
+        received: '100',
+      },
+      {
+        aliasId: 'a1',
+        currency: 'USD',
+        count: BigInt(1),
+        spent: '20',
+        received: '0',
+      },
+      {
+        aliasId: 'a2',
+        currency: 'MXN',
+        count: BigInt(2),
+        spent: '0',
+        received: '500',
+      },
+    ] as never);
+
+    const spending = await service.spending(
+      userId,
+      new Date('2026-11-01'),
+      new Date('2026-11-30'),
+    );
+
+    expect(spending.get('a1')).toEqual({
+      count: 5,
+      total: 1200,
+      currency: 'MXN',
+    });
+    expect(spending.get('a2')).toEqual({
+      count: 2,
+      total: -500,
+      currency: 'MXN',
     });
   });
 });

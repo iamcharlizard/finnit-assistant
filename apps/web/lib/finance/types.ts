@@ -77,10 +77,19 @@ export interface ApiTransaction {
   aliasId?: string | null;
   /** Renamed one by one (setTransactionAlias), without a rule. */
   hasOwnAlias?: boolean;
+  /** The movement's own private flag (`isPrivate` also counts its rule). */
+  ownPrivate?: boolean;
+  /** The automatic name (alias rule) that names it. */
+  aliasRule?: {
+    id: string;
+    displayName: string;
+    isPrivate: boolean;
+    isProtected: boolean;
+  } | null;
 }
 
 export const TRANSACTION_FIELDS =
-  'id type amount balanceEffect currency txnDate description merchantName displayName isPrivate aliasId hasOwnAlias isPending inProcess source transferDirection accountId account { id name type metadata { nickname } } category { id name parentId }';
+  'id type amount balanceEffect currency txnDate description merchantName displayName isPrivate ownPrivate aliasId aliasRule { id displayName isPrivate isProtected } hasOwnAlias isPending inProcess source transferDirection accountId account { id name type metadata { nickname } } category { id name parentId }';
 
 export type CategorySource = 'manual' | 'rule' | 'ai' | 'bank';
 

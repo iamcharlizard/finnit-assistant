@@ -31,6 +31,7 @@ export function HistoryScreen({
             accounts={data.accounts}
             categories={data.categoryOptions}
             today={data.today}
+            aliasName={data.aliasName}
           />
 
           {/* New filters → new first page from the server: start the list over. */}

@@ -4,20 +4,46 @@ import { Attachment } from '../../common/types/models/attachment.model';
 import { Category } from '../../common/types/models/category.model';
 import { Transaction } from '../../common/types/models/transaction.model';
 
-/** Shown for a private movement that has no display name of its own. */
+/**
+ * Shown for a private movement that has no display name of its own. The
+ * Transaction.displayName field resolver translates it (PRIVATE_FALLBACK_NAMES).
+ */
 export const PRIVATE_FALLBACK_NAME = 'Movimiento privado';
+
+export const PRIVATE_FALLBACK_NAMES: Record<string, string> = {
+  es: PRIVATE_FALLBACK_NAME,
+  en: 'Private movement',
+};
 
 /**
  * Relations every Transaction response loads: the alias rule (display name
  * and privacy) and the pending category suggestion.
  */
 export const TRANSACTION_PRESENTATION_INCLUDE = {
-  alias: { select: { displayName: true, isPrivate: true } },
+  alias: {
+    select: {
+      id: true,
+      displayName: true,
+      isPrivate: true,
+      pattern: true,
+      isProtected: true,
+    },
+  },
   suggestedCategory: true,
 } satisfies Prisma.TransactionInclude;
 
+/** The alias rule fields a movement's presentation uses (id/pattern when loaded). */
+export interface PresentationAlias {
+  id?: string;
+  displayName: string;
+  isPrivate: boolean;
+  pattern?: string;
+  /** Needs the privacy PIN to show the bank text or the pattern. */
+  isProtected?: boolean;
+}
+
 type TransactionRow = Prisma.TransactionGetPayload<Record<string, never>> & {
-  alias?: { displayName: string; isPrivate: boolean } | null;
+  alias?: PresentationAlias | null;
   suggestedCategory?: Prisma.CategoryGetPayload<Record<string, never>> | null;
   account?: Prisma.AccountGetPayload<Record<string, never>> | null;
   category?: Prisma.CategoryGetPayload<Record<string, never>> | null;
@@ -29,12 +55,24 @@ export interface PresentationInput {
   description: string | null;
   aliasName: string | null;
   isPrivate: boolean;
-  alias?: { displayName: string; isPrivate: boolean } | null;
+  alias?: PresentationAlias | null;
 }
 
 export interface Presentation {
   displayName: string;
   isPrivate: boolean;
+  /** The movement's own privacy flag (a rule may also make it private). */
+  ownPrivate: boolean;
+  /** Its bank text needs the privacy PIN (protected rule, not unlocked). */
+  originalLocked: boolean;
+  /** The rule that names it; its pattern only when revealed (it may say what the movement is). */
+  aliasRule: {
+    id: string;
+    displayName: string;
+    isPrivate: boolean;
+    isProtected: boolean;
+    pattern: string | null;
+  } | null;
   hasOwnAlias: boolean;
   originalDescription: string | null;
   merchantName: string | null;
@@ -48,10 +86,15 @@ export interface Presentation {
  */
 export function presentTransaction(
   row: PresentationInput,
-  reveal = false,
+  revealRequested = false,
+  unlocked = false,
 ): Presentation {
   const ownName = row.aliasName?.trim() || null;
-  const isPrivate = row.isPrivate || Boolean(row.alias?.isPrivate);
+  // A protected rule (privacy PIN) is always private and only reveals when unlocked.
+  const isProtected = Boolean(row.alias?.isProtected);
+  const isPrivate =
+    row.isPrivate || Boolean(row.alias?.isPrivate) || isProtected;
+  const reveal = revealRequested && (!isProtected || unlocked);
   const original = row.merchantName?.trim() || row.description?.trim() || null;
   const hide = isPrivate && !reveal;
   const displayName =
@@ -61,6 +104,17 @@ export function presentTransaction(
   return {
     displayName,
     isPrivate,
+    originalLocked: isProtected && !reveal,
+    ownPrivate: Boolean(row.isPrivate),
+    aliasRule: row.alias?.id
+      ? {
+          id: row.alias.id,
+          displayName: row.alias.displayName,
+          isPrivate: row.alias.isPrivate || isProtected,
+          isProtected,
+          pattern: reveal || !isPrivate ? (row.alias.pattern ?? null) : null,
+        }
+      : null,
     hasOwnAlias: ownName !== null,
     originalDescription: hide ? null : original,
     merchantName: hide ? null : row.merchantName,
@@ -80,13 +134,16 @@ export function presentationFields(
     aliasName?: string | null;
     isPrivate?: boolean | null;
     categorySource?: Transaction['categorySource'];
-    alias?: { displayName: string; isPrivate: boolean } | null;
+    alias?: PresentationAlias | null;
   },
   reveal = false,
 ): Pick<
   Transaction,
   | 'displayName'
   | 'isPrivate'
+  | 'ownPrivate'
+  | 'originalLocked'
+  | 'aliasRule'
   | 'originalDescription'
   | 'aliasId'
   | 'hasOwnAlias'
@@ -107,6 +164,9 @@ export function presentationFields(
   return {
     displayName: shown.displayName,
     isPrivate: shown.isPrivate,
+    ownPrivate: shown.ownPrivate,
+    originalLocked: shown.originalLocked,
+    aliasRule: shown.aliasRule,
     originalDescription: shown.originalDescription,
     aliasId: row.aliasId ?? null,
     hasOwnAlias: shown.hasOwnAlias,
@@ -152,9 +212,13 @@ export function mapAttachment(
 /** A transaction row (with whatever relations it loaded) as the GraphQL type. */
 export function mapTransaction(
   transaction: TransactionRow,
-  options: { reveal?: boolean } = {},
+  options: { reveal?: boolean; unlocked?: boolean } = {},
 ): Transaction {
-  const shown = presentTransaction(transaction, options.reveal);
+  const shown = presentTransaction(
+    transaction,
+    options.reveal,
+    options.unlocked,
+  );
   return {
     id: transaction.id,
     userId: transaction.userId,
@@ -180,6 +244,9 @@ export function mapTransaction(
     updatedAt: transaction.updatedAt,
     displayName: shown.displayName,
     isPrivate: shown.isPrivate,
+    ownPrivate: shown.ownPrivate,
+    originalLocked: shown.originalLocked,
+    aliasRule: shown.aliasRule,
     originalDescription: shown.originalDescription,
     aliasId: transaction.aliasId ?? null,
     hasOwnAlias: shown.hasOwnAlias,

@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Paperclip } from 'lucide-react';
 
@@ -26,6 +25,7 @@ import {
 } from '@/lib/transaction-detail/api';
 import type { AttachmentView } from '@/lib/transaction-detail/view';
 import { AttachmentItem } from './attachment-item';
+import { useDetailHost } from './detail-host';
 
 /** The movement's files: list, download, delete and upload one more. */
 export function AttachmentsCard({
@@ -35,7 +35,7 @@ export function AttachmentsCard({
   transactionId: string;
   attachments: AttachmentView[];
 }) {
-  const router = useRouter();
+  const host = useDetailHost();
   const { t } = useLocalizer();
   const ta = useTranslations('transaction.attachments');
   const { state, upload, reset } = useAttachmentUpload();
@@ -50,7 +50,7 @@ export function AttachmentsCard({
       setFile(null);
       reset();
       toast.success(t('transaction.toasts.attachmentUploaded'));
-      router.refresh();
+      host.refresh();
     }
   }
 
@@ -66,7 +66,7 @@ export function AttachmentsCard({
         removeAttachment(attachment.id, gql)
           .then(() => {
             toast.success(t('transaction.toasts.attachmentRemoved'));
-            router.refresh();
+            host.refresh();
           })
           .catch((error: unknown) =>
             toast.error(transactionErrorMessage(error, t)),

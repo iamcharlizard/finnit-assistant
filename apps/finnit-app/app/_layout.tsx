@@ -1,3 +1,4 @@
+import '@/lib/i18n/intl-polyfills';
 import '../global.css';
 
 import {
@@ -78,6 +79,7 @@ function Navigation() {
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
         <Stack.Screen name="(app)" options={{ animation: 'none' }} />
+        <Stack.Screen name="dev/theme-preview" />
         <Stack.Screen name="+not-found" options={{ headerShown: true }} />
       </Stack>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />

@@ -200,7 +200,7 @@ importers:
         version: 7.2.2
       ts-jest:
         specifier: ^29.4.11
-        version: 29.4.11(@babel/core@7.29.0)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.0))(jest-util@30.4.1)(jest@30.4.2(@types/node@25.9.1)(ts-node@10.9.2(@swc/core@1.16.18(@swc/helpers@0.5.23))(@types/node@25.9.1)(typescript@5.9.3)))(typescript@5.9.3)
+        version: 29.4.11(@babel/core@7.29.13)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.13))(jest-util@30.4.1)(jest@30.4.2(@types/node@25.9.1)(ts-node@10.9.2(@swc/core@1.16.18(@swc/helpers@0.5.23))(@types/node@25.9.1)(typescript@5.9.3)))(typescript@5.9.3)
       ts-loader:
         specifier: ^9.5.7
         version: 9.5.7(typescript@5.9.3)(webpack@5.106.0(@swc/core@1.16.18(@swc/helpers@0.5.23)))
@@ -240,6 +240,9 @@ importers:
       '@finnit/ui-native':
         specifier: workspace:*
         version: link:../../packages/ui-native
+      '@formatjs/intl-pluralrules':
+        specifier: ^7.0.2
+        version: 7.0.2
       '@react-native-async-storage/async-storage':
         specifier: 2.2.0
         version: 2.2.0(react-native@0.88.1(@babel/core@7.29.13)(@react-native/metro-config@0.88.1(@babel/core@7.29.13))(@types/react@19.3.0)(react@19.3.0))
@@ -2214,6 +2217,9 @@ packages:
   '@fontsource/ubuntu@5.3.0':
     resolution: {integrity: sha512-LsjJXgE430QLs8LKfn1RIFbbdGAiZBU1gao8ASa4Z2kGNGh7lMb7Rzx09v3bLLuuK+3XA/JSLgPWTAbLD6r1fg==}
 
+  '@formatjs/bigdecimal@0.2.10':
+    resolution: {integrity: sha512-npIs6UARNOg5amJY5UOVsd6HUQQfzYjet0sa0SWIqzsnVhxLSpaIx2DjoIVrr/vqmjURjvroeW6dItjfy3Uf8A==}
+
   '@formatjs/fast-memoize@3.1.7':
     resolution: {integrity: sha512-zXfhLpvA6T7+efdt9JLbBwZ00tT7NsBMDVnDu8rpHeNNv8KfRZAMo2gkG0k9lK/Nzc//3kJ9pImsfuJxk3KhUA==}
 
@@ -2229,8 +2235,14 @@ packages:
   '@formatjs/icu-skeleton-parser@2.1.12':
     resolution: {integrity: sha512-ca7tZMLpfHX3sUD7hP6gE/qr6Iq89EDd3ZLeRhbsB7r0UD55DGJq+tmFLzrGrnx5StahUevQmQQVtbDRHsfDHA==}
 
+  '@formatjs/intl-localematcher@0.10.1':
+    resolution: {integrity: sha512-gBqglQK9rXuHsLmM8wzTMBy4Xo4d0jamirIVKuEL8F1rwbskWdpMA1kZarSkny+uvr5q/K6GSzE0Rcq1wZLl3g==}
+
   '@formatjs/intl-localematcher@0.8.14':
     resolution: {integrity: sha512-8O7V38QmbB11+ryJ3KM/znrzXtiqgpXzqNoqDsndHZZ5/zDKTTL+cf5F0mzXkQEwhx8IlWnqYvEovf2S5EwLTw==}
+
+  '@formatjs/intl-pluralrules@7.0.2':
+    resolution: {integrity: sha512-PJ4+ldlqXlo3csmP02u2HqyXw09TDB/fatYpDCyWryfEQeVWl2EbMzij9SBksPaW2U//+q69lXR3IMnCRQAmrw==}
 
   '@graphql-tools/merge@9.1.9':
     resolution: {integrity: sha512-iHUWNjRHeQRYdgIMIuChThOwoKzA9vrzYeslgfBo5eUYEyHGZCoDPjAavssoYXLwstYt1dZj2J22jSzc2DrN0Q==}
@@ -11091,20 +11103,44 @@ snapshots:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-async-generators@7.8.4(@babel/core@7.29.13)':
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/helper-plugin-utils': 7.28.6
+    optional: true
+
   '@babel/plugin-syntax-bigint@7.8.3(@babel/core@7.29.0)':
     dependencies:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
+
+  '@babel/plugin-syntax-bigint@7.8.3(@babel/core@7.29.13)':
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/helper-plugin-utils': 7.28.6
+    optional: true
 
   '@babel/plugin-syntax-class-properties@7.12.13(@babel/core@7.29.0)':
     dependencies:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-class-properties@7.12.13(@babel/core@7.29.13)':
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/helper-plugin-utils': 7.28.6
+    optional: true
+
   '@babel/plugin-syntax-class-static-block@7.14.5(@babel/core@7.29.0)':
     dependencies:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
+
+  '@babel/plugin-syntax-class-static-block@7.14.5(@babel/core@7.29.13)':
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/helper-plugin-utils': 7.28.6
+    optional: true
 
   '@babel/plugin-syntax-decorators@7.28.6(@babel/core@7.29.13)':
     dependencies:
@@ -11131,15 +11167,33 @@ snapshots:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-import-attributes@7.28.6(@babel/core@7.29.13)':
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/helper-plugin-utils': 7.28.6
+    optional: true
+
   '@babel/plugin-syntax-import-meta@7.10.4(@babel/core@7.29.0)':
     dependencies:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-import-meta@7.10.4(@babel/core@7.29.13)':
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/helper-plugin-utils': 7.28.6
+    optional: true
+
   '@babel/plugin-syntax-json-strings@7.8.3(@babel/core@7.29.0)':
     dependencies:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
+
+  '@babel/plugin-syntax-json-strings@7.8.3(@babel/core@7.29.13)':
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/helper-plugin-utils': 7.28.6
+    optional: true
 
   '@babel/plugin-syntax-jsx@7.28.6(@babel/core@7.29.0)':
     dependencies:
@@ -11156,6 +11210,12 @@ snapshots:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-logical-assignment-operators@7.10.4(@babel/core@7.29.13)':
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/helper-plugin-utils': 7.28.6
+    optional: true
+
   '@babel/plugin-syntax-nullish-coalescing-operator@7.8.3(@babel/core@7.29.0)':
     dependencies:
       '@babel/core': 7.29.0
@@ -11171,15 +11231,33 @@ snapshots:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-numeric-separator@7.10.4(@babel/core@7.29.13)':
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/helper-plugin-utils': 7.28.6
+    optional: true
+
   '@babel/plugin-syntax-object-rest-spread@7.8.3(@babel/core@7.29.0)':
     dependencies:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-object-rest-spread@7.8.3(@babel/core@7.29.13)':
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/helper-plugin-utils': 7.28.6
+    optional: true
+
   '@babel/plugin-syntax-optional-catch-binding@7.8.3(@babel/core@7.29.0)':
     dependencies:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
+
+  '@babel/plugin-syntax-optional-catch-binding@7.8.3(@babel/core@7.29.13)':
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/helper-plugin-utils': 7.28.6
+    optional: true
 
   '@babel/plugin-syntax-optional-chaining@7.8.3(@babel/core@7.29.0)':
     dependencies:
@@ -11196,10 +11274,22 @@ snapshots:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
 
+  '@babel/plugin-syntax-private-property-in-object@7.14.5(@babel/core@7.29.13)':
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/helper-plugin-utils': 7.28.6
+    optional: true
+
   '@babel/plugin-syntax-top-level-await@7.14.5(@babel/core@7.29.0)':
     dependencies:
       '@babel/core': 7.29.0
       '@babel/helper-plugin-utils': 7.28.6
+
+  '@babel/plugin-syntax-top-level-await@7.14.5(@babel/core@7.29.13)':
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/helper-plugin-utils': 7.28.6
+    optional: true
 
   '@babel/plugin-syntax-typescript@7.28.6(@babel/core@7.29.0)':
     dependencies:
@@ -12488,6 +12578,8 @@ snapshots:
 
   '@fontsource/ubuntu@5.3.0': {}
 
+  '@formatjs/bigdecimal@0.2.10': {}
+
   '@formatjs/fast-memoize@3.1.7': {}
 
   '@formatjs/icu-messageformat-parser@3.5.18':
@@ -12502,9 +12594,18 @@ snapshots:
 
   '@formatjs/icu-skeleton-parser@2.1.12': {}
 
+  '@formatjs/intl-localematcher@0.10.1':
+    dependencies:
+      '@formatjs/fast-memoize': 3.1.7
+
   '@formatjs/intl-localematcher@0.8.14':
     dependencies:
       '@formatjs/fast-memoize': 3.1.7
+
+  '@formatjs/intl-pluralrules@7.0.2':
+    dependencies:
+      '@formatjs/bigdecimal': 0.2.10
+      '@formatjs/intl-localematcher': 0.10.1
 
   '@graphql-tools/merge@9.1.9(graphql@16.14.0)':
     dependencies:
@@ -15964,6 +16065,20 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  babel-jest@30.4.1(@babel/core@7.29.13):
+    dependencies:
+      '@babel/core': 7.29.13
+      '@jest/transform': 30.4.1
+      '@types/babel__core': 7.20.5
+      babel-plugin-istanbul: 7.0.1
+      babel-preset-jest: 30.4.0(@babel/core@7.29.13)
+      chalk: 4.1.2
+      graceful-fs: 4.2.11
+      slash: 3.0.0
+    transitivePeerDependencies:
+      - supports-color
+    optional: true
+
   babel-plugin-istanbul@7.0.1:
     dependencies:
       '@babel/helper-plugin-utils': 7.28.6
@@ -16041,6 +16156,26 @@ snapshots:
       '@babel/plugin-syntax-private-property-in-object': 7.14.5(@babel/core@7.29.0)
       '@babel/plugin-syntax-top-level-await': 7.14.5(@babel/core@7.29.0)
 
+  babel-preset-current-node-syntax@1.2.0(@babel/core@7.29.13):
+    dependencies:
+      '@babel/core': 7.29.13
+      '@babel/plugin-syntax-async-generators': 7.8.4(@babel/core@7.29.13)
+      '@babel/plugin-syntax-bigint': 7.8.3(@babel/core@7.29.13)
+      '@babel/plugin-syntax-class-properties': 7.12.13(@babel/core@7.29.13)
+      '@babel/plugin-syntax-class-static-block': 7.14.5(@babel/core@7.29.13)
+      '@babel/plugin-syntax-import-attributes': 7.28.6(@babel/core@7.29.13)
+      '@babel/plugin-syntax-import-meta': 7.10.4(@babel/core@7.29.13)
+      '@babel/plugin-syntax-json-strings': 7.8.3(@babel/core@7.29.13)
+      '@babel/plugin-syntax-logical-assignment-operators': 7.10.4(@babel/core@7.29.13)
+      '@babel/plugin-syntax-nullish-coalescing-operator': 7.8.3(@babel/core@7.29.13)
+      '@babel/plugin-syntax-numeric-separator': 7.10.4(@babel/core@7.29.13)
+      '@babel/plugin-syntax-object-rest-spread': 7.8.3(@babel/core@7.29.13)
+      '@babel/plugin-syntax-optional-catch-binding': 7.8.3(@babel/core@7.29.13)
+      '@babel/plugin-syntax-optional-chaining': 7.8.3(@babel/core@7.29.13)
+      '@babel/plugin-syntax-private-property-in-object': 7.14.5(@babel/core@7.29.13)
+      '@babel/plugin-syntax-top-level-await': 7.14.5(@babel/core@7.29.13)
+    optional: true
+
   babel-preset-expo@58.0.24(@babel/core@7.29.13)(@babel/runtime@7.29.2)(expo@58.0.23)(react-refresh@0.14.2):
     dependencies:
       '@babel/generator': 7.29.1
@@ -16098,6 +16233,13 @@ snapshots:
       '@babel/core': 7.29.0
       babel-plugin-jest-hoist: 30.4.0
       babel-preset-current-node-syntax: 1.2.0(@babel/core@7.29.0)
+
+  babel-preset-jest@30.4.0(@babel/core@7.29.13):
+    dependencies:
+      '@babel/core': 7.29.13
+      babel-plugin-jest-hoist: 30.4.0
+      babel-preset-current-node-syntax: 1.2.0(@babel/core@7.29.13)
+    optional: true
 
   backo2@1.0.2: {}
 
@@ -16899,7 +17041,7 @@ snapshots:
       '@typescript-eslint/eslint-plugin': 8.59.4(@typescript-eslint/parser@8.59.4(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
       '@typescript-eslint/parser': 8.59.4(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
       eslint: 9.39.5(jiti@2.7.0)
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.59.4(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.39.5(jiti@2.7.0))
       eslint-plugin-expo: 1.2.1(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
       eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.59.4(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.5(jiti@2.7.0))
       eslint-plugin-react: 7.37.5(eslint@9.39.5(jiti@2.7.0))
@@ -16923,7 +17065,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.59.4(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0)):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.39.5(jiti@2.7.0)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.3
@@ -16938,14 +17080,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.59.4(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.59.4(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0)):
+  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.59.4(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.5(jiti@2.7.0)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 8.59.4(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
       eslint: 9.39.5(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.59.4(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.39.5(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
@@ -16969,7 +17111,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.39.5(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.59.4(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.59.4(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0))
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.59.4(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.5(jiti@2.7.0))
       hasown: 2.0.3
       is-core-module: 2.16.2
       is-glob: 4.0.3
@@ -21024,7 +21166,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  ts-jest@29.4.11(@babel/core@7.29.0)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.0))(jest-util@30.4.1)(jest@30.4.2(@types/node@25.9.1)(ts-node@10.9.2(@swc/core@1.16.18(@swc/helpers@0.5.23))(@types/node@25.9.1)(typescript@5.9.3)))(typescript@5.9.3):
+  ts-jest@29.4.11(@babel/core@7.29.13)(@jest/transform@30.4.1)(@jest/types@30.4.1)(babel-jest@30.4.1(@babel/core@7.29.13))(jest-util@30.4.1)(jest@30.4.2(@types/node@25.9.1)(ts-node@10.9.2(@swc/core@1.16.18(@swc/helpers@0.5.23))(@types/node@25.9.1)(typescript@5.9.3)))(typescript@5.9.3):
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
@@ -21038,10 +21180,10 @@ snapshots:
       typescript: 5.9.3
       yargs-parser: 21.1.1
     optionalDependencies:
-      '@babel/core': 7.29.0
+      '@babel/core': 7.29.13
       '@jest/transform': 30.4.1
       '@jest/types': 30.4.1
-      babel-jest: 30.4.1(@babel/core@7.29.0)
+      babel-jest: 30.4.1(@babel/core@7.29.13)
       jest-util: 30.4.1
 
   ts-loader@9.5.7(typescript@5.9.3)(webpack@5.106.0(@swc/core@1.16.18(@swc/helpers@0.5.23))):

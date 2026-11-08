@@ -379,7 +379,21 @@
       "chart": "Chart"
     },
     "chartTotal": "Spent",
-    "chartSummary": "This month's spending by category: {items}"
+    "chartSummary": "Spending by category: {items}",
+    "filters": {
+      "accounts": "Accounts",
+      "categories": "Categories",
+      "type": "Type",
+      "dates": "Dates",
+      "clearSelection": "Deselect all",
+      "show": "Show filters",
+      "hide": "Hide filters",
+      "remove": "Remove {name}",
+      "month": "By month",
+      "allTime": "All history",
+      "range": "Range"
+    },
+    "categorySearch": "Search category"
   },
   "cards": {
     "count": "{count, plural, one {# card} other {# cards}}",

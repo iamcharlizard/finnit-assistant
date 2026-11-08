@@ -47,6 +47,9 @@ import {
   withAmount,
 } from '../../common/utils/balance-effect.util';
 import { Prisma } from '@finnit/database';
+import { loadCategoryI18n } from '../categories/category-names';
+import type { AppLocale } from '../translation/locale';
+import { TransactionSpending } from './dto/transaction-spending.dto';
 import { Attachment } from '../../common/types/models/attachment.model';
 import {
   Transaction,
@@ -207,6 +210,50 @@ export class TransactionsService {
     connection.pageInfo.hasNextPage = backward ? true : hasMore;
     connection.pageInfo.hasPreviousPage = backward ? hasMore : !!cursorId;
     return connection;
+  }
+
+  /**
+   * Confirmed spending of the movements that pass these filters, by
+   * category (the history's chart follows its filters). Only expenses
+   * count: filtering by another type leaves nothing.
+   */
+  async spending(
+    userId: string,
+    filters: TransactionFilters | undefined,
+    locale: AppLocale,
+  ): Promise<TransactionSpending> {
+    if (filters?.type && filters.type !== TransactionType.expense) {
+      return { totalExpenses: 0, categoryBreakdown: [] };
+    }
+    const where: Prisma.TransactionWhereInput = { userId };
+    if (filters) await this.applyFilters(userId, where, filters);
+    where.type = TransactionType.expense;
+    where.isPending = false;
+
+    const groups = await this.prisma.transaction.groupBy({
+      by: ['categoryId'],
+      where,
+      _sum: { amount: true },
+    });
+    const total = groups.reduce((sum, g) => sum + Number(g._sum.amount ?? 0), 0);
+    const ids = groups.flatMap((g) => (g.categoryId ? [g.categoryId] : []));
+    const names = await loadCategoryI18n(this.prisma, ids, locale);
+    return {
+      totalExpenses: total,
+      categoryBreakdown: groups.flatMap((g) => {
+        if (!g.categoryId) return [];
+        const amount = Number(g._sum.amount ?? 0);
+        return [
+          {
+            categoryId: g.categoryId,
+            categoryName: names.get(g.categoryId)?.name || 'Unknown',
+            amount,
+            percentage:
+              total > 0 ? Math.round((amount / total) * 10000) / 100 : 0,
+          },
+        ];
+      }),
+    };
   }
 
   async findById(
@@ -967,8 +1014,30 @@ export class TransactionsService {
     where: Prisma.TransactionWhereInput,
     filters: TransactionFilters,
   ): Promise<void> {
+    // Conditions that must all hold; AND, so they never clash with the
+    // search's OR.
+    const and: Prisma.TransactionWhereInput[] = [];
+
     if (filters.accountId) {
       where.accountId = filters.accountId;
+    }
+
+    if (filters.accountIds?.length) {
+      and.push({ accountId: { in: filters.accountIds } });
+    }
+
+    if (filters.categoryIds?.length || filters.includeUncategorized) {
+      const ids = (
+        await Promise.all(
+          (filters.categoryIds ?? []).map((id) =>
+            this.categoryWithDescendants(userId, id),
+          ),
+        )
+      ).flat();
+      const anyOf: Prisma.TransactionWhereInput[] = [];
+      if (ids.length) anyOf.push({ categoryId: { in: [...new Set(ids)] } });
+      if (filters.includeUncategorized) anyOf.push({ categoryId: null });
+      and.push(anyOf.length === 1 ? anyOf[0]! : { OR: anyOf });
     }
 
     if (filters.categoryId) {
@@ -1014,8 +1083,7 @@ export class TransactionsService {
     }
 
     if (filters.categorizable) {
-      // AND, so it never clashes with the search's OR.
-      where.AND = [categorizableWhere()];
+      and.push(categorizableWhere());
     }
 
     if (filters.hasSuggestion !== undefined && filters.hasSuggestion !== null) {
@@ -1025,6 +1093,8 @@ export class TransactionsService {
     if (filters.search?.trim()) {
       where.OR = this.searchConditions(filters.search.trim());
     }
+
+    if (and.length) where.AND = and;
   }
 
   /**

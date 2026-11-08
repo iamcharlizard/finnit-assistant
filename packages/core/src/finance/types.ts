@@ -103,9 +103,10 @@ export interface ApiCategory {
   parentId: string | null;
   /** Icon key chosen for it (catalog or user); null: by name. */
   icon?: string | null;
+  kind?: 'expense' | 'income';
 }
 
-export const CATEGORY_FIELDS = 'id name parentId icon';
+export const CATEGORY_FIELDS = 'id name parentId icon kind';
 
 export interface Connection<T> {
   totalCount: number;

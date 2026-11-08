@@ -25,7 +25,7 @@ export function HistoryScreen() {
 
   const { view, loading, error, refreshing, refresh } = useView({
     query: HISTORY_QUERY,
-    variables: historyVariables(filters, today),
+    variables: historyVariables(filters),
     build: (data: HistoryResult, l) => buildHistoryData(data, filters, today, l),
   });
   useOnTransactionsChanged(refresh);

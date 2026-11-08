@@ -13,7 +13,8 @@
       "infoPlist": {
         "CFBundleDevelopmentRegion": "es",
         "CFBundleAllowMixedLocalizations": true
-      }
+      },
+      "appleTeamId": "DBLC2KXWY6"
     },
     "android": {
       "package": "com.karlhub.finnitapp",

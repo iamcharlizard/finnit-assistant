@@ -379,7 +379,21 @@
       "chart": "Gráfica"
     },
     "chartTotal": "Gastado",
-    "chartSummary": "Gasto del mes por categoría: {items}"
+    "chartSummary": "Gasto por categoría: {items}",
+    "filters": {
+      "accounts": "Cuentas",
+      "categories": "Categorías",
+      "type": "Tipo",
+      "dates": "Fechas",
+      "clearSelection": "Deseleccionar todas",
+      "show": "Mostrar filtros",
+      "hide": "Ocultar filtros",
+      "remove": "Quitar {name}",
+      "month": "Por mes",
+      "allTime": "Todo el historial",
+      "range": "Rango"
+    },
+    "categorySearch": "Buscar categoría"
   },
   "cards": {
     "count": "{count, plural, one {# tarjeta} other {# tarjetas}}",

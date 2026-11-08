@@ -15,6 +15,8 @@ import {
   IsBoolean,
   IsDateString,
   IsDate,
+  IsArray,
+  ArrayMaxSize,
   Min,
   Max,
   MaxLength,
@@ -135,6 +137,36 @@ export class TransactionFilters {
   @IsOptional()
   @IsString()
   accountId?: string;
+
+  @Field(() => [ID], {
+    nullable: true,
+    description: 'Movements of any of these accounts',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(100)
+  @IsString({ each: true })
+  accountIds?: string[];
+
+  @Field(() => [ID], {
+    nullable: true,
+    description:
+      'Movements in any of these categories (a parent includes its subcategories)',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(200)
+  @IsString({ each: true })
+  categoryIds?: string[];
+
+  @Field(() => Boolean, {
+    nullable: true,
+    description:
+      'With categoryIds: also movements without a category; alone: only those',
+  })
+  @IsOptional()
+  @IsBoolean()
+  includeUncategorized?: boolean | null;
 
   @Field({ nullable: true })
   @IsOptional()

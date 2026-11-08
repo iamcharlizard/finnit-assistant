@@ -4,28 +4,22 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import {
   ArrowUpDown,
-  ChevronDown,
   CircleDot,
   CreditCard,
   Search,
   Shapes,
   X,
-  type LucideIcon,
 } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import {
-  DropdownMenu,
   DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from '@finnit/ui/components/ui/dropdown-menu';
 import { InputWithIcon } from '@finnit/ui/components/ui/input-with-icon';
-import { cn } from '@finnit/ui/lib/utils';
+
+import { FilterMenu } from '@/components/filters/filter-menu';
 
 import {
   DEFAULT_EXPENSE_FILTERS,
@@ -239,58 +233,5 @@ export function ExpenseFiltersBar({
         </div>
       ) : null}
     </div>
-  );
-}
-
-/** One filter's button: its name, then what it holds (a value or a count). */
-function FilterMenu({
-  icon: Icon,
-  label,
-  value,
-  count = 0,
-  className,
-  children,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value?: string | null;
-  count?: number;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  const on = Boolean(value) || count > 0;
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          className={cn(
-            'shrink-0 gap-1.5 rounded-full',
-            on && 'border-brand/40 bg-brand/5',
-            className,
-          )}
-        >
-          <Icon aria-hidden />
-          <span>{label}</span>
-          {value ? (
-            <span className="font-normal text-on-surface-variant">
-              · {value}
-            </span>
-          ) : null}
-          {count > 0 ? (
-            <span className="flex size-5 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-brand-foreground">
-              {count}
-            </span>
-          ) : null}
-          <ChevronDown aria-hidden className="text-on-surface-variant" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-56">
-        <DropdownMenuLabel>{label}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {children}
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }

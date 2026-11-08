@@ -1537,6 +1537,105 @@ describe('TransactionsService', () => {
       expect(where.OR).toBeDefined();
     });
 
+    it('filters by several accounts and categories, with or without a category', async () => {
+      jest.restoreAllMocks();
+      prismaService.transaction.findMany.mockResolvedValue([]);
+      prismaService.transaction.count.mockResolvedValue(0);
+      // c1 has a subcategory c1a; c2 has none.
+      prismaService.category.findMany.mockImplementation(((args: {
+        where: { parentId: { in: string[] } };
+      }) =>
+        Promise.resolve(
+          args.where.parentId.in.includes('c1') ? [{ id: 'c1a' }] : [],
+        )) as never);
+
+      await service.findMany(mockUserId, {
+        filters: {
+          accountIds: ['a1', 'a2'],
+          categoryIds: ['c1', 'c2'],
+          includeUncategorized: true,
+        },
+      });
+
+      const { where } = prismaService.transaction.count.mock.calls[0][0] as {
+        where: Record<string, unknown>;
+      };
+      expect(where.AND).toEqual([
+        { accountId: { in: ['a1', 'a2'] } },
+        {
+          OR: [
+            { categoryId: { in: ['c1', 'c1a', 'c2'] } },
+            { categoryId: null },
+          ],
+        },
+      ]);
+    });
+
+    it('filters only movements without a category', async () => {
+      jest.restoreAllMocks();
+      prismaService.transaction.findMany.mockResolvedValue([]);
+      prismaService.transaction.count.mockResolvedValue(0);
+
+      await service.findMany(mockUserId, {
+        filters: { includeUncategorized: true },
+      });
+
+      const { where } = prismaService.transaction.count.mock.calls[0][0] as {
+        where: Record<string, unknown>;
+      };
+      expect(where.AND).toEqual([{ categoryId: null }]);
+    });
+
+    describe('spending', () => {
+      it('sums the filtered confirmed expenses by category', async () => {
+        prismaService.transaction.groupBy.mockResolvedValue([
+          { categoryId: 'c1', _sum: { amount: 300 } },
+          { categoryId: null, _sum: { amount: 100 } },
+        ] as never);
+        prismaService.category.findMany.mockResolvedValue([
+          { id: 'c1', key: null, name: 'Food', translations: [{ name: 'Comida' }] },
+        ] as never);
+
+        const result = await service.spending(
+          mockUserId,
+          { accountIds: ['a1'], search: 'oxxo' },
+          'es',
+        );
+
+        const call = prismaService.transaction.groupBy.mock.calls[0]![0] as {
+          where: Record<string, unknown>;
+        };
+        expect(call.where).toMatchObject({
+          userId: mockUserId,
+          type: 'expense',
+          isPending: false,
+          AND: [{ accountId: { in: ['a1'] } }],
+        });
+        expect(call.where.OR).toBeDefined();
+        expect(result).toEqual({
+          totalExpenses: 400,
+          categoryBreakdown: [
+            {
+              categoryId: 'c1',
+              categoryName: 'Comida',
+              amount: 300,
+              percentage: 75,
+            },
+          ],
+        });
+      });
+
+      it('is empty when the filters ask for another type', async () => {
+        const result = await service.spending(
+          mockUserId,
+          { type: TransactionType.income },
+          'es',
+        );
+        expect(result).toEqual({ totalExpenses: 0, categoryBreakdown: [] });
+        expect(prismaService.transaction.groupBy).not.toHaveBeenCalled();
+      });
+    });
+
     describe('setTransactionAlias', () => {
       beforeEach(() => {
         prismaService.transaction.findFirst.mockResolvedValue({

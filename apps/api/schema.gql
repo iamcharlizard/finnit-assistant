@@ -2333,6 +2333,11 @@ type Query {
   One movement; unlike lists, it includes the original text of private movements
   """
   transaction(id: String!): Transaction!
+
+  """
+  Confirmed spending by category of the movements that pass these filters (the history chart)
+  """
+  transactionSpending(filters: TransactionFilters): TransactionSpending!
   transactions(after: String, before: String, filters: TransactionFilters, first: Int, last: Int): TransactionConnection!
   transfer(id: String!): Transfer!
 
@@ -3026,6 +3031,9 @@ type TransactionEdge {
 input TransactionFilters {
   accountId: String
 
+  """Movements of any of these accounts"""
+  accountIds: [ID!]
+
   """
   Only movements shown with this alias rule's automatic name (no one-off name)
   """
@@ -3036,10 +3044,18 @@ input TransactionFilters {
   """
   categorizable: Boolean
   categoryId: String
+
+  """
+  Movements in any of these categories (a parent includes its subcategories)
+  """
+  categoryIds: [ID!]
   endDate: DateTime
 
   """true: only movements with a pending category suggestion"""
   hasSuggestion: Boolean
+
+  """With categoryIds: also movements without a category; alone: only those"""
+  includeUncategorized: Boolean
   isPending: Boolean
 
   """
@@ -3081,6 +3097,17 @@ enum TransactionSource {
   ocr
   sms
   statement
+}
+
+"""
+Confirmed spending of the movements that pass some filters, by category
+"""
+type TransactionSpending {
+  """Per category; what has no category is the rest of the total"""
+  categoryBreakdown: [CategoryExpense!]!
+
+  """Every matching expense, with or without a category"""
+  totalExpenses: Float!
 }
 
 """Transaction type"""

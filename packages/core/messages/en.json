@@ -391,7 +391,10 @@
       "remove": "Remove {name}",
       "month": "By month",
       "allTime": "All history",
-      "range": "Range"
+      "range": "Range",
+      "clearAll": "Clear all",
+      "showAll": "View all ({count})",
+      "showFewer": "View fewer"
     },
     "categorySearch": "Search category"
   },

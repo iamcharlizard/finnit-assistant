@@ -391,7 +391,10 @@
       "remove": "Quitar {name}",
       "month": "Por mes",
       "allTime": "Todo el historial",
-      "range": "Rango"
+      "range": "Rango",
+      "clearAll": "Limpiar todo",
+      "showAll": "Ver todas ({count})",
+      "showFewer": "Ver menos"
     },
     "categorySearch": "Buscar categoría"
   },

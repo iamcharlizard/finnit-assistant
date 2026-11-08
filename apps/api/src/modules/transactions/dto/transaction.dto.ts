@@ -140,22 +140,22 @@ export class TransactionFilters {
 
   @Field(() => [ID], {
     nullable: true,
-    description: 'Movements of any of these accounts',
+    description: 'Movements of any of these accounts (empty: none)',
   })
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(100)
+  @ArrayMaxSize(500)
   @IsString({ each: true })
   accountIds?: string[];
 
   @Field(() => [ID], {
     nullable: true,
     description:
-      'Movements in any of these categories (a parent includes its subcategories)',
+      'Movements in any of these categories (a parent includes its subcategories; empty with no includeUncategorized: none)',
   })
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(200)
+  @ArrayMaxSize(500)
   @IsString({ each: true })
   categoryIds?: string[];
 
@@ -167,6 +167,25 @@ export class TransactionFilters {
   @IsOptional()
   @IsBoolean()
   includeUncategorized?: boolean | null;
+
+  @Field(() => Boolean, {
+    nullable: true,
+    description:
+      'categoryIds / includeUncategorized only narrow expenses; other movements pass',
+  })
+  @IsOptional()
+  @IsBoolean()
+  categoriesForExpensesOnly?: boolean | null;
+
+  @Field(() => [TransactionType], {
+    nullable: true,
+    description: 'Movements of any of these types (empty: none)',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsEnum(TransactionType, { each: true })
+  types?: TransactionType[];
 
   @Field({ nullable: true })
   @IsOptional()

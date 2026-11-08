@@ -3031,7 +3031,7 @@ type TransactionEdge {
 input TransactionFilters {
   accountId: String
 
-  """Movements of any of these accounts"""
+  """Movements of any of these accounts (empty: none)"""
   accountIds: [ID!]
 
   """
@@ -3040,13 +3040,18 @@ input TransactionFilters {
   aliasId: ID
 
   """
+  categoryIds / includeUncategorized only narrow expenses; other movements pass
+  """
+  categoriesForExpensesOnly: Boolean
+
+  """
   true: only movements that can take a category (expenses and income, not transfers, adjustments or possible transfers waiting for an answer)
   """
   categorizable: Boolean
   categoryId: String
 
   """
-  Movements in any of these categories (a parent includes its subcategories)
+  Movements in any of these categories (a parent includes its subcategories; empty with no includeUncategorized: none)
   """
   categoryIds: [ID!]
   endDate: DateTime
@@ -3065,6 +3070,9 @@ input TransactionFilters {
   source: TransactionSource
   startDate: DateTime
   type: TransactionType
+
+  """Movements of any of these types (empty: none)"""
+  types: [TransactionType!]
 
   """true: only movements without a category; false: only with one"""
   uncategorized: Boolean

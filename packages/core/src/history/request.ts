@@ -99,11 +99,7 @@ export function buildHistoryData(
   l: Localizer,
 ): HistoryData {
   const { t } = l;
-  const chart = topCategoryChart(
-    data.transactionSpending,
-    data.categories,
-    l,
-  );
+  const chart = topCategoryChart(data.transactionSpending, data.categories, l);
   return {
     today,
     page: toTransactionPage(

@@ -200,6 +200,8 @@ export function toTransactionPage(
 export interface Option {
   value: string;
   label: string;
+  /** A subcategory's parent (category options). */
+  parentId?: string;
 }
 
 export function accountOptions(
@@ -232,9 +234,37 @@ export function categoryOptions(
         .map((c) => ({
           value: c.id,
           label: `${categoryLabel(root.name, t)} › ${categoryLabel(c.name, t)}`,
+          parentId: root.id,
         })),
     ]),
   ];
+}
+
+/**
+ * A narrowed selection's chip: "Cuentas: Nu, Revolut" for one or two,
+ * else "Cuentas: 5 de 7" (0 when every box is unchecked).
+ */
+export function selectionLabel(
+  group: string,
+  list: ReadonlyArray<string>,
+  options: ReadonlyArray<Option>,
+  t: Translate,
+): string {
+  const total = options.length;
+  if (list.length > 0 && list.length <= 2) {
+    const names = list.map(
+      (id) => options.find((o) => o.value === id)?.label ?? id,
+    );
+    return t('history.filters.selectionNamed', {
+      group,
+      names: names.join(', '),
+    });
+  }
+  return t('history.filters.selectionCount', {
+    group,
+    count: list.length,
+    total,
+  });
 }
 
 /** How many categories the top lists; the rest are "Otras" in the chart. */

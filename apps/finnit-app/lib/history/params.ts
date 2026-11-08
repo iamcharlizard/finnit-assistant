@@ -1,5 +1,5 @@
 import { formatMonthParam, monthOf, sameMonth, type DayKey } from '@finnit/core/finance/dates';
-import { hasRange, type HistoryFilters } from '@finnit/core/history/filters';
+import { hasRange, selectionParam, type HistoryFilters } from '@finnit/core/history/filters';
 
 /**
  * The filters as route params, the same keys as the web's URL
@@ -8,9 +8,9 @@ import { hasRange, type HistoryFilters } from '@finnit/core/history/filters';
  */
 export function historyParams(filters: HistoryFilters, today: DayKey): Record<string, string | undefined> {
   return {
-    type: filters.type,
-    account: filters.accountIds?.join(','),
-    category: filters.categoryIds?.join(','),
+    type: filters.types && selectionParam(filters.types),
+    account: filters.accountIds && selectionParam(filters.accountIds),
+    category: filters.categoryIds && selectionParam(filters.categoryIds),
     from: filters.from,
     to: filters.to,
     q: filters.search,

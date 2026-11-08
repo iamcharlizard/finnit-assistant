@@ -5,17 +5,19 @@ import { Search, SlidersHorizontal, X } from 'lucide-react-native';
 
 import { monthLabel, monthOf, shortDate, type DayKey, type MonthRef } from '@finnit/core/finance/dates';
 import {
-  TYPE_OPTIONS,
+  HISTORY_TYPES,
   activeFilterCount,
+  categoryCheck,
   hasFilters,
   hasRange,
+  isSelected,
   monthLinks,
-  toggleValue,
+  selectCategory,
+  selectValues,
   withPeriod,
   type HistoryFilters as Filters,
-  type HistoryType,
 } from '@finnit/core/history/filters';
-import type { Option } from '@finnit/core/history/view';
+import { selectionLabel, type Option } from '@finnit/core/history/view';
 import { rankOptions } from '@finnit/core/text/option-search';
 import { cn } from '@finnit/ui-native/lib/utils';
 import { TwPressable, TwView } from '@finnit/ui-native/lib/tw';
@@ -24,17 +26,15 @@ import { Checkbox } from '@finnit/ui-native/components/ui/checkbox';
 import { DatePicker } from '@finnit/ui-native/components/ui/date-picker';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
 import { Input } from '@finnit/ui-native/components/ui/input';
+import { Segmented } from '@finnit/ui-native/components/ui/segmented';
 import { Sheet } from '@finnit/ui-native/components/ui/sheet';
 import { Text } from '@finnit/ui-native/components/ui/text';
 
-import { ChoiceRow } from '@/components/filters/choice-row';
-import { FilterSection } from '@/components/filters/filter-section';
 import { MonthSwitcher } from '@/components/finance/month-switcher';
-import { useLocale } from '@/lib/i18n/i18n-provider';
+import { useLocale, useLocalizer } from '@/lib/i18n/i18n-provider';
 
-const ALL = 'all';
-
-type Section = 'accounts' | 'categories' | 'type' | 'dates';
+type Tab = 'accounts' | 'categories' | 'type' | 'dates';
+const TABS: Tab[] = ['accounts', 'categories', 'type', 'dates'];
 
 /** Categories shown before "Ver todas". */
 const FIRST_CATEGORIES = 8;
@@ -42,9 +42,10 @@ const FIRST_CATEGORIES = 8;
 /**
  * The history's toolbar (the web's HistoryFilters): search and "Filtros",
  * with the active count above it, which opens one sheet with every filter
- * in collapsible sections (accounts and categories with checkboxes,
- * type, dates); the filters in use as removable chips with the month at
- * the end of the same row. Every change updates the route params.
+ * in tabs (accounts, categories and types as checkboxes, all checked while
+ * the group doesn't narrow the list; dates); one removable chip per group
+ * in use, with the month at the end of the same row. Every change updates
+ * the route params.
  */
 export function HistoryFilters({
   filters,
@@ -67,7 +68,8 @@ export function HistoryFilters({
   const { locale } = useLocale();
   const [search, setSearch] = React.useState(filters.search ?? '');
   const [open, setOpen] = React.useState(false);
-  const [sections, setSections] = React.useState<ReadonlySet<Section>>(() => new Set(['accounts']));
+  const [tab, setTab] = React.useState<Tab>('accounts');
+  const { t: tr } = useLocalizer();
   const [categoryQuery, setCategoryQuery] = React.useState('');
   const [allCategories, setAllCategories] = React.useState(false);
   const count = activeFilterCount(filters);
@@ -81,15 +83,8 @@ export function HistoryFilters({
     return () => clearTimeout(timer);
   }, [search, filters, onChange]);
 
-  const toggleSection = (key: Section) =>
-    setSections((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-
-  const labelOf = (options: Option[], id: string) => options.find((o) => o.value === id)?.label ?? id;
+  const typeOptions = HISTORY_TYPES.map((value) => ({ value, label: t(`types.${value}`) }));
+  const accountIds = accounts.map((a) => a.value);
   const datesLabel = hasRange(filters)
     ? t('rangeLabel', {
         from: filters.from ? shortDate(filters.from, locale) : '…',
@@ -100,17 +95,27 @@ export function HistoryFilters({
       : null;
 
   const chips: { key: string; label: string; remove: () => void }[] = [
-    ...(filters.type ? [{ key: 'type', label: t(`types.${filters.type}`), remove: () => onChange({ ...filters, type: undefined }) }] : []),
-    ...(filters.accountIds ?? []).map((id) => ({
-      key: `account:${id}`,
-      label: labelOf(accounts, id),
-      remove: () => onChange({ ...filters, accountIds: toggleValue(filters.accountIds, id, false) }),
-    })),
-    ...(filters.categoryIds ?? []).map((id) => ({
-      key: `category:${id}`,
-      label: labelOf(categories, id),
-      remove: () => onChange({ ...filters, categoryIds: toggleValue(filters.categoryIds, id, false) }),
-    })),
+    ...(filters.types
+      ? [{ key: 'type', label: selectionLabel(tf('type'), filters.types, typeOptions, tr), remove: () => onChange({ ...filters, types: undefined }) }]
+      : []),
+    ...(filters.accountIds
+      ? [
+          {
+            key: 'accounts',
+            label: selectionLabel(tf('accounts'), filters.accountIds, accounts, tr),
+            remove: () => onChange({ ...filters, accountIds: undefined }),
+          },
+        ]
+      : []),
+    ...(filters.categoryIds
+      ? [
+          {
+            key: 'categories',
+            label: selectionLabel(tf('categories'), filters.categoryIds, categories, tr),
+            remove: () => onChange({ ...filters, categoryIds: undefined }),
+          },
+        ]
+      : []),
     ...(datesLabel ? [{ key: 'dates', label: datesLabel, remove: () => onChange(withPeriod(filters, monthOf(today))) }] : []),
     ...(filters.aliasId
       ? [{ key: 'alias', label: t('aliasFilter', { name: aliasName ?? '…' }), remove: () => onChange({ ...filters, aliasId: undefined }) }]
@@ -126,9 +131,17 @@ export function HistoryFilters({
     onChange({ period: filters.period });
   };
 
-  const clearLink = (onClear: () => void, disabled: boolean) => (
+  const narrowed: Record<Tab, boolean> = {
+    accounts: Boolean(filters.accountIds),
+    categories: Boolean(filters.categoryIds),
+    type: Boolean(filters.types),
+    dates: dateMode !== 'month',
+  };
+
+  /** "Seleccionar todas" when some box is unchecked, else "Deseleccionar todas". */
+  const allToggle = (list: readonly string[] | undefined, onAll: () => void, onNone: () => void) => (
     <TwView className="flex-row">
-      <Button variant="ghost" size="sm" label={tf('clearSelection')} disabled={disabled} onPress={onClear} />
+      <Button variant="ghost" size="sm" label={list ? tf('selectAll') : tf('clearSelection')} onPress={list ? onAll : onNone} />
     </TwView>
   );
 
@@ -214,132 +227,142 @@ export function HistoryFilters({
           <TwView className="flex-row justify-end">
             <Button variant="ghost" size="sm" label={tf('clearAll')} disabled={!hasFilters(filters)} onPress={clearAll} />
           </TwView>
-          <ScrollView style={{ maxHeight: 520 }} keyboardShouldPersistTaps="handled">
-            <FilterSection
-              title={tf('accounts')}
-              count={filters.accountIds?.length ?? 0}
-              open={sections.has('accounts')}
-              onToggle={() => toggleSection('accounts')}
-            >
-              {clearLink(() => onChange({ ...filters, accountIds: undefined }), !filters.accountIds?.length)}
-              {accounts.map((account) => (
-                <TwView key={account.value} className="px-1 py-2">
-                  <Checkbox
-                    label={account.label}
-                    checked={filters.accountIds?.includes(account.value) ?? false}
-                    onCheckedChange={(on) => onChange({ ...filters, accountIds: toggleValue(filters.accountIds, account.value, on) })}
-                  />
-                </TwView>
-              ))}
-            </FilterSection>
-
-            <FilterSection
-              title={tf('categories')}
-              count={filters.categoryIds?.length ?? 0}
-              open={sections.has('categories')}
-              onToggle={() => toggleSection('categories')}
-            >
-              <Input
-                icon={Search}
-                value={categoryQuery}
-                onChangeText={setCategoryQuery}
-                placeholder={t('categorySearch')}
-                accessibilityLabel={t('categorySearch')}
-                autoCorrect={false}
-              />
-              {clearLink(() => onChange({ ...filters, categoryIds: undefined }), !filters.categoryIds?.length)}
-              {shownCategories.map((category) => (
-                <TwView key={category.value} className="px-1 py-2">
-                  <Checkbox
-                    label={category.label}
-                    checked={filters.categoryIds?.includes(category.value) ?? false}
-                    onCheckedChange={(on) => onChange({ ...filters, categoryIds: toggleValue(filters.categoryIds, category.value, on) })}
-                  />
-                </TwView>
-              ))}
-              {!categoryQuery.trim() && matching.length > FIRST_CATEGORIES ? (
-                <TwView className="flex-row">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    label={allCategories ? tf('showFewer') : tf('showAll', { count: matching.length })}
-                    onPress={() => setAllCategories((value) => !value)}
-                  />
-                </TwView>
-              ) : null}
-            </FilterSection>
-
-            <FilterSection
-              title={tf('type')}
-              count={filters.type ? 1 : 0}
-              open={sections.has('type')}
-              onToggle={() => toggleSection('type')}
-            >
-              {TYPE_OPTIONS.map((value) => (
-                <ChoiceRow
-                  key={value}
-                  label={t(`types.${value}`)}
-                  selected={(filters.type ?? ALL) === value}
-                  onPress={() => onChange({ ...filters, type: value === ALL ? undefined : (value as HistoryType) })}
-                />
-              ))}
-            </FilterSection>
-
-            <FilterSection
-              title={tf('dates')}
-              count={dateMode === 'month' ? 0 : 1}
-              open={sections.has('dates')}
-              onToggle={() => toggleSection('dates')}
-            >
-              <TwView accessibilityRole="radiogroup" className="flex-row gap-1 rounded-full bg-track p-1">
-                {(['month', 'all'] as const).map((option) => (
-                  <TwPressable
-                    key={option}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: dateMode === option }}
-                    onPress={() => onChange(withPeriod(filters, option === 'all' ? 'all' : monthOf(today)))}
-                    className={cn('min-h-10 flex-1 items-center justify-center rounded-full px-3', dateMode === option ? 'bg-surface' : '')}
-                  >
-                    <Text
-                      weight="medium"
-                      className={cn('text-sm', dateMode === option ? 'text-on-background' : 'text-on-surface-variant')}
-                    >
-                      {option === 'all' ? tf('allTime') : tf('month')}
-                    </Text>
-                  </TwPressable>
+          <Segmented
+            options={TABS.map((key) => ({ value: key, label: narrowed[key] ? `${tf(key)} •` : tf(key) }))}
+            value={tab}
+            onValueChange={setTab}
+            accessibilityLabel={t('moreFilters')}
+          />
+          {/* A steady height, so switching tabs doesn't resize the sheet. */}
+          <ScrollView style={{ height: 380 }} keyboardShouldPersistTaps="handled">
+            {tab === 'accounts' ? (
+              <TwView className="gap-0.5">
+                {allToggle(
+                  filters.accountIds,
+                  () => onChange({ ...filters, accountIds: undefined }),
+                  () => onChange({ ...filters, accountIds: [] }),
+                )}
+                {accounts.map((account) => (
+                  <TwView key={account.value} className="px-1 py-1">
+                    <Checkbox
+                      label={account.label}
+                      checked={isSelected(filters.accountIds, account.value)}
+                      onCheckedChange={(on) =>
+                        onChange({ ...filters, accountIds: selectValues(filters.accountIds, [account.value], on, accountIds) })
+                      }
+                    />
+                  </TwView>
                 ))}
               </TwView>
-              <Text weight="medium" className="px-1 pt-2 text-xs text-on-surface-variant">
-                {t('range')}
-              </Text>
-              <TwView className="flex-row gap-2">
-                <TwView className="flex-1">
-                  <DatePicker
-                    locale={locale}
-                    placeholder={t('from')}
-                    value={filters.from}
-                    max={filters.to ?? today}
-                    clearable
-                    clearLabel={t('clearDate')}
-                    onChange={(from) => onChange({ ...filters, from })}
-                    closeLabel={tc('close')}
-                  />
+            ) : null}
+
+            {tab === 'categories' ? (
+              <TwView className="gap-0.5">
+                <Input
+                  icon={Search}
+                  value={categoryQuery}
+                  onChangeText={setCategoryQuery}
+                  placeholder={t('categorySearch')}
+                  accessibilityLabel={t('categorySearch')}
+                  autoCorrect={false}
+                />
+                {allToggle(
+                  filters.categoryIds,
+                  () => onChange({ ...filters, categoryIds: undefined }),
+                  () => onChange({ ...filters, categoryIds: [] }),
+                )}
+                {shownCategories.map((category) => (
+                  <TwView key={category.value} className="px-1 py-1">
+                    <Checkbox
+                      label={category.label}
+                      checked={categoryCheck(filters.categoryIds, category, categories)}
+                      onCheckedChange={(on) =>
+                        onChange({ ...filters, categoryIds: selectCategory(filters.categoryIds, category, on, categories) })
+                      }
+                    />
+                  </TwView>
+                ))}
+                {!categoryQuery.trim() && matching.length > FIRST_CATEGORIES ? (
+                  <TwView className="flex-row">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      label={allCategories ? tf('showFewer') : tf('showAll', { count: matching.length })}
+                      onPress={() => setAllCategories((value) => !value)}
+                    />
+                  </TwView>
+                ) : null}
+              </TwView>
+            ) : null}
+
+            {tab === 'type' ? (
+              <TwView className="gap-0.5 pt-2">
+                {typeOptions.map((option) => (
+                  <TwView key={option.value} className="px-1 py-1">
+                    <Checkbox
+                      label={option.label}
+                      checked={isSelected(filters.types, option.value)}
+                      onCheckedChange={(on) =>
+                        onChange({ ...filters, types: selectValues(filters.types, [option.value], on, HISTORY_TYPES) })
+                      }
+                    />
+                  </TwView>
+                ))}
+              </TwView>
+            ) : null}
+
+            {tab === 'dates' ? (
+              <TwView className="gap-1 pt-2">
+                <TwView accessibilityRole="radiogroup" className="flex-row gap-1 rounded-full bg-track p-1">
+                  {(['month', 'all'] as const).map((option) => (
+                    <TwPressable
+                      key={option}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: dateMode === option }}
+                      onPress={() => onChange(withPeriod(filters, option === 'all' ? 'all' : monthOf(today)))}
+                      className={cn('min-h-10 flex-1 items-center justify-center rounded-full px-3', dateMode === option ? 'bg-surface' : '')}
+                    >
+                      <Text
+                        weight="medium"
+                        className={cn('text-sm', dateMode === option ? 'text-on-background' : 'text-on-surface-variant')}
+                      >
+                        {option === 'all' ? tf('allTime') : tf('month')}
+                      </Text>
+                    </TwPressable>
+                  ))}
                 </TwView>
-                <TwView className="flex-1">
-                  <DatePicker
-                    locale={locale}
-                    placeholder={t('to')}
-                    value={filters.to}
-                    min={filters.from}
-                    max={today}
-                    clearable
-                    clearLabel={t('clearDate')}
-                    onChange={(to) => onChange({ ...filters, to })}
-                    closeLabel={tc('close')}
-                  />
+                <Text weight="medium" className="px-1 pt-2 text-xs text-on-surface-variant">
+                  {t('range')}
+                </Text>
+                <TwView className="flex-row gap-2">
+                  <TwView className="flex-1">
+                    <DatePicker
+                      locale={locale}
+                      placeholder={t('from')}
+                      value={filters.from}
+                      max={filters.to ?? today}
+                      clearable
+                      clearLabel={t('clearDate')}
+                      onChange={(from) => onChange({ ...filters, from })}
+                      closeLabel={tc('close')}
+                    />
+                  </TwView>
+                  <TwView className="flex-1">
+                    <DatePicker
+                      locale={locale}
+                      placeholder={t('to')}
+                      value={filters.to}
+                      min={filters.from}
+                      max={today}
+                      clearable
+                      clearLabel={t('clearDate')}
+                      onChange={(to) => onChange({ ...filters, to })}
+                      closeLabel={tc('close')}
+                    />
+                  </TwView>
                 </TwView>
               </TwView>
-            </FilterSection>
+            ) : null}
           </ScrollView>
           <Button variant="secondary" label={tc('done')} onPress={() => setOpen(false)} />
         </Sheet>

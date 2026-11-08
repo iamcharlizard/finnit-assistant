@@ -215,14 +215,17 @@ export class TransactionsService {
   /**
    * Confirmed spending of the movements that pass these filters, by
    * category (the history's chart follows its filters). Only expenses
-   * count: filtering by another type leaves nothing.
+   * count: filtering by other types leaves nothing.
    */
   async spending(
     userId: string,
     filters: TransactionFilters | undefined,
     locale: AppLocale,
   ): Promise<TransactionSpending> {
-    if (filters?.type && filters.type !== TransactionType.expense) {
+    if (
+      (filters?.type && filters.type !== TransactionType.expense) ||
+      (filters?.types && !filters.types.includes(TransactionType.expense))
+    ) {
       return { totalExpenses: 0, categoryBreakdown: [] };
     }
     const where: Prisma.TransactionWhereInput = { userId };
@@ -1022,11 +1025,16 @@ export class TransactionsService {
       where.accountId = filters.accountId;
     }
 
-    if (filters.accountIds?.length) {
+    // A list, even empty (every box unchecked, so nothing passes).
+    if (filters.accountIds) {
       and.push({ accountId: { in: filters.accountIds } });
     }
 
-    if (filters.categoryIds?.length || filters.includeUncategorized) {
+    if (filters.types) {
+      and.push({ type: { in: filters.types } });
+    }
+
+    if (filters.categoryIds || filters.includeUncategorized) {
       const ids = (
         await Promise.all(
           (filters.categoryIds ?? []).map((id) =>
@@ -1037,7 +1045,22 @@ export class TransactionsService {
       const anyOf: Prisma.TransactionWhereInput[] = [];
       if (ids.length) anyOf.push({ categoryId: { in: [...new Set(ids)] } });
       if (filters.includeUncategorized) anyOf.push({ categoryId: null });
-      and.push(anyOf.length === 1 ? anyOf[0]! : { OR: anyOf });
+      const inCategories: Prisma.TransactionWhereInput =
+        anyOf.length === 0
+          ? { id: { in: [] } }
+          : anyOf.length === 1
+            ? anyOf[0]!
+            : { OR: anyOf };
+      and.push(
+        filters.categoriesForExpensesOnly
+          ? {
+              OR: [
+                { type: { not: TransactionType.expense } },
+                inCategories,
+              ],
+            }
+          : inCategories,
+      );
     }
 
     if (filters.categoryId) {

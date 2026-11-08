@@ -6,7 +6,10 @@ import {
   historyQuery,
   monthLinks,
   activeFilterCount,
-  toggleValue,
+  categoryCheck,
+  isSelected,
+  selectCategory,
+  selectValues,
   parseHistoryFilters,
   toApiFilters,
   withPeriod,
@@ -23,6 +26,7 @@ import {
   categoryOptions,
   dayNet,
   groupTransfers,
+  selectionLabel,
   toHistoryRow,
   topCategoryChart,
   topCategoryRows,
@@ -59,7 +63,7 @@ describe('history filters', () => {
         today,
       ),
       {
-        type: 'expense',
+        types: ['expense'],
         accountIds: ['acc-1', 'acc-2'],
         from: '2026-10-01',
         search: 'oxxo',
@@ -79,7 +83,7 @@ describe('history filters', () => {
 
   it('round-trips through the URL, leaving this month out', () => {
     const filters = {
-      type: 'income' as const,
+      types: ['income' as const],
       search: 'nómina',
       period: { year: 2026, month: 9 },
     };
@@ -107,6 +111,8 @@ describe('history filters', () => {
   it('asks the API for the month, the range or everything', () => {
     assert.deepEqual(toApiFilters({ categoryIds: ['c'], period: november }), {
       categoryIds: ['c'],
+      includeUncategorized: false,
+      categoriesForExpensesOnly: true,
       startDate: '2026-11-01T00:00:00.000Z',
       endDate: '2026-11-30T23:59:59.999Z',
     });
@@ -139,35 +145,107 @@ describe('history filters', () => {
     );
   });
 
-  it('chooses several accounts and categories, "Sin categoría" included', () => {
+  it('chooses several accounts, categories and types, "Sin categoría" included', () => {
     const filters = parseHistoryFilters(
-      { account: ['a1', 'a2'], category: 'c1,none', type: 'expense' },
+      { account: ['a1', 'a2'], category: 'c1,none', type: 'expense,income' },
       today,
     );
     assert.deepEqual(filters.accountIds, ['a1', 'a2']);
-    assert.equal(historyQuery(filters, today), '?type=expense&account=a1%2Ca2&category=c1%2Cnone');
+    assert.deepEqual(filters.types, ['expense', 'income']);
+    assert.equal(
+      historyQuery(filters, today),
+      '?type=expense%2Cincome&account=a1%2Ca2&category=c1%2Cnone',
+    );
     assert.deepEqual(toApiFilters(filters), {
-      type: 'expense',
+      types: ['expense', 'income'],
       accountIds: ['a1', 'a2'],
       categoryIds: ['c1'],
       includeUncategorized: true,
+      categoriesForExpensesOnly: true,
       startDate: '2026-11-01T00:00:00.000Z',
       endDate: '2026-11-30T23:59:59.999Z',
     });
-    assert.deepEqual(
-      toApiFilters({ categoryIds: ['none'], period: 'all' }),
-      { includeUncategorized: true },
-    );
-    // Each account and category, the type and the dates count.
-    assert.equal(activeFilterCount(filters), 5);
+    // One per group that narrows the list.
+    assert.equal(activeFilterCount(filters), 3);
     assert.equal(
       activeFilterCount({ from: '2026-11-01', period: november }),
       1,
     );
     assert.equal(activeFilterCount({ period: 'all' }), 1);
     assert.equal(activeFilterCount({ period: november }), 0);
-    assert.deepEqual(toggleValue(['a'], 'b', true), ['a', 'b']);
-    assert.equal(toggleValue(['a'], 'a', false), undefined);
+    // Every type is no filter; an old `type=all` too.
+    assert.equal(
+      parseHistoryFilters({ type: 'income,expense,transfer' }, today).types,
+      undefined,
+    );
+  });
+
+  it('keeps an empty selection, which shows nothing', () => {
+    const filters = parseHistoryFilters(
+      { account: '-', category: '-', type: '-' },
+      today,
+    );
+    assert.deepEqual(filters.accountIds, []);
+    assert.deepEqual(filters.categoryIds, []);
+    assert.deepEqual(filters.types, []);
+    assert.equal(historyQuery(filters, today), '?type=-&account=-&category=-');
+    assert.deepEqual(toApiFilters({ ...filters, period: 'all' }), {
+      types: [],
+      accountIds: [],
+      categoryIds: [],
+      includeUncategorized: false,
+      categoriesForExpensesOnly: true,
+    });
+  });
+
+  it('checks everything by default and gives "everything" back', () => {
+    const all = ['a', 'b', 'c'];
+    assert.ok(isSelected(undefined, 'a'));
+    assert.deepEqual(selectValues(undefined, ['b'], false, all), ['a', 'c']);
+    assert.equal(selectValues(['a', 'c'], ['b'], true, all), undefined);
+    assert.deepEqual(selectValues(undefined, all, false, all), []);
+  });
+
+  it('labels a narrowed selection', () => {
+    const { t } = testLocalizer('es');
+    const options = [
+      { value: 'a', label: 'Nu' },
+      { value: 'b', label: 'Revolut' },
+      { value: 'c', label: 'BBVA' },
+    ];
+    assert.equal(
+      selectionLabel('Cuentas', ['a', 'b'], options, t),
+      'Cuentas: Nu, Revolut',
+    );
+    assert.equal(selectionLabel('Cuentas', [], options, t), 'Cuentas: 0 de 3');
+  });
+
+  it('checks a parent category with its subcategories', () => {
+    const options = [
+      { value: 'none' },
+      { value: 'food' },
+      { value: 'coffee', parentId: 'food' },
+      { value: 'groceries', parentId: 'food' },
+      { value: 'home' },
+    ];
+    const food = options[1]!;
+    const coffee = options[2]!;
+    // Unchecking a subcategory unchecks its parent (mixed).
+    const noCoffee = selectCategory(undefined, coffee, false, options);
+    assert.deepEqual(noCoffee, ['none', 'groceries', 'home']);
+    assert.equal(categoryCheck(noCoffee, food, options), 'indeterminate');
+    // Checking it again completes the family.
+    assert.equal(selectCategory(noCoffee, coffee, true, options), undefined);
+    // The parent takes its whole family.
+    assert.deepEqual(selectCategory(undefined, food, false, options), [
+      'none',
+      'home',
+    ]);
+    assert.deepEqual(selectCategory([], food, true, options), [
+      'food',
+      'coffee',
+      'groceries',
+    ]);
   });
 
   it("adds up a day's income and spending in one currency", () => {

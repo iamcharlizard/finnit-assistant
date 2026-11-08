@@ -394,7 +394,10 @@
       "range": "Rango",
       "clearAll": "Limpiar todo",
       "showAll": "Ver todas ({count})",
-      "showFewer": "Ver menos"
+      "showFewer": "Ver menos",
+      "selectAll": "Seleccionar todas",
+      "selectionNamed": "{group}: {names}",
+      "selectionCount": "{group}: {count} de {total}"
     },
     "categorySearch": "Buscar categoría"
   },

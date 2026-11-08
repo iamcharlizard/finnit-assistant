@@ -3,6 +3,8 @@
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+
+import { useLocalizer } from '@/lib/i18n/client';
 import { ChevronDown, Search, SlidersHorizontal, X } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
@@ -12,33 +14,30 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@finnit/ui/components/ui/popover';
+import { cn } from '@finnit/ui/lib/utils';
 
 import { HistoryFilterPanel } from '@/components/history/history-filter-panel';
 import { HistoryMonth } from '@/components/history/history-month';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
-import {
-  monthOf,
-  shortDate,
-  type DayKey,
-} from '@finnit/core/finance/dates';
+import { monthOf, shortDate, type DayKey } from '@finnit/core/finance/dates';
 import {
   activeFilterCount,
   hasFilters,
   hasRange,
   historyQuery,
+  HISTORY_TYPES,
   monthLinks,
-  toggleValue,
   withPeriod,
   type HistoryFilters as Filters,
 } from '@finnit/core/history/filters';
-import type { Option } from '@finnit/core/history/view';
+import { selectionLabel, type Option } from '@finnit/core/history/view';
 
 /**
  * The history's toolbar, fixed under the header while the list scrolls
  * (exactly where it starts, so it never moves; see useStickyTops): search
- * and the "Filtros" dropdown (accounts, categories, type and dates in
- * collapsible sections, with the active count above the button); the
- * filters in use as removable chips, and the month (‹ Noviembre 2026 ›).
+ * and the "Filtros" dropdown (accounts, categories, types and dates in
+ * tabs, with the active count above the button); one removable chip per
+ * group in use, and the month (‹ Noviembre 2026 ›).
  * Every change updates the URL.
  */
 export function HistoryFilters({
@@ -60,6 +59,7 @@ export function HistoryFilters({
   const locale = useLocale();
   const t = useTranslations('history');
   const tf = useTranslations('history.filters');
+  const { t: tr } = useLocalizer();
   const [search, setSearch] = React.useState(filters.search ?? '');
   const debouncedSearch = useDebouncedValue(search.trim(), 400);
   const count = activeFilterCount(filters);
@@ -82,8 +82,10 @@ export function HistoryFilters({
     }
   }, [debouncedSearch, filters, apply]);
 
-  const labelOf = (options: Option[], id: string) =>
-    options.find((o) => o.value === id)?.label ?? id;
+  const typeOptions = HISTORY_TYPES.map((value) => ({
+    value,
+    label: t(`types.${value}`),
+  }));
   const datesLabel = hasRange(filters)
     ? t('rangeLabel', {
         from: filters.from ? shortDate(filters.from, locale) : '…',
@@ -94,33 +96,43 @@ export function HistoryFilters({
       : null;
 
   const chips: { key: string; label: string; remove: () => void }[] = [
-    ...(filters.type
+    ...(filters.types
       ? [
           {
             key: 'type',
-            label: t(`types.${filters.type}`),
-            remove: () => apply({ ...filters, type: undefined }),
+            label: selectionLabel(tf('type'), filters.types, typeOptions, tr),
+            remove: () => apply({ ...filters, types: undefined }),
           },
         ]
       : []),
-    ...(filters.accountIds ?? []).map((id) => ({
-      key: `account:${id}`,
-      label: labelOf(accounts, id),
-      remove: () =>
-        apply({
-          ...filters,
-          accountIds: toggleValue(filters.accountIds, id, false),
-        }),
-    })),
-    ...(filters.categoryIds ?? []).map((id) => ({
-      key: `category:${id}`,
-      label: labelOf(categories, id),
-      remove: () =>
-        apply({
-          ...filters,
-          categoryIds: toggleValue(filters.categoryIds, id, false),
-        }),
-    })),
+    ...(filters.accountIds
+      ? [
+          {
+            key: 'accounts',
+            label: selectionLabel(
+              tf('accounts'),
+              filters.accountIds,
+              accounts,
+              tr,
+            ),
+            remove: () => apply({ ...filters, accountIds: undefined }),
+          },
+        ]
+      : []),
+    ...(filters.categoryIds
+      ? [
+          {
+            key: 'categories',
+            label: selectionLabel(
+              tf('categories'),
+              filters.categoryIds,
+              categories,
+              tr,
+            ),
+            remove: () => apply({ ...filters, categoryIds: undefined }),
+          },
+        ]
+      : []),
     ...(datesLabel
       ? [
           {
@@ -185,7 +197,7 @@ export function HistoryFilters({
           </div>
           <PopoverContent
             align="end"
-            className="flex max-h-[min(36rem,var(--radix-popover-content-available-height))] w-[min(24rem,calc(100vw-2rem))] flex-col gap-1 p-0"
+            className="flex max-h-[min(36rem,var(--radix-popover-content-available-height))] w-[min(26rem,calc(100vw-2rem))] flex-col gap-2 p-0"
           >
             <div className="flex items-center justify-between gap-2 px-4 pt-3">
               <p className="text-sm font-bold text-on-background">
@@ -203,15 +215,13 @@ export function HistoryFilters({
                 {tf('clearAll')}
               </button>
             </div>
-            <div className="min-h-0 overflow-y-auto px-3 pb-1">
-              <HistoryFilterPanel
-                filters={filters}
-                accounts={accounts}
-                categories={categories}
-                today={today}
-                onApply={apply}
-              />
-            </div>
+            <HistoryFilterPanel
+              filters={filters}
+              accounts={accounts}
+              categories={categories}
+              today={today}
+              onApply={apply}
+            />
           </PopoverContent>
         </Popover>
       </div>
@@ -221,7 +231,14 @@ export function HistoryFilters({
         categories instead, so it takes no row here).
       */}
       {chips.length > 0 || showMonth ? (
-        <div className="flex flex-wrap items-center gap-2">
+        <div
+          className={cn(
+            'flex flex-wrap items-center gap-2',
+            // Only the month, which moves out of this row from @3xl: hide
+            // the row there so it leaves no gap under the search.
+            chips.length === 0 && '@3xl:hidden',
+          )}
+        >
           {chips.map((chip) => (
             <span
               key={chip.key}

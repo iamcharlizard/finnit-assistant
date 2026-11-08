@@ -1586,6 +1586,42 @@ describe('TransactionsService', () => {
       expect(where.AND).toEqual([{ categoryId: null }]);
     });
 
+    it('narrows only expenses by category, by types, and shows nothing for empty lists', async () => {
+      jest.restoreAllMocks();
+      prismaService.transaction.findMany.mockResolvedValue([]);
+      prismaService.transaction.count.mockResolvedValue(0);
+
+      await service.findMany(mockUserId, {
+        filters: {
+          accountIds: [],
+          types: [TransactionType.expense, TransactionType.income],
+          categoryIds: [],
+          includeUncategorized: true,
+          categoriesForExpensesOnly: true,
+        },
+      });
+      await service.findMany(mockUserId, {
+        filters: { categoryIds: [], categoriesForExpensesOnly: true },
+      });
+
+      const first = prismaService.transaction.count.mock.calls[0][0] as {
+        where: Record<string, unknown>;
+      };
+      expect(first.where.AND).toEqual([
+        { accountId: { in: [] } },
+        { type: { in: ['expense', 'income'] } },
+        {
+          OR: [{ type: { not: 'expense' } }, { categoryId: null }],
+        },
+      ]);
+      const second = prismaService.transaction.count.mock.calls[1][0] as {
+        where: Record<string, unknown>;
+      };
+      expect(second.where.AND).toEqual([
+        { OR: [{ type: { not: 'expense' } }, { id: { in: [] } }] },
+      ]);
+    });
+
     describe('spending', () => {
       it('sums the filtered confirmed expenses by category', async () => {
         prismaService.transaction.groupBy.mockResolvedValue([
@@ -1633,6 +1669,13 @@ describe('TransactionsService', () => {
         );
         expect(result).toEqual({ totalExpenses: 0, categoryBreakdown: [] });
         expect(prismaService.transaction.groupBy).not.toHaveBeenCalled();
+        expect(
+          await service.spending(
+            mockUserId,
+            { types: [TransactionType.income, TransactionType.transfer] },
+            'es',
+          ),
+        ).toEqual({ totalExpenses: 0, categoryBreakdown: [] });
       });
     });
 

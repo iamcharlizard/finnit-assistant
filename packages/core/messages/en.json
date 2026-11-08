@@ -312,7 +312,7 @@
       "alsoIn": "Also: {list}"
     },
     "welcome": {
-      "title": "Hi, {name}. Welcome to Finnit",
+      "title": "Welcome to Finnit",
       "description": "You don't have accounts or transactions yet. Start by connecting your bank; here you'll see your balances, this month's spending and upcoming payments.",
       "stepBank": "Connect your bank: we import your accounts, balances and transactions.",
       "stepCategories": "See where your money goes each month, by category.",
@@ -379,7 +379,21 @@
       "chart": "Chart"
     },
     "chartTotal": "Spent",
-    "chartSummary": "This month's spending by category: {items}"
+    "chartSummary": "Spending by category: {items}",
+    "filters": {
+      "accounts": "Accounts",
+      "categories": "Categories",
+      "type": "Type",
+      "dates": "Dates",
+      "clearSelection": "Deselect all",
+      "show": "Show filters",
+      "hide": "Hide filters",
+      "remove": "Remove {name}",
+      "month": "By month",
+      "allTime": "All history",
+      "range": "Range"
+    },
+    "categorySearch": "Search category"
   },
   "cards": {
     "count": "{count, plural, one {# card} other {# cards}}",

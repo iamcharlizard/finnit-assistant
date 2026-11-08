@@ -40,6 +40,14 @@
   --chart-4: #eda100;
   --chart-5: #e87ba4;
   --chart-6: #008300;
+  /* Pastel slices (category donut): the same families, soft. Validated
+     as a set (CVD ΔE ≥ 8 between any two); under 3:1 on light, so the
+     donut always has its legend. */
+  --chart-pastel-1: #6f9be0;
+  --chart-pastel-2: #f3a07a;
+  --chart-pastel-3: #95e0c8;
+  --chart-pastel-4: #c878ab;
+  --chart-pastel-5: #f6e394;
   --glass: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(0, 0, 0, 0.07);
   --track: rgba(0, 0, 0, 0.06);
@@ -95,6 +103,14 @@
   --chart-4: #c98500;
   --chart-5: #d55181;
   --chart-6: #008300;
+  /* Pastel slices (category donut): the same families, soft. Validated
+     as a set (CVD ΔE ≥ 8 between any two); light on the dark
+     surface too. */
+  --chart-pastel-1: #6f9be0;
+  --chart-pastel-2: #f3a07a;
+  --chart-pastel-3: #95e0c8;
+  --chart-pastel-4: #c878ab;
+  --chart-pastel-5: #f6e394;
   --glass: rgba(23, 24, 31, 0.85);
   --glass-border: rgba(255, 255, 255, 0.08);
   --track: rgba(255, 255, 255, 0.06);

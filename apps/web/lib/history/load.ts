@@ -18,7 +18,7 @@ export type { HistoryData };
 export async function loadHistory(filters: HistoryFilters): Promise<HistoryData> {
   const today = todayKey();
   const [data, l] = await Promise.all([
-    serverGraphql<HistoryResult>(HISTORY_QUERY, historyVariables(filters, today)),
+    serverGraphql<HistoryResult>(HISTORY_QUERY, historyVariables(filters)),
     getLocalizer(),
   ]);
   return buildHistoryData(data, filters, today, l);

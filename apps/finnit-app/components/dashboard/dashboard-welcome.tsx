@@ -15,14 +15,14 @@ const STEPS = [
 ] as const;
 
 /** First visit: no accounts and no movements yet. */
-export function DashboardWelcome({ firstName }: { firstName: string }) {
+export function DashboardWelcome() {
   const t = useTranslations();
   const router = useRouter();
   return (
     <Card className="items-start gap-5 p-6">
       <TwView>
         <Text accessibilityRole="header" weight="bold" className="mb-2 text-[28px]" style={{ lineHeight: 36 }}>
-          {t('dashboard.welcome.title', { name: firstName })}
+          {t('dashboard.welcome.title')}
         </Text>
         <Text className="text-[15px] text-on-surface-variant">{t('dashboard.welcome.description')}</Text>
       </TwView>

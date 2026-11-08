@@ -9,8 +9,8 @@ import { hasRange, type HistoryFilters } from '@finnit/core/history/filters';
 export function historyParams(filters: HistoryFilters, today: DayKey): Record<string, string | undefined> {
   return {
     type: filters.type,
-    account: filters.accountId,
-    category: filters.categoryId,
+    account: filters.accountIds?.join(','),
+    category: filters.categoryIds?.join(','),
     from: filters.from,
     to: filters.to,
     q: filters.search,

@@ -5,7 +5,8 @@ import {
   hasFilters,
   historyQuery,
   monthLinks,
-  moreFiltersCount,
+  activeFilterCount,
+  toggleValue,
   parseHistoryFilters,
   toApiFilters,
   withPeriod,
@@ -49,7 +50,7 @@ describe('history filters', () => {
       parseHistoryFilters(
         {
           type: 'expense',
-          account: 'acc-1',
+          account: 'acc-1,acc-2,acc-1',
           category: 'bad id!',
           from: '2026-10-01',
           to: '2026-02-30',
@@ -59,7 +60,7 @@ describe('history filters', () => {
       ),
       {
         type: 'expense',
-        accountId: 'acc-1',
+        accountIds: ['acc-1', 'acc-2'],
         from: '2026-10-01',
         search: 'oxxo',
         period: november,
@@ -104,8 +105,8 @@ describe('history filters', () => {
   });
 
   it('asks the API for the month, the range or everything', () => {
-    assert.deepEqual(toApiFilters({ categoryId: 'c', period: november }), {
-      categoryId: 'c',
+    assert.deepEqual(toApiFilters({ categoryIds: ['c'], period: november }), {
+      categoryIds: ['c'],
       startDate: '2026-11-01T00:00:00.000Z',
       endDate: '2026-11-30T23:59:59.999Z',
     });
@@ -131,15 +132,42 @@ describe('history filters', () => {
     assert.equal(monthLinks({ period: 'all' }, today), null);
     assert.deepEqual(
       withPeriod(
-        { from: '2026-11-01', accountId: 'a', period: 'all' },
+        { from: '2026-11-01', accountIds: ['a'], period: 'all' },
         november,
       ),
-      { accountId: 'a', period: november },
+      { accountIds: ['a'], period: november },
     );
+  });
+
+  it('chooses several accounts and categories, "Sin categoría" included', () => {
+    const filters = parseHistoryFilters(
+      { account: ['a1', 'a2'], category: 'c1,none', type: 'expense' },
+      today,
+    );
+    assert.deepEqual(filters.accountIds, ['a1', 'a2']);
+    assert.equal(historyQuery(filters, today), '?type=expense&account=a1%2Ca2&category=c1%2Cnone');
+    assert.deepEqual(toApiFilters(filters), {
+      type: 'expense',
+      accountIds: ['a1', 'a2'],
+      categoryIds: ['c1'],
+      includeUncategorized: true,
+      startDate: '2026-11-01T00:00:00.000Z',
+      endDate: '2026-11-30T23:59:59.999Z',
+    });
+    assert.deepEqual(
+      toApiFilters({ categoryIds: ['none'], period: 'all' }),
+      { includeUncategorized: true },
+    );
+    // Each account and category, the type and the dates count.
+    assert.equal(activeFilterCount(filters), 5);
     assert.equal(
-      moreFiltersCount({ accountId: 'a', from: '2026-11-01', period: 'all' }),
-      2,
+      activeFilterCount({ from: '2026-11-01', period: november }),
+      1,
     );
+    assert.equal(activeFilterCount({ period: 'all' }), 1);
+    assert.equal(activeFilterCount({ period: november }), 0);
+    assert.deepEqual(toggleValue(['a'], 'b', true), ['a', 'b']);
+    assert.equal(toggleValue(['a'], 'a', false), undefined);
   });
 
   it("adds up a day's income and spending in one currency", () => {
@@ -160,17 +188,23 @@ describe('history filters', () => {
     );
   });
 
-  it('lists categories under their parent', () => {
+  it('lists "Sin categoría" and the expense categories under their parent', () => {
     assert.deepEqual(
       categoryOptions(
         [
-          { id: 'f', name: 'Comida', parentId: null },
-          { id: 'r', name: 'Restaurantes', parentId: 'f' },
+          { id: 'f', name: 'Comida', parentId: null, kind: 'expense' },
+          { id: 'r', name: 'Restaurantes', parentId: 'f', kind: 'expense' },
+          { id: 's', name: 'Sueldo', parentId: null, kind: 'income' },
           { id: 'p', name: 'Mascotas', parentId: null },
         ],
         testLocalizer('es').t,
-      ).map((o) => o.label),
-      ['Comida', 'Comida › Restaurantes', 'Mascotas'],
+      ).map((o) => `${o.value}:${o.label}`),
+      [
+        'none:Sin categoría',
+        'f:Comida',
+        'r:Comida › Restaurantes',
+        'p:Mascotas',
+      ],
     );
   });
 
@@ -315,8 +349,14 @@ describe('history: transfers and top categories', () => {
       Math.round(chart.slices.reduce((sum, s) => sum + s.percent, 0)),
       100,
     );
-    const rows = topCategoryRows(report, categories, es);
+    // Pastel colors by place, so the five always differ.
+    assert.deepEqual(
+      chart.slices.slice(0, 5).map((s) => s.dotColor),
+      [1, 2, 3, 4, 5].map((n) => `var(--chart-pastel-${n})`),
+    );
+    const rows = topCategoryRows(chart);
     assert.equal(rows.length, 5);
     assert.equal(rows[0]!.amount, '$300.00');
+    assert.equal(rows[0]!.dotColor, 'var(--chart-pastel-1)');
   });
 });

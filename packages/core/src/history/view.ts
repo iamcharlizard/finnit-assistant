@@ -27,6 +27,7 @@ import {
   type Connection,
 } from '../finance/types';
 import { canConvertToTransfer, type ConvertSource } from '../transfers/convert';
+import { UNCATEGORIZED } from './filters';
 
 export const HISTORY_QUERY_FIELDS = `transactions(first: $first, after: $after, filters: $filters) {
     totalCount
@@ -211,25 +212,48 @@ export function accountOptions(
   }));
 }
 
-/** Top-level categories, each followed by its subcategories ("Comida › Café"). */
+/**
+ * The category filter's options: "Sin categoría", then the expense
+ * categories, each top-level one followed by its subcategories
+ * ("Comida › Café"; choosing a parent includes them).
+ */
 export function categoryOptions(
   categories: ReadonlyArray<ApiCategory>,
   t: Translate,
 ): Option[] {
-  const roots = categories.filter((c) => !c.parentId);
-  return roots.flatMap((root) => [
-    { value: root.id, label: categoryLabel(root.name, t) },
-    ...categories
-      .filter((c) => c.parentId === root.id)
-      .map((c) => ({
-        value: c.id,
-        label: `${categoryLabel(root.name, t)} › ${categoryLabel(c.name, t)}`,
-      })),
-  ]);
+  const spending = categories.filter((c) => c.kind !== 'income');
+  const roots = spending.filter((c) => !c.parentId);
+  return [
+    { value: UNCATEGORIZED, label: t('finance.uncategorized') },
+    ...roots.flatMap((root) => [
+      { value: root.id, label: categoryLabel(root.name, t) },
+      ...spending
+        .filter((c) => c.parentId === root.id)
+        .map((c) => ({
+          value: c.id,
+          label: `${categoryLabel(root.name, t)} › ${categoryLabel(c.name, t)}`,
+        })),
+    ]),
+  ];
 }
 
-/** How many categories the top lists; the rest are "Otros" in the chart. */
+/** How many categories the top lists; the rest are "Otras" in the chart. */
 export const TOP_CATEGORIES = 5;
+
+/**
+ * Pastel slice colors (`--chart-pastel-1…5`), by place in the top, so the
+ * five always differ; "Otras" is gray.
+ */
+export const SLICE_COLORS = [1, 2, 3, 4, 5].map(
+  (n) => `var(--chart-pastel-${n})`,
+);
+export const OTHERS_COLOR = 'var(--outline)';
+
+/** The confirmed spending the top and its chart are built from. */
+export type SpendingReport = Pick<
+  ApiMonthlyReport,
+  'totalExpenses' | 'categoryBreakdown'
+>;
 
 export interface TopCategoryRow {
   id: string;
@@ -242,27 +266,9 @@ export interface TopCategoryRow {
   amount: string;
 }
 
-/** Rows for PopularCategoriesCard: the month's top 5 spending categories. */
-export function topCategoryRows(
-  report: ApiMonthlyReport,
-  categories: ReadonlyArray<ApiCategory>,
-  { locale, t }: Localizer,
-): TopCategoryRow[] {
-  return spendingByCategory(report, indexCategories(categories), t)
-    .slice(0, TOP_CATEGORIES)
-    .map((c) => ({
-      id: c.id,
-      label: c.label,
-      percentage: `${c.percent}%`,
-      dotColor: c.color,
-      value: c.amount,
-      amount: formatMoney(c.amount, DEFAULT_CURRENCY, locale),
-    }));
-}
-
-/** A slice of the month's spending (the top categories, then "Otros"). */
+/** A slice of the spending (the top categories, then "Otras"). */
 export interface CategorySlice extends TopCategoryRow {
-  /** Share of the month's spending, 0–100. */
+  /** Share of the spending, 0–100. */
   percent: number;
   /** The remaining categories together. */
   others: boolean;
@@ -270,13 +276,13 @@ export interface CategorySlice extends TopCategoryRow {
 
 export interface CategoryChart {
   slices: CategorySlice[];
-  /** The month's spending, formatted (the donut's center). */
+  /** The spending, formatted (the donut's center). */
   total: string;
 }
 
-/** The month's spending as a donut: the top categories and the rest together. */
+/** The spending as a donut: the top categories and the rest together. */
 export function topCategoryChart(
-  report: ApiMonthlyReport,
+  report: SpendingReport,
   categories: ReadonlyArray<ApiCategory>,
   { locale, t }: Localizer,
 ): CategoryChart {
@@ -284,16 +290,18 @@ export function topCategoryChart(
   const total = all.reduce((sum, c) => sum + c.amount, 0);
   const money = (n: number) => formatMoney(n, DEFAULT_CURRENCY, locale);
   const share = (n: number) => (total > 0 ? (n / total) * 100 : 0);
-  const slices: CategorySlice[] = all.slice(0, TOP_CATEGORIES).map((c) => ({
-    id: c.id,
-    label: c.label,
-    percentage: `${c.percent}%`,
-    dotColor: c.color,
-    value: c.amount,
-    amount: money(c.amount),
-    percent: share(c.amount),
-    others: false,
-  }));
+  const slices: CategorySlice[] = all
+    .slice(0, TOP_CATEGORIES)
+    .map((c, index) => ({
+      id: c.id,
+      label: c.label,
+      percentage: `${c.percent}%`,
+      dotColor: SLICE_COLORS[index]!,
+      value: c.amount,
+      amount: money(c.amount),
+      percent: share(c.amount),
+      others: false,
+    }));
   const rest = roundCents(
     all.slice(TOP_CATEGORIES).reduce((sum, c) => sum + c.amount, 0),
   );
@@ -302,7 +310,7 @@ export function topCategoryChart(
       id: 'others',
       label: t('history.otherCategories'),
       percentage: `${percentOf(rest, report.totalExpenses)}%`,
-      dotColor: 'var(--outline)',
+      dotColor: OTHERS_COLOR,
       value: rest,
       amount: money(rest),
       percent: share(rest),
@@ -310,4 +318,18 @@ export function topCategoryChart(
     });
   }
   return { slices, total: money(roundCents(total)) };
+}
+
+/** The list view: the top categories, in the chart's colors. */
+export function topCategoryRows(chart: CategoryChart): TopCategoryRow[] {
+  return chart.slices
+    .filter((slice) => !slice.others)
+    .map(({ id, label, percentage, dotColor, value, amount }) => ({
+      id,
+      label,
+      percentage,
+      dotColor,
+      value,
+      amount,
+    }));
 }

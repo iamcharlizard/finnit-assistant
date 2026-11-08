@@ -3,14 +3,12 @@
  * the mobile app: the query, its variables and the screen's data.
  */
 import { indexCategories } from '../finance/categories';
-import { monthLabel, monthOf, type DayKey } from '../finance/dates';
+import { monthLabel, shortDate, type DayKey } from '../finance/dates';
 import {
   ACCOUNT_FIELDS,
   CATEGORY_FIELDS,
-  MONTHLY_REPORT_FIELDS,
   type ApiAccount,
   type ApiCategory,
-  type ApiMonthlyReport,
   type ApiTransaction,
   type Connection,
 } from '../finance/types';
@@ -30,6 +28,7 @@ import {
   topCategoryRows,
   type CategoryChart,
   type Option,
+  type SpendingReport,
   type TransactionPage,
 } from './view';
 
@@ -48,11 +47,15 @@ export interface HistoryData {
   aliasName: string | null;
 }
 
-export const HISTORY_QUERY = `query History($first: Int!, $after: String, $filters: TransactionFilters, $year: Int!, $month: Int!) {
+/** The spending by category of the filtered movements (the top and its chart). */
+export const SPENDING_FIELDS =
+  'transactionSpending(filters: $filters) { totalExpenses categoryBreakdown { categoryId categoryName amount } }';
+
+export const HISTORY_QUERY = `query History($first: Int!, $after: String, $filters: TransactionFilters) {
   ${HISTORY_QUERY_FIELDS}
   accounts(first: 100) { edges { node { ${ACCOUNT_FIELDS} } } }
   categories(includeHidden: true) { ${CATEGORY_FIELDS} }
-  monthlyReport(year: $year, month: $month) { ${MONTHLY_REPORT_FIELDS} }
+  ${SPENDING_FIELDS}
   merchantAliases { id displayName }
 }`;
 
@@ -60,21 +63,31 @@ export interface HistoryResult {
   transactions: Connection<ApiTransaction>;
   accounts: Connection<ApiAccount>;
   categories: ApiCategory[];
-  monthlyReport: ApiMonthlyReport;
+  transactionSpending: SpendingReport;
   merchantAliases: { id: string; displayName: string }[];
 }
 
-/** Top categories follow the month on screen (this one otherwise). */
-function topMonth(filters: HistoryFilters, today: DayKey) {
-  return shownMonth(filters) ?? monthOf(today);
+/** The period the top covers: the month, the range or the whole history. */
+export function spendingPeriodLabel(
+  filters: HistoryFilters,
+  { locale, t }: Localizer,
+): string {
+  const month = shownMonth(filters);
+  if (month) return monthLabel(month, locale);
+  if (filters.from || filters.to) {
+    return t('history.rangeLabel', {
+      from: filters.from ? shortDate(filters.from, locale) : '…',
+      to: filters.to ? shortDate(filters.to, locale) : '…',
+    });
+  }
+  return t('history.allTime');
 }
 
-export function historyVariables(filters: HistoryFilters, today: DayKey) {
+export function historyVariables(filters: HistoryFilters) {
   return {
     first: HISTORY_PAGE_SIZE,
     after: null,
     filters: toApiFilters(filters),
-    ...topMonth(filters, today),
   };
 }
 
@@ -85,8 +98,12 @@ export function buildHistoryData(
   today: DayKey,
   l: Localizer,
 ): HistoryData {
-  const { locale, t } = l;
-  const month = topMonth(filters, today);
+  const { t } = l;
+  const chart = topCategoryChart(
+    data.transactionSpending,
+    data.categories,
+    l,
+  );
   return {
     today,
     page: toTransactionPage(
@@ -101,9 +118,11 @@ export function buildHistoryData(
     ),
     categoryOptions: categoryOptions(data.categories, t),
     topCategories: {
-      title: t('history.topCategories', { month: monthLabel(month, locale) }),
-      rows: topCategoryRows(data.monthlyReport, data.categories, l),
-      chart: topCategoryChart(data.monthlyReport, data.categories, l),
+      title: t('history.topCategories', {
+        month: spendingPeriodLabel(filters, l),
+      }),
+      rows: topCategoryRows(chart),
+      chart,
     },
     aliasName: filters.aliasId
       ? (data.merchantAliases.find((a) => a.id === filters.aliasId)

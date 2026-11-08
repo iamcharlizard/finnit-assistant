@@ -62,7 +62,7 @@ export function DashboardScreen() {
   if (view?.isEmpty) {
     return (
       <Screen title={t('greeting', { name: firstName })} refreshing={refreshing} onRefresh={onRefresh}>
-        <DashboardWelcome firstName={firstName} />
+        <DashboardWelcome />
       </Screen>
     );
   }

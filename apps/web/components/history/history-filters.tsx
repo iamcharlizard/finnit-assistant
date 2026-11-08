@@ -3,25 +3,32 @@
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  CalendarRange,
+  CreditCard,
+  Search,
+  Shapes,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react';
 
-import { FilterChipGroup } from '@finnit/ui/components/finance/filter-chip-group';
 import { Button } from '@finnit/ui/components/ui/button';
 import { DatePicker } from '@finnit/ui/components/ui/date-picker';
+import {
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from '@finnit/ui/components/ui/dropdown-menu';
 import { InputWithIcon } from '@finnit/ui/components/ui/input-with-icon';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@finnit/ui/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@finnit/ui/components/ui/select';
+import { cn } from '@finnit/ui/lib/utils';
 
+import { FilterMenu } from '@/components/filters/filter-menu';
 import { MonthSwitcher } from '@/components/finance/month-switcher';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import {
@@ -32,12 +39,13 @@ import {
 } from '@finnit/core/finance/dates';
 import {
   TYPE_OPTIONS,
+  activeFilterCount,
   hasFilters,
   hasRange,
   historyHref,
   historyQuery,
   monthLinks,
-  moreFiltersCount,
+  toggleValue,
   withPeriod,
   type HistoryFilters as Filters,
   type HistoryType,
@@ -48,9 +56,11 @@ const ALL = 'all';
 
 /**
  * The history's toolbar, fixed under the header while the list scrolls
- * (exactly where it starts, so it never moves; see useStickyTops):
- * search, type, the month (‹ Noviembre 2026 ›) and "Filtros" (account,
- * category, whole history or a date range). Every change updates the URL.
+ * (exactly where it starts, so it never moves; see useStickyTops): search
+ * and "Filtros", which shows or hides a row of dropdowns (accounts and
+ * categories with checkboxes, type, dates); the filters in use as
+ * removable chips, and the month (‹ Noviembre 2026 ›). Every change
+ * updates the URL.
  */
 export function HistoryFilters({
   filters,
@@ -70,14 +80,13 @@ export function HistoryFilters({
   const pathname = usePathname();
   const locale = useLocale();
   const t = useTranslations('history');
-  const typeOptions = React.useMemo(
-    () => TYPE_OPTIONS.map((value) => ({ value, label: t(`types.${value}`) })),
-    [t],
-  );
+  const tf = useTranslations('history.filters');
   const [search, setSearch] = React.useState(filters.search ?? '');
   const debouncedSearch = useDebouncedValue(search.trim(), 400);
-  const extra = moreFiltersCount(filters);
+  const count = activeFilterCount(filters);
+  const [open, setOpen] = React.useState(false);
   const links = monthLinks(filters, today);
+  const panelId = React.useId();
 
   const apply = React.useCallback(
     (next: Filters) => {
@@ -94,7 +103,75 @@ export function HistoryFilters({
     }
   }, [debouncedSearch, filters, apply]);
 
-  const backToMonth = () => apply(withPeriod(filters, monthOf(today)));
+  const labelOf = (options: Option[], id: string) =>
+    options.find((o) => o.value === id)?.label ?? id;
+  const datesLabel = hasRange(filters)
+    ? t('rangeLabel', {
+        from: filters.from ? shortDate(filters.from, locale) : '…',
+        to: filters.to ? shortDate(filters.to, locale) : '…',
+      })
+    : filters.period === 'all'
+      ? t('allTime')
+      : null;
+
+  const chips: { key: string; label: string; remove: () => void }[] = [
+    ...(filters.type
+      ? [
+          {
+            key: 'type',
+            label: t(`types.${filters.type}`),
+            remove: () => apply({ ...filters, type: undefined }),
+          },
+        ]
+      : []),
+    ...(filters.accountIds ?? []).map((id) => ({
+      key: `account:${id}`,
+      label: labelOf(accounts, id),
+      remove: () =>
+        apply({
+          ...filters,
+          accountIds: toggleValue(filters.accountIds, id, false),
+        }),
+    })),
+    ...(filters.categoryIds ?? []).map((id) => ({
+      key: `category:${id}`,
+      label: labelOf(categories, id),
+      remove: () =>
+        apply({
+          ...filters,
+          categoryIds: toggleValue(filters.categoryIds, id, false),
+        }),
+    })),
+    ...(datesLabel
+      ? [
+          {
+            key: 'dates',
+            label: datesLabel,
+            remove: () => apply(withPeriod(filters, monthOf(today))),
+          },
+        ]
+      : []),
+    ...(filters.aliasId
+      ? [
+          {
+            key: 'alias',
+            label: t('aliasFilter', { name: aliasName ?? '…' }),
+            remove: () => apply({ ...filters, aliasId: undefined }),
+          },
+        ]
+      : []),
+  ];
+
+  const clearAction = (onClear: () => void, disabled: boolean) => (
+    <button
+      type="button"
+      onClick={onClear}
+      disabled={disabled}
+      className="mr-1 rounded-md px-2 py-1 text-xs font-medium text-brand-ink outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40"
+    >
+      {tf('clearSelection')}
+    </button>
+  );
 
   return (
     <div
@@ -113,148 +190,165 @@ export function HistoryFilters({
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="min-h-12 shrink-0"
-              aria-label={t('moreFiltersLabel', { count: extra })}
-            >
-              <SlidersHorizontal aria-hidden />
-              <span className="hidden sm:inline">{t('moreFilters')}</span>
-              {extra > 0 ? (
-                <span className="flex size-5 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-brand-foreground">
-                  {extra}
-                </span>
-              ) : null}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            align="end"
-            className="flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-3 p-4"
+        <div className="relative shrink-0">
+          <Button
+            variant="outline"
+            className={cn('min-h-12', open && 'border-brand/40 bg-brand/5')}
+            aria-expanded={open}
+            aria-controls={panelId}
+            aria-label={t('moreFiltersLabel', { count })}
+            onClick={() => setOpen((value) => !value)}
           >
-            <Select
-              value={filters.accountId ?? ALL}
-              onValueChange={(v) =>
-                apply({ ...filters, accountId: v === ALL ? undefined : v })
-              }
+            <SlidersHorizontal aria-hidden />
+            <span className="hidden sm:inline">{t('moreFilters')}</span>
+          </Button>
+          {count > 0 ? (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-brand-foreground shadow-sm ring-2 ring-surface"
             >
-              <SelectTrigger
-                aria-label={t('account')}
-                className="min-h-12 w-full"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>{t('allAccounts')}</SelectItem>
-                {accounts.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.categoryId ?? ALL}
-              onValueChange={(v) =>
-                apply({ ...filters, categoryId: v === ALL ? undefined : v })
-              }
-            >
-              <SelectTrigger
-                aria-label={t('category')}
-                className="min-h-12 w-full"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>{t('allCategories')}</SelectItem>
-                {categories.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <p className="px-1 pt-1 text-xs font-medium text-on-surface-variant">
-              {t('range')}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <DatePicker
-                aria-label={t('from')}
-                placeholder={t('from')}
-                value={filters.from}
-                max={filters.to ?? today}
-                locale={locale}
-                displayFormat="d MMM yy"
-                clearable
-                clearLabel={t('clearDate')}
-                onChange={(from) => apply({ ...filters, from })}
-              />
-              <DatePicker
-                aria-label={t('to')}
-                placeholder={t('to')}
-                value={filters.to}
-                min={filters.from}
-                max={today}
-                locale={locale}
-                displayFormat="d MMM yy"
-                clearable
-                clearLabel={t('clearDate')}
-                onChange={(to) => apply({ ...filters, to })}
-              />
-            </div>
-            {filters.period !== 'all' && !hasRange(filters) ? (
-              <Button
-                variant="ghost"
-                className="justify-start"
-                onClick={() => apply(withPeriod(filters, 'all'))}
-              >
-                {t('allTime')}
-              </Button>
-            ) : null}
-
-            {hasFilters(filters) ? (
-              <Button
-                variant="ghost"
-                className="justify-start text-income"
-                onClick={() => {
-                  setSearch('');
-                  apply({ period: filters.period });
-                }}
-              >
-                <X aria-hidden /> {t('clearFilters')}
-              </Button>
-            ) : null}
-          </PopoverContent>
-        </Popover>
+              {count > 9 ? '9+' : count}
+            </span>
+          ) : null}
+        </div>
       </div>
 
-      {filters.aliasId ? (
-        <button
-          type="button"
-          onClick={() => apply({ ...filters, aliasId: undefined })}
-          aria-label={t('clearAlias')}
-          className="flex min-h-9 items-center gap-1.5 self-start rounded-full bg-primary/15 px-3 text-sm font-medium text-on-background hover:bg-primary/25"
+      {open ? (
+        <div
+          id={panelId}
+          className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] @2xl:flex-wrap @2xl:overflow-visible"
         >
-          {t('aliasFilter', { name: aliasName ?? '…' })}
-          <X aria-hidden className="size-4" />
-        </button>
+          <FilterMenu
+            icon={CreditCard}
+            label={tf('accounts')}
+            count={filters.accountIds?.length ?? 0}
+            action={clearAction(
+              () => apply({ ...filters, accountIds: undefined }),
+              !filters.accountIds?.length,
+            )}
+          >
+            {accounts.map((account) => (
+              <DropdownMenuCheckboxItem
+                key={account.value}
+                checked={filters.accountIds?.includes(account.value) ?? false}
+                onCheckedChange={(on) =>
+                  apply({
+                    ...filters,
+                    accountIds: toggleValue(
+                      filters.accountIds,
+                      account.value,
+                      on,
+                    ),
+                  })
+                }
+              >
+                <span className="min-w-0 flex-1 truncate">
+                  {account.label}
+                </span>
+              </DropdownMenuCheckboxItem>
+            ))}
+          </FilterMenu>
+
+          <FilterMenu
+            icon={Shapes}
+            label={tf('categories')}
+            count={filters.categoryIds?.length ?? 0}
+            action={clearAction(
+              () => apply({ ...filters, categoryIds: undefined }),
+              !filters.categoryIds?.length,
+            )}
+          >
+            {categories.map((category) => (
+              <DropdownMenuCheckboxItem
+                key={category.value}
+                checked={
+                  filters.categoryIds?.includes(category.value) ?? false
+                }
+                onCheckedChange={(on) =>
+                  apply({
+                    ...filters,
+                    categoryIds: toggleValue(
+                      filters.categoryIds,
+                      category.value,
+                      on,
+                    ),
+                  })
+                }
+              >
+                <span className="min-w-0 flex-1 truncate">
+                  {category.label}
+                </span>
+              </DropdownMenuCheckboxItem>
+            ))}
+          </FilterMenu>
+
+          <FilterMenu
+            icon={ArrowLeftRight}
+            label={tf('type')}
+            value={filters.type ? t(`types.${filters.type}`) : null}
+          >
+            <DropdownMenuRadioGroup
+              value={filters.type ?? ALL}
+              onValueChange={(v) =>
+                apply({
+                  ...filters,
+                  type: v === ALL ? undefined : (v as HistoryType),
+                })
+              }
+            >
+              {TYPE_OPTIONS.map((value) => (
+                <DropdownMenuRadioItem key={value} value={value}>
+                  {t(`types.${value}`)}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </FilterMenu>
+
+          <DatesMenu
+            filters={filters}
+            today={today}
+            value={datesLabel}
+            onApply={apply}
+          />
+        </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <FilterChipGroup
-          items={typeOptions}
-          activeValue={filters.type ?? ALL}
-          onSelect={(v) =>
-            apply({
-              ...filters,
-              type: v === ALL ? undefined : (v as HistoryType),
-            })
-          }
-          aria-label={t('filterByType')}
-        />
-        {links && filters.period !== 'all' ? (
+      {chips.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {chips.map((chip) => (
+            <span
+              key={chip.key}
+              className="flex max-w-full items-center gap-1 rounded-full border border-brand/30 bg-brand/10 py-1 pr-1 pl-3 text-xs font-medium text-brand-ink"
+            >
+              <span className="truncate">{chip.label}</span>
+              <button
+                type="button"
+                onClick={chip.remove}
+                aria-label={tf('remove', { name: chip.label })}
+                className="flex size-6 shrink-0 items-center justify-center rounded-full outline-none hover:bg-brand/15 focus-visible:ring-2 focus-visible:ring-ring/50"
+              >
+                <X aria-hidden className="size-3.5" />
+              </button>
+            </span>
+          ))}
+          {hasFilters(filters) ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearch('');
+                apply({ period: filters.period });
+              }}
+            >
+              {t('clearFilters')}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {links && filters.period !== 'all' ? (
+        <div className="flex justify-end">
           <MonthSwitcher
             as="h2"
             compact
@@ -266,23 +360,118 @@ export function HistoryFilters({
                 : null
             }
           />
-        ) : (
-          <button
-            type="button"
-            onClick={backToMonth}
-            aria-label={t('backToMonth')}
-            className="flex min-h-11 items-center gap-1.5 rounded-full bg-track px-4 text-sm font-medium text-on-background hover:bg-accent"
-          >
-            {hasRange(filters)
-              ? t('rangeLabel', {
-                  from: filters.from ? shortDate(filters.from, locale) : '…',
-                  to: filters.to ? shortDate(filters.to, locale) : '…',
-                })
-              : t('allTime')}
-            <X aria-hidden className="size-4" />
-          </button>
-        )}
-      </div>
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+/**
+ * "Fechas": month by month (the default), the whole history, or a range
+ * picked with two calendars. A popover, not a menu, so the calendars work.
+ */
+function DatesMenu({
+  filters,
+  today,
+  value,
+  onApply,
+}: {
+  filters: Filters;
+  today: DayKey;
+  value: string | null;
+  onApply: (next: Filters) => void;
+}) {
+  const t = useTranslations('history');
+  const tf = useTranslations('history.filters');
+  const locale = useLocale();
+  const mode = hasRange(filters)
+    ? 'range'
+    : filters.period === 'all'
+      ? 'all'
+      : 'month';
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className={cn(
+            'shrink-0 gap-1.5 rounded-full',
+            value && 'border-brand/40 bg-brand/5',
+          )}
+        >
+          <CalendarRange aria-hidden />
+          <span>{tf('dates')}</span>
+          {value ? (
+            <span className="font-normal text-on-surface-variant">
+              · {value}
+            </span>
+          ) : null}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-3 p-4"
+      >
+        <div
+          role="radiogroup"
+          aria-label={tf('dates')}
+          className="flex gap-1 rounded-full bg-track p-1"
+        >
+          {(['month', 'all'] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={mode === option}
+              onClick={() =>
+                onApply(
+                  withPeriod(
+                    filters,
+                    option === 'all' ? 'all' : monthOf(today),
+                  ),
+                )
+              }
+              className={cn(
+                'flex min-h-9 flex-1 items-center justify-center rounded-full px-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                mode === option
+                  ? 'bg-surface text-on-background shadow-sm'
+                  : 'text-on-surface-variant hover:text-on-background',
+              )}
+            >
+              {option === 'all' ? tf('allTime') : tf('month')}
+            </button>
+          ))}
+        </div>
+        <p className="px-1 text-xs font-medium text-on-surface-variant">
+          {t('range')}
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <DatePicker
+            aria-label={t('from')}
+            placeholder={t('from')}
+            value={filters.from}
+            max={filters.to ?? today}
+            locale={locale}
+            displayFormat="d MMM yy"
+            clearable
+            clearLabel={t('clearDate')}
+            onChange={(from) => onApply({ ...filters, from })}
+          />
+          <DatePicker
+            aria-label={t('to')}
+            placeholder={t('to')}
+            value={filters.to}
+            min={filters.from}
+            max={today}
+            locale={locale}
+            displayFormat="d MMM yy"
+            clearable
+            clearLabel={t('clearDate')}
+            onChange={(to) => onApply({ ...filters, to })}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

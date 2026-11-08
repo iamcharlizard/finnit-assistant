@@ -15,7 +15,9 @@ import {
   UpdateTransactionInput,
   TransactionsArgs,
   SimilarTransactionsArgs,
+  TransactionFilters,
 } from './dto/transaction.dto';
+import { TransactionSpending } from './dto/transaction-spending.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../../common/types/models/user.model';
@@ -35,7 +37,12 @@ import {
   PRIVATE_FALLBACK_NAME,
   PRIVATE_FALLBACK_NAMES,
 } from './transaction.mapper';
-import { resolveLocale, type LocaleRequest } from '../translation/locale';
+import {
+  AppLocale,
+  RequestLocale,
+  resolveLocale,
+  type LocaleRequest,
+} from '../translation/locale';
 
 @Resolver(() => Transaction)
 @UseGuards(JwtAuthGuard)
@@ -143,6 +150,19 @@ export class TransactionsResolver {
     @Args() args: TransactionsArgs,
   ): Promise<TransactionConnection> {
     return this.transactionsService.findMany(user.id, args);
+  }
+
+  @Query(() => TransactionSpending, {
+    description:
+      'Confirmed spending by category of the movements that pass these filters (the history chart)',
+  })
+  async transactionSpending(
+    @CurrentUser() user: User,
+    @RequestLocale() locale: AppLocale,
+    @Args('filters', { type: () => TransactionFilters, nullable: true })
+    filters?: TransactionFilters,
+  ): Promise<TransactionSpending> {
+    return this.transactionsService.spending(user.id, filters, locale);
   }
 
   @Query(() => Transaction, {

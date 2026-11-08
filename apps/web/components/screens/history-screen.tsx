@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 
 import { HistoryFilters } from '@/components/history/history-filters';
 import { HistoryList } from '@/components/history/history-list';
+import { HistoryMonth } from '@/components/history/history-month';
 import { TopCategoriesCard } from '@/components/history/top-categories-card';
 import { useStickyTops } from '@/components/history/use-sticky-tops';
 import { PageHeader } from '@/components/page-header';
@@ -47,12 +48,33 @@ export function HistoryScreen({
           />
         </div>
 
-        {data.topCategories.rows.length > 0 ? (
-          <aside className="flex flex-col gap-4 @3xl:sticky @3xl:top-[var(--history-top,6rem)] @3xl:self-start">
+        {/*
+          From @3xl: the month on top of the aside (below, the toolbar has
+          it), then the top categories.
+        */}
+        <aside className="flex flex-col gap-4 empty:hidden @3xl:sticky @3xl:top-[var(--history-top,6rem)] @3xl:self-start">
+          <MonthCard filters={filters} today={data.today} />
+          {data.topCategories.rows.length > 0 ? (
             <TopCategoriesCard data={data.topCategories} />
-          </aside>
-        ) : null}
+          ) : null}
+        </aside>
       </div>
+    </div>
+  );
+}
+
+/** The month switcher as a card over the aside (wide screens only). */
+function MonthCard({
+  filters,
+  today,
+}: {
+  filters: Filters;
+  today: HistoryData['today'];
+}) {
+  if (filters.period === 'all' || filters.from || filters.to) return null;
+  return (
+    <div className="hidden justify-center rounded-card border border-glass-border bg-glass p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] backdrop-blur-md @3xl:flex">
+      <HistoryMonth filters={filters} today={today} />
     </div>
   );
 }

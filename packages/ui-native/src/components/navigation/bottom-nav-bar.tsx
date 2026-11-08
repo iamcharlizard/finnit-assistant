@@ -41,31 +41,41 @@ export const BOTTOM_NAV_SPACE = BAR_HEIGHT + 12 + 16;
 
 const EASE = Easing.bezier(0.32, 0.72, 0, 1);
 
-/** The bar's outline: a pill with the notch bitten out of its top edge. */
-function barPath(width: number, height: number): string {
-  const r = height / 2;
-  const cx = width / 2;
+/**
+ * The bar's outline: a pill with the notch bitten out of its top edge,
+ * inset by `o` (half the stroke) so the 1px border is not clipped. The
+ * offset is in the coordinates (no x/y props on the Path, which Android
+ * renderers have placed differently).
+ */
+function barPath(width: number, height: number, o = 0.5): string {
+  const w = width - 2 * o;
+  const h = height - 2 * o;
+  const r = h / 2;
+  const cx = o + w / 2;
+  const top = o;
   const holeR = TAB / 2 + NOTCH_GAP;
   const reach = holeR + FILLET;
   const dx = Math.sqrt(reach ** 2 - (FILLET - HOLE_CY) ** 2);
   const hx = (dx * holeR) / reach;
-  const hy = HOLE_CY + ((FILLET - HOLE_CY) * holeR) / reach;
+  const hy = top + HOLE_CY + ((FILLET - HOLE_CY) * holeR) / reach;
   const n = (v: number) => v.toFixed(3);
   return [
-    `M${n(r)} 0`,
+    `M${n(o + r)} ${n(top)}`,
     `H${n(cx - dx)}`,
     `A${FILLET} ${FILLET} 0 0 1 ${n(cx - hx)} ${n(hy)}`,
     `A${holeR} ${holeR} 0 0 0 ${n(cx + hx)} ${n(hy)}`,
-    `A${FILLET} ${FILLET} 0 0 1 ${n(cx + dx)} 0`,
-    `H${n(width - r)}`,
-    `A${r} ${r} 0 0 1 ${n(width - r)} ${n(height)}`,
-    `H${n(r)}`,
-    `A${r} ${r} 0 0 1 ${n(r)} 0`,
+    `A${FILLET} ${FILLET} 0 0 1 ${n(cx + dx)} ${n(top)}`,
+    `H${n(o + w - r)}`,
+    `A${r} ${r} 0 0 1 ${n(o + w - r)} ${n(o + h)}`,
+    `H${n(o + r)}`,
+    `A${r} ${r} 0 0 1 ${n(o + r)} ${n(top)}`,
     'Z',
-  ].join('');
+  ].join(' ');
 }
 
-const BAR_PATH = barPath(BAR_WIDTH - 1, BAR_HEIGHT - 1);
+const BAR_PATH = barPath(BAR_WIDTH, BAR_HEIGHT);
+/** Room kept on each side of the bar when the screen is narrow. */
+const SIDE_ROOM = 8;
 
 /*
  * The "+" menu: five shortcuts in a wide, flat arc above the button. `k`
@@ -125,6 +135,8 @@ export function BottomNavBar({ tabs, more, actions, addLabel, closeLabel, label 
   const glassBorder = useToken('--glass-border');
   const elevation = useElevation();
   const step = Math.min(screenWidth * 0.18, 104);
+  // Narrow screens (or a large display size): shrink the whole bar to fit.
+  const scale = Math.min(1, (screenWidth - 2 * SIDE_ROOM) / BAR_WIDTH);
 
   const slots = [tabs[0], tabs[1], null, tabs[2]];
   const tabSlot = slots.findIndex((tab) => tab?.active);
@@ -176,11 +188,26 @@ export function BottomNavBar({ tabs, more, actions, addLabel, closeLabel, label 
       <View
         pointerEvents="box-none"
         accessibilityLabel={label}
-        style={[styles.bar, { bottom: Math.max(12, insets.bottom), width: BAR_WIDTH, height: BAR_HEIGHT }]}
+        style={[
+          styles.bar,
+          {
+            bottom: Math.max(12, insets.bottom) - (BAR_HEIGHT * (1 - scale)) / 2,
+            left: (screenWidth - BAR_WIDTH) / 2,
+            width: BAR_WIDTH,
+            height: BAR_HEIGHT,
+            transform: [{ scale }],
+          },
+        ]}
       >
         <View style={[StyleSheet.absoluteFill, styles.shadow, elevation]} pointerEvents="none" />
-        <Svg width={BAR_WIDTH} height={BAR_HEIGHT} style={StyleSheet.absoluteFill} pointerEvents="none">
-          <Path d={BAR_PATH} x={0.5} y={0.5} fill={fill} stroke={glassBorder} strokeWidth={1} />
+        <Svg
+          width={BAR_WIDTH}
+          height={BAR_HEIGHT}
+          viewBox={`0 0 ${BAR_WIDTH} ${BAR_HEIGHT}`}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        >
+          <Path d={BAR_PATH} fill={fill} stroke={glassBorder} strokeWidth={1} />
         </Svg>
         <TwView className="flex-1 flex-row items-center p-2" style={{ gap: GAP, margin: 1 }}>
           <Animated.View pointerEvents="none" style={[styles.highlight, highlightStyle]}>
@@ -295,7 +322,7 @@ function DialAction({
 
 const styles = StyleSheet.create({
   backdrop: { backgroundColor: 'rgba(0, 0, 0, 0.35)' },
-  bar: { position: 'absolute', alignSelf: 'center' },
+  bar: { position: 'absolute' },
   shadow: { borderRadius: BAR_HEIGHT / 2 },
   highlight: { position: 'absolute', left: PAD, top: PAD },
   anchor: { position: 'absolute', top: 0, left: '50%', width: 0, height: 0 },

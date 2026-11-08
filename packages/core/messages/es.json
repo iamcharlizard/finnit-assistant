@@ -312,7 +312,7 @@
       "alsoIn": "También: {list}"
     },
     "welcome": {
-      "title": "Hola, {name}. Te damos la bienvenida a Finnit",
+      "title": "Te damos la bienvenida a Finnit",
       "description": "Aún no tienes cuentas ni movimientos. Empieza conectando tu banco; aquí verás tus saldos, gastos del mes y próximos pagos.",
       "stepBank": "Conecta tu banco: importamos tus cuentas, saldos y movimientos.",
       "stepCategories": "Ve en qué se va tu dinero cada mes, por categoría.",

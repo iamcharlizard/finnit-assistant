@@ -12,13 +12,13 @@ const STEPS = [
 ] as const;
 
 /** First visit: no accounts and no movements yet. */
-export function DashboardWelcome({ firstName }: { firstName: string }) {
+export function DashboardWelcome() {
   const t = useTranslations();
   return (
     <Card className="mx-auto max-w-2xl items-start gap-5 p-6 sm:p-8">
       <div>
         <h1 className="mb-2 text-[28px] leading-9 font-bold text-on-background">
-          {t('dashboard.welcome.title', { name: firstName })}
+          {t('dashboard.welcome.title')}
         </h1>
         <p className="text-[15px] text-on-surface-variant">
           {t('dashboard.welcome.description')}

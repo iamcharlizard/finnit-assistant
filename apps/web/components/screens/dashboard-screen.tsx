@@ -34,7 +34,16 @@ export function DashboardScreen({
   const tc = useTranslations('common');
   const firstName = user.name.split(' ')[0] ?? user.name;
 
-  if (view.isEmpty) return <DashboardWelcome firstName={firstName} />;
+  // The greeting is the screen's header (so the generic "Finnit" bar is
+  // hidden); the welcome card goes under it.
+  if (view.isEmpty) {
+    return (
+      <div className="flex flex-col gap-5">
+        <PageHeader title={t('greeting', { name: firstName })} />
+        <DashboardWelcome />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">

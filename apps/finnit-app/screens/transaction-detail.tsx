@@ -328,9 +328,7 @@ export function TransactionDetailScreen() {
           ) : null}
           {recurringSheet ? (
             <LinkRecurringSheet
-              transactionId={view.id}
-              amountLabel={view.amount}
-              currency={data.currency}
+              transaction={data.transaction}
               onClose={() => setRecurringSheet(false)}
               onLinked={(name) => {
                 setRecurringSheet(false);

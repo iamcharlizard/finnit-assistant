@@ -21,6 +21,7 @@ import { ChoiceOption } from '@/components/loan-links/choice-option';
 import {
   linkRecurringPayment,
   loadRecurringLinkOptions,
+  linkIntro,
   toRecurringLinkOptions,
   type RecurringLinkOptionView,
 } from '@finnit/core/recurring/links';
@@ -39,15 +40,17 @@ type State =
  * and gives the expense its category. Mounted while open.
  */
 export function LinkRecurringDialog({
-  transactionId,
-  amountLabel,
-  currency,
+  transaction,
   onClose,
   onLinked,
 }: {
-  transactionId: string;
-  amountLabel: string;
-  currency: string;
+  /** The expense: its id, amount, currency and day. */
+  transaction: {
+    id: string;
+    amount: number;
+    currency: string;
+    txnDate: string;
+  };
   onClose: () => void;
   onLinked: (name: string) => void;
 }) {
@@ -61,10 +64,14 @@ export function LinkRecurringDialog({
 
   React.useEffect(() => {
     let live = true;
-    loadRecurringLinkOptions(transactionId, gql)
+    loadRecurringLinkOptions(transaction.id, gql)
       .then((raw) => {
         if (!live) return;
-        const { options, initial } = toRecurringLinkOptions(raw, currency, l);
+        const { options, initial } = toRecurringLinkOptions(
+          raw,
+          transaction.currency,
+          l,
+        );
         setState({ status: 'ready', options });
         setPicked(initial);
       })
@@ -79,7 +86,7 @@ export function LinkRecurringDialog({
     return () => {
       live = false;
     };
-  }, [transactionId, currency, l]);
+  }, [transaction.id, transaction.currency, l]);
 
   const options = state.status === 'ready' ? state.options : [];
   const choice = options.find((o) => o.occurrenceId === picked) ?? null;
@@ -90,7 +97,7 @@ export function LinkRecurringDialog({
     setSaving(true);
     setError(null);
     try {
-      await linkRecurringPayment(transactionId, choice.occurrenceId, gql);
+      await linkRecurringPayment(transaction.id, choice.occurrenceId, gql);
       exit.after(onLinked)(choice.name);
     } catch (e) {
       setError(transactionErrorMessage(e, l.t));
@@ -112,7 +119,7 @@ export function LinkRecurringDialog({
           <DialogHeader>
             <DialogTitle>{t('title')}</DialogTitle>
             <DialogDescription>
-              {t('description', { amount: amountLabel })}
+              {t('description', linkIntro(transaction, l))}
             </DialogDescription>
           </DialogHeader>
           <DialogBody>

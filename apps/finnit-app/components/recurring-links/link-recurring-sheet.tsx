@@ -4,6 +4,7 @@ import { useTranslations } from 'use-intl';
 import {
   linkRecurringPayment,
   loadRecurringLinkOptions,
+  linkIntro,
   toRecurringLinkOptions,
   type RecurringLinkOptionView,
 } from '@finnit/core/recurring/links';
@@ -29,15 +30,17 @@ type State =
  * takes its category. Mounted while open.
  */
 export function LinkRecurringSheet({
-  transactionId,
-  amountLabel,
-  currency,
+  transaction,
   onClose,
   onLinked,
 }: {
-  transactionId: string;
-  amountLabel: string;
-  currency: string;
+  /** The expense: its id, amount, currency and day. */
+  transaction: {
+    id: string;
+    amount: number;
+    currency: string;
+    txnDate: string;
+  };
   onClose: () => void;
   onLinked: (name: string) => void;
 }) {
@@ -51,10 +54,14 @@ export function LinkRecurringSheet({
 
   React.useEffect(() => {
     let live = true;
-    loadRecurringLinkOptions(transactionId, gql)
+    loadRecurringLinkOptions(transaction.id, gql)
       .then((raw) => {
         if (!live) return;
-        const { options, initial } = toRecurringLinkOptions(raw, currency, l);
+        const { options, initial } = toRecurringLinkOptions(
+          raw,
+          transaction.currency,
+          l,
+        );
         setState({ status: 'ready', options });
         setPicked(initial);
       })
@@ -69,7 +76,7 @@ export function LinkRecurringSheet({
     return () => {
       live = false;
     };
-  }, [transactionId, currency, gql, l]);
+  }, [transaction.id, transaction.currency, gql, l]);
 
   const options = state.status === 'ready' ? state.options : [];
   const choice = options.find((o) => o.occurrenceId === picked) ?? null;
@@ -79,7 +86,7 @@ export function LinkRecurringSheet({
     setSaving(true);
     setError(null);
     try {
-      await linkRecurringPayment(transactionId, choice.occurrenceId, gql);
+      await linkRecurringPayment(transaction.id, choice.occurrenceId, gql);
       onLinked(choice.name);
     } catch (e) {
       setError(transactionErrorMessage(e, l.t));
@@ -92,7 +99,7 @@ export function LinkRecurringSheet({
       open
       onOpenChange={(next) => !next && !saving && onClose()}
       title={t('title')}
-      description={t('description', { amount: amountLabel })}
+      description={t('description', linkIntro(transaction, l))}
       closeLabel={l.t('common.close')}
     >
       <TwScrollView

@@ -372,9 +372,7 @@ export function TransactionDetailScreen({
       ) : null}
       {dialog === 'linkRecurring' ? (
         <LinkRecurringDialog
-          transactionId={view.id}
-          amountLabel={view.amount}
-          currency={data.currency}
+          transaction={data.transaction}
           onClose={() => setDialog(null)}
           onLinked={(name) => {
             setDialog(null);

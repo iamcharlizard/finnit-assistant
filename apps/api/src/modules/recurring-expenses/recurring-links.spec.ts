@@ -11,37 +11,70 @@ describe('recurring links: ranking', () => {
     occurrenceId: 'o',
     dueDay: '2026-11-08',
     expectedAmount: 219,
+    isVariableAmount: false,
     sameAccount: false,
     nameMatches: false,
     ...over,
   });
 
-  it('proposes the payment due near the day with the same amount', () => {
-    const { ranked, proposed } = rankLinkCandidates(
+  it('offers only payments due near the day with a similar amount', () => {
+    const { ranked } = rankLinkCandidates(
       [
-        candidate({ occurrenceId: 'far', dueDay: '2026-10-08' }),
-        candidate({ occurrenceId: 'near', dueDay: '2026-11-06' }),
+        candidate({ occurrenceId: 'month-before', dueDay: '2026-10-08' }),
+        candidate({ occurrenceId: 'other-amount', expectedAmount: 53 }),
+        candidate({ occurrenceId: 'near', dueDay: '2026-11-03' }),
+        candidate({ occurrenceId: 'closer', dueDay: '2026-11-07' }),
+        // A variable bill fits within 50%.
+        candidate({
+          occurrenceId: 'variable',
+          expectedAmount: 300,
+          isVariableAmount: true,
+        }),
       ],
       movement,
     );
-    expect(ranked.map((c) => c.occurrenceId)).toEqual(['near', 'far']);
-    expect(proposed).toBe('near');
+    expect(ranked.map((c) => c.occurrenceId)).toEqual([
+      'variable',
+      'closer',
+      'near',
+    ]);
   });
 
-  it('proposes nothing when nothing is close', () => {
-    const { proposed } = rankLinkCandidates(
-      [candidate({ dueDay: '2026-10-01', expectedAmount: 500 })],
+  it('puts the one its text names first, and proposes it', () => {
+    const { ranked, proposed } = rankLinkCandidates(
+      [
+        candidate({ occurrenceId: 'same-day' }),
+        candidate({
+          occurrenceId: 'named',
+          dueDay: '2026-11-02',
+          nameMatches: true,
+        }),
+      ],
       movement,
     );
-    expect(proposed).toBeNull();
+    expect(ranked[0].occurrenceId).toBe('named');
+    expect(proposed).toBe('named');
   });
 
-  it('matches by pattern or name, without accents or case', () => {
+  it('proposes the only candidate, and none among several unnamed', () => {
+    expect(rankLinkCandidates([candidate({})], movement).proposed).toBe('o');
+    expect(
+      rankLinkCandidates(
+        [candidate({ occurrenceId: 'a' }), candidate({ occurrenceId: 'b' })],
+        movement,
+      ).proposed,
+    ).toBeNull();
+  });
+
+  it('matches by pattern or by name, like the bank sync', () => {
     expect(
       namesMatch('NETFLIX.COM 866', { name: 'Netflix', merchantPattern: null }),
     ).toBe(true);
     expect(
-      namesMatch('Gimnasio Spórt', { name: 'Gym', merchantPattern: 'sport' }),
+      namesMatch('PAYPAL *SPORTCLUB', {
+        name: 'Gimnasio',
+        merchantPattern: 'SPORTCLUB',
+      }),
     ).toBe(true);
     expect(namesMatch('OXXO', { name: 'Netflix', merchantPattern: null })).toBe(
       false,
@@ -77,21 +110,25 @@ describe('RecurringLinksService', () => {
 
   it('offers the scheduled payments, the clear one proposed', async () => {
     prisma.transaction.findFirst.mockResolvedValue(expense as never);
-    prisma.recurringOccurrence.findMany.mockResolvedValue([
-      {
-        id: 'occ-1',
-        dueDate: new Date('2026-11-07T00:00:00Z'),
-        expectedAmount: 219,
-        status: 'upcoming',
-        recurringExpense: {
-          id: 'rec-1',
-          name: 'Netflix',
-          kind: 'subscription',
-          accountId: 'a1',
-          merchantPattern: null,
-          categoryId: 'streaming',
-        },
+    const occurrence = (id: string, dueDate: string, amount: number) => ({
+      id,
+      dueDate: new Date(`${dueDate}T00:00:00Z`),
+      expectedAmount: amount,
+      status: 'upcoming',
+      recurringExpense: {
+        id: `rec-${id}`,
+        name: id === 'occ-1' ? 'Netflix' : 'Termius',
+        kind: 'subscription',
+        accountId: 'a1',
+        merchantPattern: null,
+        categoryId: 'streaming',
+        isVariableAmount: false,
       },
+    });
+    prisma.recurringOccurrence.findMany.mockResolvedValue([
+      occurrence('occ-1', '2026-11-07', 219),
+      // Another amount: not offered.
+      occurrence('occ-2', '2026-11-08', 53),
     ] as never);
 
     const options = await service.options('user-1', 'tx-1');
@@ -111,12 +148,23 @@ describe('RecurringLinksService', () => {
     });
   });
 
+  const linked = (over: Record<string, unknown> = {}) => ({
+    id: 'occ-1',
+    status: 'upcoming',
+    transactionId: null,
+    recurringExpense: {
+      id: 'rec-1',
+      name: 'Netflix',
+      debtId: null,
+      categoryId: 'streaming',
+      merchantPattern: null,
+    },
+    ...over,
+  });
+
   it('marks the payment paid and gives the expense its category', async () => {
     prisma.transaction.findFirst.mockResolvedValue(expense as never);
-    prisma.recurringOccurrence.findFirst.mockResolvedValue({
-      id: 'occ-1',
-      recurringExpense: { debtId: null, categoryId: 'streaming' },
-    } as never);
+    prisma.recurringOccurrence.findFirst.mockResolvedValue(linked() as never);
 
     await service.link('user-1', 'tx-1', 'occ-1');
 
@@ -132,6 +180,38 @@ describe('RecurringLinksService', () => {
         categorySource: 'manual',
         suggestedCategoryId: null,
       },
+    });
+    // The text already names it: nothing to learn.
+    expect(prisma.recurringExpense.update).not.toHaveBeenCalled();
+  });
+
+  it('learns the bank text so the next syncs link by themselves', async () => {
+    prisma.transaction.findFirst.mockResolvedValue({
+      ...expense,
+      merchantName: 'PAYPAL *NFX 4029357733',
+    } as never);
+    prisma.recurringOccurrence.findFirst.mockResolvedValue(linked() as never);
+
+    await service.link('user-1', 'tx-1', 'occ-1');
+
+    expect(prisma.recurringExpense.update).toHaveBeenCalledWith({
+      where: { id: 'rec-1' },
+      data: { merchantPattern: 'PAYPAL NFX' },
+    });
+  });
+
+  it('gives a payment marked paid by hand its movement', async () => {
+    prisma.transaction.findFirst.mockResolvedValue(expense as never);
+    prisma.recurringOccurrence.findFirst.mockResolvedValue(
+      linked({ status: 'paid' }) as never,
+    );
+
+    await service.link('user-1', 'tx-1', 'occ-1');
+
+    expect(recurring.markOccurrencePaid).not.toHaveBeenCalled();
+    expect(prisma.recurringOccurrence.update).toHaveBeenCalledWith({
+      where: { id: 'occ-1' },
+      data: { transactionId: 'tx-1', matchedBy: 'manual' },
     });
   });
 
@@ -151,10 +231,17 @@ describe('RecurringLinksService', () => {
       'already pays',
     );
     prisma.transaction.findFirst.mockResolvedValueOnce(expense as never);
-    prisma.recurringOccurrence.findFirst.mockResolvedValueOnce({
-      id: 'occ-2',
-      recurringExpense: { debtId: 'd1', categoryId: null },
-    } as never);
+    prisma.recurringOccurrence.findFirst.mockResolvedValueOnce(
+      linked({
+        recurringExpense: {
+          id: 'r2',
+          name: 'Préstamo',
+          debtId: 'd1',
+          categoryId: null,
+          merchantPattern: null,
+        },
+      }) as never,
+    );
     await expect(service.link('user-1', 'tx-1', 'occ-2')).rejects.toThrow(
       'from the loan',
     );

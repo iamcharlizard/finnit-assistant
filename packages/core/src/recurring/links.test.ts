@@ -30,6 +30,17 @@ describe('linking an expense to a recurring payment', () => {
           categoryId: null,
           proposed: false,
         },
+        {
+          occurrenceId: 'o3',
+          recurringExpenseId: 'r3',
+          name: 'Luz',
+          kind: 'utility',
+          dueDate: '2026-11-05T00:00:00.000Z',
+          expectedAmount: 450,
+          status: 'paid',
+          categoryId: null,
+          proposed: false,
+        },
       ],
       'MXN',
       testLocalizer('es'),
@@ -37,7 +48,11 @@ describe('linking an expense to a recurring payment', () => {
     assert.equal(initial, 'o1');
     assert.deepEqual(
       options.map((o) => o.detail),
-      ['Vence el 7 nov · $219.00', 'Vencido el 30 oct · $600.00'],
+      [
+        'Vence el 7 nov · $219.00',
+        'Vencido el 30 oct · $600.00',
+        'Pagado sin movimiento · 5 nov · $450.00',
+      ],
     );
   });
 });

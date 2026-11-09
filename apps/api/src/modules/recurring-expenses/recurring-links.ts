@@ -1,77 +1,77 @@
 /**
  * Linking an expense to the recurring payment it paid (a subscription, a
  * membership, a service…): which scheduled payments to offer and which one
- * to propose. Loans have their own flow (debts/loan-links).
+ * to propose. The rules are the bank sync's (`matchOccurrences`): due near
+ * the movement's day and a similar amount; the text naming the expense makes
+ * it the clear one. Loans have their own flow (debts/loan-links).
  */
+import {
+  OCCURRENCE_DATE_WINDOW_DAYS,
+  fitsRecurringAmount,
+  identifiesRecurring,
+} from '../statements/reconciliation/matching';
+import { normalizeText } from '../statements/parsing/parse-utils';
 
-/** How far from the movement's day a scheduled payment is offered. */
-export const LINK_WINDOW_DAYS = 45;
-/** Proposed when this close in date and amount. */
-export const PROPOSE_DAYS = 10;
-export const PROPOSE_AMOUNT_SHARE = 0.15;
+/** Scheduled payments due this many days from the movement are offered. */
+export const LINK_WINDOW_DAYS = OCCURRENCE_DATE_WINDOW_DAYS;
 
 export interface LinkCandidate {
   occurrenceId: string;
   dueDay: string;
   expectedAmount: number;
+  isVariableAmount: boolean;
+  /** The recurring expense's pattern (or name) appears in the movement's text. */
+  nameMatches: boolean;
   /** The recurring expense is paid with the movement's account. */
   sameAccount: boolean;
-  /** The recurring expense's text matches the movement's. */
-  nameMatches: boolean;
 }
 
 const dayDiff = (a: string, b: string) =>
   Math.abs(Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) /
   86_400_000;
 
-/** Lower is closer: days apart, amount share apart, account and name. */
-export function linkScore(
-  candidate: LinkCandidate,
-  movement: { day: string; amount: number },
-): number {
-  const days = dayDiff(candidate.dueDay, movement.day);
-  const amountShare =
-    Math.abs(candidate.expectedAmount - movement.amount) /
-    Math.max(movement.amount, 0.01);
-  return (
-    days +
-    amountShare * 30 -
-    (candidate.sameAccount ? 5 : 0) -
-    (candidate.nameMatches ? 15 : 0)
-  );
-}
-
-/** Closest first; the first is proposed when it is clearly the one. */
+/**
+ * The payments the movement may be: due within the window and with a
+ * similar amount, the ones its text names first, then the closest in date
+ * (and amount). The first is proposed when its text names it or it is the
+ * only one.
+ */
 export function rankLinkCandidates<T extends LinkCandidate>(
   candidates: ReadonlyArray<T>,
   movement: { day: string; amount: number },
 ): { ranked: T[]; proposed: string | null } {
-  const ranked = [...candidates].sort(
-    (a, b) => linkScore(a, movement) - linkScore(b, movement),
+  const fitting = candidates.filter(
+    (c) =>
+      dayDiff(c.dueDay, movement.day) <= LINK_WINDOW_DAYS &&
+      fitsRecurringAmount(
+        movement.amount,
+        c.expectedAmount,
+        c.isVariableAmount,
+      ),
+  );
+  const ranked = [...fitting].sort(
+    (a, b) =>
+      Number(b.nameMatches) - Number(a.nameMatches) ||
+      dayDiff(a.dueDay, movement.day) - dayDiff(b.dueDay, movement.day) ||
+      Math.abs(a.expectedAmount - movement.amount) -
+        Math.abs(b.expectedAmount - movement.amount) ||
+      Number(b.sameAccount) - Number(a.sameAccount),
   );
   const best = ranked[0];
   const proposed =
-    best &&
-    (best.nameMatches ||
-      (dayDiff(best.dueDay, movement.day) <= PROPOSE_DAYS &&
-        Math.abs(best.expectedAmount - movement.amount) <=
-          movement.amount * PROPOSE_AMOUNT_SHARE))
+    best && (best.nameMatches || ranked.length === 1)
       ? best.occurrenceId
       : null;
   return { ranked, proposed };
 }
-
-const normalize = (text: string) =>
-  text.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
 
 /** The expense's pattern (or name) appears in the movement's text. */
 export function namesMatch(
   movementText: string,
   expense: { name: string; merchantPattern: string | null },
 ): boolean {
-  const text = normalize(movementText);
-  const needles = [expense.merchantPattern, expense.name]
-    .map((n) => (n ? normalize(n).trim() : ''))
-    .filter((n) => n.length >= 3);
-  return needles.some((n) => text.includes(n));
+  return identifiesRecurring(normalizeText(movementText), {
+    merchantPattern: expense.merchantPattern,
+    expenseName: expense.name,
+  });
 }

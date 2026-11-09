@@ -179,15 +179,30 @@ function identifies(
   return identifiesRecurring(lineText(line), occurrence);
 }
 
+/**
+ * Whether an amount pays a recurring payment of `expected`: within 15%
+ * (a price change), or 50% for variable bills; never less than $1 apart.
+ */
+export function fitsRecurringAmount(
+  amount: number,
+  expected: number,
+  isVariableAmount: boolean,
+): boolean {
+  const tolerance = isVariableAmount
+    ? VARIABLE_AMOUNT_TOLERANCE
+    : FIXED_AMOUNT_TOLERANCE;
+  return Math.abs(amount - expected) <= Math.max(1, expected * tolerance);
+}
+
 function amountFits(
   line: LineToMatch,
   occurrence: CandidateOccurrence,
 ): boolean {
-  const tolerance = occurrence.isVariableAmount
-    ? VARIABLE_AMOUNT_TOLERANCE
-    : FIXED_AMOUNT_TOLERANCE;
-  const expected = occurrence.expectedAmount;
-  return Math.abs(line.amount - expected) <= Math.max(1, expected * tolerance);
+  return fitsRecurringAmount(
+    line.amount,
+    occurrence.expectedAmount,
+    occurrence.isVariableAmount,
+  );
 }
 
 /**

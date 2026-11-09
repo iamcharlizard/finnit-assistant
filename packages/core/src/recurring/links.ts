@@ -6,8 +6,10 @@ import { formatMoney } from '../finance/money';
 /**
  * "Ligar a gasto recurrente" from an expense's detail: the scheduled
  * payments (subscriptions, memberships, services; loans have their own) it
- * may have paid. Linking marks that payment paid and gives the expense the
- * recurring expense's category.
+ * may have paid: due near its day with a similar amount (the bank sync's
+ * rules), pending, missed or paid without a movement. Linking marks that
+ * payment paid, gives the expense the recurring expense's category and
+ * teaches the expense its bank text, so the next syncs link by themselves.
  */
 export interface ApiRecurringLinkOption {
   occurrenceId: string;
@@ -48,7 +50,9 @@ export function toRecurringLinkOptions(
       detail: t(
         o.status === 'missed'
           ? 'transaction.linkRecurring.missed'
-          : 'transaction.linkRecurring.due',
+          : o.status === 'paid'
+            ? 'transaction.linkRecurring.paidWithout'
+            : 'transaction.linkRecurring.due',
         {
           date: shortDate(dayKeyOf(o.dueDate), locale),
           amount: formatMoney(o.expectedAmount, currency, locale),
@@ -77,4 +81,15 @@ export async function linkRecurringPayment(
   run: GqlRunner,
 ): Promise<void> {
   await run(LINK_RECURRING_MUTATION, { transactionId, occurrenceId });
+}
+
+/** The movement as the dialog's description names it: "7 nov", "$219.00". */
+export function linkIntro(
+  tx: { amount: number; currency: string; txnDate: string },
+  { locale }: Pick<Localizer, 'locale'>,
+): { date: string; amount: string } {
+  return {
+    date: shortDate(dayKeyOf(tx.txnDate), locale),
+    amount: formatMoney(Math.abs(tx.amount), tx.currency, locale),
+  };
 }

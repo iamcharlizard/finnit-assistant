@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   CategorySource,
+  OccurrenceMatchSource,
   OccurrenceStatus,
   TransactionType,
 } from '@finnit/database';
@@ -18,10 +19,17 @@ import {
   namesMatch,
   rankLinkCandidates,
 } from './recurring-links';
+import { normalizeMerchant } from './suggestions/detect';
 
 const dayOf = (date: Date) => date.toISOString().slice(0, 10);
 const shiftDays = (date: Date, days: number) =>
   new Date(date.getTime() + days * 86_400_000);
+
+/** The bank's text of a movement (what a recurring expense's pattern is looked for in). */
+const movementText = (movement: {
+  merchantName: string | null;
+  description: string | null;
+}) => [movement.merchantName, movement.description].filter(Boolean).join(' ');
 
 /**
  * An expense that paid a recurring payment (a subscription, a membership…):
@@ -35,7 +43,11 @@ export class RecurringLinksService {
     private readonly recurring: RecurringExpensesService,
   ) {}
 
-  /** The scheduled payments the expense may have paid, closest first. */
+  /**
+   * The scheduled payments the expense may have paid: due near its day with
+   * a similar amount (the bank sync's rules), pending, missed or marked paid
+   * without a movement.
+   */
   async options(
     userId: string,
     transactionId: string,
@@ -44,14 +56,19 @@ export class RecurringLinksService {
     const occurrences = await this.prisma.recurringOccurrence.findMany({
       where: {
         transactionId: null,
-        status: { in: [OccurrenceStatus.upcoming, OccurrenceStatus.missed] },
+        status: {
+          in: [
+            OccurrenceStatus.upcoming,
+            OccurrenceStatus.missed,
+            OccurrenceStatus.paid,
+          ],
+        },
         dueDate: {
           gte: shiftDays(movement.txnDate, -LINK_WINDOW_DAYS),
           lte: shiftDays(movement.txnDate, LINK_WINDOW_DAYS),
         },
         recurringExpense: {
           userId,
-          active: true,
           debtId: null,
           currency: movement.currency,
         },
@@ -65,24 +82,20 @@ export class RecurringLinksService {
             accountId: true,
             merchantPattern: true,
             categoryId: true,
+            isVariableAmount: true,
           },
         },
       },
       take: 200,
     });
-    const text = [
-      movement.merchantName,
-      movement.description,
-      movement.aliasName,
-    ]
-      .filter(Boolean)
-      .join(' ');
+    const text = movementText(movement);
     const { ranked, proposed } = rankLinkCandidates(
       occurrences.map((o) => ({
         occurrence: o,
         occurrenceId: o.id,
         dueDay: dayOf(o.dueDate),
         expectedAmount: Number(o.expectedAmount),
+        isVariableAmount: o.recurringExpense.isVariableAmount,
         sameAccount: o.recurringExpense.accountId === movement.accountId,
         nameMatches: namesMatch(text, o.recurringExpense),
       })),
@@ -103,40 +116,81 @@ export class RecurringLinksService {
 
   /**
    * Links the expense to that scheduled payment: the payment is paid with
-   * it, and the expense takes the recurring expense's category.
+   * it (one marked paid without a movement takes it), the expense takes the
+   * recurring expense's category and, when the expense has no merchant
+   * pattern yet, its bank text becomes it, so the next syncs link by
+   * themselves.
    */
   async link(
     userId: string,
     transactionId: string,
     occurrenceId: string,
   ): Promise<boolean> {
-    await this.linkable(userId, transactionId);
+    const movement = await this.linkable(userId, transactionId);
     const occurrence = await this.prisma.recurringOccurrence.findFirst({
       where: { id: occurrenceId, recurringExpense: { userId } },
       include: {
-        recurringExpense: { select: { debtId: true, categoryId: true } },
+        recurringExpense: {
+          select: {
+            id: true,
+            name: true,
+            debtId: true,
+            categoryId: true,
+            merchantPattern: true,
+          },
+        },
       },
     });
     if (!occurrence) throw new NotFoundError('Recurring payment not found');
-    if (occurrence.recurringExpense.debtId) {
+    const expense = occurrence.recurringExpense;
+    if (expense.debtId) {
       throw new ValidationError('Loan payments are linked from the loan');
     }
-    await this.recurring.markOccurrencePaid(
-      occurrenceId,
-      userId,
-      transactionId,
-    );
-    const categoryId = occurrence.recurringExpense.categoryId;
-    if (categoryId) {
-      await this.prisma.transaction.update({
-        where: { id: transactionId },
-        data: {
-          categoryId,
-          categorySource: CategorySource.manual,
-          suggestedCategoryId: null,
-        },
-      });
+    if (occurrence.transactionId) {
+      throw new ConflictError('This payment already has its movement');
     }
+
+    if (occurrence.status === OccurrenceStatus.paid) {
+      // Paid by hand before: it only gets its movement.
+      await this.prisma.recurringOccurrence.update({
+        where: { id: occurrence.id },
+        data: { transactionId, matchedBy: OccurrenceMatchSource.manual },
+      });
+    } else {
+      await this.recurring.markOccurrencePaid(
+        occurrenceId,
+        userId,
+        transactionId,
+      );
+    }
+
+    const pattern = normalizeMerchant(
+      movement.merchantName || movement.description || '',
+    );
+    await this.prisma.$transaction([
+      ...(expense.categoryId
+        ? [
+            this.prisma.transaction.update({
+              where: { id: transactionId },
+              data: {
+                categoryId: expense.categoryId,
+                categorySource: CategorySource.manual,
+                suggestedCategoryId: null,
+              },
+            }),
+          ]
+        : []),
+      ...(!expense.merchantPattern &&
+      pattern &&
+      !namesMatch(movementText(movement), expense)
+        ? [
+            this.prisma.recurringExpense.update({
+              where: { id: expense.id },
+              data: { merchantPattern: pattern },
+            }),
+          ]
+        : []),
+    ]);
     return true;
   }
 

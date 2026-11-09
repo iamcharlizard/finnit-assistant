@@ -2729,14 +2729,15 @@
     "linkRecurring": {
       "action": "Ligar a gasto recurrente",
       "title": "Ligar a gasto recurrente",
-      "description": "Elige el pago que cubrió este gasto de {amount}. Se marcará como pagado y el gasto tomará su categoría.",
+      "description": "Pagos recurrentes que vencían cerca del {date} con un monto parecido a {amount}. El que elijas queda pagado con este gasto, el gasto toma su categoría y las próximas sincronizaciones lo ligan solas.",
       "due": "Vence el {date} · {amount}",
       "missed": "Vencido el {date} · {amount}",
       "proposed": "Sugerido",
-      "empty": "No hay pagos recurrentes pendientes cerca de esta fecha.",
+      "empty": "Ningún pago recurrente vencía cerca de esta fecha con un monto parecido.",
       "loading": "Buscando pagos recurrentes…",
       "submit": "Ligar",
-      "done": "Ligado a {name}"
+      "done": "Ligado a {name}",
+      "paidWithout": "Pagado sin movimiento · {date} · {amount}"
     },
     "unlinkRecurring": {
       "action": "Desligar del gasto recurrente",

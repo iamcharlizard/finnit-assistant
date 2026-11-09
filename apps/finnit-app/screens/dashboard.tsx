@@ -12,16 +12,17 @@ import {
   type DashboardBudgetResult,
   type DashboardResult,
 } from '@finnit/core/dashboard/request';
-import { UPCOMING_DAYS, buildDashboardView } from '@finnit/core/dashboard/view';
+import { UPCOMING_DAYS, buildDashboardView, maskDashboardView } from '@finnit/core/dashboard/view';
 import { monthOf, todayKey } from '@finnit/core/finance/dates';
 import { TwView } from '@finnit/ui-native/lib/tw';
-import { StatCard } from '@finnit/ui-native/components/finance/stat-card';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
 import { SectionHeading } from '@finnit/ui-native/components/ui/section-heading';
 
 import { BudgetDashboardCard } from '@/components/budgets/budget-dashboard-card';
 import { BalanceSummary } from '@/components/dashboard/balance-summary';
+import { DashboardAccounts } from '@/components/dashboard/dashboard-accounts';
 import { DashboardDebts } from '@/components/dashboard/dashboard-debts';
+import { DashboardStats } from '@/components/dashboard/dashboard-stats';
 import { DashboardWelcome } from '@/components/dashboard/dashboard-welcome';
 import { PaymentRow } from '@/components/finance/payment-row';
 import { TextLink } from '@/components/finance/text-link';
@@ -29,8 +30,13 @@ import { Screen } from '@/components/shell/screen';
 import { useAuth } from '@/contexts/AuthContext';
 import { useView } from '@/lib/graphql/use-view';
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
+import { useAmountsVisibility } from '@/lib/privacy/amounts-visibility';
 
-/** Home: balance, the month's income and expenses, budget, upcoming payments and debts. */
+/**
+ * Home: the available balance (tap: Cuentas; the eye hides every amount),
+ * the analytics in a sideways row, the accounts, budget, upcoming payments
+ * and debts.
+ */
 export function DashboardScreen() {
   const t = useTranslations('dashboard');
   const tc = useTranslations('common');
@@ -41,11 +47,13 @@ export function DashboardScreen() {
   const month = monthOf(today);
   const firstName = user?.name.split(' ')[0] ?? '';
 
-  const { view, loading, error, refreshing, refresh } = useView({
+  const { hidden } = useAmountsVisibility();
+  const { view: fullView, loading, error, refreshing, refresh } = useView({
     query: DASHBOARD_QUERY,
     variables: dashboardVariables(today),
     build: (data: DashboardResult, loc) => buildDashboardView(dashboardData(data), { today, month }, loc),
   });
+  const view = fullView && hidden ? maskDashboardView(fullView) : fullView;
   const [budgetResult, refetchBudget] = useQuery<DashboardBudgetResult>({
     query: DASHBOARD_BUDGET_QUERY,
     variables: { ...month },
@@ -88,10 +96,8 @@ export function DashboardScreen() {
               action={{ label: tc('connectBank'), onPress: () => router.push('/connect-bank') }}
             />
           )}
-          <TwView className="gap-3">
-            <StatCard variant="income" label={t('incomeOf', { month: view.month.label })} amount={view.month.income} />
-            <StatCard variant="expense" label={t('expensesOf', { month: view.month.label })} amount={view.month.expenses} />
-          </TwView>
+          <DashboardStats stats={view.stats} />
+          {view.accounts.length > 0 ? <DashboardAccounts accounts={view.accounts} count={view.accountCount} /> : null}
           {budgetCard ? <BudgetDashboardCard card={budgetCard} /> : null}
           <TwView>
             <SectionHeading title={t('upcoming')} action={<TextLink href="/recurring" label={t('calendarLink')} />} />
@@ -109,7 +115,7 @@ export function DashboardScreen() {
               />
             )}
           </TwView>
-          {view.debts ? <DashboardDebts insights={view.debts.insights} today={view.debts.today} /> : null}
+          {view.debts ? <DashboardDebts insights={view.debts.insights} today={view.debts.today} hidden={hidden} /> : null}
         </TwView>
       ) : null}
     </Screen>

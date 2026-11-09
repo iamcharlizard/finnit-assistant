@@ -389,6 +389,8 @@ export interface AccountEditValues {
   archived: boolean;
   /** The user's cash account: it can't be archived. */
   defaultCash?: boolean;
+  /** Adds up to the total balance. */
+  includeInTotal?: boolean;
   nickname: string | null;
   design: { primaryColor: string; secondaryColor: string | null } | null;
   bank: string | null;

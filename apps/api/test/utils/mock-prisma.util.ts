@@ -62,6 +62,7 @@ export const mockAccountData: Account = {
   metadata: null,
   archived: false,
   isDefaultCash: false,
+  includeInTotal: true,
   bankDifferenceTransactionId: null,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),

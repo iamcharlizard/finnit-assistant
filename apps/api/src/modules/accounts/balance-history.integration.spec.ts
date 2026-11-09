@@ -177,6 +177,14 @@ const key = (date: Date) => date.toISOString().slice(0, 10);
         where: { id: archived.id },
         data: { archived: true },
       });
+      // Left out of the total by the user.
+      const apart = await accounts.create(own.id, {
+        type: AccountType.savings,
+        name: 'Apartado',
+        currency: 'MXN',
+        initialBalance: 777,
+      });
+      await accounts.update(apart.id, own.id, { includeInTotal: false });
       await transactions.create(own.id, {
         accountId: card.id,
         type: TransactionType.expense,

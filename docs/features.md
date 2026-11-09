@@ -45,7 +45,7 @@ Expo SDK 58 (React Native 0.88, React 19.3) con NativeWind v5 (`5.0.0-rc.1`). La
 |---|---|---|
 | Login (contraseña, Google, "Mantener sesión iniciada") | ✅ | Google requiere *development build* con `EXPO_PUBLIC_GOOGLE_*`; sin probar en dispositivo. |
 | Sesión: renovación del token, guardia de rutas, idioma de la cuenta | ✅ | — |
-| Inicio (saldo, mes, presupuesto, próximos pagos, deudas) | ✅ | — |
+| Inicio (saldo, analíticas, cuentas, presupuesto, próximos pagos, deudas) | ✅ | Saldo disponible centrado (toca: Cuentas) con el ojo de ocultar montos; las 4 analíticas en una fila con scroll horizontal (media pantalla cada una); tarjeta Cuentas (toca una: su detalle). Sin probar con sesión. |
 | Movimientos (búsqueda, tipo, mes, filtros, por día, "Cargar más") | ✅ | — |
 | Detalle y edición de un movimiento, PIN de privacidad | ✅ | Convertir en transferencia, adjuntos, crear nombre automático desde el editor. |
 | Nuevo movimiento: gasto, ingreso, transferencia / pago de tarjeta, duplicados | ✅ | Adjuntar comprobante al crear. |
@@ -90,7 +90,7 @@ Expo SDK 58 (React Native 0.88, React 19.3) con NativeWind v5 (`5.0.0-rc.1`). La
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| CRUD de cuentas (efectivo, débito, crédito, ahorro, e-wallet) | ✅ | 🟡 | ✅ | Web: `/accounts` (Cuentas y tarjetas): **Nueva cuenta** pregunta primero si conectar el banco (el flujo de Syncfy dentro del mismo modal; `?add=bank`) o agregarla a mano (`?add=1`); edición y archivado; Inicio muestra disponible, deuda en tarjetas y patrimonio neto. Móvil: ver «App móvil». |
+| CRUD de cuentas (efectivo, débito, crédito, ahorro, e-wallet) | ✅ | 🟡 | ✅ | Web: `/accounts` (Cuentas y tarjetas): **Nueva cuenta** pregunta primero si conectar el banco (el flujo de Syncfy dentro del mismo modal; `?add=bank`) o agregarla a mano (`?add=1`); edición y archivado; **Incluir en el saldo total** (switch al editar en web y en el detalle en móvil; `Account.includeInTotal`): excluida, no suma al disponible ni a la deuda de tarjetas del Inicio ni al total de Cuentas y tarjetas (`accountsBalanceHistory` la omite), y lleva la marca "No suma al total". Móvil: ver «App móvil». |
 | Cuenta de efectivo de cada usuario | ✅ | ✅ | ✅ | Todo usuario tiene una cuenta **Efectivo** ("Cash" en inglés) que no se puede eliminar, archivar ni cambiar de tipo (`Account.isDefaultCash`, índice único parcial por usuario). Se crea al dar de alta al usuario y, por si falta, al iniciar sesión (`ensureDefaultCashAccount`); la migración marcó la cuenta de efectivo más antigua de cada usuario o creó una. Se puede renombrar. Insignia "Tu efectivo". |
 | Ajuste de saldo sin ingreso/gasto falso | ✅ | ⏳ | ✅ | `setAccountBalance`: el usuario escribe el saldo real (tarjetas: lo que debe) y la diferencia se guarda como ajuste con signo, fechado hoy. Web: botón **Actualizar saldo** en `/accounts`. Los ajustes no se pueden eliminar (los antiguos no guardan su dirección): se corrige el saldo otra vez. `adjustAccountBalance` (delta) sigue disponible. |
 | Términos de tarjeta de crédito (corte, pago, tasa) | ✅ | 🟡 | ✅ | Modelo `CreditCardTerms`; `accounts` ya los incluye. Web: se capturan al dar de alta o editar la tarjeta; próximo corte y fecha de pago en Cuentas y en el Calendario. `setCreditCardTerms` / `removeCreditCardTerms`. |
@@ -175,7 +175,7 @@ Expo SDK 58 (React Native 0.88, React 19.3) con NativeWind v5 (`5.0.0-rc.1`). La
 
 | Funcionalidad | API | Móvil | Web | Notas |
 |---|---|---|---|---|
-| Resumen mensual (ingresos, gastos por categoría, neto) | ✅ | 🟡 | ✅ | `monthlyReport` (cuenta el mes completo en UTC). Web: Inicio (ingresos y gastos del mes), Analytics (gasto, tasa de ahorro y gastos por categoría agrupados en la categoría principal) e Historial (top categorías). |
+| Resumen mensual (ingresos, gastos por categoría, neto) | ✅ | 🟡 | ✅ | `monthlyReport` (cuenta el mes completo en UTC); `dailyCashFlow(from, to)` (ingresos y gastos confirmados por día, sin transferencias, hasta 92 días). Web: Inicio (analíticas: saldo total con tendencia de 30 días, gastos e ingresos del mes contra los mismos días del mes pasado y pagos pendientes en 14 días, con mini gráfica y %; el saldo compacto abre Cuentas; tarjeta Cuentas con su saldo; el ojo oculta todos los montos del Inicio en ese navegador —cookie `finnit-hide-amounts`—, mostrarlos pide el PIN de privacidad si hay y, sin PIN, ocultarlos sugiere crearlo), Analytics (gasto, tasa de ahorro y gastos por categoría agrupados en la categoría principal) e Historial (top categorías). |
 | Comparativa con el mes anterior y tendencias 3–6 meses | ⏳ | 🟡 | ✅ | Web: Analytics pide 6 `monthlyReport` en una consulta (cambio vs. mes anterior, ingresos vs. gastos de 6 meses). Móvil: ver «App móvil». |
 | Insights (gastos inusuales, top categorías) | ⏳ | ⏳ | ⏳ | |
 | Exportar a CSV | ⏳ | ⏳ | ⏳ | |

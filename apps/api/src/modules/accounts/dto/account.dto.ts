@@ -89,6 +89,14 @@ export class UpdateAccountInput {
   @IsBoolean()
   archived?: boolean;
 
+  @Field({
+    nullable: true,
+    description: 'Whether it adds up to the total balance',
+  })
+  @IsOptional()
+  @IsBoolean()
+  includeInTotal?: boolean;
+
   @Field(() => AccountMetadataInput, { nullable: true })
   @IsOptional()
   metadata?: AccountMetadataInput;

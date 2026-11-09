@@ -116,3 +116,17 @@ export class WhatIfResult {
   @Field()
   totalSavings: number;
 }
+
+@ObjectType({
+  description: 'Confirmed income and expenses of one day (transfers left out)',
+})
+export class DailyCashFlow {
+  @Field({ description: 'The day, YYYY-MM-DD' })
+  date: string;
+
+  @Field(() => Float)
+  income: number;
+
+  @Field(() => Float)
+  expenses: number;
+}

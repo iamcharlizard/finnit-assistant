@@ -5,6 +5,7 @@ import {
   MonthlyReport,
   CashFlowBaseline,
   CashFlowProjection,
+  DailyCashFlow,
   WhatIfInput,
   WhatIfResult,
 } from './dto/report.dto';
@@ -26,6 +27,18 @@ export class ReportsResolver {
     @RequestLocale() locale: AppLocale,
   ): Promise<MonthlyReport> {
     return this.reportsService.getMonthlyReport(user.id, year, month, locale);
+  }
+
+  @Query(() => [DailyCashFlow], {
+    description:
+      'Confirmed income and expenses per day, from/to YYYY-MM-DD (at most 92 days)',
+  })
+  async dailyCashFlow(
+    @CurrentUser() user: User,
+    @Args('from') from: string,
+    @Args('to') to: string,
+  ): Promise<DailyCashFlow[]> {
+    return this.reportsService.getDailyCashFlow(user.id, from, to);
   }
 
   @Query(() => [CashFlowProjection])

@@ -12,6 +12,7 @@ import { DebtTypeBars } from '@/components/debts/insights/debt-type-bars';
 import { buildDebtInsightsView } from '@finnit/core/debts/insights-view';
 import type { ApiDebtInsights } from '@finnit/core/debts/types';
 import { DEBTS_PATH } from '@finnit/core/debts/view';
+import { MASKED_AMOUNT } from '@finnit/core/finance/mask';
 import type { DayKey } from '@finnit/core/finance/dates';
 import { useLocalizer } from '@/lib/i18n/client';
 
@@ -27,17 +28,28 @@ const LINK_CLASS =
 export function DashboardDebts({
   insights,
   today,
+  hidden = false,
 }: {
   insights: ApiDebtInsights;
   today: DayKey;
+  /** Amounts hidden: figures masked and the charts left out. */
+  hidden?: boolean;
 }) {
   const l = useLocalizer();
   const t = useTranslations('dashboard.debts');
   const ti = useTranslations('debts.insights');
-  const view = React.useMemo(
+  const built = React.useMemo(
     () => buildDebtInsightsView(insights, { today, includeMsi: false }, l),
     [insights, today, l],
   );
+  const view = hidden
+    ? {
+        ...built,
+        current: MASKED_AMOUNT,
+        paid: MASKED_AMOUNT,
+        monthly: MASKED_AMOUNT,
+      }
+    : built;
 
   return (
     <section aria-label={t('title')} className="min-w-0">
@@ -102,15 +114,19 @@ export function DashboardDebts({
             {ti('currentVsTotal', { percent: view.paidPercent })}
           </p>
         </div>
-        <DebtTypeBars
-          bars={view.types}
-          className="@2xl:col-start-1 @7xl:col-start-auto"
-        />
-        <BalanceProjectionChart
-          points={view.projection}
-          paidOffLabel={view.paidOffLabel}
-          className="@2xl:col-start-2 @2xl:row-span-2 @2xl:row-start-1 @7xl:col-start-auto @7xl:row-span-1"
-        />
+        {hidden ? null : (
+          <>
+            <DebtTypeBars
+              bars={view.types}
+              className="@2xl:col-start-1 @7xl:col-start-auto"
+            />
+            <BalanceProjectionChart
+              points={view.projection}
+              paidOffLabel={view.paidOffLabel}
+              className="@2xl:col-start-2 @2xl:row-span-2 @2xl:row-start-1 @7xl:col-start-auto @7xl:row-span-1"
+            />
+          </>
+        )}
       </div>
     </section>
   );

@@ -347,6 +347,8 @@ model Account {
   // The user's cash account ("Efectivo"): every user has exactly one (partial
   // unique index in SQL); it can't be deleted, archived or change type.
   isDefaultCash  Boolean     @default(false)
+  // Whether it adds up to the total balance (home, "Cuentas y tarjetas").
+  includeInTotal Boolean     @default(true)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

@@ -270,6 +270,7 @@ export function mapTransaction(
         metadata: transaction.account.metadata as AccountMetadata,
         archived: transaction.account.archived,
         isDefaultCash: transaction.account.isDefaultCash ?? false,
+        includeInTotal: transaction.account.includeInTotal ?? true,
         createdAt: transaction.account.createdAt,
         updatedAt: transaction.account.updatedAt,
       },

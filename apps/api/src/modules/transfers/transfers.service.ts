@@ -240,6 +240,7 @@ export class TransfersService {
           metadata: Record<string, unknown> | null;
           archived: boolean;
           isDefaultCash?: boolean;
+          includeInTotal?: boolean;
           createdAt: Date;
           updatedAt: Date;
         } | null;
@@ -276,6 +277,7 @@ export class TransfersService {
           metadata: Record<string, unknown> | null;
           archived: boolean;
           isDefaultCash?: boolean;
+          includeInTotal?: boolean;
           createdAt: Date;
           updatedAt: Date;
         } | null;
@@ -318,6 +320,7 @@ export class TransfersService {
               metadata: t.fromTxn.account.metadata || undefined,
               archived: t.fromTxn.account.archived,
               isDefaultCash: t.fromTxn.account.isDefaultCash ?? false,
+              includeInTotal: t.fromTxn.account.includeInTotal ?? true,
               createdAt: t.fromTxn.account.createdAt,
               updatedAt: t.fromTxn.account.updatedAt,
             }
@@ -353,6 +356,7 @@ export class TransfersService {
               metadata: t.toTxn.account.metadata || undefined,
               archived: t.toTxn.account.archived,
               isDefaultCash: t.toTxn.account.isDefaultCash ?? false,
+              includeInTotal: t.toTxn.account.includeInTotal ?? true,
               createdAt: t.toTxn.account.createdAt,
               updatedAt: t.toTxn.account.updatedAt,
             }

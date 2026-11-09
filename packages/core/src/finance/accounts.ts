@@ -26,16 +26,25 @@ export function creditOwed(
   return Math.max(0, roundCents(-account.balanceCurrent));
 }
 
+/** Whether an account adds up to the total balance (the user can leave one out). */
+export function countsInTotal(account: {
+  archived: boolean;
+  includeInTotal?: boolean;
+}): boolean {
+  return !account.archived && account.includeInTotal !== false;
+}
+
 /**
  * Balances per currency, the main currency first (MXN when present,
- * otherwise the one with the most accounts). Archived accounts are left out.
+ * otherwise the one with the most accounts). Archived accounts and those
+ * left out of the total are skipped.
  */
 export function summarizeBalances(
   accounts: ReadonlyArray<ApiAccount>,
 ): CurrencyBalance[] {
   const byCurrency = new Map<string, CurrencyBalance>();
   for (const account of accounts) {
-    if (account.archived) continue;
+    if (!countsInTotal(account)) continue;
     const total = byCurrency.get(account.currency) ?? {
       currency: account.currency,
       available: 0,

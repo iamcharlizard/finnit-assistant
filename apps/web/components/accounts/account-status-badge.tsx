@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import { Archive, Link2, PencilLine, Wallet } from 'lucide-react';
+import { Archive, CircleSlash, Link2, PencilLine, Wallet } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
 
@@ -38,6 +38,16 @@ export function AccountStatusBadge({
   ) : (
     <Badge variant="muted">
       <PencilLine aria-hidden /> {t('manual')}
+    </Badge>
+  );
+}
+
+/** The account doesn't add up to the total balance (the user left it out). */
+export function ExcludedFromTotalBadge() {
+  const t = useTranslations('accounts.inTotal');
+  return (
+    <Badge variant="outline">
+      <CircleSlash aria-hidden /> {t('excluded')}
     </Badge>
   );
 }

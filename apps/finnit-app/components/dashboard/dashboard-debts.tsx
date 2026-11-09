@@ -14,6 +14,7 @@ import { BalanceProjectionChart } from '@/components/debts/insights/balance-proj
 import { DebtTypeBars } from '@/components/debts/insights/debt-type-bars';
 import { TextLink } from '@/components/finance/text-link';
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
+import { MASKED_AMOUNT } from '@finnit/core/finance/mask';
 
 function Figure({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
@@ -32,14 +33,24 @@ function Figure({ label, value, note }: { label: string; value: string; note?: s
  * the monthly payments with their share of income, and the two charts.
  * Card MSI plans are left out, as on the web.
  */
-export function DashboardDebts({ insights, today }: { insights: ApiDebtInsights; today: DayKey }) {
+export function DashboardDebts({
+  insights,
+  today,
+  hidden = false,
+}: {
+  insights: ApiDebtInsights;
+  today: DayKey;
+  /** Amounts hidden: figures masked and the charts left out. */
+  hidden?: boolean;
+}) {
   const l = useLocalizer();
   const t = useTranslations('dashboard.debts');
   const ti = useTranslations('debts.insights');
-  const view = React.useMemo(
+  const built = React.useMemo(
     () => buildDebtInsightsView(insights, { today, includeMsi: false }, l),
     [insights, today, l],
   );
+  const view = hidden ? { ...built, current: MASKED_AMOUNT, paid: MASKED_AMOUNT, monthly: MASKED_AMOUNT } : built;
   return (
     <TwView>
       <SectionHeading title={t('title')} action={<TextLink href={DEBTS_PATH} label={t('seeAll')} />} />
@@ -65,8 +76,12 @@ export function DashboardDebts({ insights, today }: { insights: ApiDebtInsights;
           />
           <Text className="text-xs text-on-surface-variant">{ti('currentVsTotal', { percent: view.paidPercent })}</Text>
         </TwView>
-        <DebtTypeBars bars={view.types} />
-        <BalanceProjectionChart points={view.projection} paidOffLabel={view.paidOffLabel} />
+        {hidden ? null : (
+          <>
+            <DebtTypeBars bars={view.types} />
+            <BalanceProjectionChart points={view.projection} paidOffLabel={view.paidOffLabel} />
+          </>
+        )}
       </TwView>
     </TwView>
   );

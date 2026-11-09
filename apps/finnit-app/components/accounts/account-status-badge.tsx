@@ -17,3 +17,9 @@ export function AccountStatusBadge({
   if (archived) return <Badge variant="outline" label={t('archived')} />;
   return linked ? <Badge variant="success" label={t('linked')} /> : <Badge variant="muted" label={t('manual')} />;
 }
+
+/** The account doesn't add up to the total balance (the user left it out). */
+export function ExcludedFromTotalBadge() {
+  const t = useTranslations('accounts.inTotal');
+  return <Badge variant="outline" label={t('excluded')} />;
+}

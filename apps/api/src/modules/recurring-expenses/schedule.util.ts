@@ -162,3 +162,38 @@ export function monthlyEquivalent(
   const perMonth = PER_YEAR[frequency] / 12 / Math.max(1, interval);
   return Math.round(amount * perMonth * 100) / 100;
 }
+
+/**
+ * The rule's rhythm within [from, to], also before its start date (a
+ * subscription registered after it was first paid) and ignoring its end:
+ * the same days of the month (or of the week) it is due on. Linking an old
+ * expense to it uses these dates.
+ */
+export function rhythmDatesBetween(
+  rule: ScheduleRule,
+  from: Date,
+  to: Date,
+): Date[] {
+  const start = toDateOnly(rule.startDate);
+  const first = toDateOnly(from);
+  const open = { ...rule, endDate: null };
+  if (start <= first) return dueDatesBetween(open, from, to);
+  const interval = Math.max(1, rule.interval);
+  let anchor: Date;
+  if (rule.frequency === RecurringFrequency.semimonthly) {
+    anchor = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), 1));
+  } else if (MONTH_STEP[rule.frequency]) {
+    const step = MONTH_STEP[rule.frequency]! * interval;
+    const months =
+      (start.getUTCFullYear() - first.getUTCFullYear()) * 12 +
+      start.getUTCMonth() -
+      first.getUTCMonth();
+    anchor = addMonthsClamped(start, -step * (Math.ceil(months / step) + 1));
+  } else {
+    const step =
+      (rule.frequency === RecurringFrequency.weekly ? 7 : 14) * interval;
+    const days = Math.round((start.getTime() - first.getTime()) / DAY_MS);
+    anchor = addDays(start, -step * (Math.ceil(days / step) + 1));
+  }
+  return dueDatesBetween({ ...open, startDate: anchor }, from, to);
+}

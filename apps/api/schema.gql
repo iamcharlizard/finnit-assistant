@@ -2016,9 +2016,14 @@ type Mutation {
   linkLoanPayment(occurrenceId: ID!, transactionId: ID!): Debt!
 
   """
-  Links an expense to the recurring payment it paid: marks it paid and gives the expense the recurring expense's category (undo with reopenRecurringPayment)
+  Links an expense to a recurring expense's payment of a month (default: the expense's): marks it paid, creating it when it wasn't generated, and gives the expense the recurring expense's category (undo with reopenRecurringPayment)
   """
-  linkRecurringPayment(occurrenceId: ID!, transactionId: ID!): Boolean!
+  linkRecurringPayment(
+    """YYYY-MM; default: the expense's month"""
+    month: String
+    recurringExpenseId: ID!
+    transactionId: ID!
+  ): Boolean!
 
   """
   Admin only: maps a Finnit user (by email) to an existing Syncfy user (id_user or id_external)
@@ -2503,9 +2508,9 @@ type Query {
   recurringExpensesSummary: RecurringExpensesSummary!
 
   """
-  Scheduled payments of recurring expenses (not loans) an expense may have paid, closest first
+  The recurring expenses (not loans) an expense may have paid, with their payment in each month around the expense's; those that fit first
   """
-  recurringLinkOptions(transactionId: ID!): [RecurringLinkOption!]!
+  recurringLinkOptions(transactionId: ID!): RecurringLinkOptions!
 
   """
   Prefilled loan for a suggestion that pays a loan; accept it with acceptRecurringSuggestionAsLoan
@@ -2758,21 +2763,58 @@ type RecurringKindTotal {
 }
 
 """
-A scheduled payment of a recurring expense (not a loan) that an expense may have paid
+A recurring expense (not a loan) an expense may have paid, with its payment in each month the dialog offers
 """
-type RecurringLinkOption {
+type RecurringLinkExpense {
+  active: Boolean!
+  amount: Float!
+
   """The category the expense takes when linked"""
   categoryId: ID
-  dueDate: DateTime!
-  expectedAmount: Float!
+
+  """
+  Its payment in the expense's month is due near its day with a similar amount
+  """
+  fits: Boolean!
+  id: ID!
   kind: RecurringExpenseKind!
   name: String!
-  occurrenceId: ID!
 
-  """Clearly the one (date, amount or name)"""
-  proposed: Boolean!
-  recurringExpenseId: ID!
-  status: OccurrenceStatus!
+  """Its pattern (or name) is in the expense's bank text"""
+  nameMatches: Boolean!
+  slots: [RecurringLinkSlot!]!
+}
+
+type RecurringLinkOptions {
+  """Those that fit first, then the rest"""
+  expenses: [RecurringLinkExpense!]!
+
+  """The expense's month (YYYY-MM), chosen by default"""
+  month: String!
+
+  """The months that can be chosen"""
+  months: [String!]!
+
+  """The one that fits best, selected by default"""
+  proposedId: ID
+}
+
+"""A recurring expense's payment in one month"""
+type RecurringLinkSlot {
+  dueDate: DateTime!
+  expectedAmount: Float!
+
+  """YYYY-MM"""
+  month: String!
+  status: RecurringLinkSlotStatus!
+}
+
+enum RecurringLinkSlotStatus {
+  linked
+  missed
+  paid_without_movement
+  pending
+  unscheduled
 }
 
 type RecurringOccurrence {

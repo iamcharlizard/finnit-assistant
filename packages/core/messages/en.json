@@ -2729,15 +2729,22 @@
     "linkRecurring": {
       "action": "Link to recurring expense",
       "title": "Link to recurring expense",
-      "description": "Recurring payments due near {date} with an amount close to {amount}. The one you pick is paid with this expense, the expense takes its category and the next syncs link it by themselves.",
+      "description": "Pick which recurring expense this {amount} expense from {date} paid, and for which month. That payment is paid with this expense, the expense takes its category and the next syncs link it by themselves.",
       "due": "Due {date} · {amount}",
       "missed": "Was due {date} · {amount}",
       "proposed": "Suggested",
-      "empty": "No recurring payment was due near this date with a similar amount.",
+      "empty": "You have no recurring expenses yet.",
       "loading": "Looking for recurring payments…",
       "submit": "Link",
       "done": "Linked to {name}",
-      "paidWithout": "Paid without a movement · {date} · {amount}"
+      "paidWithout": "Paid without a movement · {date} · {amount}",
+      "linked": "Already paid with another movement · {date}",
+      "unscheduled": "The {date} payment will be recorded · {amount}",
+      "month": "Payment month",
+      "search": "Search recurring expense",
+      "suggestedTitle": "Suggested",
+      "othersTitle": "Other recurring expenses",
+      "noResults": "No recurring expense has that name."
     },
     "unlinkRecurring": {
       "action": "Unlink from recurring expense",

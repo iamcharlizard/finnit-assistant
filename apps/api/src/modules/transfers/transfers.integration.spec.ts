@@ -22,6 +22,7 @@ import { TransfersService } from './transfers.service';
 import { TransferConversionService } from './transfer-conversion.service';
 import { TransferSuggestionsService } from './transfer-suggestions.service';
 import { TransferSuggestionAction } from './dto/transfer-suggestion.dto';
+import { ReportsService } from '../reports/reports.service';
 
 const DATABASE_URL = process.env.TRANSFERS_TEST_DATABASE_URL;
 
@@ -86,6 +87,7 @@ const DATABASE_URL = process.env.TRANSFERS_TEST_DATABASE_URL;
           MerchantAliasesService,
           MerchantRulesService,
           CategorizationService,
+          ReportsService,
           { provide: AiModelsService, useValue: {} },
         ],
       }).compile();
@@ -159,6 +161,92 @@ const DATABASE_URL = process.env.TRANSFERS_TEST_DATABASE_URL;
       ).toBeNull();
       expect(await balance(debitId)).toBe(debitBefore);
       expect(await balance(savingsId)).toBe(savingsBefore);
+    });
+
+    it('finds a card payment that showed up days apart, or months apart', async () => {
+      const card = await prisma.account.create({
+        data: {
+          userId,
+          name: 'Tarjeta',
+          type: AccountType.credit,
+          currency: 'MXN',
+          balanceCurrent: -5_000,
+        },
+      });
+      // Paid on Friday the 31st; the bank shows it on Monday the 3rd.
+      const paid = await bankMovement(
+        debitId,
+        TransactionType.expense,
+        3_210.55,
+        'PAGO TARJETA',
+        new Date('2026-11-03T00:00:00.000Z'),
+      );
+      const cardSide = (day: string) =>
+        prisma.transaction.create({
+          data: {
+            userId,
+            accountId: card.id,
+            type: TransactionType.adjustment,
+            amount: 3_210.55,
+            balanceEffect: 3_210.55,
+            currency: 'MXN',
+            txnDate: new Date(`${day}T00:00:00.000Z`),
+            description: 'SU PAGO GRACIAS',
+            source: TransactionSource.imported,
+          },
+        });
+      const far = await cardSide('2026-08-30');
+      const near = await cardSide('2026-10-31');
+
+      const found = await conversion.candidates(userId, paid.id, card.id);
+      expect(found.map((c) => c.id)).toEqual([near.id, far.id]);
+
+      // Picked by hand, a far one links too.
+      const transfer = await conversion.convert(userId, {
+        transactionId: paid.id,
+        counterpartAccountId: card.id,
+        counterpartTransactionId: far.id,
+      });
+      expect(transfer.toTxnId).toBe(far.id);
+      await conversion.undo(userId, transfer.id);
+    });
+
+    it('leaves categories out of the totals out of the reports', async () => {
+      const reports = new ReportsService(prisma);
+      const category = (name: string, excludeFromTotals: boolean) =>
+        prisma.category.create({
+          data: { userId, name, kind: 'expense', excludeFromTotals },
+        });
+      const counted = await category('Comida', false);
+      const untracked = await category('Sin seguimiento', true);
+      const day = new Date('2025-03-10T00:00:00.000Z');
+      const spend = async (amount: number, categoryId: string) => {
+        const row = await bankMovement(
+          debitId,
+          TransactionType.expense,
+          amount,
+          'X',
+          day,
+        );
+        await prisma.transaction.update({
+          where: { id: row.id },
+          data: { categoryId },
+        });
+      };
+      await spend(100, counted.id);
+      await spend(900, untracked.id);
+
+      const report = await reports.getMonthlyReport(userId, 2025, 3);
+      expect(report.totalExpenses).toBe(100);
+      expect(report.categoryBreakdown.map((c) => c.categoryId)).toEqual([
+        counted.id,
+      ]);
+      const flow = await reports.getDailyCashFlow(
+        userId,
+        '2025-03-10',
+        '2025-03-10',
+      );
+      expect(flow[0]!.expenses).toBe(100);
     });
 
     it('suggests the pair found in two synced accounts and links it', async () => {

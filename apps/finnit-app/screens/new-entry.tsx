@@ -39,7 +39,7 @@ import {
   type NewEntryData,
   type SimilarTransaction,
 } from '@finnit/core/new-entry/graphql';
-import { isCardPayment } from '@finnit/core/new-entry/options';
+import { hasCreditCard, isCardPayment } from '@finnit/core/new-entry/options';
 import {
   CONFIRM_RECEIPT_MUTATION,
   type ReceiptImport,
@@ -74,7 +74,8 @@ import {
 type Step =
   | { name: 'kind' }
   | { name: 'entry' }
-  | { name: 'transfer' }
+  /** `cards`: "Pago a tarjeta de crédito", only cards as the destination. */
+  | { name: 'transfer'; cards?: boolean }
   | { name: 'receipt' }
   | { name: 'duplicates'; matches: SimilarTransaction[] };
 type Busy = 'checking' | 'saving' | null;
@@ -154,21 +155,29 @@ export function NewEntryScreen() {
 
   const [initialApplied, setInitialApplied] = React.useState(!action);
 
-  function pickKind(kind: EntryKind) {
+  function pickKind(kind: EntryKind | 'cardPayment') {
     setSubmitError(null);
     setReceipt(null);
     setCheck([]);
     // Only the form the shortcut opened starts filled in.
     const filled = !initialApplied;
-    if (kind === 'transfer') {
+    if (kind === 'transfer' || kind === 'cardPayment') {
+      const cards = kind === 'cardPayment';
+      // With a single card, it is already the destination.
+      const openCards = accounts.filter(
+        (a) => a.type === 'credit' && !a.archived,
+      );
       setTransfer({
         ...emptyTransferDraft(todayKey()),
+        ...(cards && openCards.length === 1
+          ? { toAccountId: openCards[0]!.id }
+          : {}),
         ...(filled && to ? { toAccountId: to } : {}),
         ...(filled && amount ? { amount } : {}),
       });
       setLegPicks({});
       setTransferTried(false);
-      setStep({ name: 'transfer' });
+      setStep({ name: 'transfer', cards });
     } else {
       setEntry({
         ...emptyEntryDraft(kind, todayKey()),
@@ -188,7 +197,12 @@ export function NewEntryScreen() {
   // Opened from a "+" shortcut: straight to that step once accounts load.
   if (!initialApplied && data) {
     setInitialApplied(true);
-    if (action === 'expense' || action === 'income' || action === 'transfer')
+    if (
+      action === 'expense' ||
+      action === 'income' ||
+      action === 'transfer' ||
+      action === 'cardPayment'
+    )
       pickKind(action);
     else if (action === 'receipt') setStep({ name: 'receipt' });
   }
@@ -316,7 +330,7 @@ export function NewEntryScreen() {
     step.name === 'entry'
       ? t(`newEntry.titles.${entry.type}`)
       : step.name === 'transfer'
-        ? isCardPayment(accounts, transfer.toAccountId)
+        ? step.cards || isCardPayment(accounts, transfer.toAccountId)
           ? t('newEntry.titles.cardPayment')
           : t('newEntry.titles.transfer')
         : step.name === 'duplicates'
@@ -366,7 +380,13 @@ export function NewEntryScreen() {
         }}
       />
     );
-  else if (step.name === 'kind') body = <EntryKindPicker onPick={pickKind} />;
+  else if (step.name === 'kind')
+    body = (
+      <EntryKindPicker
+        onPick={pickKind}
+        withCardPayment={hasCreditCard(accounts)}
+      />
+    );
   else if (step.name === 'entry')
     body = (
       <EntryForm
@@ -402,6 +422,7 @@ export function NewEntryScreen() {
         submitError={submitError}
         onSubmit={submitTransfer}
         cardDueDate={due && /^\d{4}-\d{2}-\d{2}$/.test(due) ? due : undefined}
+        onlyCards={step.cards}
       />
     );
   else

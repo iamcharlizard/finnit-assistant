@@ -3,9 +3,11 @@ import { Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
 import {
+  ArrowLeftRight,
   CalendarClock,
   CheckCheck,
   CopyCheck,
+  CreditCard,
   Landmark,
   MoreHorizontal,
   PencilLine,
@@ -27,7 +29,10 @@ import {
   type TransactionDetailResult,
 } from '@finnit/core/transaction-detail/request';
 import { runPaymentAction } from '@finnit/core/recurring/api';
-import { UNDO_TRANSFER_CONVERSION_MUTATION } from '@finnit/core/transfers/convert';
+import {
+  UNDO_TRANSFER_CONVERSION_MUTATION,
+  type ConvertMode,
+} from '@finnit/core/transfers/convert';
 import { TwView } from '@finnit/ui-native/lib/tw';
 import { Button } from '@finnit/ui-native/components/ui/button';
 import { Text } from '@finnit/ui-native/components/ui/text';
@@ -38,6 +43,7 @@ import { LinkLoanSheet } from '@/components/loan-links/link-loan-sheet';
 import { UnlinkLoanSheet } from '@/components/loan-links/unlink-loan-sheet';
 import { LinkRecurringSheet } from '@/components/recurring-links/link-recurring-sheet';
 import { LinkCardInstallmentSheet } from '@/components/card-installments/link-card-installment-sheet';
+import { ConvertTransferSheet } from '@/components/transfers/convert-transfer-sheet';
 import {
   ActionsSheet,
   type DetailAction,
@@ -67,6 +73,9 @@ export function TransactionDetailScreen() {
   const today = todayKey();
   const [editing, setEditing] = React.useState(false);
   const [cardSheet, setCardSheet] = React.useState(false);
+  const [convertSheet, setConvertSheet] = React.useState<ConvertMode | null>(
+    null,
+  );
   const [loanSheet, setLoanSheet] = React.useState<'link' | 'unlink' | null>(
     null,
   );
@@ -168,6 +177,26 @@ export function TransactionDetailScreen() {
   const view = data?.view;
   const actions: DetailAction[] = view
     ? [
+        ...(view.convertSource
+          ? [
+              {
+                key: 'convert',
+                label: tx('convert.action'),
+                icon: ArrowLeftRight,
+                run: () => setConvertSheet('transfer'),
+              },
+            ]
+          : []),
+        ...(view.convertSource && view.canRecordCardPayment
+          ? [
+              {
+                key: 'cardPayment',
+                label: tx('cardPayment.action'),
+                icon: CreditCard,
+                run: () => setConvertSheet('cardPayment'),
+              },
+            ]
+          : []),
         ...(view.counterpart?.converted
           ? [
               {
@@ -346,6 +375,25 @@ export function TransactionDetailScreen() {
               onLinked={(name) => {
                 setRecurringSheet(false);
                 toast.success(t('linkRecurring.done', { name }));
+                changed();
+              }}
+            />
+          ) : null}
+          {convertSheet && view.convertSource ? (
+            <ConvertTransferSheet
+              source={view.convertSource}
+              mode={convertSheet}
+              onClose={() => setConvertSheet(null)}
+              onConverted={() => {
+                const mode = convertSheet;
+                setConvertSheet(null);
+                toast.success(
+                  tx(
+                    mode === 'cardPayment'
+                      ? 'cardPayment.done'
+                      : 'convert.done',
+                  ),
+                );
                 changed();
               }}
             />

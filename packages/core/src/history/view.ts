@@ -88,15 +88,18 @@ export function toHistoryRow(
           accountId: tx.accountId,
           currency: tx.currency,
           amount,
+          txnDate: tx.txnDate,
         }
       : null,
-    net: tx.isPending
-      ? 0
-      : tx.type === 'income'
-        ? amount
-        : tx.type === 'expense'
-          ? -amount
-          : 0,
+    // Pending movements and categories left out of the totals add nothing.
+    net:
+      tx.isPending || tx.category?.excludeFromTotals
+        ? 0
+        : tx.type === 'income'
+          ? amount
+          : tx.type === 'expense'
+            ? -amount
+            : 0,
     currency: tx.currency,
     value: amount,
     accountLabel: tx.account ? accountLabel(tx.account) : '',

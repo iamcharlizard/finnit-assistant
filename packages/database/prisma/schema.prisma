@@ -397,17 +397,20 @@ model CreditCardTerms {
 /// start; nobody edits it). Otherwise the user's own category, seen only by them.
 /// Global keys are unique through a partial index (Category_global_key_key).
 model Category {
-  id        String       @id @default(uuid())
-  userId    String? // null => global catalog
-  parentId  String?
-  name      String // English original; localized names live in CategoryTranslation
-  key       String? // catalog key, e.g. categories.food.groceries
-  isDefault Boolean      @default(false)
-  kind      CategoryKind @default(expense)
-  icon      String? // icon key the clients know; null => the parent's / by name
-  color     String? // color key the clients know; null => the icon's
-  sortOrder Int?
-  createdAt DateTime     @default(now())
+  id                String       @id @default(uuid())
+  userId            String? // null => global catalog
+  parentId          String?
+  name              String // English original; localized names live in CategoryTranslation
+  key               String? // catalog key, e.g. categories.food.groceries
+  isDefault         Boolean      @default(false)
+  kind              CategoryKind @default(expense)
+  icon              String? // icon key the clients know; null => the parent's / by name
+  color             String? // color key the clients know; null => the icon's
+  sortOrder         Int?
+  // A user's own category whose movements no sum or chart counts (they
+  // stay in the history and move balances); subcategories follow their parent.
+  excludeFromTotals Boolean      @default(false)
+  createdAt         DateTime     @default(now())
 
   user              User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
   parent            Category?             @relation("category_to_self", fields: [parentId], references: [id], onDelete: SetNull)

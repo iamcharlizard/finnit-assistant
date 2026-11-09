@@ -1,13 +1,16 @@
 import { View } from 'react-native';
 import { Tabs, useRouter, type Href } from 'expo-router';
 import { useTranslations } from 'use-intl';
-import { ArrowLeftRight, CircleArrowDown, CircleArrowUp, ScanLine, Smartphone } from 'lucide-react-native';
+import { ArrowLeftRight, CircleArrowDown, CircleArrowUp, CreditCard, ScanLine, Smartphone } from 'lucide-react-native';
+import { useQuery } from 'urql';
 
 import { BOTTOM_NAV_KEYS } from '@finnit/core/nav/sections';
 import { BottomNavBar, type BottomNavTab } from '@finnit/ui-native/components/navigation/bottom-nav-bar';
 
 import { NAV_ITEM_ICONS } from '@/lib/nav/icons';
 import { useNav } from '@/lib/nav/use-nav';
+
+const CREDIT_CARDS_QUERY = `query HasCreditCard { accounts(first: 1, type: credit, archived: false) { totalCount } }`;
 
 /** Every route under (tabs): Expo Router 58 only shows the declared ones. */
 const TAB_ROUTES = [
@@ -34,6 +37,9 @@ export default function TabsLayout() {
   const t = useTranslations();
   const router = useRouter();
   const { entries, activeHref, moreActive } = useNav();
+  // "Pago a tarjeta" joins the "+" shortcuts once there is a card to pay.
+  const [{ data: cards }] = useQuery<{ accounts: { totalCount: number } }>({ query: CREDIT_CARDS_QUERY, requestPolicy: 'cache-and-network' });
+  const hasCreditCard = (cards?.accounts.totalCount ?? 0) > 0;
 
   const tabs = BOTTOM_NAV_KEYS.map((key): BottomNavTab => {
     const entry = entries.find((e) => e.entry.key === key)!.entry;
@@ -71,6 +77,9 @@ export default function TabsLayout() {
           { key: 'transfer', label: t('newEntry.transfer'), icon: ArrowLeftRight, tone: '--violet-ink', onPress: newEntry('transfer') },
           { key: 'receipt', label: t('receipts.scan'), icon: ScanLine, tone: '--brand-ink', onPress: newEntry('receipt') },
           { key: 'screenshot', label: t('screenshots.import'), icon: Smartphone, tone: '--brand-ink', onPress: newEntry('screenshot') },
+          ...(hasCreditCard
+            ? [{ key: 'cardPayment', label: t('newEntry.cardPayment'), icon: CreditCard, tone: '--violet-ink' as const, onPress: newEntry('cardPayment') }]
+            : []),
         ]}
       />
     </View>

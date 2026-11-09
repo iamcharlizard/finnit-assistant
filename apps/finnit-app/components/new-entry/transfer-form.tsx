@@ -14,6 +14,7 @@ import type { EntryAccount } from '@finnit/core/new-entry/graphql';
 import {
   isCardPayment,
   transferSources,
+  cardPaymentTargets,
   transferTargets,
 } from '@finnit/core/new-entry/options';
 import { TwView } from '@finnit/ui-native/lib/tw';
@@ -57,7 +58,10 @@ export function TransferForm({
   legPicks,
   onLegPick,
   cardDueDate,
+  onlyCards = false,
 }: {
+  /** "Pago a tarjeta de crédito": the money can only go to a credit card. */
+  onlyCards?: boolean;
   /** Paying a card's cycle: after this day it counts for the next one. */
   cardDueDate?: DayKey;
   /** Movements already recorded that may be its sides (null: not searched). */
@@ -85,10 +89,11 @@ export function TransferForm({
   );
   const targets = React.useMemo(
     () =>
-      transferTargets(accounts, draft.fromAccountId).map(
-        ({ value, label }) => ({ value, label }),
-      ),
-    [accounts, draft.fromAccountId],
+      (onlyCards ? cardPaymentTargets : transferTargets)(
+        accounts,
+        draft.fromAccountId,
+      ).map(({ value, label }) => ({ value, label })),
+    [accounts, draft.fromAccountId, onlyCards],
   );
   const from = accounts.find((a) => a.id === draft.fromAccountId);
   const to = accounts.find((a) => a.id === draft.toAccountId);
@@ -141,7 +146,9 @@ export function TransferForm({
           options={sources}
           value={draft.fromAccountId ?? null}
           onValueChange={(fromAccountId) => {
-            const stillValid = transferTargets(accounts, fromAccountId).some(
+            const stillValid = (
+              onlyCards ? cardPaymentTargets : transferTargets
+            )(accounts, fromAccountId).some(
               (o) => o.value === draft.toAccountId,
             );
             set({

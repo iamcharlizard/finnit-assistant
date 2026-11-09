@@ -1,3 +1,4 @@
+import { countedInTotalsWhere } from '../categories/category-scope';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { TransactionsService } from './transactions.service';
@@ -1681,6 +1682,7 @@ describe('TransactionsService', () => {
           AND: [
             { accountId: { in: ['a1'] } },
             expect.objectContaining({ type: { in: ['expense', 'income'] } }),
+            countedInTotalsWhere(),
           ],
         });
         expect(call.where.OR).toBeDefined();

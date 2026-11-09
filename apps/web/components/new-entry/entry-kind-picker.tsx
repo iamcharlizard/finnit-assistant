@@ -5,31 +5,49 @@ import {
   ArrowLeftRight,
   CircleArrowDown,
   CircleArrowUp,
+  CreditCard,
   type LucideIcon,
 } from 'lucide-react';
 
 import type { EntryKind } from '@finnit/core/new-entry/form';
 
+type PickedKind = EntryKind | 'cardPayment';
+
 const KINDS: ReadonlyArray<{
-  kind: EntryKind;
+  kind: PickedKind;
   icon: LucideIcon;
   tone: string;
 }> = [
   { kind: 'expense', icon: CircleArrowUp, tone: 'text-expense' },
   { kind: 'income', icon: CircleArrowDown, tone: 'text-income' },
   { kind: 'transfer', icon: ArrowLeftRight, tone: 'text-violet-ink' },
+  { kind: 'cardPayment', icon: CreditCard, tone: 'text-violet-ink' },
 ];
 
-/** Step 1: gasto, ingreso or transferencia (which includes card payments). */
+/**
+ * Step 1: gasto, ingreso, transferencia or, with a credit card registered,
+ * pago a tarjeta (a transfer into a card).
+ */
 export function EntryKindPicker({
   onPick,
+  withCardPayment,
 }: {
-  onPick: (kind: EntryKind) => void;
+  onPick: (kind: PickedKind) => void;
+  withCardPayment: boolean;
 }) {
   const t = useTranslations('newEntry');
+  const kinds = KINDS.filter(
+    ({ kind }) => kind !== 'cardPayment' || withCardPayment,
+  );
   return (
-    <ul className="grid gap-2 sm:grid-cols-3">
-      {KINDS.map(({ kind, icon: Icon, tone }) => (
+    <ul
+      className={
+        kinds.length === 4
+          ? 'grid grid-cols-2 gap-2 sm:grid-cols-4'
+          : 'grid gap-2 sm:grid-cols-3'
+      }
+    >
+      {kinds.map(({ kind, icon: Icon, tone }) => (
         <li key={kind}>
           <button
             type="button"

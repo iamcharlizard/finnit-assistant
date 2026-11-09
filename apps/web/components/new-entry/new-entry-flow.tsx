@@ -42,7 +42,11 @@ import {
   SIMILAR_TRANSACTIONS_QUERY,
   type SimilarTransaction,
 } from '@finnit/core/new-entry/graphql';
-import { isCardPayment, transferSources } from '@finnit/core/new-entry/options';
+import {
+  hasCreditCard,
+  isCardPayment,
+  transferSources,
+} from '@finnit/core/new-entry/options';
 import {
   CONFIRM_RECEIPT_MUTATION,
   DISCARD_RECEIPT_MUTATION,
@@ -83,7 +87,8 @@ import {
 type Step =
   | { name: 'kind' }
   | { name: 'entry' }
-  | { name: 'transfer' }
+  /** `cards`: "Pago a tarjeta de crédito", only cards as the destination. */
+  | { name: 'transfer'; cards?: boolean }
   | { name: 'duplicates'; matches: SimilarTransaction[] }
   /** Receipt capture: pick the photo, upload, read (or why it couldn't). */
   | { name: 'receipt' }
@@ -101,7 +106,11 @@ type Step =
 type Busy = null | 'checking' | 'saving';
 
 /** Where "Nuevo movimiento" can start besides the kind step. */
-export type NewEntryAction = EntryKind | 'receipt' | 'screenshot';
+export type NewEntryAction =
+  | EntryKind
+  | 'cardPayment'
+  | 'receipt'
+  | 'screenshot';
 
 /** Starting values of a shortcut's form (pay a card, record its interest). */
 export interface NewEntryPrefill {
@@ -259,18 +268,29 @@ export function NewEntryFlow({
     onDone();
   };
 
-  function pickKind(kind: EntryKind) {
+  function pickKind(kind: EntryKind | 'cardPayment') {
     setSubmitError(null);
     setReceipt(null);
     setCheck([]);
     const only = onlyAccount;
     // Only the form the shortcut opened starts filled in.
     const filled = initialApplied ? undefined : prefill;
-    if (kind === 'transfer') {
-      setTransfer({ ...emptyTransferDraft(todayKey()), ...filled?.transfer });
+    if (kind === 'transfer' || kind === 'cardPayment') {
+      const cards = kind === 'cardPayment';
+      // With a single card, it is already the destination.
+      const openCards = accounts.filter(
+        (a) => a.type === 'credit' && !a.archived,
+      );
+      setTransfer({
+        ...emptyTransferDraft(todayKey()),
+        ...(cards && openCards.length === 1
+          ? { toAccountId: openCards[0]!.id }
+          : {}),
+        ...filled?.transfer,
+      });
       setLegPicks({});
       setTransferTried(false);
-      setStep({ name: 'transfer' });
+      setStep({ name: 'transfer', cards });
     } else {
       setEntry({
         ...emptyEntryDraft(kind, todayKey()),
@@ -526,7 +546,7 @@ export function NewEntryFlow({
       case 'entry':
         return t(`newEntry.titles.${entry.type}`);
       case 'transfer':
-        return isCardPayment(accounts, transfer.toAccountId)
+        return step.cards || isCardPayment(accounts, transfer.toAccountId)
           ? t('newEntry.titles.cardPayment')
           : t('newEntry.titles.transfer');
       case 'duplicates':
@@ -593,7 +613,10 @@ export function NewEntryFlow({
   } else if (step.name === 'kind') {
     body = (
       <div className="flex flex-col gap-4">
-        <EntryKindPicker onPick={pickKind} />
+        <EntryKindPicker
+          onPick={pickKind}
+          withCardPayment={hasCreditCard(accounts)}
+        />
         <ScanReceiptButton
           variant="shortcut"
           onClick={() => startCapture('kind')}
@@ -707,6 +730,7 @@ export function NewEntryFlow({
             setLegPicks((current) => ({ ...current, [side]: id }))
           }
           cardDueDate={prefill?.cardDueDate}
+          onlyCards={step.cards}
           draft={transfer}
           onChange={setTransfer}
           accounts={accounts}

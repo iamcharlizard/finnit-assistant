@@ -74,7 +74,13 @@ export interface ApiTransaction {
     type: AccountType;
     metadata?: { nickname?: string | null } | null;
   } | null;
-  category: { id: string; name: string; parentId: string | null } | null;
+  category: {
+    id: string;
+    name: string;
+    parentId: string | null;
+    /** Left out of the totals: the movement counts in no sum or chart. */
+    excludeFromTotals?: boolean;
+  } | null;
   /** What to show: the alias (rule or one-off) or the merchant/description. */
   displayName: string;
   /** A private alias: lists show only `displayName`, never the original. */
@@ -95,7 +101,7 @@ export interface ApiTransaction {
 }
 
 export const TRANSACTION_FIELDS =
-  'id type amount balanceEffect currency txnDate description merchantName displayName isPrivate ownPrivate aliasId aliasRule { id displayName isPrivate isProtected } hasOwnAlias isPending inProcess source transferDirection transferId accountId account { id name type metadata { nickname } } category { id name parentId }';
+  'id type amount balanceEffect currency txnDate description merchantName displayName isPrivate ownPrivate aliasId aliasRule { id displayName isPrivate isProtected } hasOwnAlias isPending inProcess source transferDirection transferId accountId account { id name type metadata { nickname } } category { id name parentId excludeFromTotals }';
 
 export type CategorySource = 'manual' | 'rule' | 'ai' | 'bank';
 

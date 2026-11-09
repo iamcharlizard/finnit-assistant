@@ -7,6 +7,7 @@ import {
   ArrowLeftRight,
   CircleArrowDown,
   CircleArrowUp,
+  CreditCard,
   Ellipsis,
   Plus,
   ScanLine,
@@ -118,7 +119,7 @@ const BAR_MASK =
 const TAB_POP = 'animate-in zoom-in-75 duration-300 motion-reduce:animate-none';
 
 /**
- * The "+" menu: five shortcuts spread over the screen's width in a wide,
+ * The "+" menu: five shortcuts (six with a card) spread over the screen's width in a wide,
  * flat arc above the button. `k` is the horizontal position in steps of
  * `--dial-step` (a share of the screen, capped), `y` the height in px above
  * the button's center; the outer ones sit lower.
@@ -159,6 +160,14 @@ const ACTIONS: ReadonlyArray<{
     k: 2,
     y: -76,
   },
+  // Only with a credit card registered: above "Transferencia", at the top.
+  {
+    action: 'cardPayment',
+    icon: CreditCard,
+    tone: 'text-violet-ink',
+    k: 0,
+    y: -228,
+  },
 ];
 
 /**
@@ -167,18 +176,21 @@ const ACTIONS: ReadonlyArray<{
  * section), and a round "+" that sticks out of its middle. A highlight
  * slides under the active tab. The "+" turns into an × and fans out the
  * shortcuts (gasto, ingreso, transferencia, escanear ticket, importar
- * captura), each opening
+ * captura and, with a credit card registered, pago a tarjeta), each opening
  * "Nuevo movimiento" on that step.
  */
 export function AppBottomNav({
   sections,
   activeHref,
   onAdd,
+  withCardPayment = false,
   className,
 }: {
   sections: ReadonlyArray<NavSection>;
   activeHref: string | null;
   onAdd: (action: NewEntryAction) => void;
+  /** The user has a credit card: "Pago a tarjeta" joins the shortcuts. */
+  withCardPayment?: boolean;
   className?: string;
 }) {
   const t = useTranslations('nav');
@@ -194,6 +206,9 @@ export function AppBottomNav({
   // it would only draw a focus ring on the first shortcut).
   const openedByKeyboard = React.useRef(false);
   const menuId = React.useId();
+  const actions = withCardPayment
+    ? ACTIONS
+    : ACTIONS.filter((a) => a.action !== 'cardPayment');
 
   const entries = sections.flatMap((s) =>
     s.items.map((entry) => ({ entry, section: s })),
@@ -341,7 +356,7 @@ export function AppBottomNav({
             // tablets.
             style={{ '--dial-step': 'min(18vw, 104px)' } as React.CSSProperties}
           >
-            {ACTIONS.map(({ action, icon: Icon, tone, k, y }, index) => {
+            {actions.map(({ action, icon: Icon, tone, k, y }, index) => {
               const label =
                 action === 'receipt'
                   ? tr('scan')
@@ -351,7 +366,7 @@ export function AppBottomNav({
               // Out one after another; back in the reverse order.
               const delay = dialOpen
                 ? index * 40
-                : (ACTIONS.length - 1 - index) * 25;
+                : (actions.length - 1 - index) * 25;
               return (
                 <button
                   key={action}

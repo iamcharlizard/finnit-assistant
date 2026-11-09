@@ -108,6 +108,7 @@ export const mockCategoryData: Category = {
   icon: null,
   color: null,
   sortOrder: 1,
+  excludeFromTotals: false,
   createdAt: new Date('2024-01-01'),
 };
 

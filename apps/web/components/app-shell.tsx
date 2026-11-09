@@ -39,11 +39,14 @@ import { pageTitleKey } from '@finnit/core/nav/titles';
 export function AppShell({
   children,
   notificationCount,
+  hasCreditCard,
   sidebarCollapsed,
   openNavGroups,
 }: {
   children: React.ReactNode;
   notificationCount: number;
+  /** Shows "Pago a tarjeta" in the "+" menu. */
+  hasCreditCard: boolean;
   /** Desktop sidebar state from the cookie, so the server renders it. */
   sidebarCollapsed: boolean;
   /** Sidebar groups left open (cookie). */
@@ -151,6 +154,7 @@ export function AppShell({
           sections={sections}
           activeHref={activeHref}
           onAdd={handleAdd}
+          withCardPayment={hasCreditCard}
           className="lg:hidden"
         />
         <NewEntrySheet

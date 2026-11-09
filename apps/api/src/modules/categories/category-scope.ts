@@ -19,3 +19,17 @@ export function pickableCategoryWhere(
     AND: [visibleCategoryWhere(userId), { hiddenBy: { none: { userId } } }],
   };
 }
+
+/**
+ * Movements that count in income/expense totals, reports and charts: the
+ * ones without a category or whose category the user didn't leave out
+ * ("no cuenta en sumas"). Put it in an `AND`, it carries its own `OR`.
+ */
+export function countedInTotalsWhere(): Prisma.TransactionWhereInput {
+  return {
+    OR: [
+      { categoryId: null },
+      { category: { is: { excludeFromTotals: false } } },
+    ],
+  };
+}

@@ -14,6 +14,7 @@ import {
 } from '../../common/exceptions/graphql-error.exception';
 import { Prisma } from '@finnit/database';
 import { loadCategoryI18n } from '../categories/category-names';
+import { countedInTotalsWhere } from '../categories/category-scope';
 import { AppLocale, DEFAULT_LOCALE } from '../translation/locale';
 
 /**
@@ -45,10 +46,15 @@ export function capSpendingWhere(
     type: 'expense',
     isPending: false,
     txnDate: budgetMonthRange(year, month),
-    OR: [
-      { categoryId },
-      { category: { parentId: categoryId } },
-      { category: { parent: { parentId: categoryId } } },
+    AND: [
+      {
+        OR: [
+          { categoryId },
+          { category: { parentId: categoryId } },
+          { category: { parent: { parentId: categoryId } } },
+        ],
+      },
+      countedInTotalsWhere(),
     ],
   };
 }
@@ -258,6 +264,7 @@ export class BudgetsService {
         type: 'expense',
         isPending: false,
         txnDate: budgetMonthRange(year, month),
+        AND: [countedInTotalsWhere()],
       },
       _sum: { amount: true },
     });
@@ -398,6 +405,7 @@ export class BudgetsService {
           gte: startDate,
           lte: endDate,
         },
+        AND: [countedInTotalsWhere()],
       },
       _sum: { amount: true },
     });

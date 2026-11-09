@@ -99,6 +99,26 @@ export function transferTargets(
   );
 }
 
+/** "Pago a tarjeta de crédito": the money can only go to a card. */
+export function cardPaymentTargets(
+  accounts: ReadonlyArray<EntryAccount>,
+  fromAccountId: string | undefined,
+): PickerOption[] {
+  const cards = new Set(
+    accounts.filter((a) => a.type === 'credit').map((a) => a.id),
+  );
+  return transferTargets(accounts, fromAccountId).filter((o) =>
+    cards.has(o.value),
+  );
+}
+
+/** Whether the user has a credit card to pay (open accounts). */
+export function hasCreditCard(
+  accounts: ReadonlyArray<Pick<EntryAccount, 'type' | 'archived'>>,
+): boolean {
+  return accounts.some((a) => a.type === 'credit' && !a.archived);
+}
+
 /**
  * A transfer into a credit card is a card payment: it lowers what the card
  * owes (its balance moves toward zero).

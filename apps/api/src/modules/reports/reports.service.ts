@@ -11,6 +11,7 @@ import {
 } from './dto/report.dto';
 import { ValidationError } from '../../common/exceptions/graphql-error.exception';
 import { loadCategoryI18n } from '../categories/category-names';
+import { countedInTotalsWhere } from '../categories/category-scope';
 import { AppLocale, DEFAULT_LOCALE } from '../translation/locale';
 
 @Injectable()
@@ -26,10 +27,12 @@ export class ReportsService {
     // The whole month in UTC, like the dates imported from banks and
     // statements (midnight UTC of the day): up to, not including, the 1st of
     // the next month, so the last day counts entirely.
-    // Pending transactions are left out until they are confirmed.
+    // Pending transactions are left out until they are confirmed, and so
+    // are the categories the user left out of the totals.
     const monthWhere = {
       userId,
       isPending: false,
+      AND: [countedInTotalsWhere()],
       txnDate: {
         gte: new Date(Date.UTC(year, month - 1, 1)),
         lt: new Date(Date.UTC(year, month, 1)),
@@ -123,6 +126,7 @@ export class ReportsService {
         isPending: false,
         type: { in: ['income', 'expense'] },
         txnDate: { gte: start, lt: new Date(end.getTime() + DAY_MS) },
+        AND: [countedInTotalsWhere()],
       },
       _sum: { amount: true },
     });
@@ -166,6 +170,7 @@ export class ReportsService {
       userId,
       isPending: false,
       txnDate: { gte: sixMonthsAgo },
+      AND: [countedInTotalsWhere()],
     };
 
     const [income, expenses, first] = await Promise.all([

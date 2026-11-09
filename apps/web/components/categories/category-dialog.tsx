@@ -17,6 +17,7 @@ import {
 } from '@finnit/ui/components/ui/dialog';
 import { Input } from '@finnit/ui/components/ui/input';
 import { Label } from '@finnit/ui/components/ui/label';
+import { Switch } from '@finnit/ui/components/ui/switch';
 import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { cn } from '@finnit/ui/lib/utils';
 
@@ -76,12 +77,14 @@ export function CategoryDialog({
           kind: category.kind,
           parentId: category.parentId ?? NO_PARENT,
           icon: category.icon ?? '',
+          excludeFromTotals: category.excludeFromTotals,
         }
       : {
           name: '',
           kind: 'expense',
           parentId: NO_PARENT,
           icon: '',
+          excludeFromTotals: false,
           ...defaults,
         },
   );
@@ -91,6 +94,8 @@ export function CategoryDialog({
 
   const parent = categories.find((c) => c.id === form.parentId);
   const kind = parent?.kind ?? form.kind;
+  // Under a main category left out of the totals, it is left out too.
+  const inheritedExclusion = Boolean(parent?.excludeFromTotals);
   // A category with subcategories stays a main category.
   const hasChildren = Boolean(
     category && categories.some((c) => c.parentId === category.id),
@@ -124,7 +129,15 @@ export function CategoryDialog({
     setSaving(true);
     setSubmitError(null);
     try {
-      await saveCategory({ ...form, kind }, category?.id ?? null, gql);
+      await saveCategory(
+        {
+          ...form,
+          kind,
+          excludeFromTotals: inheritedExclusion || form.excludeFromTotals,
+        },
+        category?.id ?? null,
+        gql,
+      );
       exit.after(onSaved)(!category);
     } catch (e) {
       setSubmitError(categoryErrorMessage(e, t));
@@ -202,6 +215,27 @@ export function CategoryDialog({
                 </p>
               </div>
             )}
+
+            <div className="flex items-start justify-between gap-4 rounded-2xl border border-outline px-4 py-3">
+              <div className="flex min-w-0 flex-col gap-1">
+                <Label htmlFor="category-exclude-from-totals">
+                  {tf('excludeFromTotals')}
+                </Label>
+                <p className="text-xs text-on-surface-variant">
+                  {inheritedExclusion
+                    ? tf('excludeFromTotalsInherited')
+                    : tf('excludeFromTotalsHint')}
+                </p>
+              </div>
+              <Switch
+                id="category-exclude-from-totals"
+                checked={inheritedExclusion || form.excludeFromTotals}
+                disabled={inheritedExclusion}
+                onCheckedChange={(checked) =>
+                  update({ excludeFromTotals: checked })
+                }
+              />
+            </div>
 
             <fieldset className="flex flex-col gap-2">
               <Label asChild className="px-1">

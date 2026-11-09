@@ -11,6 +11,7 @@ import {
   IsString,
   IsOptional,
   IsNumber,
+  IsBoolean,
   IsDateString,
   IsEnum,
   MaxLength,
@@ -59,6 +60,15 @@ export class CreateCategoryInput {
   @IsOptional()
   @IsNumber()
   sortOrder?: number;
+
+  @Field({
+    nullable: true,
+    description:
+      'Leave its movements out of income/expense totals, reports and charts (own categories only; subcategories follow their parent)',
+  })
+  @IsOptional()
+  @IsBoolean()
+  excludeFromTotals?: boolean;
 }
 
 @InputType()
@@ -96,6 +106,15 @@ export class UpdateCategoryInput {
   @IsOptional()
   @IsNumber()
   sortOrder?: number;
+
+  @Field({
+    nullable: true,
+    description:
+      'Leave its movements out of income/expense totals, reports and charts (own categories only; subcategories follow their parent)',
+  })
+  @IsOptional()
+  @IsBoolean()
+  excludeFromTotals?: boolean;
 }
 
 @ObjectType()

@@ -133,6 +133,7 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261119090000_duplicate_suggestions` (`DuplicateSuggestion` + `DuplicateSuggestionStatus`: possible duplicates of one account, merged by `src/modules/duplicates/` (the bank's movement stays) or dismissed as "No es duplicado"; rollback in `packages/database/scripts/rollbacks/`)
 - `20261120090000_card_notifications` (`NotificationType.card_statement`, `card_due`, `card_unpaid`: credit card reminders from `src/modules/credit-cards/`; rollback in `packages/database/scripts/rollbacks/`)
 - `20261121090000_card_installments` + `20261121090100_card_installments_data` (`LoanType.card_installments`, `Debt.purchaseTransactionId`: a credit card purchase in monthly installments is a loan linked to the card; the old MSI plans (recurring expenses of kind installment on a credit card) became such debts; one rollback covers both)
+- `20261122090000_category_exclude_from_totals` (`Category.excludeFromTotals`: a user's own category whose movements no total, report or chart counts; they stay in the history and move balances; filter with `countedInTotalsWhere()` from `modules/categories/category-scope.ts`; rollback in `packages/database/scripts/rollbacks/`)
 - `20261013120000_private_attachments`
 - `20261014090000_admin_access_and_ai_features`
 - `20261015090000_category_i18n_and_ai_features` + `20261015090100_ai_feature_defaults` (enum values added in one file can't be used in the same transaction, so the seed rows live in a second file)

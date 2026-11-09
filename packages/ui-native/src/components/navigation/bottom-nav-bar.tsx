@@ -88,6 +88,8 @@ const ARC = [
   { k: 0, y: -144 },
   { k: 1, y: -124 },
   { k: 2, y: -76 },
+  // A sixth shortcut (e.g. "Pago a tarjeta") sits above the middle one.
+  { k: 0, y: -228 },
 ];
 
 export interface BottomNavTab {

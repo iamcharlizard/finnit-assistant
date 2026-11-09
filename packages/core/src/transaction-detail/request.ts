@@ -13,6 +13,8 @@ export { TRANSACTION_DETAIL_QUERY } from './types';
 export interface TransactionDetailResult {
   transaction: TransactionDetail;
   categories: DetailCategory[];
+  /** The user's open credit cards. */
+  creditCards?: { edges: { node: { id: string } }[] };
 }
 
 export interface TransactionDetailData {
@@ -36,7 +38,12 @@ export function buildTransactionDetailData(
   return {
     today,
     transaction: tx,
-    view: toTransactionDetailView(tx, today, l),
+    view: toTransactionDetailView(
+      tx,
+      today,
+      l,
+      (data.creditCards?.edges ?? []).map((e) => e.node.id),
+    ),
     form: detailFormOf(tx),
     currency: tx.currency,
     categoryKind: tx.type === 'income' ? 'income' : 'expense',

@@ -210,5 +210,10 @@ WHERE t."userId" = ${userId}
   AND t."aliasName" IS NULL
   AND t."type" IN ('expense', 'income')
   AND t."txnDate" >= ${from} AND t."txnDate" <= ${to}
+  -- Categories left out of the totals don't add up here either.
+  AND NOT EXISTS (
+    SELECT 1 FROM "Category" AS c
+    WHERE c."id" = t."categoryId" AND c."excludeFromTotals"
+  )
 GROUP BY t."aliasId", t."currency"`;
 }

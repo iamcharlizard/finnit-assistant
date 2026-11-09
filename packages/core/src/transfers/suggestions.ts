@@ -107,6 +107,7 @@ export function toSuggestionView(
       accountId: tx.accountId,
       currency: tx.currency,
       amount,
+      txnDate: tx.txnDate,
     },
     accountId: suggestion.counterpartAccountId,
     counterpartTransactionId: other?.id ?? null,

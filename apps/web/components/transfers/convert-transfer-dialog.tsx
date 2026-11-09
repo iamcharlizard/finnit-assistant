@@ -38,9 +38,23 @@ import {
   convertInput,
   convertTargets,
   initialConvertChoice,
+  proposedCandidate,
   type ConvertData,
+  type ConvertMode,
   type ConvertSource,
 } from '@finnit/core/transfers/convert';
+
+/** The keys of transfers.convert that transfers.cardPayment words its own way. */
+const CARD_PAYMENT_COPY: ReadonlySet<string> = new Set([
+  'title',
+  'descriptionOut',
+  'descriptionIn',
+  'noAccounts',
+  'toAccount',
+  'fromAccount',
+  'submit',
+  'saving',
+]);
 import type { ApiTransaction } from '@finnit/core/finance/types';
 import { RESOLVE_TRANSFER_SUGGESTION_MUTATION } from '@finnit/core/transfers/suggestions';
 
@@ -61,16 +75,25 @@ export interface FromSuggestion {
 export function ConvertTransferDialog({
   source,
   suggestion,
+  mode = 'transfer',
   onClose,
   onConverted,
 }: {
   source: ConvertSource;
+  /** "Registrar como pago a tarjeta de crédito": the card side, its copy. */
+  mode?: ConvertMode;
   suggestion?: FromSuggestion;
   onClose: () => void;
   onConverted: () => void;
 }) {
   const exit = useDialogExit();
-  const tc = useTranslations('transfers.convert');
+  const tt = useTranslations('transfers');
+  // The card payment's own wording where it differs; the rest is shared.
+  const tc = (key: string, values?: Record<string, string>) =>
+    tt(
+      `${mode === 'cardPayment' && CARD_PAYMENT_COPY.has(key) ? 'cardPayment' : 'convert'}.${key}` as 'convert.title',
+      values,
+    );
   const { t, locale } = useLocalizer();
   const [data, setData] = React.useState<{
     targets: EntryAccount[];
@@ -93,9 +116,14 @@ export function ConvertTransferDialog({
         const targets = convertTargets(
           result.accounts.edges.map((edge) => edge.node),
           source,
+          mode,
         );
         setData({ targets, candidates: result.transferCandidates });
-        const start = initialConvertChoice(result.transferCandidates, targets);
+        const start = initialConvertChoice(
+          result.transferCandidates,
+          targets,
+          source,
+        );
         // The suggestion's account (and movement) wins when still valid.
         const suggested =
           suggestion?.accountId &&
@@ -112,8 +140,7 @@ export function ConvertTransferDialog({
             inSuggested.find(
               (c) => c.id === suggestion?.counterpartTransactionId,
             )?.id ??
-              inSuggested[0]?.id ??
-              null,
+              proposedCandidate(result.transferCandidates, suggested, source),
           );
         } else {
           setAccountId(start.accountId);
@@ -126,7 +153,7 @@ export function ConvertTransferDialog({
     return () => {
       alive = false;
     };
-  }, [source, suggestion, t]);
+  }, [source, suggestion, mode, t]);
 
   const options = React.useMemo(
     () => (data ? accountOptions(data.targets) : []),
@@ -140,7 +167,7 @@ export function ConvertTransferDialog({
     const next = id ?? null;
     setAccountId(next);
     setCandidateId(
-      data ? (candidatesIn(data.candidates, next)[0]?.id ?? null) : null,
+      data ? proposedCandidate(data.candidates, next, source) : null,
     );
     setError(null);
   }

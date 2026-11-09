@@ -17,7 +17,6 @@ import {
   effectOf,
   moveBalance,
 } from '../../common/utils/balance-effect.util';
-import { addDays } from '../../common/utils/local-date.util';
 import { Transaction } from '../../common/types/models/transaction.model';
 import { Transfer } from '../../common/types/models/transfer.model';
 import {
@@ -27,7 +26,6 @@ import {
 import {
   CONVERTIBLE_TYPES,
   COUNTERPART_TYPES,
-  TRANSFER_DAYS_WINDOW,
   isTransferPair,
   rankTransferCandidates,
   type TransferMovement,
@@ -130,7 +128,11 @@ export class TransferConversionService {
     private readonly transfers: TransfersService,
   ) {}
 
-  /** Movements in other accounts that may be the other side, best first. */
+  /**
+   * Movements in other accounts that may be the other side, closest date
+   * first: the same amount going the other way and not linked to anything
+   * yet, from any month (the ones within a week come first).
+   */
   async candidates(
     userId: string,
     transactionId: string,
@@ -148,13 +150,11 @@ export class TransferConversionService {
           gte: Number(source.amount) - 0.01,
           lte: Number(source.amount) + 0.01,
         },
-        txnDate: {
-          gte: addDays(source.txnDate, -TRANSFER_DAYS_WINDOW),
-          lte: addDays(source.txnDate, TRANSFER_DAYS_WINDOW),
-        },
       },
       include: { ...TRANSACTION_PRESENTATION_INCLUDE, account: true },
-      take: 20,
+      // The closest are picked after ranking; this only bounds the read.
+      orderBy: { txnDate: 'desc' },
+      take: 200,
     });
     const byId = new Map(rows.map((row) => [row.id, row]));
     return rankTransferCandidates(
@@ -194,9 +194,10 @@ export class TransferConversionService {
           select: MOVEMENT_SELECT,
         });
         if (!other) throw new NotFoundError('Counterpart movement not found');
-        if (!isTransferPair(asMovement(source), asMovement(other))) {
+        // Picked by hand: any date, as long as it is the same money.
+        if (!isTransferPair(asMovement(source), asMovement(other), Infinity)) {
           throw new ValidationError(
-            'The other movement must be the same amount going the other way, within a few days',
+            'The other movement must be the same amount going the other way',
           );
         }
         await becomeSide(tx, other);

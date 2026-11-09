@@ -5,7 +5,11 @@ import { categoryLabel } from '../finance/categories';
 import { dayKeyOf, longDate, timeOf, type DayKey } from '../finance/dates';
 import { formatMoney } from '../finance/money';
 import { direction, transactionTitle } from '../finance/transactions';
-import { canConvertToTransfer, type ConvertSource } from '../transfers/convert';
+import {
+  canConvertToTransfer,
+  canRecordCardPayment,
+  type ConvertSource,
+} from '../transfers/convert';
 import { debtHref } from '../debts/view';
 import type { ApiAttachment, TransactionDetail } from './types';
 
@@ -193,6 +197,11 @@ export interface TransactionDetailView {
   } | null;
   /** An expense/income that can become a transfer; null otherwise. */
   convertSource: ConvertSource | null;
+  /**
+   * "Registrar como pago a tarjeta de crédito": an expense when the user has
+   * a credit card, or an income on a card.
+   */
+  canRecordCardPayment: boolean;
   /** The recurring payment it paid, linked (its scheduled payment to unlink). */
   recurring: { href: string; label: string; occurrenceId: string } | null;
   /**
@@ -226,6 +235,8 @@ export function toTransactionDetailView(
   tx: TransactionDetail,
   today: DayKey,
   { locale, t }: Localizer,
+  /** The user's open credit cards ("Registrar como pago a tarjeta"). */
+  creditCardIds: ReadonlyArray<string> = [],
 ): TransactionDetailView {
   const dir = direction(tx);
   const day = dayKeyOf(tx.txnDate);
@@ -329,8 +340,11 @@ export function toTransactionDetailView(
             accountId: tx.accountId,
             currency: tx.currency,
             amount: Math.abs(tx.amount),
+            txnDate: tx.txnDate,
           }
         : null,
+    canRecordCardPayment:
+      !counterpart && canRecordCardPayment(tx, tx.account?.type, creditCardIds),
     rules: editRules(tx),
     deleteBlock: deleteBlock(tx),
     deleteNotes: deleteNotes(tx, t),

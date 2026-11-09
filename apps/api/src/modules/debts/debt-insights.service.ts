@@ -7,6 +7,7 @@ import {
   TransactionType,
 } from '@finnit/database';
 import { PrismaService } from '../../services/prisma.service';
+import { countedInTotalsWhere } from '../categories/category-scope';
 import {
   monthlyEquivalent,
   toDateOnly,
@@ -107,6 +108,7 @@ export class DebtInsightsService {
           userId,
           type: TransactionType.income,
           isPending: false,
+          AND: [countedInTotalsWhere()],
           txnDate: {
             gte: new Date(
               `${lastMonths(today, INCOME_MONTHS + 1)[0]}-01T00:00:00.000Z`,

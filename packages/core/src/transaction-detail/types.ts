@@ -75,4 +75,5 @@ export interface DetailCategory {
 export const TRANSACTION_DETAIL_QUERY = `query TransactionDetail($id: String!) {
   transaction(id: $id) { ${TRANSACTION_DETAIL_FIELDS} }
   categories { id name parentId key kind icon }
+  creditCards: accounts(first: 100, type: credit, archived: false) { edges { node { id } } }
 }`;

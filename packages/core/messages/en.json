@@ -89,10 +89,12 @@
     "expense": "Expense",
     "income": "Income",
     "transfer": "Transfer",
+    "cardPayment": "Card payment",
     "kindHints": {
       "expense": "A purchase or a payment",
       "income": "Money you received",
-      "transfer": "Between your accounts or a card payment"
+      "transfer": "Between your accounts",
+      "cardPayment": "Toward your card"
     },
     "back": "Back",
     "titles": {
@@ -3503,6 +3505,18 @@
     "add": "Add \"{name}\""
   },
   "transfers": {
+    "cardPayment": {
+      "title": "Record as a card payment",
+      "action": "Record as a credit card payment",
+      "descriptionOut": "These {amount} paid one of your credit cards: they no longer count as spending and lower what you owe on the card.",
+      "descriptionIn": "These {amount} are a payment this card received from another of your accounts: they no longer count as income.",
+      "noAccounts": "You have no other credit card in the same currency.",
+      "toAccount": "Card you paid",
+      "fromAccount": "Account you paid from",
+      "submit": "Record payment",
+      "saving": "Recording…",
+      "done": "Recorded as a card payment"
+    },
     "convert": {
       "title": "Turn into a transfer",
       "action": "Turn into a transfer",
@@ -3590,6 +3604,9 @@
       "income": "Income"
     },
     "own": "Yours",
+    "untracked": "Not in totals",
+    "countInTotals": "Count in totals",
+    "leaveOutOfTotals": "Leave out of totals",
     "thisMonth": "{count, plural, =0 {No movements this month} one {# movement this month} other {# movements this month}}",
     "hiddenHint": "Hidden: not offered when choosing a category",
     "subcategories": "{count, plural, =0 {No subcategories} one {# subcategory} other {# subcategories}}",
@@ -3623,6 +3640,9 @@
       "noParent": "None (main category)",
       "searchParent": "Search category…",
       "noParents": "No results.",
+      "excludeFromTotals": "Left out of totals",
+      "excludeFromTotalsHint": "Its movements stay in the history and move their account's balance, but they don't add up as income or spending in totals, analytics, budgets or charts. Its subcategories do the same.",
+      "excludeFromTotalsInherited": "Its main category is left out of totals, so this one is too.",
       "mainHint": "Without a main category, it becomes a new main category.",
       "parentHint": "It will be a {kind} subcategory.",
       "icon": "Icon",

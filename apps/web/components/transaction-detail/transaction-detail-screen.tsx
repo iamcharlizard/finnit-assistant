@@ -7,6 +7,7 @@ import {
   CalendarClock,
   CheckCheck,
   CopyCheck,
+  CreditCard,
   Landmark,
   MoreHorizontal,
   PencilLine,
@@ -71,6 +72,7 @@ export function TransactionDetailScreen({
   const [dialog, setDialog] = React.useState<
     | 'edit'
     | 'convert'
+    | 'cardPayment'
     | 'linkLoan'
     | 'unlinkLoan'
     | 'linkRecurring'
@@ -182,6 +184,16 @@ export function TransactionDetailScreen({
             label: tx('convert.action'),
             icon: ArrowLeftRight,
             run: () => setDialog('convert'),
+          },
+        ]
+      : []),
+    ...(view.convertSource && view.canRecordCardPayment
+      ? [
+          {
+            key: 'cardPayment',
+            label: tx('cardPayment.action'),
+            icon: CreditCard,
+            run: () => setDialog('cardPayment'),
           },
         ]
       : []),
@@ -359,6 +371,18 @@ export function TransactionDetailScreen({
               return;
             }
             toast.success(tt(rule ? 'toasts.ruleCreated' : 'toasts.saved'));
+            host.refresh();
+          }}
+        />
+      ) : null}
+      {dialog === 'cardPayment' && view.convertSource ? (
+        <ConvertTransferDialog
+          source={view.convertSource}
+          mode="cardPayment"
+          onClose={() => setDialog(null)}
+          onConverted={() => {
+            setDialog(null);
+            toast.success(tx('cardPayment.done'));
             host.refresh();
           }}
         />

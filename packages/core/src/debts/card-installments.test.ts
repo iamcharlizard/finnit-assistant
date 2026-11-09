@@ -6,6 +6,10 @@ import type { ApiAccount } from '@finnit/core/finance/types';
 import {
   billedInstallments,
   buildCardInstallmentInput,
+  cardScheduleRows,
+  moveInstallment,
+  schedulePage,
+  withScheduleRowChange,
   cardInstallmentPreview,
   cardInstallmentSpan,
   installmentDays,
@@ -156,6 +160,106 @@ describe('card purchases in installments', () => {
       }).installmentAmount,
       1100,
     );
+  });
+});
+
+describe('the installments of a card purchase', () => {
+  const base = withCardInstallmentChange(
+    newCardInstallmentForm(today),
+    {
+      accountId: 'card',
+      principal: '998',
+      months: '3',
+      purchaseDate: '2026-10-07',
+    },
+    { accounts, today },
+  );
+
+  it('lists them on the cut-offs, the last with the cents left', () => {
+    assert.deepEqual(cardScheduleRows(base, accounts), [
+      { day: '2026-10-07', amount: '332.66' },
+      { day: '2026-11-07', amount: '332.66' },
+      { day: '2026-12-07', amount: '332.68' },
+    ]);
+  });
+
+  it('moves the next ones with a date, changes one amount, and starts over with the terms', () => {
+    let form = withScheduleRowChange(
+      base,
+      0,
+      { day: '2026-10-07' },
+      { accounts, today },
+    );
+    form = withScheduleRowChange(
+      form,
+      1,
+      { day: '2026-10-17' },
+      { accounts, today },
+    );
+    form = withScheduleRowChange(
+      form,
+      2,
+      { amount: '340' },
+      { accounts, today },
+    );
+    assert.deepEqual(form.schedule, [
+      { day: '2026-10-07', amount: '332.66' },
+      { day: '2026-10-17', amount: '332.66' },
+      { day: '2026-11-17', amount: '340' },
+    ]);
+    // Billed by today (Nov 9): the first two.
+    assert.equal(form.installmentsPaid, '2');
+    assert.deepEqual(
+      validateCardInstallmentForm({ ...form, name: 'X' }, { today }),
+      {},
+    );
+    assert.deepEqual(
+      (
+        buildCardInstallmentInput({ ...form, name: 'X' })
+          .installmentSchedule as unknown[]
+      )[2],
+      { dueDate: '2026-11-17', amount: 340 },
+    );
+    const restarted = withCardInstallmentChange(
+      form,
+      { months: '6' },
+      { accounts, today },
+    );
+    assert.equal(restarted.schedule, null);
+    assert.equal(
+      validateCardInstallmentForm(
+        {
+          ...form,
+          name: 'X',
+          schedule: [
+            { day: '2026-10-07', amount: '100' },
+            { day: '2026-10-17', amount: '100' },
+            { day: '2026-11-17', amount: '100' },
+          ],
+        },
+        { today },
+      ).schedule,
+      'scheduleBelowPrincipal',
+    );
+  });
+
+  it('moves days like the API and pages long lists', () => {
+    assert.deepEqual(
+      moveInstallment(
+        ['2026-10-16', '2026-11-16', '2026-12-16'],
+        0,
+        '2026-10-31',
+        true,
+      ),
+      ['2026-10-31', '2026-11-30', '2026-12-31'],
+    );
+    const rows = Array.from({ length: 24 }, (_, i) => i);
+    assert.deepEqual(schedulePage(rows, 1), {
+      rows: [6, 7, 8, 9, 10, 11],
+      start: 6,
+      pages: 4,
+    });
+    assert.equal(schedulePage(rows, 9).start, 18);
   });
 });
 

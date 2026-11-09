@@ -1755,6 +1755,19 @@
         "linked": "La compra completa está ligada: la tarjeta cobra cada mensualidad en su corte.",
         "unlinked": "Cada mensualidad se liga con su cargo en la tarjeta (automático al sincronizar, o desde el gasto en el historial).",
         "open": "Ver gasto de la compra"
+      },
+      "editInstallment": {
+        "action": "Editar mensualidad",
+        "title": "Mensualidad {number} de {total}",
+        "description": "Cambia el día en que se cobra y su monto.",
+        "date": "Fecha de cobro",
+        "amount": "Monto",
+        "shift": "Mover las siguientes al mismo día de los meses siguientes",
+        "save": "Guardar",
+        "saving": "Guardando…",
+        "saved": "Mensualidad guardada",
+        "amountRequired": "Escribe un monto mayor que 0.",
+        "dateRequired": "Elige la fecha de cobro."
       }
     },
     "categories": {
@@ -1947,7 +1960,16 @@
       "spanNoTerms": "La tarjeta no tiene días de corte: una mensualidad cada mes desde la compra (primera el {first}, última el {last}).",
       "purchaseLinked": "Se ligará con el gasto de la compra: la tarjeta cobra cada mensualidad y la compra no cuenta dos veces como gasto.",
       "create": "Registrar compra a meses",
-      "saving": "Guardando…"
+      "saving": "Guardando…",
+      "scheduleTitle": "Mensualidades",
+      "scheduleHint": "Cambia la fecha o el monto si no coinciden con tu estado de cuenta. Al cambiar una fecha, las siguientes pasan a ese mismo día de los meses siguientes.",
+      "scheduleNumber": "{number} de {total}",
+      "scheduleDate": "Fecha de cobro {number}",
+      "scheduleAmount": "Monto {number}",
+      "scheduleReset": "Volver a las fechas de corte",
+      "schedulePage": "{from}–{to} de {total}",
+      "schedulePrevious": "Anteriores",
+      "scheduleNext": "Siguientes"
     },
     "cardInstallmentValidation": {
       "nameRequired": "Escribe el concepto.",
@@ -1967,7 +1989,10 @@
       "installmentAmountRequired": "Escribe la mensualidad.",
       "installmentAmountTooLow": "Las mensualidades no alcanzan el monto de la compra.",
       "installmentsPaidInvalid": "Escribe un número entero.",
-      "installmentsPaidTooMany": "No pueden ser más que los meses."
+      "installmentsPaidTooMany": "No pueden ser más que los meses.",
+      "scheduleDates": "Las fechas deben ir en orden, desde la compra y sin repetirse.",
+      "scheduleAmounts": "Cada mensualidad debe ser mayor que 0.",
+      "scheduleBelowPrincipal": "Las mensualidades no alcanzan el monto de la compra."
     },
     "newKindLabel": "Tipo"
   },

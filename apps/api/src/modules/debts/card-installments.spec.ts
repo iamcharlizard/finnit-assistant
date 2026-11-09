@@ -1,5 +1,8 @@
 import {
   billedInstallments,
+  defaultSchedule,
+  moveInstallment,
+  scheduleError,
   cycleInstallments,
   fitsInstallment,
   fitsPurchase,
@@ -105,6 +108,49 @@ describe('card purchases in installments', () => {
     );
     expect(fitsInstallment({ amount: 1300, day: '2026-11-07' }, target)).toBe(
       false,
+    );
+  });
+
+  it('starts with equal installments on the cut-offs, the last with the cents left', () => {
+    expect(defaultSchedule('2026-10-07', 3, terms, 998, 332.66)).toEqual([
+      { day: '2026-10-07', amount: 332.66 },
+      { day: '2026-11-07', amount: 332.66 },
+      { day: '2026-12-07', amount: 332.68 },
+    ]);
+  });
+
+  it('moves one installment, or the next ones to the same day', () => {
+    const days = ['2026-10-16', '2026-11-16', '2026-12-16', '2027-01-16'];
+    expect(moveInstallment(days, 0, '2026-10-07', false)).toEqual([
+      '2026-10-07',
+      '2026-11-16',
+      '2026-12-16',
+      '2027-01-16',
+    ]);
+    expect(moveInstallment(days, 1, '2026-11-30', true)).toEqual([
+      '2026-10-16',
+      '2026-11-30',
+      '2026-12-30',
+      '2027-01-30',
+    ]);
+    expect(moveInstallment(days, 2, '2027-01-31', true)).toEqual([
+      '2026-10-16',
+      '2026-11-16',
+      '2027-01-31',
+      '2027-02-28',
+    ]);
+  });
+
+  it('keeps the days in order after the purchase and the amounts above 0', () => {
+    const ok = [
+      { day: '2026-10-07', amount: 500 },
+      { day: '2026-10-17', amount: 500 },
+    ];
+    expect(scheduleError(ok, '2026-10-07')).toBeNull();
+    expect(scheduleError(ok, '2026-10-08')).toBe('dates');
+    expect(scheduleError([ok[1], ok[0]], '2026-10-01')).toBe('dates');
+    expect(scheduleError([{ ...ok[0], amount: 0 }], '2026-10-01')).toBe(
+      'amounts',
     );
   });
 });

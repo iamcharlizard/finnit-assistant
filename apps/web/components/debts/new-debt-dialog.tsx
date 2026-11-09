@@ -54,6 +54,7 @@ import {
   newCardInstallmentForm,
   validateCardInstallmentForm,
   withCardInstallmentChange,
+  withScheduleRowChange,
   type CardInstallmentErrors,
   type CardInstallmentForm,
   type CardInstallmentPrefill,
@@ -431,6 +432,19 @@ export function NewDebtDialog({
                 form={cardForm}
                 errors={cardErrors}
                 update={updateCard}
+                updateRow={(index, patch) => {
+                  setCardForm((current) =>
+                    withScheduleRowChange(current, index, patch, {
+                      accounts,
+                      today,
+                    }),
+                  );
+                  setCardErrors((current) => {
+                    const next = { ...current };
+                    delete next.schedule;
+                    return next;
+                  });
+                }}
                 accounts={accounts}
                 today={today}
               />

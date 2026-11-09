@@ -50,6 +50,7 @@ import { UnlinkLoanDialog } from '@/components/loan-links/unlink-loan-dialog';
 import { useTransactionDrawer } from '@/components/transaction-detail/transaction-drawer';
 import { PaymentDialog } from './payment-dialog';
 import { RescheduleDialog } from './reschedule-dialog';
+import { InstallmentEditDialog } from './installment-edit-dialog';
 
 /**
  * One loan: what is left on top, then tabs: its details (editable), the
@@ -79,6 +80,7 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
   // Personal loans and purchase financing list each amount in its own tab.
   const lentTab = personal || debt.loanType === 'purchase_financing';
   const [moving, setMoving] = React.useState<ScheduleRow | null>(null);
+  const [editingRow, setEditingRow] = React.useState<ScheduleRow | null>(null);
   const [linkingRow, setLinkingRow] = React.useState<ScheduleRow | null>(null);
   const [unlinkingRow, setUnlinkingRow] = React.useState<ScheduleRow | null>(
     null,
@@ -409,6 +411,7 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
                 onLinkExpense={setLinkingRow}
                 onUnlink={setUnlinkingRow}
                 onOpenMovement={openMovement}
+                onEditInstallment={cardPurchase ? setEditingRow : undefined}
               />
             </TabsContent>
           )}
@@ -551,6 +554,18 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
           onSaved={() => {
             setMoving(null);
             toast.success(td('rescheduled'));
+            refresh();
+          }}
+        />
+      ) : null}
+      {editingRow?.editOccurrenceId ? (
+        <InstallmentEditDialog
+          row={{ ...editingRow, editOccurrenceId: editingRow.editOccurrenceId }}
+          total={debt.installmentsTotal ?? view.schedule.length}
+          onClose={() => setEditingRow(null)}
+          onSaved={() => {
+            setEditingRow(null);
+            toast.success(td('editInstallment.saved'));
             refresh();
           }}
         />

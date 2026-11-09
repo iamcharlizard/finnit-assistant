@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
 
-import { Link2, Receipt, Unlink } from 'lucide-react-native';
+import { Link2, Pencil, Receipt, Unlink } from 'lucide-react-native';
 
 import { buildLoanDetailView, type ScheduleRow, type ScheduleRowStatus } from '@finnit/core/debts/detail-view';
 import { DEBT_DETAIL_QUERY, type DebtDetailResult } from '@finnit/core/debts/request';
@@ -17,6 +17,7 @@ import { Progress } from '@finnit/ui-native/components/ui/progress';
 import { Text } from '@finnit/ui-native/components/ui/text';
 import { toast } from '@finnit/ui-native/components/ui/toaster';
 
+import { InstallmentEditSheet } from '@/components/debts/installment-edit-sheet';
 import { LinkExpenseSheet } from '@/components/loan-links/link-expense-sheet';
 import { UnlinkLoanSheet } from '@/components/loan-links/unlink-loan-sheet';
 import { Screen } from '@/components/shell/screen';
@@ -44,6 +45,7 @@ export function DebtDetailScreen() {
   const router = useRouter();
   const [linking, setLinking] = React.useState<ScheduleRow | null>(null);
   const [unlinking, setUnlinking] = React.useState<ScheduleRow | null>(null);
+  const [editing, setEditing] = React.useState<ScheduleRow | null>(null);
   const today = todayKey();
   const { view, loading, error, refreshing, refresh } = useView({
     query: DEBT_DETAIL_QUERY,
@@ -145,6 +147,9 @@ export function DebtDetailScreen() {
                       {row.amountLabel}
                     </Text>
                     <Badge variant={STATUS_VARIANT[row.status]} label={t(`status.${row.status}`)} />
+                    {row.editOccurrenceId ? (
+                      <Button size="icon-sm" variant="ghost" icon={Pencil} label={t('editInstallment.action')} onPress={() => setEditing(row)} />
+                    ) : null}
                     {row.linkOccurrenceId ? (
                       <Button size="sm" variant="outline" icon={Link2} label={tl('linkPaid')} onPress={() => setLinking(row)} />
                     ) : null}
@@ -203,6 +208,17 @@ export function DebtDetailScreen() {
               onUnlinked={() => {
                 setUnlinking(null);
                 changed(tl('unlink.done'));
+              }}
+            />
+          ) : null}
+          {editing?.editOccurrenceId ? (
+            <InstallmentEditSheet
+              row={{ ...editing, editOccurrenceId: editing.editOccurrenceId }}
+              total={view.debt.installmentsTotal ?? view.schedule.length}
+              onClose={() => setEditing(null)}
+              onSaved={() => {
+                setEditing(null);
+                changed(t('editInstallment.saved'));
               }}
             />
           ) : null}

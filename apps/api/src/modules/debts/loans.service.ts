@@ -71,7 +71,14 @@ import {
   totalOwedOf,
 } from './debt-ledger';
 import { LoanTermsError, resolveLoanTerms } from './loan-math';
-import { billedInstallments, installmentDays } from './card-installments';
+import {
+  defaultSchedule,
+  installmentDays,
+  scheduleError,
+  type ScheduleEntry,
+} from './card-installments';
+import { materializeCardSchedule } from './card-schedule';
+import type { CardTerms } from '../credit-cards/credit-card-cycle';
 import { dayKey } from '../credit-cards/credit-card-cycle';
 import { localToday } from '../../common/utils/local-date.util';
 import { visibleCategoryWhere } from '../categories/category-scope';
@@ -88,6 +95,17 @@ interface ResolvedTerms {
   totalToRepay: number;
   installmentAmount: number | null;
 }
+
+/** A card purchase in installments, ready for `create`. */
+interface CardPlan {
+  input: CreateDebtInput;
+  /** The installments typed by the user (null: on the card's cut-offs). */
+  custom: ScheduleEntry[] | null;
+  terms: CardTerms | null;
+  purchaseDay: string;
+}
+
+const dateOfDay = (day: string) => new Date(`${day}T00:00:00.000Z`);
 
 /** What `create` gets from an accepted recurring suggestion. */
 interface FromSuggestion {
@@ -120,8 +138,10 @@ export class LoansService {
     fromSuggestion?: FromSuggestion,
   ): Promise<Debt> {
     const loanType = input.loanType;
+    let card: CardPlan | null = null;
     if (loanType === LoanType.card_installments) {
-      input = await this.cardInstallmentsInput(userId, input);
+      card = await this.cardInstallmentsInput(userId, input);
+      input = card.input;
     }
     const name = input.name?.trim();
     if (!loanType) throw new ValidationError('The loan type is required');
@@ -223,15 +243,31 @@ export class LoansService {
         'Payments already made cannot exceed the number of payments',
       );
     }
-    const scheduledHistory = rule
-      ? this.scheduledHistory(
-          rule,
-          terms,
-          input.installmentsTotal ?? null,
-          installmentsPaid - detected.length,
-          detected,
-        )
-      : [];
+    // A card purchase: the installments typed, or on the card's cut-offs.
+    const cardSchedule = card
+      ? (card.custom ??
+        defaultSchedule(
+          card.purchaseDay,
+          input.installmentsTotal!,
+          card.terms,
+          terms.totalToRepay,
+          terms.installmentAmount!,
+        ))
+      : null;
+    const scheduledHistory = cardSchedule
+      ? cardSchedule.slice(0, installmentsPaid).map((s) => ({
+          dueDate: dateOfDay(s.day),
+          amount: s.amount,
+        }))
+      : rule
+        ? this.scheduledHistory(
+            rule,
+            terms,
+            input.installmentsTotal ?? null,
+            installmentsPaid - detected.length,
+            detected,
+          )
+        : [];
 
     const explicit = (input.historicalPayments ?? []).map((p) => {
       if (!(p.amount > 0)) {
@@ -465,6 +501,10 @@ export class LoansService {
       // The schedule was generated before the expense was linked to the
       // debt, so purchase financing gets its per-date amounts now.
       await this.recurring.resyncLoanOccurrences(tx, debtId!);
+      if (cardSchedule) {
+        await materializeCardSchedule(tx, debtId!, cardSchedule);
+        await syncDebtStatus(tx, debtId!);
+      }
     });
     return this.debts.findById(debtId!, userId);
   }
@@ -1145,13 +1185,26 @@ export class LoansService {
         : null;
 
     // Terms again, from what defined them, when something they use changed.
+    // A card purchase changes its installments one by one
+    // (updateCardInstallment); its price is only informative here.
+    const cardPurchase = debt.loanType === LoanType.card_installments;
+    if (
+      cardPurchase &&
+      input.installmentsTotal !== undefined &&
+      input.installmentsTotal !== debt.installmentsTotal
+    ) {
+      throw new ValidationError(
+        'A purchase in installments keeps its number of installments',
+      );
+    }
     const termsChanged =
-      (input.principal !== undefined &&
+      !cardPurchase &&
+      ((input.principal !== undefined &&
         input.principal !== Number(debt.principal)) ||
-      (input.installmentsTotal !== undefined &&
-        input.installmentsTotal !== debt.installmentsTotal) ||
-      (input.periodicFee !== undefined &&
-        periodicFee !== Number(debt.periodicFee ?? 0));
+        (input.installmentsTotal !== undefined &&
+          input.installmentsTotal !== debt.installmentsTotal) ||
+        (input.periodicFee !== undefined &&
+          periodicFee !== Number(debt.periodicFee ?? 0)));
     const terms = termsChanged
       ? this.resolveTerms({
           principal,
@@ -1445,7 +1498,7 @@ export class LoansService {
   private async cardInstallmentsInput(
     userId: string,
     input: CreateDebtInput,
-  ): Promise<CreateDebtInput> {
+  ): Promise<CardPlan> {
     if (!input.linkedAccountId) {
       throw new ValidationError('Choose the credit card of the purchase');
     }
@@ -1483,22 +1536,50 @@ export class LoansService {
 
     const terms = card.creditCardTerms ?? null;
     const purchaseDay = dayKey(toDateOnly(new Date(input.startDate)));
-    const days = installmentDays(purchaseDay, count, terms);
-    const interestMode = input.interestMode ?? LoanInterestMode.total_amount;
-    return {
+    const custom = input.installmentSchedule?.length
+      ? input.installmentSchedule.map((s) => ({
+          day: dayKey(toDateOnly(new Date(s.dueDate))),
+          amount: cents(s.amount),
+        }))
+      : null;
+    if (custom) {
+      if (custom.length !== count) {
+        throw new ValidationError(
+          'The installments must be as many as the months',
+        );
+      }
+      if (scheduleError(custom, purchaseDay)) {
+        throw new ValidationError(
+          'Installments go after the purchase, one per day, each above 0',
+        );
+      }
+      const total = cents(custom.reduce((sum, s) => sum + s.amount, 0));
+      if (total < input.principal - CENT) {
+        throw new ValidationError('The installments do not cover the purchase');
+      }
+    }
+    const days = custom
+      ? custom.map((s) => s.day)
+      : installmentDays(purchaseDay, count, terms);
+    // Typed installments define what is repaid (their sum).
+    const interestMode = custom
+      ? LoanInterestMode.total_amount
+      : (input.interestMode ?? LoanInterestMode.total_amount);
+    const today = dayKey(localToday());
+    const prepared: CreateDebtInput = {
       ...input,
       kind: DebtKind.loan,
       paymentFrequency: RecurringFrequency.monthly,
       firstPaymentDate: new Date(`${days[0]}T00:00:00.000Z`),
       interestMode,
       // Without interest it is the price split in equal installments.
-      totalToRepay:
-        interestMode === LoanInterestMode.total_amount
+      totalToRepay: custom
+        ? cents(custom.reduce((sum, s) => sum + s.amount, 0))
+        : interestMode === LoanInterestMode.total_amount
           ? (input.totalToRepay ?? input.principal)
           : input.totalToRepay,
       installmentsPaid:
-        input.installmentsPaid ??
-        billedInstallments(purchaseDay, count, terms, dayKey(localToday())),
+        input.installmentsPaid ?? days.filter((d) => d <= today).length,
       paymentAccountId: card.id,
       trackingMode: input.trackingMode ?? RecurringTrackingMode.automatic,
       destination: DebtChargeDestination.purchase,
@@ -1506,6 +1587,7 @@ export class LoansService {
       periodicFee: undefined,
       merchantPattern,
     };
+    return { input: prepared, custom, terms, purchaseDay };
   }
 
   /** An expense of the user on `cardId` not already the purchase of a debt. */

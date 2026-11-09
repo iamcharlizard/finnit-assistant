@@ -1608,4 +1608,115 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       }),
     ).rejects.toThrow(ValidationError);
   });
+
+  it('card purchase in installments: every installment stored, typed ones, and changing one or the next ones', async () => {
+    const card = await prisma.account.create({
+      data: {
+        userId,
+        type: AccountType.credit,
+        name: 'Tarjeta calendario',
+        currency: 'MXN',
+        balanceCurrent: 0,
+        creditCardTerms: { create: { statementDay: 16, paymentDueDay: 9 } },
+      },
+    });
+    const occurrencesOf = async (debtId: string) =>
+      (
+        await prisma.recurringOccurrence.findMany({
+          where: { recurringExpense: { debtId } },
+          orderBy: { dueDate: 'asc' },
+        })
+      ).map((o) => [iso(o.dueDate), Number(o.expectedAmount), o.status]);
+
+    // Typed: the first on the purchase day, the rest on the 17th.
+    const typed = await loans.create(userId, {
+      name: 'Audífonos',
+      kind: DebtKind.loan,
+      loanType: LoanType.card_installments,
+      principal: 998,
+      installmentsTotal: 3,
+      startDate: d('2027-03-07'),
+      linkedAccountId: card.id,
+      installmentsPaid: 0,
+      installmentSchedule: [
+        { dueDate: d('2027-03-07'), amount: 332.66 },
+        { dueDate: d('2027-04-17'), amount: 332.66 },
+        { dueDate: d('2027-05-17'), amount: 332.68 },
+      ],
+    });
+    expect(typed.totalToRepay).toBe(998);
+    expect(typed.dueDate && iso(typed.dueDate)).toBe('2027-05-17');
+    expect(await occurrencesOf(typed.id)).toEqual([
+      ['2027-03-07', 332.66, 'upcoming'],
+      ['2027-04-17', 332.66, 'upcoming'],
+      ['2027-05-17', 332.68, 'upcoming'],
+    ]);
+    await expect(
+      loans.create(userId, {
+        name: 'Desordenada',
+        kind: DebtKind.loan,
+        loanType: LoanType.card_installments,
+        principal: 100,
+        installmentsTotal: 2,
+        startDate: d('2027-03-07'),
+        linkedAccountId: card.id,
+        installmentSchedule: [
+          { dueDate: d('2027-04-07'), amount: 50 },
+          { dueDate: d('2027-03-08'), amount: 50 },
+        ],
+      }),
+    ).rejects.toThrow(ValidationError);
+
+    // On the cut-offs, every installment stored (not only the next ones).
+    const plan = await loans.create(userId, {
+      name: 'Bocina',
+      kind: DebtKind.loan,
+      loanType: LoanType.card_installments,
+      principal: 1200,
+      installmentsTotal: 12,
+      startDate: d('2027-03-01'),
+      linkedAccountId: card.id,
+      installmentsPaid: 0,
+    });
+    const stored = await occurrencesOf(plan.id);
+    expect(stored).toHaveLength(12);
+    expect(stored[0]).toEqual(['2027-03-16', 100, 'upcoming']);
+    expect(stored[11]).toEqual(['2028-02-16', 100, 'upcoming']);
+
+    // The first one moves alone; the second moves the next ones too.
+    const [first, second] = await prisma.recurringOccurrence.findMany({
+      where: { recurringExpense: { debtId: plan.id } },
+      orderBy: { dueDate: 'asc' },
+      take: 2,
+    });
+    await cardInstallments.updateInstallment(userId, {
+      occurrenceId: first.id,
+      dueDate: d('2027-03-01'),
+      amount: 150,
+    });
+    const moved = await cardInstallments.updateInstallment(userId, {
+      occurrenceId: second.id,
+      dueDate: d('2027-04-17'),
+      shiftFollowing: true,
+    });
+    const after = await occurrencesOf(plan.id);
+    expect(after[0]).toEqual(['2027-03-01', 150, 'upcoming']);
+    expect(after[1][0]).toBe('2027-04-17');
+    expect(after[11][0]).toBe('2028-02-17');
+    expect(moved.totalToRepay).toBe(1250);
+    expect(moved.dueDate && iso(moved.dueDate)).toBe('2028-02-17');
+    // Before the purchase, or onto the next one: refused.
+    await expect(
+      cardInstallments.updateInstallment(userId, {
+        occurrenceId: first.id,
+        dueDate: d('2027-02-01'),
+      }),
+    ).rejects.toThrow(ValidationError);
+    await expect(
+      cardInstallments.updateInstallment(userId, {
+        occurrenceId: first.id,
+        dueDate: d('2027-04-17'),
+      }),
+    ).rejects.toThrow(ValidationError);
+  });
 });

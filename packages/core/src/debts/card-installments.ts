@@ -116,6 +116,17 @@ export interface CardInstallmentForm {
   paidTouched: boolean;
   /** The card's expense of the whole purchase ('' = none). */
   purchaseTransactionId: string;
+  /**
+   * The installments as the user changed them (day and raw amount, e.g.
+   * "332.66"); null = on the card's cut-offs, split evenly. Changing the
+   * total, months, date, card or interest starts them over.
+   */
+  schedule: ScheduleRow[] | null;
+}
+
+export interface ScheduleRow {
+  day: DayKey;
+  amount: string;
 }
 
 export type CardInstallmentField = keyof CardInstallmentForm;
@@ -138,7 +149,10 @@ export type CardInstallmentErrorCode =
   | 'installmentAmountRequired'
   | 'installmentAmountTooLow'
   | 'installmentsPaidInvalid'
-  | 'installmentsPaidTooMany';
+  | 'installmentsPaidTooMany'
+  | 'scheduleDates'
+  | 'scheduleAmounts'
+  | 'scheduleBelowPrincipal';
 
 export type CardInstallmentErrors = Partial<
   Record<CardInstallmentField, CardInstallmentErrorCode>
@@ -171,7 +185,112 @@ export function newCardInstallmentForm(
     installmentsPaid: '0',
     paidTouched: false,
     purchaseTransactionId: prefill.purchaseTransactionId ?? '',
+    schedule: null,
   };
+}
+
+/** What starts the installments over when it changes. */
+const SCHEDULE_INPUTS: ReadonlyArray<keyof CardInstallmentForm> = [
+  'accountId',
+  'principal',
+  'months',
+  'withInterest',
+  'interestMode',
+  'rate',
+  'includesVat',
+  'totalToRepay',
+  'installmentAmount',
+  'purchaseDate',
+];
+
+/**
+ * Moves installment `index` to `day`; with `following`, the ones after it
+ * go to that same day of the next months (as the API does).
+ */
+export function moveInstallment(
+  days: readonly DayKey[],
+  index: number,
+  day: DayKey,
+  following: boolean,
+): DayKey[] {
+  const next = [...days];
+  next[index] = day;
+  if (!following) return next;
+  const { year, month, day: date } = parseDayKey(day);
+  for (let j = index + 1; j < next.length; j++) {
+    next[j] = dayOfMonth(year, month + (j - index), date);
+  }
+  return next;
+}
+
+/**
+ * The installments the form will save: as the user changed them, or on
+ * the card's cut-offs with the terms' amounts (the last takes the cents
+ * left). Null while the total, months or date are missing.
+ */
+export function cardScheduleRows(
+  form: CardInstallmentForm,
+  accounts: ReadonlyArray<ApiAccount>,
+): ScheduleRow[] | null {
+  if (form.schedule) return form.schedule;
+  const months = wholeNumber(form.months);
+  const preview = cardInstallmentPreview(form);
+  if (
+    !months ||
+    months > MAX_MONTHS ||
+    !preview ||
+    !isDayKey(form.purchaseDate)
+  ) {
+    return null;
+  }
+  const terms = cardTermsOf(accounts.find((a) => a.id === form.accountId));
+  const each = preview.installmentAmount;
+  const last = roundCents(preview.totalToRepay - each * (months - 1));
+  return installmentDays(form.purchaseDate, months, terms).map((day, i) => ({
+    day,
+    amount: (i === months - 1 ? last : each).toFixed(2),
+  }));
+}
+
+/**
+ * One installment changed in the list: a new day moves the next ones to
+ * that day of the following months; a new amount changes only that one.
+ */
+export function withScheduleRowChange(
+  form: CardInstallmentForm,
+  index: number,
+  patch: Partial<ScheduleRow>,
+  { accounts, today }: { accounts: ReadonlyArray<ApiAccount>; today: DayKey },
+): CardInstallmentForm {
+  const rows = cardScheduleRows(form, accounts);
+  if (!rows) return form;
+  const days = patch.day
+    ? moveInstallment(
+        rows.map((r) => r.day),
+        index,
+        patch.day,
+        true,
+      )
+    : rows.map((r) => r.day);
+  const schedule = rows.map((row, i) => ({
+    day: days[i]!,
+    amount:
+      i === index && patch.amount !== undefined ? patch.amount : row.amount,
+  }));
+  return withCardInstallmentChange(form, { schedule }, { accounts, today });
+}
+
+/** One page of a long list of installments (12 or 24 months). */
+export const SCHEDULE_PAGE = 6;
+
+export function schedulePage<T>(
+  rows: readonly T[],
+  page: number,
+): { rows: T[]; start: number; pages: number } {
+  const pages = Math.max(1, Math.ceil(rows.length / SCHEDULE_PAGE));
+  const current = Math.min(Math.max(0, page), pages - 1);
+  const start = current * SCHEDULE_PAGE;
+  return { rows: rows.slice(start, start + SCHEDULE_PAGE), start, pages };
 }
 
 const wholeNumber = (text: string): number | null =>
@@ -186,18 +305,27 @@ export function withCardInstallmentChange(
   patch: Partial<CardInstallmentForm>,
   { accounts, today }: { accounts: ReadonlyArray<ApiAccount>; today: DayKey },
 ): CardInstallmentForm {
+  const restart = SCHEDULE_INPUTS.some((key) => key in patch);
   const next = {
     ...form,
     ...patch,
+    ...(restart && !('schedule' in patch) ? { schedule: null } : {}),
     ...('installmentsPaid' in patch ? { paidTouched: true } : {}),
   };
   if (next.paidTouched) return next;
+  // The days alone say what was billed (the amounts may still be missing).
   const months = wholeNumber(next.months);
-  if (!months || !isDayKey(next.purchaseDate)) {
-    return { ...next, installmentsPaid: '0' };
-  }
-  const terms = cardTermsOf(accounts.find((a) => a.id === next.accountId));
-  const billed = billedInstallments(next.purchaseDate, months, terms, today);
+  const days = next.schedule
+    ? next.schedule.map((r) => r.day)
+    : months && months <= MAX_MONTHS && isDayKey(next.purchaseDate)
+      ? installmentDays(
+          next.purchaseDate,
+          months,
+          cardTermsOf(accounts.find((a) => a.id === next.accountId)),
+        )
+      : null;
+  if (!days) return { ...next, installmentsPaid: '0' };
+  const billed = days.filter((d) => d <= today).length;
   return { ...next, installmentsPaid: String(billed) };
 }
 
@@ -207,6 +335,16 @@ export function cardInstallmentPreview(
 ): LoanTermsPreview | null {
   const principal = parseAmount(form.principal) ?? 0;
   const months = wholeNumber(form.months) ?? 0;
+  if (form.schedule) {
+    const amounts = form.schedule.map((r) => parseAmount(r.amount) ?? 0);
+    const total = roundCents(amounts.reduce((sum, a) => sum + a, 0));
+    return {
+      installmentAmount: amounts[0] ?? 0,
+      totalToRepay: total,
+      interest: roundCents(total - principal),
+      fees: 0,
+    };
+  }
   if (!form.withInterest) {
     return previewLoanTerms({
       mode: 'total_amount',
@@ -233,13 +371,9 @@ export function cardInstallmentSpan(
   form: CardInstallmentForm,
   accounts: ReadonlyArray<ApiAccount>,
 ): { first: DayKey; last: DayKey } | null {
-  const months = wholeNumber(form.months);
-  if (!months || months > MAX_MONTHS || !isDayKey(form.purchaseDate)) {
-    return null;
-  }
-  const terms = cardTermsOf(accounts.find((a) => a.id === form.accountId));
-  const days = installmentDays(form.purchaseDate, months, terms);
-  return { first: days[0]!, last: days[days.length - 1]! };
+  const rows = cardScheduleRows(form, accounts);
+  if (!rows || rows.length === 0) return null;
+  return { first: rows[0]!.day, last: rows[rows.length - 1]!.day };
 }
 
 export function validateCardInstallmentForm(
@@ -297,6 +431,26 @@ export function validateCardInstallmentForm(
     }
   }
 
+  if (form.schedule) {
+    const amounts = form.schedule.map((r) => parseAmount(r.amount));
+    if (amounts.some((a) => a === null || a <= 0)) {
+      errors.schedule = 'scheduleAmounts';
+    } else if (
+      form.schedule.some(
+        (r, i) =>
+          (isDayKey(form.purchaseDate) && r.day < form.purchaseDate) ||
+          (i > 0 && r.day <= form.schedule![i - 1]!.day),
+      )
+    ) {
+      errors.schedule = 'scheduleDates';
+    } else if (
+      principal !== null &&
+      roundCents(amounts.reduce((s, a) => s! + a!, 0)!) < principal - 0.001
+    ) {
+      errors.schedule = 'scheduleBelowPrincipal';
+    }
+  }
+
   const paid = wholeNumber(form.installmentsPaid || '0');
   if (paid === null) errors.installmentsPaid = 'installmentsPaidInvalid';
   else if (months && paid > months) {
@@ -322,6 +476,12 @@ export function buildCardInstallmentInput(
   };
   if (form.purchaseTransactionId) {
     input.purchaseTransactionId = form.purchaseTransactionId;
+  }
+  if (form.schedule) {
+    input.installmentSchedule = form.schedule.map((r) => ({
+      dueDate: r.day,
+      amount: parseAmount(r.amount),
+    }));
   }
   if (!form.withInterest) {
     input.interestMode = 'total_amount';

@@ -82,7 +82,9 @@ type EditableDebt = Pick<
 export function loanEditFields(debt: EditableDebt): LoanEditFields {
   const institutional = debt.loanType === 'institutional';
   return {
-    installments: debt.interestMode !== null,
+    // A card purchase changes its installments one by one.
+    installments:
+      debt.interestMode !== null && debt.loanType !== 'card_installments',
     openingFee: institutional,
     periodicFee: institutional && debt.interestMode === 'rate',
   };

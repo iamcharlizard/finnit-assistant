@@ -1,10 +1,15 @@
 import * as React from 'react';
 import { useTranslations } from 'use-intl';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
 import {
   INSTALLMENT_MONTHS,
+  SCHEDULE_PAGE,
   cardInstallmentPreview,
   cardInstallmentSpan,
+  cardScheduleRows,
+  schedulePage,
+  type ScheduleRow,
   cardTermsOf,
   installmentCards,
   type CardInstallmentErrorCode,
@@ -18,6 +23,7 @@ import { DEFAULT_CURRENCY, formatMoney } from '@finnit/core/finance/money';
 import type { ApiAccount } from '@finnit/core/finance/types';
 import { accountOptions } from '@finnit/core/new-entry/options';
 import { TwView } from '@finnit/ui-native/lib/tw';
+import { Button } from '@finnit/ui-native/components/ui/button';
 import { DatePicker } from '@finnit/ui-native/components/ui/date-picker';
 import { Input } from '@finnit/ui-native/components/ui/input';
 import { MoneyInput } from '@finnit/ui-native/components/ui/money-input';
@@ -27,6 +33,7 @@ import { Switch } from '@finnit/ui-native/components/ui/switch';
 import { Text } from '@finnit/ui-native/components/ui/text';
 import { ToggleGroup } from '@finnit/ui-native/components/ui/toggle-group';
 
+import { TextLink } from '@/components/finance/text-link';
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
 
 const OTHER = 'other';
@@ -40,12 +47,15 @@ export function CardInstallmentFields({
   form,
   errors,
   update,
+  updateRow,
   accounts,
   today,
 }: {
   form: CardInstallmentForm;
   errors: CardInstallmentErrors;
   update: (patch: Partial<CardInstallmentForm>) => void;
+  /** One installment changed (a new day moves the next ones too). */
+  updateRow: (index: number, patch: Partial<ScheduleRow>) => void;
   accounts: ApiAccount[];
   today: DayKey;
 }) {
@@ -70,6 +80,10 @@ export function CardInstallmentFields({
     Boolean(form.months) && !preset,
   );
   const preview = cardInstallmentPreview(form);
+  const rows = cardScheduleRows(form, accounts);
+  const [page, setPage] = React.useState(0);
+  const shown = rows ? schedulePage(rows, page) : null;
+  const current = shown ? shown.start / SCHEDULE_PAGE : 0;
   const span = cardInstallmentSpan(form, accounts);
   const hasTerms = Boolean(cardTermsOf(card));
 
@@ -255,6 +269,67 @@ export function CardInstallmentFields({
           </TwView>
         ) : null}
       </TwView>
+
+      {rows && shown ? (
+        <TwView className="gap-3 rounded-3xl border border-outline p-4">
+          <TwView className="flex-row items-center justify-between gap-2">
+            <Text weight="bold" className="text-sm">
+              {tf('scheduleTitle')}
+            </Text>
+            {form.schedule ? <TextLink label={tf('scheduleReset')} onPress={() => update({ schedule: null })} /> : null}
+          </TwView>
+          <Text className="text-xs text-on-surface-variant">{tf('scheduleHint')}</Text>
+          {shown.rows.map((row, i) => {
+            const index = shown.start + i;
+            const number = index + 1;
+            return (
+              <TwView key={index} className="gap-2 rounded-2xl bg-track p-3">
+                <Text weight="medium" className="text-xs text-on-surface-variant">
+                  {tf('scheduleNumber', { number, total: rows.length })}
+                </Text>
+                <DatePicker
+                  label={tf('scheduleDate', { number })}
+                  value={row.day}
+                  onChange={(day) => day && updateRow(index, { day })}
+                  min={form.purchaseDate || undefined}
+                  locale={locale}
+                  closeLabel={t('common.close')}
+                />
+                <MoneyInput
+                  label={tf('scheduleAmount', { number })}
+                  value={row.amount}
+                  currency={currency}
+                  onValueChange={(amount) => updateRow(index, { amount })}
+                />
+              </TwView>
+            );
+          })}
+          {shown.pages > 1 ? (
+            <TwView className="flex-row items-center justify-between gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={ChevronLeft}
+                label={tf('schedulePrevious')}
+                disabled={current === 0}
+                onPress={() => setPage(current - 1)}
+              />
+              <Text className="text-xs text-on-surface-variant">
+                {tf('schedulePage', { from: shown.start + 1, to: shown.start + shown.rows.length, total: rows.length })}
+              </Text>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={ChevronRight}
+                label={tf('scheduleNext')}
+                disabled={current >= shown.pages - 1}
+                onPress={() => setPage(current + 1)}
+              />
+            </TwView>
+          ) : null}
+          {errors.schedule ? <Text className="text-[13px] text-expense">{errorText(errors.schedule)}</Text> : null}
+        </TwView>
+      ) : null}
 
       <TwView className="gap-1">
         <NumberInput

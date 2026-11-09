@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import {
   AccountType,
@@ -17,7 +17,7 @@ import {
 } from '../../common/exceptions/graphql-error.exception';
 import { localToday } from '../../common/utils/local-date.util';
 import { RecurringExpensesService } from '../recurring-expenses/recurring-expenses.service';
-import { CardTerms, DayKey, dayKey } from '../credit-cards/credit-card-cycle';
+import { DayKey, dayKey } from '../credit-cards/credit-card-cycle';
 import { Debt } from './dto/debt.dto';
 import {
   CardInstallmentLinkOptions,
@@ -29,8 +29,12 @@ import { namesMatch } from './loan-links';
 import {
   fitsInstallment,
   fitsPurchase,
-  planInstallments,
+  moveInstallment,
+  scheduleError,
 } from './card-installments';
+import { ensureCardSchedule, refreshCardPlan } from './card-schedule';
+import { UpdateCardInstallmentInput } from './dto/debt.dto';
+import { toDateOnly } from '../recurring-expenses/schedule.util';
 
 type Client = Prisma.TransactionClient | PrismaService;
 
@@ -85,7 +89,7 @@ const textOf = (t: {
  * (paid without a movement), so they never count as spending twice.
  */
 @Injectable()
-export class CardInstallmentsService {
+export class CardInstallmentsService implements OnApplicationBootstrap {
   private readonly logger = new Logger(CardInstallmentsService.name);
 
   /** Every morning: the installments the cards billed overnight. */
@@ -162,7 +166,7 @@ export class CardInstallmentsService {
           name: plan.name,
           purchase: false,
           occurrenceId: movement.recurringPayment.id,
-          number: numberOf(plan, movement.recurringPayment),
+          number: numberOf(plan, movement.recurringPayment.id),
           installmentsTotal: plan.installmentsTotal ?? 0,
         };
       }
@@ -197,7 +201,7 @@ export class CardInstallmentsService {
                 const expected = Number(o.expectedAmount);
                 return {
                   occurrenceId: o.id,
-                  number: numberOf(plan, o),
+                  number: numberOf(plan, o.id),
                   dueDate: o.dueDate,
                   amount: expected,
                   fits: fitsInstallment(
@@ -262,6 +266,145 @@ export class CardInstallmentsService {
         return rest;
       }),
     };
+  }
+
+  /** Plans from before every installment was stored get the rest. */
+  async onApplicationBootstrap(): Promise<void> {
+    try {
+      const plans = await this.prisma.debt.findMany({
+        where: {
+          loanType: LoanType.card_installments,
+          status: DebtStatus.active,
+        },
+        select: { id: true },
+      });
+      for (const plan of plans) {
+        await this.prisma.$transaction((tx) => ensureCardSchedule(tx, plan.id));
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Card installments backfill failed: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  /**
+   * Changes one installment: its day (with `shiftFollowing`, the next ones
+   * go to that day of the following months) and its amount. Days stay in
+   * order after the purchase; the plan then owes the installments' sum. A
+   * paid one without a movement moves its payment too; one paid by a
+   * movement keeps the movement's amount.
+   */
+  async updateInstallment(
+    userId: string,
+    input: UpdateCardInstallmentInput,
+  ): Promise<Debt> {
+    const occurrence = await this.prisma.recurringOccurrence.findFirst({
+      where: {
+        id: input.occurrenceId,
+        recurringExpense: {
+          userId,
+          debt: { loanType: LoanType.card_installments },
+        },
+      },
+      include: { recurringExpense: { select: { id: true, debtId: true } } },
+    });
+    if (!occurrence) throw new NotFoundError('Installment not found');
+    const debtId = occurrence.recurringExpense.debtId!;
+    const debt = await this.prisma.debt.findUniqueOrThrow({
+      where: { id: debtId },
+      select: { startDate: true, principal: true },
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      await ensureCardSchedule(tx, debtId);
+      const all = await tx.recurringOccurrence.findMany({
+        where: {
+          recurringExpenseId: occurrence.recurringExpense.id,
+          status: { not: OccurrenceStatus.skipped },
+        },
+        orderBy: { dueDate: 'asc' },
+      });
+      const index = all.findIndex((o) => o.id === occurrence.id);
+      const before = all.map((o) => dayKey(o.dueDate));
+      const days = input.dueDate
+        ? moveInstallment(
+            before,
+            index,
+            dayKey(toDateOnly(new Date(input.dueDate))),
+            input.shiftFollowing ?? false,
+          )
+        : before;
+      const amounts = all.map((o, i) =>
+        i === index && input.amount != null
+          ? Math.round(input.amount * 100) / 100
+          : Number(o.expectedAmount),
+      );
+      const error = scheduleError(
+        days.map((day, i) => ({ day, amount: amounts[i] })),
+        debt.startDate ? dayKey(debt.startDate) : days[0],
+      );
+      if (error) {
+        throw new ValidationError(
+          error === 'dates'
+            ? 'Installments go after the purchase, one per day, in order'
+            : 'Installments must be above 0',
+        );
+      }
+      const total = amounts.reduce((sum, a) => sum + a, 0);
+      if (total < Number(debt.principal) - 0.01) {
+        throw new ValidationError('The installments do not cover the purchase');
+      }
+
+      const changed = all
+        .map((o, i) => ({ o, i }))
+        .filter(
+          ({ o, i }) =>
+            days[i] !== before[i] || amounts[i] !== Number(o.expectedAmount),
+        );
+      // Out of the way first: two installments can't share a day.
+      for (const { o, i } of changed) {
+        if (days[i] === before[i]) continue;
+        await tx.recurringOccurrence.update({
+          where: { id: o.id },
+          data: { dueDate: new Date(Date.UTC(1900, 0, 1 + i)) },
+        });
+      }
+      const today = toDateOnly(new Date());
+      for (const { o, i } of changed) {
+        const dueDate = new Date(`${days[i]}T00:00:00.000Z`);
+        await tx.recurringOccurrence.update({
+          where: { id: o.id },
+          data: {
+            dueDate,
+            expectedAmount: amounts[i],
+            // A missed one moved ahead is open again.
+            ...(o.status === OccurrenceStatus.missed &&
+              dueDate >= today && { status: OccurrenceStatus.upcoming }),
+          },
+        });
+        // Paid before registering it: its payment follows.
+        if (o.status === OccurrenceStatus.paid && !o.transactionId) {
+          const payment = await tx.debtPayment.findFirst({
+            where: {
+              debtId,
+              transactionId: null,
+              chargeId: null,
+              date: o.dueDate,
+            },
+          });
+          if (payment) {
+            await tx.debtPayment.update({
+              where: { id: payment.id },
+              data: { date: dueDate, amount: amounts[i] },
+            });
+          }
+        }
+      }
+      await refreshCardPlan(tx, debtId);
+      await syncDebtStatus(tx, debtId);
+    });
+    return this.debts.findById(debtId, userId);
   }
 
   /** The movement is the card's charge of the whole purchase. */
@@ -511,33 +654,12 @@ const PLAN_SELECT_WITH_ACCOUNT = {
   linkedAccountId: true,
 } satisfies Prisma.DebtSelect;
 
-/** Which installment an occurrence is, from where it falls in the plan. */
-function numberOf(
-  plan: PlanRow,
-  occurrence: { dueDate: Date; originalDueDate: Date | null },
-): number {
-  const terms: CardTerms | null = plan.linkedAccount?.creditCardTerms ?? null;
-  const schedule = planInstallments(
-    {
-      debtId: plan.id,
-      name: plan.name,
-      purchaseDay: dayKey(plan.startDate!),
-      count: plan.installmentsTotal ?? 0,
-      totalToRepay: Number(plan.totalToRepay ?? plan.principal),
-      installmentAmount: Number(plan.installmentAmount ?? 0),
-      purchaseChargedOn: null,
-    },
-    terms,
+/** Which installment an occurrence is: its place among the stored ones. */
+function numberOf(plan: PlanRow, occurrenceId: string): number {
+  const index = (plan.recurringExpense?.occurrences ?? []).findIndex(
+    (o) => o.id === occurrenceId,
   );
-  const day = dayKey(occurrence.originalDueDate ?? occurrence.dueDate);
-  const exact = schedule.find((i) => i.day === day);
-  if (exact) return exact.number;
-  // Moved or generated by another rhythm: the closest one.
-  const closestItem = closest(
-    schedule.map((i) => ({ ...i, dueDate: new Date(`${i.day}T00:00:00Z`) })),
-    day,
-  );
-  return closestItem?.number ?? 1;
+  return index + 1 || 1;
 }
 
 function closest<T extends { dueDate: Date }>(

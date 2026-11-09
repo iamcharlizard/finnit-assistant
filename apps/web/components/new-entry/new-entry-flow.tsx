@@ -74,7 +74,11 @@ import { AttachmentUploadStatus } from './attachment-upload-status';
 import { DuplicateReview } from './duplicate-review';
 import { EntryForm } from './entry-form';
 import { EntryKindPicker } from './entry-kind-picker';
-import { TransferForm } from './transfer-form';
+import { TransferForm, type LegPicks } from './transfer-form';
+import {
+  legChoice,
+  type TransferLegCandidates,
+} from '@finnit/core/transfers/legs';
 
 type Step =
   | { name: 'kind' }
@@ -145,6 +149,8 @@ export function NewEntryFlow({
   const [entry, setEntry] = React.useState<EntryDraft>(() =>
     emptyEntryDraft('expense', todayKey()),
   );
+  const [legs, setLegs] = React.useState<TransferLegCandidates | null>(null);
+  const [legPicks, setLegPicks] = React.useState<LegPicks>({});
   const [transfer, setTransfer] = React.useState<TransferDraft>(() =>
     emptyTransferDraft(todayKey()),
   );
@@ -249,6 +255,7 @@ export function NewEntryFlow({
     const only = onlyAccount;
     if (kind === 'transfer') {
       setTransfer(emptyTransferDraft(todayKey()));
+      setLegPicks({});
       setTransferTried(false);
       setStep({ name: 'transfer' });
     } else {
@@ -456,6 +463,10 @@ export function NewEntryFlow({
           : 'newEntry.defaultTransferDescription',
         { account: accountLabel(to) },
       ),
+      {
+        from: legs ? legChoice(legs.from, legPicks.from) : null,
+        to: legs ? legChoice(legs.to, legPicks.to) : null,
+      },
     );
     setBusy('saving');
     try {
@@ -672,6 +683,12 @@ export function NewEntryFlow({
         </p>
       ) : (
         <TransferForm
+          legs={legs}
+          onLegs={setLegs}
+          legPicks={legPicks}
+          onLegPick={(side, id) =>
+            setLegPicks((current) => ({ ...current, [side]: id }))
+          }
           draft={transfer}
           onChange={setTransfer}
           accounts={accounts}

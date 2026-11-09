@@ -27,6 +27,12 @@ export class TransferCounterpart {
 
   @Field({ description: '"out" when this movement is the source side' })
   direction: string;
+
+  @Field({
+    description:
+      'Deleting the transfer keeps the other side as an expense/income (it came from the bank or was converted); false: it is deleted too',
+  })
+  keptOnDelete: boolean;
 }
 
 @ObjectType({ description: 'The recurring payment a movement paid' })

@@ -190,6 +190,10 @@ export interface CreateTransferPayload {
   amount: number;
   txnDate: DayKey;
   description: string;
+  /** A movement already recorded that is the outgoing side (none is created). */
+  fromTransactionId?: string;
+  /** A movement already recorded that is the incoming side (none is created). */
+  toTransactionId?: string;
 }
 
 /**
@@ -200,6 +204,7 @@ export interface CreateTransferPayload {
 export function buildTransferInput(
   draft: TransferDraft,
   defaultDescription: string,
+  legs: { from?: string | null; to?: string | null } = {},
 ): CreateTransferPayload {
   return {
     fromAccountId: draft.fromAccountId!,
@@ -207,6 +212,8 @@ export function buildTransferInput(
     amount: parseAmount(draft.amount)!,
     txnDate: draft.date!,
     description: draft.description.trim() || defaultDescription,
+    ...(legs.from && { fromTransactionId: legs.from }),
+    ...(legs.to && { toTransactionId: legs.to }),
   };
 }
 

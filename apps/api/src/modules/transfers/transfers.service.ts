@@ -10,18 +10,35 @@ import {
   TransferSameAccountError,
 } from '../../common/exceptions/graphql-error.exception';
 import {
+  Prisma,
   TransactionType,
   TransactionSource,
+  TransferSuggestionStatus,
   AccountType,
 } from '@finnit/database';
+import { Transaction } from '../../common/types/models/transaction.model';
+import { effectOf, moveBalance } from '../../common/utils/balance-effect.util';
+import { addDays } from '../../common/utils/local-date.util';
+import { FREE_MOVEMENT } from './free-movement';
+import { COUNTERPART_TYPES } from './transfer-matching';
+import {
+  becomeSide,
+  dissolveTransfer,
+  requireTransfer,
+  transferOfMovement,
+} from './transfer-dissolve';
 import {
   localToday,
   toLocalDateOnly,
 } from '../../common/utils/local-date.util';
 import {
   TRANSACTION_PRESENTATION_INCLUDE,
+  mapTransaction,
   presentationFields,
 } from '../transactions/transaction.mapper';
+
+/** A new transfer looks for its sides this many days around its date. */
+export const LEG_DAYS_WINDOW = 3;
 
 @Injectable()
 export class TransfersService {
@@ -50,83 +67,89 @@ export class TransfersService {
       throw new NotFoundError('Destination account not found');
     }
 
-    // Check if source account has sufficient balance
-    if (Number(fromAccount.balanceCurrent) < input.amount) {
-      throw new InsufficientBalanceError(
-        'Insufficient balance in source account',
-      );
-    }
-
     // Check currency compatibility (simplified - in production, you'd handle exchange rates)
     if (fromAccount.currency !== toAccount.currency) {
       throw new ValidationError('Currency conversion not supported yet');
     }
 
-    // The calendar day in the user's time zone (date-only, midnight UTC).
-    const txnDate = input.txnDate
-      ? toLocalDateOnly(input.txnDate)
-      : localToday();
-    const description = input.description || `Transfer to ${toAccount.name}`;
-
     return await this.prisma.$transaction(async (tx) => {
-      // Create outgoing transaction
-      const fromTxn = await tx.transaction.create({
-        data: {
-          userId,
-          accountId: input.fromAccountId,
-          type: TransactionType.transfer,
-          amount: input.amount,
-          balanceEffect: -input.amount,
-          currency: fromAccount.currency,
-          txnDate,
-          description,
-          source: TransactionSource.manual,
-        },
-      });
+      // Movements already recorded become the sides (no new money moves).
+      const existingFrom = input.fromTransactionId
+        ? await this.existingSide(tx, userId, input.fromTransactionId, {
+            accountId: fromAccount.id,
+            amount: input.amount,
+            direction: 'out',
+          })
+        : null;
+      const existingTo = input.toTransactionId
+        ? await this.existingSide(tx, userId, input.toTransactionId, {
+            accountId: toAccount.id,
+            amount: input.amount,
+            direction: 'in',
+          })
+        : null;
 
-      // Create incoming transaction
-      const toTxn = await tx.transaction.create({
-        data: {
-          userId,
-          accountId: input.toAccountId,
-          type: TransactionType.transfer,
-          amount: input.amount,
-          balanceEffect: input.amount,
-          currency: toAccount.currency,
-          txnDate,
-          description,
-          source: TransactionSource.manual,
-        },
-      });
+      // Only money that still has to leave the source must be there.
+      if (!existingFrom && Number(fromAccount.balanceCurrent) < input.amount) {
+        throw new InsufficientBalanceError(
+          'Insufficient balance in source account',
+        );
+      }
 
-      // Create transfer record
+      // The calendar day in the user's time zone (date-only, midnight UTC);
+      // without one, the day of a side already recorded.
+      const txnDate = input.txnDate
+        ? toLocalDateOnly(input.txnDate)
+        : (existingFrom?.txnDate ?? existingTo?.txnDate ?? localToday());
+      const description = input.description || `Transfer to ${toAccount.name}`;
+
+      const sideId = async (
+        existing: Parameters<typeof becomeSide>[1] | null,
+        account: { id: string; currency: string },
+        effect: number,
+      ): Promise<string> => {
+        if (existing) {
+          await becomeSide(tx, existing);
+          return existing.id;
+        }
+        const created = await tx.transaction.create({
+          data: {
+            userId,
+            accountId: account.id,
+            type: TransactionType.transfer,
+            amount: input.amount,
+            balanceEffect: effect,
+            currency: account.currency,
+            txnDate,
+            description,
+            source: TransactionSource.manual,
+          },
+          select: { id: true },
+        });
+        await moveBalance(tx, account.id, effect);
+        return created.id;
+      };
+
+      const fromTxnId = await sideId(existingFrom, fromAccount, -input.amount);
+      const toTxnId = await sideId(existingTo, toAccount, input.amount);
+
       const transfer = await tx.transfer.create({
         data: {
-          fromTxnId: fromTxn.id,
-          toTxnId: toTxn.id,
+          fromTxnId,
+          toTxnId,
           amount: input.amount,
+          // Made from a recorded movement: undoing it gives it back.
+          ...((existingFrom || existingTo) && { convertedAt: new Date() }),
         },
       });
-
-      // Update account balances
-      await Promise.all([
-        tx.account.update({
-          where: { id: input.fromAccountId },
-          data: {
-            balanceCurrent: {
-              decrement: input.amount,
-            },
-          },
-        }),
-        tx.account.update({
-          where: { id: input.toAccountId },
-          data: {
-            balanceCurrent: {
-              increment: input.amount,
-            },
-          },
-        }),
-      ]);
+      await tx.transferSuggestion.updateMany({
+        where: {
+          userId,
+          transactionId: { in: [fromTxnId, toTxnId] },
+          status: TransferSuggestionStatus.pending,
+        },
+        data: { status: TransferSuggestionStatus.accepted },
+      });
 
       // Fetch the complete transfer with transactions
       const completeTransfer = await tx.transfer.findUnique({
@@ -144,6 +167,105 @@ export class TransfersService {
       }
       return this.mapTransfer(completeTransfer);
     });
+  }
+
+  /**
+   * Movements already recorded that may be the sides of a new transfer:
+   * free expenses/income (or a card payment's adjustment) of this amount, a
+   * few days around `date`, leaving the source and arriving at the
+   * destination. Closest date first.
+   */
+  async legCandidates(
+    userId: string,
+    args: {
+      fromAccountId: string;
+      toAccountId: string;
+      amount: number;
+      date?: Date | null;
+    },
+  ): Promise<{ from: Transaction[]; to: Transaction[] }> {
+    const day = args.date ? toLocalDateOnly(args.date) : localToday();
+    const rows = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        ...FREE_MOVEMENT,
+        accountId: { in: [args.fromAccountId, args.toAccountId] },
+        type: { in: [...COUNTERPART_TYPES] },
+        amount: { gte: args.amount - 0.01, lte: args.amount + 0.01 },
+        txnDate: {
+          gte: addDays(day, -LEG_DAYS_WINDOW),
+          lte: addDays(day, LEG_DAYS_WINDOW),
+        },
+      },
+      include: { ...TRANSACTION_PRESENTATION_INCLUDE, account: true },
+      take: 40,
+    });
+    const distance = (date: Date) => Math.abs(date.getTime() - day.getTime());
+    const pick = (accountId: string, sign: number) =>
+      rows
+        .filter(
+          (row) =>
+            row.accountId === accountId && Math.sign(effectOf(row)) === sign,
+        )
+        .sort(
+          (a, b) =>
+            distance(a.txnDate) - distance(b.txnDate) ||
+            a.id.localeCompare(b.id),
+        )
+        .slice(0, 5)
+        .map((row) => mapTransaction(row));
+    return {
+      from: pick(args.fromAccountId, -1),
+      to: pick(args.toAccountId, 1),
+    };
+  }
+
+  /**
+   * Deletes a transfer: sides that existed before (converted, or from the
+   * bank) go back to being expenses/income; sides it created are deleted
+   * with their balance.
+   */
+  async delete(userId: string, transferId: string): Promise<boolean> {
+    await this.prisma.$transaction(async (tx) => {
+      const transfer = requireTransfer(
+        await transferOfMovement(tx, { id: transferId, fromTxn: { userId } }),
+      );
+      await dissolveTransfer(tx, transfer);
+    });
+    return true;
+  }
+
+  /** A recorded movement checked to fit as one side of a new transfer. */
+  private async existingSide(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    id: string,
+    want: { accountId: string; amount: number; direction: 'in' | 'out' },
+  ) {
+    const row = await tx.transaction.findFirst({
+      where: { id, userId, ...FREE_MOVEMENT },
+      select: {
+        id: true,
+        accountId: true,
+        type: true,
+        amount: true,
+        balanceEffect: true,
+        txnDate: true,
+      },
+    });
+    if (!row) throw new NotFoundError('Movement not found or already linked');
+    const effect = effectOf(row);
+    if (
+      row.accountId !== want.accountId ||
+      !COUNTERPART_TYPES.includes(row.type) ||
+      Math.abs(Number(row.amount) - want.amount) > 0.01 ||
+      (want.direction === 'out' ? effect >= 0 : effect <= 0)
+    ) {
+      throw new ValidationError(
+        "That movement doesn't match this side of the transfer",
+      );
+    }
+    return row;
   }
 
   async findById(id: string, userId: string): Promise<Transfer> {

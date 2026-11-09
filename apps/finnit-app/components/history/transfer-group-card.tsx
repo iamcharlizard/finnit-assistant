@@ -1,6 +1,11 @@
+import * as React from 'react';
+import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ChevronRight, type LucideIcon } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ChevronRight, Trash2, type LucideIcon } from 'lucide-react-native';
+
+import { deleteTransfer, transactionErrorMessage } from '@finnit/core/transaction-detail/api';
+import { toast } from '@finnit/ui-native/components/ui/toaster';
 
 import type { HistoryRow, TransferGroup } from '@finnit/core/history/view';
 import { cn } from '@finnit/ui-native/lib/utils';
@@ -8,9 +13,36 @@ import { TwPressable, TwView } from '@finnit/ui-native/lib/tw';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
 import { Text } from '@finnit/ui-native/components/ui/text';
 
+import { useGql } from '@/lib/graphql/runner';
+import { useLocalizer } from '@/lib/i18n/i18n-provider';
+import { emitTransactionsChanged } from '@/lib/transactions/events';
+
 /** Both sides of a transfer as one movement, each side below opening its own detail (the web's TransferGroupCard). */
 export function TransferGroupCard({ group }: { group: TransferGroup }) {
   const t = useTranslations();
+  const l = useLocalizer();
+  const gql = useGql();
+  const [deleting, setDeleting] = React.useState(false);
+
+  function askDelete() {
+    Alert.alert(t('history.deleteTransferTitle'), t('history.deleteTransferDescription'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('history.deleteTransfer'),
+        style: 'destructive',
+        onPress: () => {
+          setDeleting(true);
+          deleteTransfer(group.transferId, gql)
+            .then(() => {
+              toast.success(t('history.transferDeleted'));
+              emitTransactionsChanged(null);
+            })
+            .catch((e: unknown) => toast.error(transactionErrorMessage(e, l.t)))
+            .finally(() => setDeleting(false));
+        },
+      },
+    ]);
+  }
   const status = group.status === 'pending' ? t('finance.pending') : group.status === 'inProcess' ? t('finance.inProcess') : t('finance.completed');
   return (
     <TwView accessibilityLabel={`${group.title}: ${group.route}`} className="rounded-2xl bg-surface">
@@ -32,6 +64,16 @@ export function TransferGroupCard({ group }: { group: TransferGroup }) {
           </Text>
           <Text className={cn('mt-0.5 text-[11px]', group.status === 'completed' ? 'text-income' : 'text-on-surface-variant')}>{status}</Text>
         </TwView>
+        <TwPressable
+          accessibilityRole="button"
+          accessibilityLabel={t('history.deleteTransfer')}
+          disabled={deleting}
+          hitSlop={6}
+          onPress={askDelete}
+          className={cn('size-9 items-center justify-center rounded-full active:bg-accent', deleting && 'opacity-40')}
+        >
+          <Icon icon={Trash2} size={16} color="--on-surface-variant" />
+        </TwPressable>
       </TwView>
       <TwView className="ml-10 border-l border-outline pb-2 pr-2">
         <SideRow icon={ArrowUpRight} label={group.outLabel} row={group.out} />

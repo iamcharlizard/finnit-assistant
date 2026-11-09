@@ -11,6 +11,7 @@ import { CategorizeFilters } from '@/components/categorize/categorize-filters';
 import { CategorizeList } from '@/components/categorize/categorize-list';
 import { PageHeader } from '@/components/page-header';
 import { TransferSuggestionsPanel } from '@/components/transfers/transfer-suggestions-panel';
+import { DuplicateSuggestionsPanel } from '@/components/duplicates/duplicate-suggestions-panel';
 import {
   categorizeQuery,
   type CategorizeFilters as Filters,
@@ -48,6 +49,7 @@ export function CategorizeScreen({
         }
       />
       <div className="mx-auto w-full max-w-3xl">
+        <DuplicateSuggestionsPanel />
         <TransferSuggestionsPanel
           suggestions={data.transferSuggestions.rows}
           total={data.transferSuggestions.total}
@@ -59,9 +61,12 @@ export function CategorizeScreen({
           today={data.today}
         />
 
-        {/* New filters → new first page from the server: start the list over. */}
+        {/*
+          New filters, or a reloaded first page (e.g. after merging a
+          duplicate): start the list over.
+        */}
         <CategorizeList
-          key={categorizeQuery(filters, data.today)}
+          key={`${categorizeQuery(filters, data.today)}:${data.page.totalCount}:${data.page.transactions[0]?.id ?? ''}`}
           initial={data.page}
           filters={filters}
           categories={data.categories}

@@ -790,185 +790,212 @@ describe('TransactionsService', () => {
   });
 
   describe('delete', () => {
-    const noLinks = {
-      transferFrom: null,
-      transferTo: null,
-      debtPayment: null,
-      goalContributions: [],
-    };
-
-    it.each([
-      ['part of a transfer (from)', { transferFrom: { id: 'transfer-1' } }],
-      ['part of a transfer (to)', { transferTo: { id: 'transfer-1' } }],
-      ['a debt payment', { debtPayment: { id: 'payment-1' } }],
-      ['linked to goal contributions', { goalContributions: [{ id: 'gc-1' }] }],
-    ])(
-      'should throw ValidationError when the transaction is %s',
-      async (_label, links) => {
-        // Arrange
-        prismaService.transaction.findFirst.mockResolvedValue({
-          ...mockTransaction,
-          ...noLinks,
-          ...links,
-        } as any);
-
-        // Act & Assert
-        await expect(
-          service.delete(mockTransaction.id, mockUserId),
-        ).rejects.toThrow(ValidationError);
-        expect(prismaService.$transaction).not.toHaveBeenCalled();
+    const fakeTx = () => ({
+      transfer: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        delete: jest.fn(),
       },
-    );
+      transaction: {
+        delete: jest.fn(),
+        update: jest.fn(),
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
+      account: { update: jest.fn() },
+      linkedAccount: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        update: jest.fn(),
+      },
+      importedTransaction: { updateMany: jest.fn() },
+      debtPayment: { updateMany: jest.fn() },
+    });
+    let tx: ReturnType<typeof fakeTx>;
+
+    const movement = (overrides: Record<string, unknown> = {}) => ({
+      id: 'txn-1',
+      accountId: 'account-1',
+      type: TransactionType.expense,
+      amount: 100,
+      balanceEffect: -100,
+      isPending: false,
+      createdAt: new Date('2026-11-01T12:00:00Z'),
+      source: TransactionSource.manual,
+      originalType: null,
+      _count: { importedMatches: 0 },
+      debtCharge: null,
+      debtDisbursement: null,
+      bankDifferenceOf: null,
+      ...overrides,
+    });
+
+    beforeEach(() => {
+      tx = fakeTx();
+      prismaService.$transaction.mockImplementation((callback: any) =>
+        callback(tx),
+      );
+    });
 
     it('does not delete balance adjustments (their direction is unknown)', async () => {
-      prismaService.transaction.findFirst.mockResolvedValue({
-        ...mockTransaction,
-        ...noLinks,
-        source: TransactionSource.manual,
-        type: TransactionType.adjustment,
-      } as any);
-
-      await expect(
-        service.delete(mockTransaction.id, mockUserId),
-      ).rejects.toThrow('update the balance instead');
+      prismaService.transaction.findFirst.mockResolvedValue(
+        movement({ type: TransactionType.adjustment }) as any,
+      );
+      await expect(service.delete('txn-1', mockUserId)).rejects.toThrow(
+        'update the balance instead',
+      );
       expect(prismaService.$transaction).not.toHaveBeenCalled();
     });
 
-    it('should successfully delete manual transaction with balance adjustment', async () => {
-      // Arrange
-      const manualTransaction = {
-        ...mockTransaction,
-        ...noLinks,
-        source: TransactionSource.manual,
-      };
+    it("sends a loan's money to the loan", async () => {
       prismaService.transaction.findFirst.mockResolvedValue(
-        manualTransaction as any,
+        movement({ debtCharge: { id: 'c1' } }) as any,
       );
-
-      const mockTx = {
-        transaction: { delete: jest.fn() },
-        account: { update: jest.fn() },
-      };
-      prismaService.$transaction.mockImplementation(runTransactionWith(mockTx));
-
-      // Act
-      const result = await service.delete(mockTransaction.id, mockUserId);
-
-      // Assert
-      expect(prismaService.transaction.findFirst).toHaveBeenCalledWith({
-        where: { id: mockTransaction.id, userId: mockUserId },
-        include: {
-          transferFrom: true,
-          transferTo: true,
-          debtPayment: true,
-          debtCharge: { select: { id: true } },
-          debtDisbursement: { select: { id: true } },
-          goalContributions: true,
-        },
-      });
-      expect(mockTx.account.update).toHaveBeenCalledWith({
-        where: { id: mockAccountId },
-        data: { balanceCurrent: { increment: 100 } },
-      });
-      expect(mockTx.transaction.delete).toHaveBeenCalledWith({
-        where: { id: mockTransaction.id },
-      });
-      expect(result).toBe(true);
+      await expect(service.delete('txn-1', mockUserId)).rejects.toThrow(
+        'delete it from the loan',
+      );
     });
 
-    it('should throw ValidationError for imported transactions', async () => {
-      // Arrange
-      const importedTransaction = {
-        ...mockTransaction,
-        source: TransactionSource.imported,
-      };
-      prismaService.transaction.findFirst.mockResolvedValue(
-        importedTransaction as any,
-      );
-
-      // Act & Assert
-      await expect(
-        service.delete(mockTransaction.id, mockUserId),
-      ).rejects.toThrow(ValidationError);
-    });
-
-    it('should throw NotFoundError when transaction not found', async () => {
-      // Arrange
+    it('throws NotFoundError when the movement is not found', async () => {
       prismaService.transaction.findFirst.mockResolvedValue(null);
-
-      // Act & Assert
-      await expect(service.delete('non-existent', mockUserId)).rejects.toThrow(
+      await expect(service.delete('txn-1', mockUserId)).rejects.toThrow(
         NotFoundError,
       );
     });
 
-    it('should reverse balance change when deleting transaction', async () => {
-      // Arrange
-      const expenseTransaction = {
-        ...mockTransaction,
-        ...noLinks,
-        type: TransactionType.expense,
-        amount: 100.0,
-        source: TransactionSource.manual,
-        isPending: false,
-      };
+    it('deletes a manual movement, giving its money back', async () => {
+      prismaService.transaction.findFirst.mockResolvedValue(movement() as any);
 
-      prismaService.transaction.findFirst.mockResolvedValue(
-        expenseTransaction as any,
-      );
+      await service.delete('txn-1', mockUserId);
 
-      let balanceAdjustment: number | undefined;
-      prismaService.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          transaction: { delete: jest.fn() },
-          account: {
-            update: jest.fn().mockImplementation((data) => {
-              balanceAdjustment = data.data.balanceCurrent.increment;
-            }),
-          },
-        };
-        return callback(mockTx as any);
+      expect(tx.account.update).toHaveBeenCalledWith({
+        where: { id: 'account-1' },
+        data: { balanceCurrent: { increment: 100 } },
       });
-
-      // Act
-      await service.delete(mockTransaction.id, mockUserId);
-
-      // Assert
-      // Deleting expense should add back the amount to balance (positive)
-      expect(balanceAdjustment).toBe(100.0);
+      // A loan payment it paid stays without a movement.
+      expect(tx.debtPayment.updateMany).toHaveBeenCalledWith({
+        where: { transactionId: 'txn-1' },
+        data: { transactionId: null },
+      });
+      expect(tx.transaction.delete).toHaveBeenCalledWith({
+        where: { id: 'txn-1' },
+      });
     });
 
-    it('should not adjust balance for pending transactions', async () => {
-      // Arrange
-      const pendingTransaction = {
-        ...mockTransaction,
-        ...noLinks,
-        source: TransactionSource.manual,
-        isPending: true,
-      };
-
+    it('deletes a bank movement and never imports it again', async () => {
       prismaService.transaction.findFirst.mockResolvedValue(
-        pendingTransaction as any,
+        movement({ source: TransactionSource.imported }) as any,
       );
 
-      let accountUpdateCalled = false;
-      prismaService.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          transaction: { delete: jest.fn() },
-          account: {
-            update: jest.fn().mockImplementation(() => {
-              accountUpdateCalled = true;
-            }),
-          },
-        };
-        return callback(mockTx as any);
+      await service.delete('txn-1', mockUserId);
+
+      expect(tx.importedTransaction.updateMany).toHaveBeenCalledWith({
+        where: { matchedTransactionId: 'txn-1' },
+        data: { status: 'ignored', matchedTransactionId: null },
+      });
+      expect(tx.transaction.delete).toHaveBeenCalled();
+    });
+
+    it('keeps a linked account reconciling when the bank already counted it', async () => {
+      prismaService.transaction.findFirst.mockResolvedValue(
+        movement({ source: TransactionSource.imported }) as any,
+      );
+      tx.linkedAccount.findFirst.mockResolvedValue({ id: 'linked-1' });
+
+      await service.delete('txn-1', mockUserId);
+
+      expect(tx.linkedAccount.findFirst).toHaveBeenCalledWith({
+        where: {
+          accountId: 'account-1',
+          reconciledAt: { gte: new Date('2026-11-01T12:00:00Z') },
+          reconciledBalance: { not: null },
+        },
+        select: { id: true },
+      });
+      expect(tx.linkedAccount.update).toHaveBeenCalledWith({
+        where: { id: 'linked-1' },
+        data: { reconciledBalance: { decrement: -100 } },
+      });
+    });
+
+    it('does not move the balance of a pending movement', async () => {
+      prismaService.transaction.findFirst.mockResolvedValue(
+        movement({ isPending: true }) as any,
+      );
+
+      await service.delete('txn-1', mockUserId);
+
+      expect(tx.account.update).not.toHaveBeenCalled();
+      expect(tx.transaction.delete).toHaveBeenCalled();
+    });
+
+    it('deletes a whole transfer made by hand, both sides with their money', async () => {
+      const out = movement({
+        id: 'out',
+        type: TransactionType.transfer,
+        balanceEffect: -100,
+      });
+      const into = movement({
+        id: 'in',
+        accountId: 'account-2',
+        type: TransactionType.transfer,
+        balanceEffect: 100,
+      });
+      prismaService.transaction.findFirst.mockResolvedValue(out as any);
+      tx.transfer.findFirst.mockResolvedValue({
+        id: 'tr-1',
+        convertedAt: null,
+        fromTxn: out,
+        toTxn: into,
       });
 
-      // Act
-      await service.delete(mockTransaction.id, mockUserId);
+      await service.delete('out', mockUserId);
 
-      // Assert
-      expect(accountUpdateCalled).toBe(false);
+      expect(tx.transfer.delete).toHaveBeenCalledWith({
+        where: { id: 'tr-1' },
+      });
+      expect(tx.transaction.delete).toHaveBeenCalledWith({
+        where: { id: 'out' },
+      });
+      expect(tx.transaction.delete).toHaveBeenCalledWith({
+        where: { id: 'in' },
+      });
+      expect(tx.account.update).toHaveBeenCalledWith({
+        where: { id: 'account-2' },
+        data: { balanceCurrent: { increment: -100 } },
+      });
+    });
+
+    it("keeps the bank's side of a deleted transfer as income", async () => {
+      const out = movement({
+        id: 'out',
+        type: TransactionType.transfer,
+        balanceEffect: -100,
+      });
+      const bankIn = movement({
+        id: 'in',
+        accountId: 'account-2',
+        type: TransactionType.transfer,
+        balanceEffect: 100,
+        source: TransactionSource.imported,
+      });
+      prismaService.transaction.findFirst.mockResolvedValue(out as any);
+      tx.transfer.findFirst.mockResolvedValue({
+        id: 'tr-1',
+        convertedAt: new Date(),
+        fromTxn: out,
+        toTxn: bankIn,
+      });
+
+      await service.delete('out', mockUserId);
+
+      expect(tx.transaction.update).toHaveBeenCalledWith({
+        where: { id: 'in' },
+        data: { type: TransactionType.income },
+      });
+      expect(tx.transaction.delete).not.toHaveBeenCalledWith({
+        where: { id: 'in' },
+      });
+      expect(tx.transaction.delete).toHaveBeenCalledWith({
+        where: { id: 'out' },
+      });
     });
   });
 
@@ -1629,7 +1656,12 @@ describe('TransactionsService', () => {
           { categoryId: null, _sum: { amount: 100 } },
         ] as never);
         prismaService.category.findMany.mockResolvedValue([
-          { id: 'c1', key: null, name: 'Food', translations: [{ name: 'Comida' }] },
+          {
+            id: 'c1',
+            key: null,
+            name: 'Food',
+            translations: [{ name: 'Comida' }],
+          },
         ] as never);
 
         const result = await service.spending(
@@ -1844,6 +1876,9 @@ describe('TransactionsService', () => {
     ) => ({
       id,
       accountId,
+      source: 'manual',
+      originalType: null,
+      _count: { importedMatches: 0 },
       account: { name, metadata: nickname ? { nickname } : null },
     });
 
@@ -1865,6 +1900,7 @@ describe('TransactionsService', () => {
         accountId: 'acc-2',
         accountName: 'Mi tarjeta',
         direction: 'out',
+        keptOnDelete: false,
       });
       expect(prismaService.transfer.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({

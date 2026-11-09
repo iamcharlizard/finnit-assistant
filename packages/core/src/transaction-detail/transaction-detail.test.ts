@@ -71,7 +71,7 @@ describe('transaction detail: what can change', () => {
     assert.equal(deleteBlock(tx()), null);
   });
 
-  it('bank and statement movements: only the category and notes, no delete', () => {
+  it('bank and statement movements: only the category and notes', () => {
     for (const source of ['imported', 'statement']) {
       assert.deepEqual(editRules(tx({ source })), {
         amount: false,
@@ -81,7 +81,8 @@ describe('transaction detail: what can change', () => {
         category: true,
         notes: true,
       });
-      assert.equal(deleteBlock(tx({ source })), 'imported');
+      // They can be deleted too (never imported again).
+      assert.equal(deleteBlock(tx({ source })), null);
     }
     // A bank adjustment still takes notes (and its name).
     const adjustment = editRules(
@@ -97,7 +98,8 @@ describe('transaction detail: what can change', () => {
     assert.equal(transfer.date, false);
     assert.equal(transfer.category, false);
     assert.equal(transfer.description, true);
-    assert.equal(deleteBlock(tx({ type: 'transfer' })), 'transfer');
+    // A transfer is deleted whole.
+    assert.equal(deleteBlock(tx({ type: 'transfer' })), null);
     assert.equal(editRules(tx({ type: 'adjustment' })).amount, false);
   });
 

@@ -33,6 +33,12 @@ import {
   type TransferMovement,
 } from './transfer-matching';
 import { TransfersService } from './transfers.service';
+import {
+  becomeSide,
+  dissolveTransfer,
+  requireTransfer,
+  transferOfMovement,
+} from './transfer-dissolve';
 
 type Client = Prisma.TransactionClient | PrismaService;
 
@@ -44,18 +50,8 @@ export interface ConvertToTransferInput {
   counterpartTransactionId?: string | null;
 }
 
-/**
- * Movements that already belong to something that keeps them as they are:
- * a transfer, a loan, or the account's "Diferencia con el banco".
- */
-export const FREE_MOVEMENT: Prisma.TransactionWhereInput = {
-  transferFrom: { is: null },
-  transferTo: { is: null },
-  bankDifferenceOf: { is: null },
-  debtPayment: { is: null },
-  debtCharge: { is: null },
-  debtDisbursement: { is: null },
-};
+export { FREE_MOVEMENT } from './free-movement';
+import { FREE_MOVEMENT } from './free-movement';
 
 const MOVEMENT_SELECT = {
   id: true,
@@ -203,7 +199,7 @@ export class TransferConversionService {
             'The other movement must be the same amount going the other way, within a few days',
           );
         }
-        await this.becomeSide(tx, other);
+        await becomeSide(tx, other);
         counterpartId = other.id;
       } else {
         // Nothing recorded on the other account: its side is created, and
@@ -230,7 +226,7 @@ export class TransferConversionService {
         await moveBalance(tx, account.id, appliedEffect(counterEffect, false));
         counterpartId = created.id;
       }
-      await this.becomeSide(tx, source);
+      await becomeSide(tx, source);
 
       const [fromTxnId, toTxnId] =
         effect < 0 ? [source.id, counterpartId] : [counterpartId, source.id];
@@ -264,48 +260,15 @@ export class TransferConversionService {
    */
   async undo(userId: string, transferId: string): Promise<boolean> {
     await this.prisma.$transaction(async (tx) => {
-      const transfer = await tx.transfer.findFirst({
-        where: { id: transferId, fromTxn: { userId } },
-        select: {
-          id: true,
-          convertedAt: true,
-          fromTxn: { select: SIDE_SELECT },
-          toTxn: { select: SIDE_SELECT },
-        },
-      });
-      if (!transfer) throw new NotFoundError('Transfer not found');
+      const transfer = requireTransfer(
+        await transferOfMovement(tx, { id: transferId, fromTxn: { userId } }),
+      );
       if (!transfer.convertedAt) {
         throw new ValidationError(
           'Only transfers made from an existing movement can be undone',
         );
       }
-      await tx.transfer.delete({ where: { id: transfer.id } });
-      for (const side of [transfer.fromTxn, transfer.toTxn]) {
-        if (side.originalType) {
-          await tx.transaction.update({
-            where: { id: side.id },
-            data: { type: side.originalType, originalType: null },
-          });
-          continue;
-        }
-        const effect = effectOf(side);
-        if (side._count.importedMatches > 0) {
-          await tx.transaction.update({
-            where: { id: side.id },
-            data: {
-              type:
-                effect > 0 ? TransactionType.income : TransactionType.expense,
-            },
-          });
-          continue;
-        }
-        await moveBalance(
-          tx,
-          side.accountId,
-          -appliedEffect(effect, side.isPending),
-        );
-        await tx.transaction.delete({ where: { id: side.id } });
-      }
+      await dissolveTransfer(tx, transfer);
     });
     return true;
   }
@@ -355,34 +318,4 @@ export class TransferConversionService {
     }
     return row;
   }
-
-  /** Becomes a transfer side: keeps its balance effect, drops its category. */
-  private async becomeSide(
-    tx: Prisma.TransactionClient,
-    row: MovementRow,
-  ): Promise<void> {
-    await tx.transaction.update({
-      where: { id: row.id },
-      data: {
-        type: TransactionType.transfer,
-        originalType: row.type,
-        balanceEffect: effectOf(row),
-        categoryId: null,
-        categorySource: null,
-        suggestedCategoryId: null,
-        suggestedBy: null,
-      },
-    });
-  }
 }
-
-const SIDE_SELECT = {
-  id: true,
-  accountId: true,
-  type: true,
-  amount: true,
-  balanceEffect: true,
-  isPending: true,
-  originalType: true,
-  _count: { select: { importedMatches: true } },
-} satisfies Prisma.TransactionSelect;

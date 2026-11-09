@@ -47,6 +47,7 @@ import { useGql } from '@/lib/graphql/runner';
 import { useView } from '@/lib/graphql/use-view';
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
 import { useOnTransactionsChanged } from '@/lib/transactions/events';
+import { DuplicateSuggestionsPanel } from '@/components/duplicates/duplicate-suggestions-panel';
 
 type Busy = 'move' | 'suggest' | 'review' | null;
 
@@ -148,6 +149,7 @@ export function CategorizeScreen() {
   return (
     <Screen title={tc('title')} subtitle={tc('subtitle')} loading={loading && !page} error={!page ? error : undefined} refreshing={refreshing} onRefresh={refresh}>
       <TwView className="gap-4">
+        <DuplicateSuggestionsPanel />
         <FilterChipGroup
           accessibilityLabel={tc('filters.show')}
           items={SHOW_OPTIONS.map((value) => ({ value, label: tc(`filters.shows.${value}`) }))}

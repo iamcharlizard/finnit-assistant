@@ -5,6 +5,7 @@ import { PrismaService } from '../../services/prisma.service';
 import { CategorizationService } from '../categorization/categorization.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TransferSuggestionsService } from '../transfers/transfer-suggestions.service';
+import { DuplicatesService } from '../duplicates/duplicates.service';
 import { REVIEW_ENTITY_TYPE, reviewTexts } from './sync-review';
 
 /** How "Clasificar automáticamente" works. */
@@ -42,18 +43,21 @@ export class SyncReviewService {
     private readonly transferSuggestions: TransferSuggestionsService,
     private readonly categorization: CategorizationService,
     private readonly notifications: NotificationsService,
+    private readonly duplicates: DuplicatesService,
   ) {}
 
   async review(userId: string, createdIds: string[]): Promise<SyncReview> {
-    const transfersFound = await this.transferSuggestions.detect(
-      userId,
-      createdIds,
-    );
+    // A bank movement that is a transfer side recorded by hand takes its place.
+    const linked = await this.duplicates.mergeIntoTransfers(userId, createdIds);
+    const fresh = createdIds.filter((id) => !linked.includes(id));
+    const transfersFound = await this.transferSuggestions.detect(userId, fresh);
+    // The clear duplicates of what arrived, to merge or dismiss.
+    const duplicatesFound = await this.duplicates.detect(userId, fresh);
     const { categorized, remaining } =
       await this.categorization.autoCategorize(userId);
     const pendingTransfers = await this.refreshNotice(userId, remaining);
     this.logger.log(
-      `Sync review: ${transfersFound} possible transfers, ${categorized} categorized, ${remaining} uncategorized`,
+      `Sync review: ${linked.length} linked to transfers, ${duplicatesFound} possible duplicates, ${transfersFound} possible transfers, ${categorized} categorized, ${remaining} uncategorized`,
     );
     return {
       transfersFound,

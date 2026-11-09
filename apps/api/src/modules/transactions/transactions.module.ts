@@ -7,9 +7,15 @@ import { PrismaService } from '../../services/prisma.service';
 import { StorageModule } from '../storage/storage.module';
 import { CategorizationModule } from '../categorization/categorization.module';
 import { PrivacyModule } from '../privacy/privacy.module';
+import { DuplicatesModule } from '../duplicates/duplicates.module';
 
 @Module({
-  imports: [StorageModule, CategorizationModule, PrivacyModule],
+  imports: [
+    StorageModule,
+    CategorizationModule,
+    PrivacyModule,
+    DuplicatesModule,
+  ],
   controllers: [AttachmentsController],
   providers: [
     TransactionsResolver,

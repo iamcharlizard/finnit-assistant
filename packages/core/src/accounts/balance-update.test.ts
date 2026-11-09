@@ -73,10 +73,7 @@ describe('balance update', () => {
   });
 
   it("can't delete an adjustment (the balance is updated instead)", () => {
-    assert.equal(
-      deleteBlock({ source: 'manual', type: 'adjustment' }),
-      'adjustment',
-    );
-    assert.equal(deleteBlock({ source: 'manual', type: 'expense' }), null);
+    assert.equal(deleteBlock({ type: 'adjustment' }), 'adjustment');
+    assert.equal(deleteBlock({ type: 'expense' }), null);
   });
 });

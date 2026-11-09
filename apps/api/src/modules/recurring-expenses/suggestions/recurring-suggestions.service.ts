@@ -729,6 +729,7 @@ export class RecurringSuggestionsService {
       metadata: row.metadata ? (row.metadata as AccountMetadata) : undefined,
       archived: row.archived,
       isDefaultCash: row.isDefaultCash ?? false,
+      includeInTotal: row.includeInTotal ?? true,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

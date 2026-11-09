@@ -184,6 +184,9 @@ export class AccountsService {
       data: {
         ...(input.name !== undefined && { name: input.name }),
         ...(input.archived !== undefined && { archived: input.archived }),
+        ...(input.includeInTotal !== undefined && {
+          includeInTotal: input.includeInTotal,
+        }),
         ...(metadata && { metadata }),
       },
     });
@@ -388,15 +391,16 @@ export class AccountsService {
   }
 
   /**
-   * Every (not archived) account in one currency, day by day: money
-   * available and card debt, from each account's own history.
+   * Every (not archived) account in one currency that adds up to the
+   * total, day by day: money available and card debt, from each account's
+   * own history.
    */
   async allBalanceHistory(
     userId: string,
     args: AccountsBalanceHistoryArgs,
   ): Promise<AccountsBalanceHistory> {
     const accounts = await this.prisma.account.findMany({
-      where: { userId, archived: false },
+      where: { userId, archived: false, includeInTotal: true },
       select: { id: true, type: true, currency: true },
       orderBy: { createdAt: 'asc' },
     });
@@ -578,6 +582,7 @@ export class AccountsService {
         : undefined,
       archived: account.archived,
       isDefaultCash: account.isDefaultCash,
+      includeInTotal: account.includeInTotal,
       createdAt: account.createdAt,
       updatedAt: account.updatedAt,
     };
@@ -600,6 +605,7 @@ export class AccountsService {
         : undefined,
       archived: account.archived,
       isDefaultCash: account.isDefaultCash,
+      includeInTotal: account.includeInTotal,
       createdAt: account.createdAt,
       updatedAt: account.updatedAt,
       creditCardTerms: account.creditCardTerms

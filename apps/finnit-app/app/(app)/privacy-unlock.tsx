@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGql } from '@/lib/graphql/runner';
 import { savePrivacyUnlock } from '@/lib/session/storage';
 import { emitTransactionsChanged } from '@/lib/transactions/events';
+import { emitPrivacyUnlocked } from '@/lib/privacy/events';
 
 type UnlockError = 'invalid' | 'wrong' | 'paused' | 'noPin' | 'failed';
 
@@ -46,6 +47,7 @@ export default function PrivacyUnlock() {
       const { unlockPrivacy } = await gql<{ unlockPrivacy: { token: string; expiresAt: string } }>(UNLOCK_MUTATION, { pin });
       await savePrivacyUnlock(unlockPrivacy.token, unlockPrivacy.expiresAt);
       emitTransactionsChanged();
+      emitPrivacyUnlocked();
       void refreshUser();
       router.back();
     } catch (e) {

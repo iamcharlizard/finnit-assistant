@@ -23,6 +23,7 @@ import { Switch } from '@finnit/ui/components/ui/switch';
 import {
   accountErrorMessage,
   saveAccountChanges,
+  setAccountInTotal,
 } from '@finnit/core/accounts/api';
 import { bankChoiceOf } from '@finnit/core/accounts/banks';
 import {
@@ -69,6 +70,8 @@ export function EditAccountDialog({
     editFormOf(initial, bankChoiceOf(initial.bank)),
   );
   const [errors, setErrors] = React.useState<FormErrors>({});
+  const initialInTotal = initial.includeInTotal !== false;
+  const [inTotal, setInTotal] = React.useState(initialInTotal);
   const [saving, setSaving] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
 
@@ -95,14 +98,18 @@ export function EditAccountDialog({
 
     const metadata = buildMetadataPatch(form, initial);
     const terms = buildTermsChange(form, initial);
-    if (!metadata && !terms) {
+    const totalChanged = inTotal !== initialInTotal;
+    if (!metadata && !terms && !totalChanged) {
       exit.close(onClose);
       return;
     }
     setSaving(true);
     setSubmitError(null);
     try {
-      await saveAccountChanges(account.id, { metadata, terms }, gql);
+      if (totalChanged) await setAccountInTotal(account.id, inTotal, gql);
+      if (metadata || terms) {
+        await saveAccountChanges(account.id, { metadata, terms }, gql);
+      }
       exit.after(onSaved)();
     } catch (error) {
       setSubmitError(accountErrorMessage(error, t));
@@ -161,6 +168,26 @@ export function EditAccountDialog({
             <p className="px-1 text-xs text-on-surface-variant">
               {t('accounts.editDialog.originalName', { name: account.name })}
             </p>
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-0.5">
+              <Label
+                htmlFor="edit-account-in-total"
+                className="normal-case tracking-normal text-sm text-on-background"
+              >
+                {t('accounts.inTotal.label')}
+              </Label>
+              <p className="text-xs text-on-surface-variant">
+                {t('accounts.inTotal.hint')}
+              </p>
+            </div>
+            <Switch
+              id="edit-account-in-total"
+              checked={inTotal}
+              onCheckedChange={setInTotal}
+              disabled={saving}
+            />
           </div>
 
           <section className="flex flex-col gap-3">

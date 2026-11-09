@@ -325,7 +325,40 @@
       "load": "{percent}% de tu ingreso · {level}",
       "noIncome": "Registra tus ingresos para ver qué parte se va en deudas."
     },
-    "greeting": "Hola, {name}"
+    "greeting": "Hola, {name}",
+    "stats": {
+      "title": "Resumen",
+      "balance": "Saldo total",
+      "expenses": "Gastos del mes",
+      "income": "Ingresos del mes",
+      "pending": "Pagos pendientes",
+      "vsLastMonth": "vs mes anterior",
+      "vsDaysAgo": "vs hace {days} días",
+      "upcomingCount": "{count, plural, =0 {Nada por pagar} one {# próximo} other {# próximos}}",
+      "balanceHint": "Saldo disponible de las cuentas que suman al total, día por día en los últimos {days} días; el porcentaje compara hoy con hace {days} días.",
+      "expensesHint": "Gastos confirmados de este mes, sin transferencias. El porcentaje compara con los mismos días del mes pasado.",
+      "incomeHint": "Ingresos confirmados de este mes, sin transferencias. El porcentaje compara con los mismos días del mes pasado.",
+      "pendingHint": "Pagos recurrentes y de préstamos que vencen en los próximos {days} días y aún no pagas.",
+      "trendUp": "Subió {percent} {compare}",
+      "trendDown": "Bajó {percent} {compare}"
+    },
+    "accounts": {
+      "title": "Cuentas",
+      "seeAll": "Ver todas",
+      "seeAllCount": "Ver todas ({count})",
+      "excluded": "No suma al total",
+      "open": "Abrir {name}"
+    },
+    "amounts": {
+      "hide": "Ocultar montos",
+      "show": "Mostrar montos",
+      "unlockReason": "Ingresa tu PIN para mostrar tus montos.",
+      "suggestTitle": "¿Proteges tus montos con un PIN?",
+      "suggestDescription": "Tus montos quedaron ocultos en este dispositivo. Con un PIN de privacidad, nadie podrá volver a mostrarlos sin él.",
+      "suggestCreate": "Crear PIN",
+      "suggestLater": "Ahora no",
+      "suggestNever": "No volver a preguntar"
+    }
   },
   "history": {
     "title": "Historial",
@@ -669,6 +702,13 @@
         "title": "Agregar manualmente",
         "description": "Para bancos que no podemos conectar, efectivo, o si prefieres registrar tus movimientos a mano."
       }
+    },
+    "inTotal": {
+      "label": "Incluir en el saldo total",
+      "hint": "Si la desactivas, esta cuenta no se suma al saldo disponible, a la deuda de tarjetas ni al total de Cuentas y tarjetas. Sus movimientos siguen contando en gastos e ingresos.",
+      "excluded": "No suma al total",
+      "saved": "Listo",
+      "error": "No se pudo guardar. Intenta de nuevo."
     }
   },
   "recurring": {

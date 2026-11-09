@@ -1,6 +1,7 @@
 import { Redirect, Stack } from 'expo-router';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { AmountsVisibilityProvider } from '@/lib/privacy/amounts-visibility';
 
 /** Detail screens pushed over the tabs (declared, as Expo Router 58 expects). */
 const PUSHED_ROUTES = [
@@ -26,51 +27,58 @@ export default function AppLayout() {
   if (status === 'signedOut') return <Redirect href="/login" />;
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
-      <Stack.Screen name="(tabs)" />
-      {PUSHED_ROUTES.map((name) => (
-        <Stack.Screen key={name} name={name} />
-      ))}
-      <Stack.Screen
-        name="new-entry"
-        options={{
-          presentation: 'formSheet',
-          sheetAllowedDetents: [0.92],
-          sheetGrabberVisible: true,
-          sheetCornerRadius: 28,
+    <AmountsVisibilityProvider>
+      <Stack
+        screenOptions={{
+          headerShown: false,
           contentStyle: { backgroundColor: 'transparent' },
         }}
-      />
-      <Stack.Screen
-        name="profile"
-        options={{
-          presentation: 'formSheet',
-          sheetAllowedDetents: 'fitToContents',
-          sheetGrabberVisible: true,
-          sheetCornerRadius: 28,
-          contentStyle: { backgroundColor: 'transparent' },
-        }}
-      />
-      <Stack.Screen
-        name="privacy-unlock"
-        options={{
-          presentation: 'formSheet',
-          sheetAllowedDetents: 'fitToContents',
-          sheetGrabberVisible: true,
-          sheetCornerRadius: 28,
-          contentStyle: { backgroundColor: 'transparent' },
-        }}
-      />
-      <Stack.Screen
-        name="more"
-        options={{
-          presentation: 'formSheet',
-          sheetAllowedDetents: 'fitToContents',
-          sheetGrabberVisible: true,
-          sheetCornerRadius: 28,
-          contentStyle: { backgroundColor: 'transparent' },
-        }}
-      />
-    </Stack>
+      >
+        <Stack.Screen name="(tabs)" />
+        {PUSHED_ROUTES.map((name) => (
+          <Stack.Screen key={name} name={name} />
+        ))}
+        <Stack.Screen
+          name="new-entry"
+          options={{
+            presentation: 'formSheet',
+            sheetAllowedDetents: [0.92],
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 28,
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+        <Stack.Screen
+          name="profile"
+          options={{
+            presentation: 'formSheet',
+            sheetAllowedDetents: 'fitToContents',
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 28,
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+        <Stack.Screen
+          name="privacy-unlock"
+          options={{
+            presentation: 'formSheet',
+            sheetAllowedDetents: 'fitToContents',
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 28,
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+        <Stack.Screen
+          name="more"
+          options={{
+            presentation: 'formSheet',
+            sheetAllowedDetents: 'fitToContents',
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 28,
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+      </Stack>
+    </AmountsVisibilityProvider>
   );
 }

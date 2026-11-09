@@ -325,7 +325,40 @@
       "load": "{percent}% of your income · {level}",
       "noIncome": "Record your income to see how much goes to debts."
     },
-    "greeting": "Hi, {name}"
+    "greeting": "Hi, {name}",
+    "stats": {
+      "title": "Summary",
+      "balance": "Total balance",
+      "expenses": "Spent this month",
+      "income": "Income this month",
+      "pending": "Pending bills",
+      "vsLastMonth": "vs last month",
+      "vsDaysAgo": "vs {days} days ago",
+      "upcomingCount": "{count, plural, =0 {Nothing due} one {# upcoming} other {# upcoming}}",
+      "balanceHint": "Available balance of the accounts in the total, day by day over the last {days} days; the percentage compares today with {days} days ago.",
+      "expensesHint": "Confirmed spending this month, transfers left out. The percentage compares with the same days of last month.",
+      "incomeHint": "Confirmed income this month, transfers left out. The percentage compares with the same days of last month.",
+      "pendingHint": "Recurring and loan payments due in the next {days} days that you haven’t paid yet.",
+      "trendUp": "Up {percent} {compare}",
+      "trendDown": "Down {percent} {compare}"
+    },
+    "accounts": {
+      "title": "Accounts",
+      "seeAll": "See all",
+      "seeAllCount": "See all ({count})",
+      "excluded": "Not in total",
+      "open": "Open {name}"
+    },
+    "amounts": {
+      "hide": "Hide amounts",
+      "show": "Show amounts",
+      "unlockReason": "Enter your PIN to show your amounts.",
+      "suggestTitle": "Protect your amounts with a PIN?",
+      "suggestDescription": "Your amounts are hidden on this device. With a privacy PIN, nobody can show them again without it.",
+      "suggestCreate": "Create PIN",
+      "suggestLater": "Not now",
+      "suggestNever": "Don’t ask again"
+    }
   },
   "history": {
     "title": "History",
@@ -669,6 +702,13 @@
         "title": "Add it manually",
         "description": "For banks we can't connect, cash, or if you'd rather record your movements by hand."
       }
+    },
+    "inTotal": {
+      "label": "Include in total balance",
+      "hint": "When off, this account doesn’t add to the available balance, card debt or the Accounts total. Its movements still count as spending and income.",
+      "excluded": "Not in total",
+      "saved": "Done",
+      "error": "Couldn’t save. Try again."
     }
   },
   "recurring": {

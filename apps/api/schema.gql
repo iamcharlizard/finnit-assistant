@@ -118,6 +118,9 @@ type Account {
   currency: String!
   id: String!
 
+  """Whether it adds up to the total balance (home, accounts overview)"""
+  includeInTotal: Boolean!
+
   """
   The user's cash account ("Efectivo"): always there; can't be deleted or archived
   """
@@ -1067,6 +1070,14 @@ input CreditCardTermsInput {
 
   """Day of the month the statement closes"""
   statementDay: Int!
+}
+
+"""Confirmed income and expenses of one day (transfers left out)"""
+type DailyCashFlow {
+  """The day, YYYY-MM-DD"""
+  date: String!
+  expenses: Float!
+  income: Float!
 }
 
 """
@@ -2183,6 +2194,11 @@ type Query {
   """By name"""
   contacts: [Contact!]!
   currentBudget: Budget
+
+  """
+  Confirmed income and expenses per day, from/to YYYY-MM-DD (at most 92 days)
+  """
+  dailyCashFlow(from: String!, to: String!): [DailyCashFlow!]!
   debt(id: String!): Debt!
 
   """
@@ -3212,6 +3228,9 @@ type UpcomingPayment {
 
 input UpdateAccountInput {
   archived: Boolean
+
+  """Whether it adds up to the total balance"""
+  includeInTotal: Boolean
   metadata: AccountMetadataInput
   name: String
 }

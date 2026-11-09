@@ -40,6 +40,12 @@ export class Account {
   })
   isDefaultCash: boolean;
 
+  @Field({
+    description:
+      'Whether it adds up to the total balance (home, accounts overview)',
+  })
+  includeInTotal: boolean;
+
   @Field()
   createdAt: Date;
 

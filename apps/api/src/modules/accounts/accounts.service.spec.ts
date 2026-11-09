@@ -39,6 +39,7 @@ describe('AccountsService', () => {
     metadata: { test: 'data' },
     archived: false,
     isDefaultCash: false,
+    includeInTotal: true,
     bankDifferenceTransactionId: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -143,6 +144,7 @@ describe('AccountsService', () => {
         metadata: expectedAccount.metadata,
         archived: expectedAccount.archived,
         isDefaultCash: false,
+        includeInTotal: true,
         createdAt: expectedAccount.createdAt,
         updatedAt: expectedAccount.updatedAt,
       });
@@ -366,6 +368,7 @@ describe('AccountsService', () => {
         metadata: mockAccount.metadata,
         archived: mockAccount.archived,
         isDefaultCash: false,
+        includeInTotal: true,
         createdAt: mockAccount.createdAt,
         updatedAt: mockAccount.updatedAt,
       });
@@ -413,6 +416,28 @@ describe('AccountsService', () => {
         name: 'Billetera',
       });
       expect(renamed).toMatchObject({ name: 'Billetera', isDefaultCash: true });
+    });
+
+    it('leaves an account out of the total, the cash one too', async () => {
+      prismaService.account.findFirst.mockResolvedValue({
+        ...mockAccount,
+        isDefaultCash: true,
+      } as any);
+      prismaService.account.update.mockResolvedValue({
+        ...mockAccount,
+        isDefaultCash: true,
+        includeInTotal: false,
+      } as any);
+
+      const updated = await service.update(mockAccount.id, mockUserId, {
+        includeInTotal: false,
+      });
+
+      expect(prismaService.account.update).toHaveBeenCalledWith({
+        where: { id: mockAccount.id },
+        data: { includeInTotal: false },
+      });
+      expect(updated.includeInTotal).toBe(false);
     });
 
     const updateInput = {
@@ -962,6 +987,7 @@ describe('AccountsService', () => {
         metadata: mockAccount.metadata,
         archived: mockAccount.archived,
         isDefaultCash: false,
+        includeInTotal: true,
         createdAt: mockAccount.createdAt,
         updatedAt: mockAccount.updatedAt,
       });

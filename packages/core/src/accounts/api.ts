@@ -24,6 +24,18 @@ import type { GqlRunner } from '@finnit/core/graphql/request';
 
 export type { GqlRunner };
 
+/** Adds an account to the total balance or leaves it out. */
+export async function setAccountInTotal(
+  accountId: string,
+  includeInTotal: boolean,
+  run: GqlRunner,
+): Promise<void> {
+  await run(UPDATE_ACCOUNT_MUTATION, {
+    id: accountId,
+    input: { includeInTotal },
+  });
+}
+
 /** The API answers a repeated account name with Prisma's unique error. */
 export function isDuplicateNameError(error: unknown): boolean {
   const message = (error as { message?: string } | null)?.message ?? '';

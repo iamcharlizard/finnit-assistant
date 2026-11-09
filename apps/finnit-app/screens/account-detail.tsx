@@ -23,7 +23,8 @@ import { Text } from '@finnit/ui-native/components/ui/text';
 import { AccountCardVisual } from '@/components/accounts/account-card-visual';
 import { AccountMovements } from '@/components/accounts/account-movements';
 import { AccountStats } from '@/components/accounts/account-stats';
-import { AccountStatusBadge } from '@/components/accounts/account-status-badge';
+import { AccountStatusBadge, ExcludedFromTotalBadge } from '@/components/accounts/account-status-badge';
+import { InTotalSwitch } from '@/components/accounts/in-total-switch';
 import { Screen } from '@/components/shell/screen';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
@@ -117,9 +118,11 @@ export function AccountDetailScreen() {
           </TwView>
           <TwView className="flex-row items-center gap-2 px-1">
             <AccountStatusBadge linked={card.linked} archived={card.archived} defaultCash={card.defaultCash} />
+            {card.includedInTotal ? null : <ExcludedFromTotalBadge />}
           </TwView>
           {card.archived ? <Text className="px-1 text-xs text-on-surface-variant">{t('archive.archivedNote')}</Text> : null}
           <AccountStats detail={detail} />
+          {card.archived ? null : <InTotalSwitch key={String(card.includedInTotal)} accountId={card.id} included={card.includedInTotal} />}
           <AccountMovements rows={detail.recent} historyHref={detail.historyHref} />
         </TwView>
       ) : null}

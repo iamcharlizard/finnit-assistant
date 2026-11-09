@@ -780,6 +780,7 @@ function mapAccount(
     metadata: (account.metadata as AccountMetadata | null) ?? undefined,
     archived: account.archived,
     isDefaultCash: account.isDefaultCash ?? false,
+    includeInTotal: account.includeInTotal ?? true,
     createdAt: account.createdAt,
     updatedAt: account.updatedAt,
   };

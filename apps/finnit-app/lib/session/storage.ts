@@ -15,6 +15,10 @@ const KEYS = {
   themePreview: 'themePreview',
   /** 'false': sign out when the app starts again ("Mantener sesión iniciada" off). */
   remember: 'rememberSession',
+  /** '1': amounts hidden on this device ("Ocultar montos"). */
+  hideAmounts: 'hideAmounts',
+  /** 'off': don't suggest creating a privacy PIN again. */
+  pinSuggestion: 'pinSuggestion',
 } as const;
 
 type Key = keyof typeof KEYS;

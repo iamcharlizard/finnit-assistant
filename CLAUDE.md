@@ -33,7 +33,7 @@ All 11 original GraphQL modules implemented, plus recurring expenses in `apps/ap
 | Goals | `src/modules/goals/` |
 | Debts | `src/modules/debts/` |
 | Notifications | `src/modules/notifications/` |
-| Reports | `src/modules/reports/` |
+| Reports (`monthlyReport`, `dailyCashFlow`, cash-flow projections) | `src/modules/reports/` |
 | Recurring expenses | `src/modules/recurring-expenses/` |
 | Statements (PDF import + reconciliation) | `src/modules/statements/` (+ `src/modules/storage/` for S3) |
 | AI model catalog + providers (Anthropic, OpenAI, Gemini) | `src/modules/ai/` |
@@ -127,6 +127,7 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261116090000_transaction_notes` (`Transaction.notes`: the user's notes on any movement, also bank ones; rollback in `packages/database/scripts/rollbacks/`)
 - `20261103090000_contacts` (`Contact`, `Debt.lenderContactId`; existing personal-loan lenders become contacts; rollback in `packages/database/scripts/rollbacks/`)
 - `20261117090000_default_cash_account` (`Account.isDefaultCash` + partial unique index per user: every user has one cash account, "Efectivo", that can't be deleted, archived or change type; the migration marked each user's oldest open cash account or created one; new users get it on creation and, as a safety net, on sign-in via `ensureDefaultCashAccount` in `modules/accounts/default-cash.ts`; rollback in `packages/database/scripts/rollbacks/`)
+- `20261118090000_account_include_in_total` (`Account.includeInTotal`, default true: whether the account adds up to the total balance on Inicio and Cuentas y tarjetas; `summarizeBalances` and `accountsBalanceHistory` skip excluded accounts; rollback in `packages/database/scripts/rollbacks/`)
 - `20261013120000_private_attachments`
 - `20261014090000_admin_access_and_ai_features`
 - `20261015090000_category_i18n_and_ai_features` + `20261015090100_ai_feature_defaults` (enum values added in one file can't be used in the same transaction, so the seed rows live in a second file)

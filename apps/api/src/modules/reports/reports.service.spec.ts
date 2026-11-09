@@ -177,4 +177,68 @@ describe('monthsOfData', () => {
     expect(monthsOfData(new Date('2026-08-20T00:00:00Z'), now)).toBe(2);
     expect(monthsOfData(new Date('2025-01-01T00:00:00Z'), now)).toBe(6);
   });
+
+  describe('getDailyCashFlow', () => {
+    it('adds up income and expenses per UTC day, zeros included', async () => {
+      const prisma = prismaMock();
+      prisma.transaction.groupBy.mockResolvedValue([
+        {
+          txnDate: new Date('2026-11-01T00:00:00.000Z'),
+          type: 'income',
+          _sum: { amount: 1000 },
+        },
+        {
+          txnDate: new Date('2026-11-01T00:00:00.000Z'),
+          type: 'expense',
+          _sum: { amount: 50 },
+        },
+        {
+          txnDate: new Date('2026-11-03T00:00:00.000Z'),
+          type: 'expense',
+          _sum: { amount: 20 },
+        },
+      ]);
+      const service = new ReportsService(prisma as unknown as PrismaService);
+
+      const days = await service.getDailyCashFlow(
+        'user-1',
+        '2026-11-01',
+        '2026-11-03',
+      );
+
+      expect(prisma.transaction.groupBy).toHaveBeenCalledWith({
+        by: ['txnDate', 'type'],
+        where: {
+          userId: 'user-1',
+          isPending: false,
+          type: { in: ['income', 'expense'] },
+          txnDate: {
+            gte: new Date('2026-11-01T00:00:00.000Z'),
+            lt: new Date('2026-11-04T00:00:00.000Z'),
+          },
+        },
+        _sum: { amount: true },
+      });
+      expect(days).toEqual([
+        { date: '2026-11-01', income: 1000, expenses: 50 },
+        { date: '2026-11-02', income: 0, expenses: 0 },
+        { date: '2026-11-03', income: 0, expenses: 20 },
+      ]);
+    });
+
+    it('rejects bad or too long ranges', async () => {
+      const service = new ReportsService(
+        prismaMock() as unknown as PrismaService,
+      );
+      await expect(
+        service.getDailyCashFlow('u', '2026-11-05', '2026-11-01'),
+      ).rejects.toThrow();
+      await expect(
+        service.getDailyCashFlow('u', '2026-02-30', '2026-03-01'),
+      ).rejects.toThrow();
+      await expect(
+        service.getDailyCashFlow('u', '2026-01-01', '2026-06-01'),
+      ).rejects.toThrow();
+    });
+  });
 });

@@ -5,9 +5,11 @@ import {
   CategoryExpense,
   CashFlowBaseline,
   CashFlowProjection,
+  DailyCashFlow,
   WhatIfInput,
   WhatIfResult,
 } from './dto/report.dto';
+import { ValidationError } from '../../common/exceptions/graphql-error.exception';
 import { loadCategoryI18n } from '../categories/category-names';
 import { AppLocale, DEFAULT_LOCALE } from '../translation/locale';
 
@@ -89,6 +91,57 @@ export class ReportsService {
       netIncome: totalIncome - totalExpenses,
       categoryBreakdown,
     };
+  }
+
+  /**
+   * Confirmed income and expenses day by day, every day from `from` to
+   * `to` (YYYY-MM-DD, at most 92 days), zeros included. Days are UTC days,
+   * like the monthly report (movements are stored at midnight UTC of their
+   * local day); transfers are left out.
+   */
+  async getDailyCashFlow(
+    userId: string,
+    from: string,
+    to: string,
+  ): Promise<DailyCashFlow[]> {
+    const start = parseDay(from);
+    const end = parseDay(to);
+    if (!start || !end || end < start) {
+      throw new ValidationError('Invalid date range');
+    }
+    const days = Math.round((end.getTime() - start.getTime()) / DAY_MS) + 1;
+    if (days > MAX_CASH_FLOW_DAYS) {
+      throw new ValidationError(
+        `The range can't be longer than ${MAX_CASH_FLOW_DAYS} days`,
+      );
+    }
+
+    const groups = await this.prisma.transaction.groupBy({
+      by: ['txnDate', 'type'],
+      where: {
+        userId,
+        isPending: false,
+        type: { in: ['income', 'expense'] },
+        txnDate: { gte: start, lt: new Date(end.getTime() + DAY_MS) },
+      },
+      _sum: { amount: true },
+    });
+
+    const byDay = new Map<string, DailyCashFlow>();
+    for (let i = 0; i < days; i++) {
+      const date = new Date(start.getTime() + i * DAY_MS)
+        .toISOString()
+        .slice(0, 10);
+      byDay.set(date, { date, income: 0, expenses: 0 });
+    }
+    for (const group of groups) {
+      const day = byDay.get(group.txnDate.toISOString().slice(0, 10));
+      if (!day) continue;
+      const amount = Number(group._sum.amount ?? 0);
+      if (group.type === 'income') day.income += amount;
+      else day.expenses += amount;
+    }
+    return [...byDay.values()];
   }
 
   /**
@@ -216,4 +269,17 @@ export function monthsOfData(
   if (!firstTxnDate) return 1;
   const days = (now.getTime() - firstTxnDate.getTime()) / 86_400_000;
   return Math.min(6, Math.max(1, Math.ceil(days / AVERAGE_MONTH_DAYS)));
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+export const MAX_CASH_FLOW_DAYS = 92;
+
+/** Midnight UTC of a YYYY-MM-DD day, or null. */
+function parseDay(value: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ||
+    date.toISOString().slice(0, 10) !== value
+    ? null
+    : date;
 }

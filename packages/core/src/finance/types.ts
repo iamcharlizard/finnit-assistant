@@ -14,6 +14,8 @@ export interface ApiAccount {
   archived: boolean;
   /** The user's cash account ("Efectivo"): can't be deleted or archived. */
   isDefaultCash?: boolean;
+  /** Whether it adds up to the total balance (absent: it does). */
+  includeInTotal?: boolean;
   metadata: {
     bank: string | null;
     last4: string | null;
@@ -36,7 +38,7 @@ export interface AccountDesign {
 }
 
 export const ACCOUNT_FIELDS =
-  'id name type currency balanceCurrent archived isDefaultCash metadata { bank last4 creditLimit nickname design { primaryColor secondaryColor } } creditCardTerms { statementDay paymentDueDay interestRateAnnual }';
+  'id name type currency balanceCurrent archived isDefaultCash includeInTotal metadata { bank last4 creditLimit nickname design { primaryColor secondaryColor } } creditCardTerms { statementDay paymentDueDay interestRateAnnual }';
 
 export type TransactionType = 'income' | 'expense' | 'transfer' | 'adjustment';
 

@@ -25,7 +25,10 @@ import { AccountCardStack } from '@/components/accounts/account-card-stack';
 import { AccountsOverview } from '@/components/accounts/accounts-overview';
 import { AccountMovements } from '@/components/accounts/account-movements';
 import { AccountStats } from '@/components/accounts/account-stats';
-import { AccountStatusBadge } from '@/components/accounts/account-status-badge';
+import {
+  AccountStatusBadge,
+  ExcludedFromTotalBadge,
+} from '@/components/accounts/account-status-badge';
 import { AddAccountWizard } from '@/components/accounts/add-account-wizard';
 import {
   BalanceDayNav,
@@ -362,6 +365,7 @@ export function AccountsScreen({
                   archived={selected.archived}
                   defaultCash={selected.defaultCash}
                 />
+                {selected.includedInTotal ? null : <ExcludedFromTotalBadge />}
               </div>
               {subtitle && !focused ? (
                 <p className="truncate text-sm text-on-surface-variant">
@@ -391,12 +395,13 @@ export function AccountsScreen({
             )}
           >
             {focused ? (
-              <span className="hidden justify-self-start px-1 @3xl:inline-flex">
+              <span className="hidden justify-self-start gap-2 px-1 @3xl:inline-flex">
                 <AccountStatusBadge
                   linked={selected.linked}
                   archived={selected.archived}
                   defaultCash={selected.defaultCash}
                 />
+                {selected.includedInTotal ? null : <ExcludedFromTotalBadge />}
               </span>
             ) : null}
             {timeline ? (

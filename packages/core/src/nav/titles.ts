@@ -6,7 +6,6 @@
 export type PageTitleKey =
   | 'app'
   | 'history'
-  | 'categorize'
   | 'recurring'
   | 'calendar'
   | 'cards'
@@ -29,7 +28,6 @@ export const PAGE_TITLES: ReadonlyArray<
 > = [
   ['/dashboard', 'app'],
   ['/history', 'history'],
-  ['/transactions/categorize', 'categorize'],
   ['/recurring', 'recurring'],
   ['/recurring/[...rest]', 'recurring'],
   ['/calendar', 'calendar'],

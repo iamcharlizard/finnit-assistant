@@ -193,8 +193,8 @@ export interface TransactionDetailView {
   } | null;
   /** An expense/income that can become a transfer; null otherwise. */
   convertSource: ConvertSource | null;
-  /** The recurring payment it paid, linked. */
-  recurring: { href: string; label: string } | null;
+  /** The recurring payment it paid, linked (its scheduled payment to unlink). */
+  recurring: { href: string; label: string; occurrenceId: string } | null;
   /**
    * The loan payment it is: the loan's page, and the scheduled payment to
    * unlink (null when the loan has no schedule: nothing to unlink).
@@ -206,6 +206,8 @@ export interface TransactionDetailView {
   } | null;
   /** An expense that pays nothing yet: it can be linked to a loan payment. */
   canLinkLoan: boolean;
+  /** The same: it can be linked to a recurring payment (subscription…). */
+  canLinkRecurring: boolean;
   attachments: AttachmentView[];
   rules: EditRules;
   deleteBlock: DeleteBlock;
@@ -284,6 +286,7 @@ export function toTransactionDetailView(
       recurring && recurringDay && !loan
         ? {
             href: `/recurring?date=${recurringDay}`,
+            occurrenceId: recurring.occurrenceId,
             label: t('transaction.recurringPaid', {
               name: recurring.name,
               date: longDate(recurringDay, today, locale),
@@ -303,6 +306,8 @@ export function toTransactionDetailView(
         }
       : null,
     canLinkLoan: tx.type === 'expense' && !tx.isPending && !loan && !recurring,
+    canLinkRecurring:
+      tx.type === 'expense' && !tx.isPending && !loan && !recurring,
     attachments: (tx.attachments ?? []).map((a) =>
       toAttachmentView(a, t('transaction.attachments.unnamed')),
     ),

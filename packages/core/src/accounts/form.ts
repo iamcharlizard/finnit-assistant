@@ -203,6 +203,18 @@ function validateTerms(
   }
 }
 
+/** Problems in a card's cut-off and payment days and rate (the app's terms sheet). */
+export function creditTermsErrors(
+  form: Pick<
+    ManualAccountForm,
+    'statementDay' | 'paymentDueDay' | 'interestRate'
+  >,
+): FormErrors {
+  const errors: FormErrors = {};
+  validateTerms(form, errors);
+  return errors;
+}
+
 /** Problems in one step of the wizard (empty when it can go on). */
 export function validateWizardStep(
   form: ManualAccountForm,

@@ -12,7 +12,6 @@ import {
   PiggyBank,
   Repeat,
   ShieldCheck,
-  Tags,
   Target,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -23,7 +22,6 @@ import type { NavItemKey, NavSectionKey } from '@finnit/core/nav/sections';
 export const NAV_ITEM_ICONS: Record<NavItemKey, LucideIcon> = {
   dashboard: House,
   history: History,
-  categorize: Tags,
   recurring: Repeat,
   statements: FileText,
   cards: CreditCard,

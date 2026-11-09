@@ -2,10 +2,22 @@ import * as React from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
-import { ArrowLeftRight, Lock, LockKeyhole, Tags, Trash2, Text as TextIcon } from 'lucide-react-native';
+import {
+  ArrowLeftRight,
+  Lock,
+  LockKeyhole,
+  Tags,
+  Trash2,
+  Text as TextIcon,
+} from 'lucide-react-native';
 
 import { deleteAlias, setAliasActive } from '@finnit/core/aliases/api';
-import { ALIASES_QUERY, aliasesData, aliasesVariables, type AliasesResult } from '@finnit/core/aliases/request';
+import {
+  ALIASES_QUERY,
+  aliasesData,
+  aliasesVariables,
+  type AliasesResult,
+} from '@finnit/core/aliases/request';
 import type { ApiMerchantAlias } from '@finnit/core/aliases/types';
 import { todayKey } from '@finnit/core/finance/dates';
 import { formatMoney } from '@finnit/core/finance/money';
@@ -62,53 +74,97 @@ export function AliasesScreen() {
   }
 
   function askDelete(alias: ApiMerchantAlias) {
-    Alert.alert(t('deleteDialog.title', { name: alias.displayName }), t('deleteDialog.description'), [
-      { text: tc('cancel'), style: 'cancel' },
-      {
-        text: t('deleteDialog.confirm'),
-        style: 'destructive',
-        onPress: async () => {
-          setBusyId(alias.id);
-          try {
-            await deleteAlias(alias.id, gql);
-            toast.success(t('toasts.deleted'));
-            refresh();
-          } catch (e) {
-            fail(e);
-          } finally {
-            setBusyId(null);
-          }
+    Alert.alert(
+      t('deleteDialog.title', { name: alias.displayName }),
+      t('deleteDialog.description'),
+      [
+        { text: tc('cancel'), style: 'cancel' },
+        {
+          text: t('deleteDialog.confirm'),
+          style: 'destructive',
+          onPress: async () => {
+            setBusyId(alias.id);
+            try {
+              await deleteAlias(alias.id, gql);
+              toast.success(t('toasts.deleted'));
+              refresh();
+            } catch (e) {
+              fail(e);
+            } finally {
+              setBusyId(null);
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
   }
 
-  const money = (amount: number, currency: string) => formatMoney(amount, currency, l.locale);
+  const money = (amount: number, currency: string) =>
+    formatMoney(amount, currency, l.locale);
 
   return (
-    <Screen title={t('title')} subtitle={t('subtitle')} back withBottomNav={false} loading={loading} error={error} refreshing={refreshing} onRefresh={refresh}>
+    <Screen
+      title={t('title')}
+      subtitle={t('subtitle')}
+      back
+      withBottomNav={false}
+      loading={loading}
+      error={error}
+      refreshing={refreshing}
+      onRefresh={refresh}
+    >
       {view ? (
         <TwView className="gap-4">
-          <Button variant="link" icon={Tags} label={t('categorizeLink')} className="self-start" onPress={() => router.navigate('/transactions/categorize')} />
+          <Button
+            variant="link"
+            icon={Tags}
+            label={t('categorizeLink')}
+            className="self-start"
+            onPress={() =>
+              router.navigate({ pathname: '/history', params: { review: '1' } })
+            }
+          />
           {view.aliases.length === 0 ? (
-            <EmptyState icon={TextIcon} title={t('emptyTitle')} description={t('emptyDescription')} />
+            <EmptyState
+              icon={TextIcon}
+              title={t('emptyTitle')}
+              description={t('emptyDescription')}
+            />
           ) : (
             <>
-              <Text className="px-1 text-xs text-on-surface-variant">{t('count', { count: view.aliases.length })}</Text>
+              <Text className="px-1 text-xs text-on-surface-variant">
+                {t('count', { count: view.aliases.length })}
+              </Text>
               {view.aliases.map((alias) => {
                 const locked = alias.locked;
-                const transferAccount = alias.transferAccountId ? view.accountNames[alias.transferAccountId] : undefined;
+                const transferAccount = alias.transferAccountId
+                  ? view.accountNames[alias.transferAccountId]
+                  : undefined;
                 const details = [
                   alias.category?.name ?? t('noCategory'),
                   t('matches', { count: alias.matchCount }),
-                  alias.priority !== 0 ? t('priority', { priority: alias.priority }) : null,
+                  alias.priority !== 0
+                    ? t('priority', { priority: alias.priority })
+                    : null,
                 ].filter(Boolean);
                 return (
-                  <TwView key={alias.id} className={cn('gap-3 rounded-card bg-surface p-4', !alias.active && 'opacity-75')}>
+                  <TwView
+                    key={alias.id}
+                    className={cn(
+                      'gap-3 rounded-card bg-surface p-4',
+                      !alias.active && 'opacity-75',
+                    )}
+                  >
                     <TwView className="flex-row items-start justify-between gap-3">
                       <TwView className="min-w-0 flex-1 gap-1">
                         <TwView className="flex-row flex-wrap items-center gap-2">
-                          {alias.isPrivate ? <Icon icon={Lock} size={16} color="--on-surface-variant" /> : null}
+                          {alias.isPrivate ? (
+                            <Icon
+                              icon={Lock}
+                              size={16}
+                              color="--on-surface-variant"
+                            />
+                          ) : null}
                           <Text weight="medium" className="shrink text-base">
                             {alias.displayName}
                           </Text>
@@ -117,21 +173,39 @@ export function AliasesScreen() {
                           ) : alias.isPrivate ? (
                             <Badge variant="muted" label={t('private')} />
                           ) : null}
-                          {!alias.active ? <Badge variant="outline" label={t('inactive')} /> : null}
+                          {!alias.active ? (
+                            <Badge variant="outline" label={t('inactive')} />
+                          ) : null}
                         </TwView>
                         <Text className="text-xs text-on-surface-variant">
-                          {locked || alias.pattern === null ? t('lockedPattern') : `${t(`matchShort.${alias.matchType}`)}: ${alias.pattern}`}
+                          {locked || alias.pattern === null
+                            ? t('lockedPattern')
+                            : `${t(`matchShort.${alias.matchType}`)}: ${alias.pattern}`}
                         </Text>
-                        <Text className="text-xs text-on-surface-variant">{details.join(' · ')}</Text>
+                        <Text className="text-xs text-on-surface-variant">
+                          {details.join(' · ')}
+                        </Text>
                         {transferAccount ? (
                           <TwView className="flex-row items-center gap-1">
-                            <Icon icon={ArrowLeftRight} size={14} color="--on-surface-variant" />
-                            <Text className="text-xs text-on-surface-variant">{t('transferTo', { account: transferAccount })}</Text>
+                            <Icon
+                              icon={ArrowLeftRight}
+                              size={14}
+                              color="--on-surface-variant"
+                            />
+                            <Text className="text-xs text-on-surface-variant">
+                              {t('transferTo', { account: transferAccount })}
+                            </Text>
                           </TwView>
                         ) : null}
                         {alias.month ? (
                           <Text className="mt-1 text-sm">
-                            {t('spending.month', { amount: money(alias.month.total, alias.month.currency), count: alias.month.count })}
+                            {t('spending.month', {
+                              amount: money(
+                                alias.month.total,
+                                alias.month.currency,
+                              ),
+                              count: alias.month.count,
+                            })}
                             {alias.year && alias.year.count > 0 ? (
                               <Text className="text-sm text-on-surface-variant">{` · ${t('spending.year', { amount: money(alias.year.total, alias.year.currency) })}`}</Text>
                             ) : null}
@@ -141,8 +215,14 @@ export function AliasesScreen() {
                       <Switch
                         checked={alias.active}
                         disabled={busyId === alias.id}
-                        onCheckedChange={(active) => (locked ? router.push('/privacy-unlock') : void toggle(alias, active))}
-                        accessibilityLabel={t('activeLabel', { name: alias.displayName })}
+                        onCheckedChange={(active) =>
+                          locked
+                            ? router.push('/privacy-unlock')
+                            : void toggle(alias, active)
+                        }
+                        accessibilityLabel={t('activeLabel', {
+                          name: alias.displayName,
+                        })}
                       />
                     </TwView>
                     <TwView className="flex-row flex-wrap items-center justify-between gap-1">
@@ -150,10 +230,21 @@ export function AliasesScreen() {
                         variant="link"
                         size="sm"
                         label={t('spending.view')}
-                        onPress={() => router.navigate({ pathname: '/history', params: { alias: alias.id, month: view.month } })}
+                        onPress={() =>
+                          router.navigate({
+                            pathname: '/history',
+                            params: { alias: alias.id, month: view.month },
+                          })
+                        }
                       />
                       {locked ? (
-                        <Button variant="outline" size="sm" icon={LockKeyhole} label={t('unlock')} onPress={() => router.push('/privacy-unlock')} />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          icon={LockKeyhole}
+                          label={t('unlock')}
+                          onPress={() => router.push('/privacy-unlock')}
+                        />
                       ) : (
                         <Button
                           variant="ghost"

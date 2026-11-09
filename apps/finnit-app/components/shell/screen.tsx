@@ -23,6 +23,27 @@ import { PageHeader } from './page-header';
 const PULL_FULL = 80;
 /** The room the pull opens above the content (iOS holds about this much while refreshing). */
 const PULL_AREA = 64;
+/** How close to the end the lists start loading their next page. */
+const END_DISTANCE = 600;
+
+type EndListener = () => void;
+const ScrollEndContext = React.createContext<
+  ((listener: EndListener) => () => void) | null
+>(null);
+
+/**
+ * Infinite scroll inside a Screen: `onEnd` runs when the content's end comes
+ * near (the lists load their next page). A list outside a Screen never
+ * hears it.
+ */
+export function useOnScrollEnd(onEnd: () => void) {
+  const subscribe = React.useContext(ScrollEndContext);
+  const latest = React.useRef(onEnd);
+  React.useEffect(() => {
+    latest.current = onEnd;
+  }, [onEnd]);
+  React.useEffect(() => subscribe?.(() => latest.current()), [subscribe]);
+}
 
 interface ScreenProps {
   title: string;
@@ -76,8 +97,23 @@ export function Screen({
     if (!refreshing) setPulled(false);
   }
 
+  const listeners = React.useRef(new Set<EndListener>());
+  const subscribe = React.useCallback((listener: EndListener) => {
+    listeners.current.add(listener);
+    return () => {
+      listeners.current.delete(listener);
+    };
+  }, []);
+
   const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    pull.value = Math.max(0, -event.nativeEvent.contentOffset.y) / PULL_FULL;
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    pull.value = Math.max(0, -contentOffset.y) / PULL_FULL;
+    if (
+      contentOffset.y + layoutMeasurement.height >=
+      contentSize.height - END_DISTANCE
+    ) {
+      listeners.current.forEach((listener) => listener());
+    }
   };
 
   return (
@@ -90,7 +126,7 @@ export function Screen({
         <TwScrollView
           className="flex-1"
           keyboardShouldPersistTaps="handled"
-          onScroll={onRefresh ? onScroll : undefined}
+          onScroll={onScroll}
           scrollEventThrottle={16}
           contentContainerClassName={cn('gap-5 px-4', className)}
           contentContainerStyle={{
@@ -146,7 +182,9 @@ export function Screen({
               }
             />
           ) : (
-            children
+            <ScrollEndContext.Provider value={subscribe}>
+              {children}
+            </ScrollEndContext.Provider>
           )}
         </TwScrollView>
         {onRefresh ? (

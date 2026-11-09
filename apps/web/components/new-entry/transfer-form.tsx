@@ -10,7 +10,7 @@ import { DatePicker } from '@finnit/ui/components/ui/date-picker';
 import { Input } from '@finnit/ui/components/ui/input';
 
 import { creditOwed } from '@finnit/core/finance/accounts';
-import { todayKey } from '@finnit/core/finance/dates';
+import { shortDate, todayKey, type DayKey } from '@finnit/core/finance/dates';
 import { formatMoney } from '@finnit/core/finance/money';
 import {
   currencyOf,
@@ -55,7 +55,10 @@ export function TransferForm({
   onLegs,
   legPicks,
   onLegPick,
+  cardDueDate,
 }: {
+  /** Paying a card's cycle: after this day it counts for the next one. */
+  cardDueDate?: DayKey;
   /** Movements already recorded that may be its sides (null: not searched). */
   legs: TransferLegCandidates | null;
   onLegs: (legs: TransferLegCandidates | null) => void;
@@ -200,6 +203,11 @@ export function TransferForm({
         required
         error={errors.date && t(`validation.${errors.date}`)}
       />
+      {cardPayment && cardDueDate && draft.date && draft.date > cardDueDate ? (
+        <p role="status" className="text-xs text-on-surface-variant">
+          {t('cardPaymentLate', { date: shortDate(cardDueDate, locale) })}
+        </p>
+      ) : null}
       <Input
         label={t('fields.transferDescription')}
         placeholder={t('fields.transferDescriptionPlaceholder')}

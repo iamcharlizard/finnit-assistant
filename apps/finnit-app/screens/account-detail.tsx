@@ -15,15 +15,25 @@ import {
 import { historyWindow } from '@finnit/core/accounts/balance-history';
 import { buildAccountDetail, buildAccounts } from '@finnit/core/accounts/view';
 import { indexCategories } from '@finnit/core/finance/categories';
-import { endOfDayIso, lastDayOf, monthOf, startOfDayIso, todayKey } from '@finnit/core/finance/dates';
+import {
+  endOfDayIso,
+  lastDayOf,
+  monthOf,
+  startOfDayIso,
+  todayKey,
+} from '@finnit/core/finance/dates';
 import { toTransactionRow } from '@finnit/core/finance/transactions';
 import { TwView } from '@finnit/ui-native/lib/tw';
 import { Text } from '@finnit/ui-native/components/ui/text';
 
 import { AccountCardVisual } from '@/components/accounts/account-card-visual';
 import { AccountMovements } from '@/components/accounts/account-movements';
+import { CardPeriods } from '@/components/accounts/card-periods';
 import { AccountStats } from '@/components/accounts/account-stats';
-import { AccountStatusBadge, ExcludedFromTotalBadge } from '@/components/accounts/account-status-badge';
+import {
+  AccountStatusBadge,
+  ExcludedFromTotalBadge,
+} from '@/components/accounts/account-status-badge';
 import { InTotalSwitch } from '@/components/accounts/in-total-switch';
 import { Screen } from '@/components/shell/screen';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,7 +50,9 @@ export function AccountDetailScreen() {
   const month = monthOf(today);
   const window = historyWindow(null, today);
 
-  const [accountsResult, refetchAccounts] = useQuery<AccountsResult>({ query: ACCOUNTS_QUERY });
+  const [accountsResult, refetchAccounts] = useQuery<AccountsResult>({
+    query: ACCOUNTS_QUERY,
+  });
   const card = React.useMemo(() => {
     if (!accountsResult.data) return null;
     const all = buildAccounts(
@@ -78,7 +90,9 @@ export function AccountDetailScreen() {
       card,
       {
         today,
-        recent: detailResult.data.recent.edges.map((e) => toTransactionRow(e.node, categories, l, { withDate: true })),
+        recent: detailResult.data.recent.edges.map((e) =>
+          toTransactionRow(e.node, categories, l, { withDate: true }),
+        ),
         summary: summaryResult.data?.cardMonthSummary ?? null,
         pending: detailResult.data.upcomingPayments,
       },
@@ -86,16 +100,22 @@ export function AccountDetailScreen() {
     );
   }, [card, detailResult.data, summaryResult.data, today, l]);
 
-  const refreshing = (accountsResult.fetching || detailResult.fetching) && Boolean(detail);
+  const refreshing =
+    (accountsResult.fetching || detailResult.fetching) && Boolean(detail);
   const reload = () => {
     refetchAccounts({ requestPolicy: 'network-only' });
     refetchDetail({ requestPolicy: 'network-only' });
-    if (card?.type === 'credit') refetchSummary({ requestPolicy: 'network-only' });
+    if (card?.type === 'credit')
+      refetchSummary({ requestPolicy: 'network-only' });
   };
   useOnTransactionsChanged(reload);
 
   const subtitle = card
-    ? [card.label !== card.name ? card.name : null, card.bankName, card.last4 ? `•${card.last4}` : null]
+    ? [
+        card.label !== card.name ? card.name : null,
+        card.bankName,
+        card.last4 ? `•${card.last4}` : null,
+      ]
         .filter(Boolean)
         .join(' · ')
     : undefined;
@@ -113,17 +133,49 @@ export function AccountDetailScreen() {
     >
       {card && detail ? (
         <TwView className="gap-4">
-          <TwView className="self-center" style={{ width: '100%', maxWidth: 360 }}>
+          <TwView
+            className="self-center"
+            style={{ width: '100%', maxWidth: 360 }}
+          >
             <AccountCardVisual account={card} holderName={user?.name ?? ''} />
           </TwView>
           <TwView className="flex-row items-center gap-2 px-1">
-            <AccountStatusBadge linked={card.linked} archived={card.archived} defaultCash={card.defaultCash} />
+            <AccountStatusBadge
+              linked={card.linked}
+              archived={card.archived}
+              defaultCash={card.defaultCash}
+            />
             {card.includedInTotal ? null : <ExcludedFromTotalBadge />}
           </TwView>
-          {card.archived ? <Text className="px-1 text-xs text-on-surface-variant">{t('archive.archivedNote')}</Text> : null}
+          {card.archived ? (
+            <Text className="px-1 text-xs text-on-surface-variant">
+              {t('archive.archivedNote')}
+            </Text>
+          ) : null}
           <AccountStats detail={detail} />
-          {card.archived ? null : <InTotalSwitch key={String(card.includedInTotal)} accountId={card.id} included={card.includedInTotal} />}
-          <AccountMovements rows={detail.recent} historyHref={detail.historyHref} />
+          {card.type === 'credit' ? (
+            // A new balance (a payment, a charge): ask for the cycles again.
+            <CardPeriods
+              key={`${card.id}:${card.amount}:${card.statementDay}:${card.paymentDueDay}`}
+              accountId={card.id}
+              terms={{
+                statementDay: card.statementDay,
+                paymentDueDay: card.paymentDueDay,
+                interestRateAnnual: card.interestRateAnnual,
+              }}
+            />
+          ) : null}
+          {card.archived ? null : (
+            <InTotalSwitch
+              key={String(card.includedInTotal)}
+              accountId={card.id}
+              included={card.includedInTotal}
+            />
+          )}
+          <AccountMovements
+            rows={detail.recent}
+            historyHref={detail.historyHref}
+          />
         </TwView>
       ) : null}
     </Screen>

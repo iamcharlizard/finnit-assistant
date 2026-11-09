@@ -257,7 +257,10 @@ describe('transaction detail: view', () => {
     assert.deepEqual(view.recurring, {
       href: '/recurring?date=2026-10-05',
       label: 'Netflix · vencía el 5 de octubre',
+      occurrenceId: 'occ-1',
     });
+    // Already pays it: nothing else to link.
+    assert.equal(view.canLinkRecurring, false);
     assert.equal(view.categoryLabel, null);
     assert.equal(view.amount, '-$80.00');
   });
@@ -387,6 +390,7 @@ describe('transaction detail: loan payments', () => {
   it('an expense that pays nothing can be linked to a loan', () => {
     const view = toTransactionDetailView(tx(), today, es);
     assert.equal(view.canLinkLoan, true);
+    assert.equal(view.canLinkRecurring, true);
     assert.equal(view.loan, null);
     assert.equal(
       toTransactionDetailView(tx({ type: 'income' }), today, es).canLinkLoan,

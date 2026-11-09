@@ -12,7 +12,6 @@ import {
   PiggyBank,
   Repeat,
   ShieldCheck,
-  Tags,
   Target,
   type LucideIcon,
 } from 'lucide-react';
@@ -42,7 +41,6 @@ export {
 const ITEM_ICONS: Record<NavItemKey, LucideIcon> = {
   dashboard: House,
   history: History,
-  categorize: Tags,
   recurring: Repeat,
   statements: FileText,
   cards: CreditCard,

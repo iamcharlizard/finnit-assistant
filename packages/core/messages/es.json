@@ -216,7 +216,8 @@
       "errors": {
         "mismatch": "Ese movimiento ya no coincide con la transferencia. Elige otro o crea uno nuevo."
       }
-    }
+    },
+    "cardPaymentLate": "Esta fecha es después de la fecha límite ({date}): el pago contará para el siguiente periodo."
   },
   "errors": {
     "network": "No pudimos conectar con Finnit. Revisa tu conexión.",
@@ -412,7 +413,8 @@
       "title": "Transferencia",
       "from": "Sale de {account}",
       "to": "Entra a {account}",
-      "sides": "Movimientos de la transferencia"
+      "sides": "Movimientos de la transferencia",
+      "cardPayment": "Pago de tarjeta"
     },
     "otherCategories": "Otras categorías",
     "topView": {
@@ -445,7 +447,21 @@
     "deleteTransfer": "Eliminar transferencia",
     "deleteTransferTitle": "¿Eliminar esta transferencia?",
     "deleteTransferDescription": "Los movimientos creados para ella se eliminan y los saldos se ajustan; los que vinieron del banco se quedan como gasto o ingreso.",
-    "transferDeleted": "Transferencia eliminada"
+    "transferDeleted": "Transferencia eliminada",
+    "review": {
+      "chip": "Por clasificar",
+      "label": "Por clasificar: {count, plural, one {# movimiento sin categoría} other {# movimientos sin categoría}}"
+    },
+    "accountCard": {
+      "balance": "Saldo actual",
+      "debt": "Deuda actual",
+      "inFavor": "Saldo a favor",
+      "seeAccount": "Ver cuenta",
+      "used": "{percent} % del límite usado",
+      "available": "Disponible {available} de {limit}",
+      "needsTerms": "Agrega tus días de corte y de pago para ver cuánto pagar en cada periodo.",
+      "setTerms": "Configurar"
+    }
   },
   "cards": {
     "count": "{count, plural, one {# tarjeta} other {# tarjetas}}",
@@ -458,6 +474,43 @@
       "minimum": "Pago mínimo",
       "interestRate": "Tasa anual",
       "percent": "{rate} %"
+    },
+    "period": {
+      "title": "Periodos",
+      "status": {
+        "open": "En curso",
+        "due": "Por pagar",
+        "paid": "Pagado",
+        "unpaid": "Vencido"
+      },
+      "headline": {
+        "open": "Corta el {date}",
+        "paid": "Pagado a tiempo (fecha límite: {date})",
+        "unpaid": "Quedaron {amount} sin pagar al {date}",
+        "due": "Paga {amount} antes del {date}"
+      },
+      "balanceSoFar": "Saldo hasta hoy",
+      "balanceAtStatement": "Saldo al corte",
+      "cycle": "Periodo {range}",
+      "progress": "{percent} % pagado",
+      "noInterest": "Pago para no generar intereses",
+      "paid": "Pagado",
+      "remaining": "Falta",
+      "minimum": "Pago mínimo",
+      "pendingInstallments": "Incluye {amount} de meses sin intereses del periodo.",
+      "fromStatement": "Montos de tu estado de cuenta.",
+      "interestHint": "Estimado de intereses con tu tasa anual más IVA: {amount}. Corrígelo con el de tu estado de cuenta.",
+      "interestNoRate": "Registra los intereses de tu estado de cuenta. Agrega la tasa anual de la tarjeta para estimarlos.",
+      "pay": "Pagar tarjeta",
+      "recordInterest": "Registrar intereses",
+      "interestName": "Intereses",
+      "movements": "Movimientos del periodo",
+      "loadMore": "Periodos anteriores",
+      "empty": "Agrega tus días de corte y de pago (en Editar) para ver tus periodos.",
+      "terms": "Días de corte y de pago",
+      "editTerms": "Días de corte y de pago",
+      "saveTerms": "Guardar",
+      "termsSaved": "Días guardados"
     }
   },
   "accounts": {
@@ -2672,7 +2725,27 @@
       "transferKeeps": "Es una transferencia: el movimiento en {account} se queda como gasto o ingreso.",
       "loanPayment": "Era un pago de {name}: el pago queda registrado, sin movimiento."
     },
-    "markDuplicate": "Marcar como duplicado"
+    "markDuplicate": "Marcar como duplicado",
+    "linkRecurring": {
+      "action": "Ligar a gasto recurrente",
+      "title": "Ligar a gasto recurrente",
+      "description": "Elige el pago que cubrió este gasto de {amount}. Se marcará como pagado y el gasto tomará su categoría.",
+      "due": "Vence el {date} · {amount}",
+      "missed": "Vencido el {date} · {amount}",
+      "proposed": "Sugerido",
+      "empty": "No hay pagos recurrentes pendientes cerca de esta fecha.",
+      "loading": "Buscando pagos recurrentes…",
+      "submit": "Ligar",
+      "done": "Ligado a {name}"
+    },
+    "unlinkRecurring": {
+      "action": "Desligar del gasto recurrente",
+      "title": "¿Desligar del gasto recurrente?",
+      "description": "El pago volverá a quedar pendiente. El gasto conserva su categoría.",
+      "confirm": "Desligar",
+      "done": "Se desligó del gasto recurrente"
+    },
+    "moreActions": "Más acciones"
   },
   "notifications": {
     "title": "Notificaciones",
@@ -2698,7 +2771,10 @@
       "debt_due": "Deuda",
       "recurring": "Pago recurrente",
       "summary": "Resumen",
-      "uncategorized": "Por revisar"
+      "uncategorized": "Por revisar",
+      "card_statement": "Corte de tarjeta",
+      "card_due": "Pago de tarjeta",
+      "card_unpaid": "Pago de tarjeta vencido"
     }
   },
   "statements": {

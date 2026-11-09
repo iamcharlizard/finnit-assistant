@@ -7,13 +7,24 @@ import {
   CheckCheck,
   CopyCheck,
   Landmark,
+  MoreHorizontal,
   PencilLine,
+  Repeat,
   Trash2,
   Undo2,
   Unlink,
+  type LucideIcon,
 } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@finnit/ui/components/ui/dropdown-menu';
+import { cn } from '@finnit/ui/lib/utils';
 import { toast } from '@finnit/ui/components/ui/toaster';
 
 import {
@@ -33,6 +44,8 @@ import { ConvertTransferDialog } from '@/components/transfers/convert-transfer-d
 import { MergeDuplicateDialog } from '@/components/duplicates/merge-duplicate-dialog';
 import { LinkLoanDialog } from '@/components/loan-links/link-loan-dialog';
 import { UnlinkLoanDialog } from '@/components/loan-links/unlink-loan-dialog';
+import { LinkRecurringDialog } from '@/components/recurring-links/link-recurring-dialog';
+import { runPaymentAction } from '@finnit/core/recurring/api';
 import { AttachmentsCard } from './attachments-card';
 import { useDetailHost } from './detail-host';
 import { TransactionEditDialog } from './transaction-edit-dialog';
@@ -52,7 +65,13 @@ export function TransactionDetailScreen({
   const tl = useTranslations('debts.links');
   const { view } = data;
   const [dialog, setDialog] = React.useState<
-    'edit' | 'convert' | 'linkLoan' | 'unlinkLoan' | 'merge' | null
+    | 'edit'
+    | 'convert'
+    | 'linkLoan'
+    | 'unlinkLoan'
+    | 'linkRecurring'
+    | 'merge'
+    | null
   >(null);
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
   const [deleting, setDeleting] = React.useState(false);
@@ -94,6 +113,28 @@ export function TransactionDetailScreen({
     });
   }
 
+  /** "Desligar del gasto recurrente": its payment is pending again. */
+  function askUnlinkRecurring(occurrenceId: string) {
+    setConfirm({
+      title: tt('unlinkRecurring.title'),
+      description: tt('unlinkRecurring.description'),
+      confirmLabel: tt('unlinkRecurring.confirm'),
+      onConfirm: () => {
+        setConfirm(null);
+        setApplying(true);
+        runPaymentAction('reopen', occurrenceId, gql)
+          .then(() => {
+            toast.success(tt('unlinkRecurring.done'));
+            host.refresh();
+          })
+          .catch((error: unknown) => {
+            toast.error(transactionErrorMessage(error, t));
+          })
+          .finally(() => setApplying(false));
+      },
+    });
+  }
+
   function askDelete() {
     setConfirm({
       title: tt('deleteTitle'),
@@ -119,52 +160,150 @@ export function TransactionDetailScreen({
     });
   }
 
+  const recurringLink = view.recurring;
+  const actions: {
+    key: string;
+    label: string;
+    icon: LucideIcon;
+    run: () => void;
+    disabled?: boolean;
+    destructive?: boolean;
+  }[] = [
+    ...(view.convertSource
+      ? [
+          {
+            key: 'convert',
+            label: tx('convert.action'),
+            icon: ArrowLeftRight,
+            run: () => setDialog('convert'),
+          },
+        ]
+      : []),
+    ...(view.counterpart?.converted
+      ? [
+          {
+            key: 'undo',
+            label: tx('undo.action'),
+            icon: Undo2,
+            run: () => askUndo(view.counterpart!.transferId),
+            disabled: applying,
+          },
+        ]
+      : []),
+    ...(view.canLinkRecurring
+      ? [
+          {
+            key: 'linkRecurring',
+            label: tt('linkRecurring.action'),
+            icon: Repeat,
+            run: () => setDialog('linkRecurring'),
+          },
+        ]
+      : []),
+    ...(recurringLink
+      ? [
+          {
+            key: 'unlinkRecurring',
+            label: tt('unlinkRecurring.action'),
+            icon: Unlink,
+            run: () => askUnlinkRecurring(recurringLink.occurrenceId),
+            disabled: applying,
+          },
+        ]
+      : []),
+    ...(view.canLinkLoan
+      ? [
+          {
+            key: 'linkLoan',
+            label: tl('linkAction'),
+            icon: Landmark,
+            run: () => setDialog('linkLoan'),
+          },
+        ]
+      : []),
+    ...(view.loan?.occurrenceId
+      ? [
+          {
+            key: 'unlinkLoan',
+            label: tl('unlink.action'),
+            icon: Unlink,
+            run: () => setDialog('unlinkLoan'),
+          },
+        ]
+      : []),
+    ...(view.mergeable
+      ? [
+          {
+            key: 'merge',
+            label: tt('markDuplicate'),
+            icon: CopyCheck,
+            run: () => setDialog('merge'),
+          },
+        ]
+      : []),
+    ...(view.deleteBlock === null
+      ? [
+          {
+            key: 'delete',
+            label: tt('delete'),
+            icon: Trash2,
+            run: askDelete,
+            disabled: deleting,
+            destructive: true,
+          },
+        ]
+      : []),
+  ];
+
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       <TransactionSummary view={view} />
 
-      <div className="flex flex-wrap gap-2">
+      {/*
+        "Editar" first; every other action in the "⋯" menu (deleting last,
+        in red), so the row doesn't grow with each one a movement allows.
+      */}
+      <div className="flex items-center gap-2">
         <Button variant="outline" onClick={() => setDialog('edit')}>
           <PencilLine aria-hidden /> {tt('edit')}
         </Button>
-        {view.convertSource ? (
-          <Button variant="outline" onClick={() => setDialog('convert')}>
-            <ArrowLeftRight aria-hidden /> {tx('convert.action')}
-          </Button>
-        ) : null}
-        {view.canLinkLoan ? (
-          <Button variant="outline" onClick={() => setDialog('linkLoan')}>
-            <Landmark aria-hidden /> {tl('linkAction')}
-          </Button>
-        ) : null}
-        {view.loan?.occurrenceId ? (
-          <Button variant="outline" onClick={() => setDialog('unlinkLoan')}>
-            <Unlink aria-hidden /> {tl('unlink.action')}
-          </Button>
-        ) : null}
-        {view.counterpart?.converted ? (
-          <Button
-            variant="outline"
-            onClick={() => askUndo(view.counterpart!.transferId)}
-            disabled={applying}
-          >
-            <Undo2 aria-hidden /> {tx('undo.action')}
-          </Button>
-        ) : null}
         {view.inProcess ? (
           <Button variant="outline" onClick={markApplied} disabled={applying}>
             <CheckCheck aria-hidden /> {tt('markApplied')}
           </Button>
         ) : null}
-        {view.mergeable ? (
-          <Button variant="outline" onClick={() => setDialog('merge')}>
-            <CopyCheck aria-hidden /> {tt('markDuplicate')}
-          </Button>
-        ) : null}
-        {view.deleteBlock === null ? (
-          <Button variant="destructive" onClick={askDelete} disabled={deleting}>
-            <Trash2 aria-hidden /> {tt('delete')}
-          </Button>
+        {actions.length > 0 ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full"
+                aria-label={tt('moreActions')}
+              >
+                <MoreHorizontal aria-hidden />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-60">
+              {actions.map((action, index) => (
+                <React.Fragment key={action.key}>
+                  {action.destructive && index > 0 ? (
+                    <DropdownMenuSeparator />
+                  ) : null}
+                  <DropdownMenuItem
+                    disabled={action.disabled}
+                    onSelect={action.run}
+                    className={cn(
+                      action.destructive &&
+                        'text-expense focus:text-expense [&_svg]:!text-expense',
+                    )}
+                  >
+                    <action.icon aria-hidden /> {action.label}
+                  </DropdownMenuItem>
+                </React.Fragment>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : null}
       </div>
       {view.deleteBlock ? (
@@ -227,6 +366,19 @@ export function TransactionDetailScreen({
           onLinked={(name) => {
             setDialog(null);
             toast.success(tl('done', { name }));
+            host.refresh();
+          }}
+        />
+      ) : null}
+      {dialog === 'linkRecurring' ? (
+        <LinkRecurringDialog
+          transactionId={view.id}
+          amountLabel={view.amount}
+          currency={data.currency}
+          onClose={() => setDialog(null)}
+          onLinked={(name) => {
+            setDialog(null);
+            toast.success(tt('linkRecurring.done', { name }));
             host.refresh();
           }}
         />

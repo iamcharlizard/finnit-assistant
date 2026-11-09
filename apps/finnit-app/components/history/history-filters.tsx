@@ -1,9 +1,15 @@
 import * as React from 'react';
 import { ScrollView } from 'react-native';
 import { useTranslations } from 'use-intl';
-import { Search, SlidersHorizontal, X } from 'lucide-react-native';
+import { Search, SlidersHorizontal, Tags, X } from 'lucide-react-native';
 
-import { monthLabel, monthOf, shortDate, type DayKey, type MonthRef } from '@finnit/core/finance/dates';
+import {
+  monthLabel,
+  monthOf,
+  shortDate,
+  type DayKey,
+  type MonthRef,
+} from '@finnit/core/finance/dates';
 import {
   HISTORY_TYPES,
   activeFilterCount,
@@ -53,6 +59,7 @@ export function HistoryFilters({
   categories,
   today,
   aliasName,
+  reviewCount,
   onChange,
 }: {
   filters: Filters;
@@ -60,6 +67,8 @@ export function HistoryFilters({
   categories: Option[];
   today: DayKey;
   aliasName?: string | null;
+  /** How many "Por clasificar" has with the other filters. */
+  reviewCount: number;
   onChange: (next: Filters) => void;
 }) {
   const t = useTranslations('history');
@@ -79,11 +88,17 @@ export function HistoryFilters({
   React.useEffect(() => {
     const value = search.trim();
     if (value === (filters.search ?? '')) return;
-    const timer = setTimeout(() => onChange({ ...filters, search: value || undefined }), 400);
+    const timer = setTimeout(
+      () => onChange({ ...filters, search: value || undefined }),
+      400,
+    );
     return () => clearTimeout(timer);
   }, [search, filters, onChange]);
 
-  const typeOptions = HISTORY_TYPES.map((value) => ({ value, label: t(`types.${value}`) }));
+  const typeOptions = HISTORY_TYPES.map((value) => ({
+    value,
+    label: t(`types.${value}`),
+  }));
   const accountIds = accounts.map((a) => a.value);
   const datesLabel = hasRange(filters)
     ? t('rangeLabel', {
@@ -96,13 +111,24 @@ export function HistoryFilters({
 
   const chips: { key: string; label: string; remove: () => void }[] = [
     ...(filters.types
-      ? [{ key: 'type', label: selectionLabel(tf('type'), filters.types, typeOptions, tr), remove: () => onChange({ ...filters, types: undefined }) }]
+      ? [
+          {
+            key: 'type',
+            label: selectionLabel(tf('type'), filters.types, typeOptions, tr),
+            remove: () => onChange({ ...filters, types: undefined }),
+          },
+        ]
       : []),
     ...(filters.accountIds
       ? [
           {
             key: 'accounts',
-            label: selectionLabel(tf('accounts'), filters.accountIds, accounts, tr),
+            label: selectionLabel(
+              tf('accounts'),
+              filters.accountIds,
+              accounts,
+              tr,
+            ),
             remove: () => onChange({ ...filters, accountIds: undefined }),
           },
         ]
@@ -111,20 +137,48 @@ export function HistoryFilters({
       ? [
           {
             key: 'categories',
-            label: selectionLabel(tf('categories'), filters.categoryIds, categories, tr),
+            label: selectionLabel(
+              tf('categories'),
+              filters.categoryIds,
+              categories,
+              tr,
+            ),
             remove: () => onChange({ ...filters, categoryIds: undefined }),
           },
         ]
       : []),
-    ...(datesLabel ? [{ key: 'dates', label: datesLabel, remove: () => onChange(withPeriod(filters, monthOf(today))) }] : []),
+    ...(datesLabel
+      ? [
+          {
+            key: 'dates',
+            label: datesLabel,
+            remove: () => onChange(withPeriod(filters, monthOf(today))),
+          },
+        ]
+      : []),
     ...(filters.aliasId
-      ? [{ key: 'alias', label: t('aliasFilter', { name: aliasName ?? '…' }), remove: () => onChange({ ...filters, aliasId: undefined }) }]
+      ? [
+          {
+            key: 'alias',
+            label: t('aliasFilter', { name: aliasName ?? '…' }),
+            remove: () => onChange({ ...filters, aliasId: undefined }),
+          },
+        ]
       : []),
   ];
 
-  const matching = categoryQuery.trim() ? rankOptions(categories, categoryQuery) : categories;
-  const shownCategories = allCategories || categoryQuery.trim() ? matching : matching.slice(0, FIRST_CATEGORIES);
-  const dateMode = hasRange(filters) ? 'range' : filters.period === 'all' ? 'all' : 'month';
+  const matching = categoryQuery.trim()
+    ? rankOptions(categories, categoryQuery)
+    : categories;
+  const shownCategories =
+    allCategories || categoryQuery.trim()
+      ? matching
+      : matching.slice(0, FIRST_CATEGORIES);
+  const dateMode = hasRange(filters)
+    ? 'range'
+    : filters.period === 'all'
+      ? 'all'
+      : 'month';
   const showMonth = Boolean(links) && filters.period !== 'all';
   const clearAll = () => {
     setSearch('');
@@ -139,9 +193,18 @@ export function HistoryFilters({
   };
 
   /** "Seleccionar todas" when some box is unchecked, else "Deseleccionar todas". */
-  const allToggle = (list: readonly string[] | undefined, onAll: () => void, onNone: () => void) => (
+  const allToggle = (
+    list: readonly string[] | undefined,
+    onAll: () => void,
+    onNone: () => void,
+  ) => (
     <TwView className="flex-row">
-      <Button variant="ghost" size="sm" label={list ? tf('selectAll') : tf('clearSelection')} onPress={list ? onAll : onNone} />
+      <Button
+        variant="ghost"
+        size="sm"
+        label={list ? tf('selectAll') : tf('clearSelection')}
+        onPress={list ? onAll : onNone}
+      />
     </TwView>
   );
 
@@ -160,6 +223,42 @@ export function HistoryFilters({
             className="min-h-12"
           />
         </TwView>
+        <TwPressable
+          accessibilityRole="button"
+          accessibilityState={{ selected: Boolean(filters.review) }}
+          accessibilityLabel={t('review.label', { count: reviewCount })}
+          onPress={() =>
+            onChange({ ...filters, review: filters.review ? undefined : true })
+          }
+          className={cn(
+            'min-h-12 flex-row items-center gap-1.5 rounded-button border px-3',
+            filters.review ? 'border-brand-40 bg-brand-10' : 'border-outline',
+          )}
+        >
+          <Icon
+            icon={Tags}
+            size={18}
+            color={filters.review ? '--brand-ink' : undefined}
+          />
+          <TwView
+            className={cn(
+              'rounded-full px-1.5',
+              reviewCount > 0 ? 'bg-brand' : 'bg-muted',
+            )}
+          >
+            <Text
+              weight="bold"
+              className={cn(
+                'text-[11px]',
+                reviewCount > 0
+                  ? 'text-brand-foreground'
+                  : 'text-on-surface-variant',
+              )}
+            >
+              {reviewCount > 999 ? '999+' : String(reviewCount)}
+            </Text>
+          </TwView>
+        </TwPressable>
         <TwView>
           <TwPressable
             accessibilityRole="button"
@@ -193,7 +292,11 @@ export function HistoryFilters({
               onPress={chip.remove}
               className="max-w-full flex-row items-center gap-1 rounded-full border border-brand-30 bg-brand-10 py-1 pr-2 pl-3"
             >
-              <Text weight="medium" numberOfLines={1} className="shrink text-xs text-brand-ink">
+              <Text
+                weight="medium"
+                numberOfLines={1}
+                className="shrink text-xs text-brand-ink"
+              >
                 {chip.label}
               </Text>
               <Icon icon={X} size={14} color="--brand-ink" />
@@ -205,7 +308,11 @@ export function HistoryFilters({
                 compact
                 label={monthLabel(filters.period as MonthRef, locale)}
                 onPrevious={() => onChange(withPeriod(filters, links.prev))}
-                onNext={links.next ? () => onChange(withPeriod(filters, links.next!)) : null}
+                onNext={
+                  links.next
+                    ? () => onChange(withPeriod(filters, links.next!))
+                    : null
+                }
               />
             </TwView>
           ) : null}
@@ -225,16 +332,28 @@ export function HistoryFilters({
           closeLabel={tc('close')}
         >
           <TwView className="flex-row justify-end">
-            <Button variant="ghost" size="sm" label={tf('clearAll')} disabled={!hasFilters(filters)} onPress={clearAll} />
+            <Button
+              variant="ghost"
+              size="sm"
+              label={tf('clearAll')}
+              disabled={!hasFilters(filters)}
+              onPress={clearAll}
+            />
           </TwView>
           <Segmented
-            options={TABS.map((key) => ({ value: key, label: narrowed[key] ? `${tf(key)} •` : tf(key) }))}
+            options={TABS.map((key) => ({
+              value: key,
+              label: narrowed[key] ? `${tf(key)} •` : tf(key),
+            }))}
             value={tab}
             onValueChange={setTab}
             accessibilityLabel={t('moreFilters')}
           />
           {/* A steady height, so switching tabs doesn't resize the sheet. */}
-          <ScrollView style={{ height: 380 }} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            style={{ height: 380 }}
+            keyboardShouldPersistTaps="handled"
+          >
             {tab === 'accounts' ? (
               <TwView className="gap-0.5">
                 {allToggle(
@@ -248,7 +367,15 @@ export function HistoryFilters({
                       label={account.label}
                       checked={isSelected(filters.accountIds, account.value)}
                       onCheckedChange={(on) =>
-                        onChange({ ...filters, accountIds: selectValues(filters.accountIds, [account.value], on, accountIds) })
+                        onChange({
+                          ...filters,
+                          accountIds: selectValues(
+                            filters.accountIds,
+                            [account.value],
+                            on,
+                            accountIds,
+                          ),
+                        })
                       }
                     />
                   </TwView>
@@ -275,9 +402,21 @@ export function HistoryFilters({
                   <TwView key={category.value} className="px-1 py-1">
                     <Checkbox
                       label={category.label}
-                      checked={categoryCheck(filters.categoryIds, category, categories)}
+                      checked={categoryCheck(
+                        filters.categoryIds,
+                        category,
+                        categories,
+                      )}
                       onCheckedChange={(on) =>
-                        onChange({ ...filters, categoryIds: selectCategory(filters.categoryIds, category, on, categories) })
+                        onChange({
+                          ...filters,
+                          categoryIds: selectCategory(
+                            filters.categoryIds,
+                            category,
+                            on,
+                            categories,
+                          ),
+                        })
                       }
                     />
                   </TwView>
@@ -287,7 +426,11 @@ export function HistoryFilters({
                     <Button
                       variant="ghost"
                       size="sm"
-                      label={allCategories ? tf('showFewer') : tf('showAll', { count: matching.length })}
+                      label={
+                        allCategories
+                          ? tf('showFewer')
+                          : tf('showAll', { count: matching.length })
+                      }
                       onPress={() => setAllCategories((value) => !value)}
                     />
                   </TwView>
@@ -303,7 +446,15 @@ export function HistoryFilters({
                       label={option.label}
                       checked={isSelected(filters.types, option.value)}
                       onCheckedChange={(on) =>
-                        onChange({ ...filters, types: selectValues(filters.types, [option.value], on, HISTORY_TYPES) })
+                        onChange({
+                          ...filters,
+                          types: selectValues(
+                            filters.types,
+                            [option.value],
+                            on,
+                            HISTORY_TYPES,
+                          ),
+                        })
                       }
                     />
                   </TwView>
@@ -313,25 +464,46 @@ export function HistoryFilters({
 
             {tab === 'dates' ? (
               <TwView className="gap-1 pt-2">
-                <TwView accessibilityRole="radiogroup" className="flex-row gap-1 rounded-full bg-track p-1">
+                <TwView
+                  accessibilityRole="radiogroup"
+                  className="flex-row gap-1 rounded-full bg-track p-1"
+                >
                   {(['month', 'all'] as const).map((option) => (
                     <TwPressable
                       key={option}
                       accessibilityRole="radio"
                       accessibilityState={{ selected: dateMode === option }}
-                      onPress={() => onChange(withPeriod(filters, option === 'all' ? 'all' : monthOf(today)))}
-                      className={cn('min-h-10 flex-1 items-center justify-center rounded-full px-3', dateMode === option ? 'bg-surface' : '')}
+                      onPress={() =>
+                        onChange(
+                          withPeriod(
+                            filters,
+                            option === 'all' ? 'all' : monthOf(today),
+                          ),
+                        )
+                      }
+                      className={cn(
+                        'min-h-10 flex-1 items-center justify-center rounded-full px-3',
+                        dateMode === option ? 'bg-surface' : '',
+                      )}
                     >
                       <Text
                         weight="medium"
-                        className={cn('text-sm', dateMode === option ? 'text-on-background' : 'text-on-surface-variant')}
+                        className={cn(
+                          'text-sm',
+                          dateMode === option
+                            ? 'text-on-background'
+                            : 'text-on-surface-variant',
+                        )}
                       >
                         {option === 'all' ? tf('allTime') : tf('month')}
                       </Text>
                     </TwPressable>
                   ))}
                 </TwView>
-                <Text weight="medium" className="px-1 pt-2 text-xs text-on-surface-variant">
+                <Text
+                  weight="medium"
+                  className="px-1 pt-2 text-xs text-on-surface-variant"
+                >
                   {t('range')}
                 </Text>
                 <TwView className="flex-row gap-2">
@@ -364,7 +536,11 @@ export function HistoryFilters({
               </TwView>
             ) : null}
           </ScrollView>
-          <Button variant="secondary" label={tc('done')} onPress={() => setOpen(false)} />
+          <Button
+            variant="secondary"
+            label={tc('done')}
+            onPress={() => setOpen(false)}
+          />
         </Sheet>
       ) : null}
     </TwView>

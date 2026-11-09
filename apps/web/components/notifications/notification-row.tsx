@@ -5,10 +5,13 @@ import {
   Bell,
   CalendarClock,
   ChevronRight,
+  CreditCard,
   Landmark,
   PiggyBank,
   Scale,
+  Scissors,
   Tags,
+  TriangleAlert,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -26,6 +29,9 @@ const ICONS: Record<NotificationType, LucideIcon> = {
   summary: Bell,
   balance_mismatch: Scale,
   uncategorized: Tags,
+  card_statement: Scissors,
+  card_due: CreditCard,
+  card_unpaid: TriangleAlert,
 };
 
 /** A notification; unread ones are highlighted. Clicking marks it read and opens what it's about. */

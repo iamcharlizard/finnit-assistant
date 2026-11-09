@@ -13,15 +13,7 @@ import {
   reviewSuggestions,
   suggestCategories,
 } from './api';
-import {
-  categorizeHref,
-  categorizeQuery,
-  pageVariables,
-  parseCategorizeFilters,
-  periodLinks,
-  toApiFilters,
-  type CategorizeFilters,
-} from '@finnit/core/categorize/filters';
+import { pageVariables } from '@finnit/core/categorize/filters';
 import {
   nameSubjectOf,
   privateByRule,
@@ -48,7 +40,6 @@ import {
   toCategorizeRow,
 } from '@finnit/core/categorize/view';
 
-const TODAY = '2026-10-13';
 const es = testLocalizer('es');
 
 const tx = (
@@ -94,110 +85,14 @@ const row = (
   ...extra,
 });
 
-describe('categorize filters', () => {
-  it('reads the URL with defaults', () => {
-    assert.deepEqual(parseCategorizeFilters({}, TODAY), {
-      show: 'uncategorized',
-      period: { year: 2026, month: 10 },
-    });
-    assert.deepEqual(
-      parseCategorizeFilters(
-        { show: 'suggested', account: 'acc-1', month: '2026-08' },
-        TODAY,
-      ),
-      {
-        show: 'suggested',
-        accountId: 'acc-1',
-        period: { year: 2026, month: 8 },
-      },
-    );
-    assert.equal(parseCategorizeFilters({ month: 'all' }, TODAY).period, 'all');
-    const junk = parseCategorizeFilters(
-      { show: 'nope', account: 'x y', month: '2026-13' },
-      TODAY,
-    );
-    assert.equal(junk.show, 'uncategorized');
-    assert.equal(junk.accountId, undefined);
-    assert.deepEqual(junk.period, { year: 2026, month: 10 });
-  });
-
-  it('round-trips through the URL, leaving defaults out', () => {
-    const base: CategorizeFilters = {
-      show: 'uncategorized',
-      period: { year: 2026, month: 10 },
-    };
-    assert.equal(categorizeQuery(base, TODAY), '');
-    const filters: CategorizeFilters = {
-      show: 'all',
-      accountId: 'a1',
-      period: { year: 2026, month: 9 },
-    };
-    const query = categorizeQuery(filters, TODAY);
-    assert.equal(query, '?show=all&account=a1&month=2026-09');
-    assert.deepEqual(
-      parseCategorizeFilters(
-        Object.fromEntries(new URLSearchParams(query)),
-        TODAY,
-      ),
-      filters,
-    );
-    assert.equal(
-      categorizeHref({ ...base, period: 'all' }, TODAY),
-      '/transactions/categorize?month=all',
-    );
-  });
-
-  it('maps filters to the API, by month or all time', () => {
-    assert.deepEqual(
-      toApiFilters({
-        show: 'uncategorized',
-        accountId: 'a1',
-        period: { year: 2026, month: 2 },
-      }),
-      {
-        categorizable: true,
-        accountId: 'a1',
-        startDate: '2026-02-01T00:00:00.000Z',
-        endDate: '2026-02-28T23:59:59.999Z',
-        uncategorized: true,
-      },
-    );
-    assert.deepEqual(toApiFilters({ show: 'suggested', period: 'all' }), {
-      categorizable: true,
-      hasSuggestion: true,
-    });
-    // Transfers never show: they don't take a category.
-    assert.deepEqual(toApiFilters({ show: 'all', period: 'all' }), {
-      categorizable: true,
-    });
-  });
-
+describe('categorize paging', () => {
   it('pages 30 at a time and reloads what is on screen, up to 100', () => {
-    const f: CategorizeFilters = { show: 'all', period: 'all' };
-    assert.deepEqual(pageVariables(f), {
-      first: 30,
-      after: null,
-      filters: { categorizable: true },
-    });
+    const f = { uncategorized: true, categorizable: true };
+    assert.deepEqual(pageVariables(f), { first: 30, after: null, filters: f });
     assert.equal(pageVariables(f, { after: 'c1' }).after, 'c1');
     assert.equal(pageVariables(f, { loaded: 60 }).first, 60);
     assert.equal(pageVariables(f, { loaded: 250 }).first, 100);
     assert.equal(pageVariables(f, { loaded: 3 }).first, 30);
-  });
-
-  it('links months, never into the future', () => {
-    const links = periodLinks(
-      { show: 'uncategorized', period: { year: 2026, month: 10 } },
-      TODAY,
-    );
-    assert.equal(links?.prevHref, '/transactions/categorize?month=2026-09');
-    assert.equal(links?.nextHref, null);
-    const past = periodLinks(
-      { show: 'all', period: { year: 2026, month: 9 } },
-      TODAY,
-    );
-    assert.equal(past?.nextHref, '/transactions/categorize?show=all');
-    assert.equal(periodLinks({ show: 'all', period: 'all' }, TODAY), null);
   });
 });
 

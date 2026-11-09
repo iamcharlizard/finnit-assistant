@@ -44,6 +44,9 @@ enum NotificationType {
   summary
   balance_mismatch
   uncategorized
+  card_statement // a credit card's cycle closed: what to pay without interest
+  card_due // a credit card's payment is due in 3 days or today
+  card_unpaid // a credit card's payment wasn't covered by the due date
 }
 
 // Why a movement looks like a transfer between the user's own accounts.

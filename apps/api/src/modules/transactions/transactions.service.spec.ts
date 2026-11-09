@@ -1677,7 +1677,11 @@ describe('TransactionsService', () => {
           userId: mockUserId,
           type: 'expense',
           isPending: false,
-          AND: [{ accountId: { in: ['a1'] } }],
+          // Possible transfers waiting for an answer aren't spending.
+          AND: [
+            { accountId: { in: ['a1'] } },
+            expect.objectContaining({ type: { in: ['expense', 'income'] } }),
+          ],
         });
         expect(call.where.OR).toBeDefined();
         expect(result).toEqual({

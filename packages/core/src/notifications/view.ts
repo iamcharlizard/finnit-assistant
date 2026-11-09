@@ -16,7 +16,10 @@ export type NotificationType =
   | 'recurring'
   | 'summary'
   | 'balance_mismatch'
-  | 'uncategorized';
+  | 'uncategorized'
+  | 'card_statement'
+  | 'card_due'
+  | 'card_unpaid';
 export type NotificationStatus = 'scheduled' | 'sent' | 'read' | 'dismissed';
 
 export interface ApiNotification {
@@ -65,7 +68,8 @@ export function isUnread(status: NotificationStatus): boolean {
  * a recurring payment's reminder opens its day in /recurring, budgets and
  * debts their planning screens, a balance that doesn't match the bank its
  * account, movements left to review (uncategorized, possible transfers)
- * "Clasificar movimientos" across every month. Summaries have nowhere to go.
+ * "Por clasificar" across every month, a credit card's reminders its
+ * account at that cycle. Summaries have nowhere to go.
  */
 export function notificationHref(
   n: Pick<ApiNotification, 'type' | 'relatedEntityId' | 'relatedEntityType'>,
@@ -88,7 +92,16 @@ export function notificationHref(
         : '/accounts';
     }
     case 'uncategorized':
-      return '/transactions/categorize?month=all';
+      return '/history?review=1&month=all';
+    case 'card_statement':
+    case 'card_due':
+    case 'card_unpaid': {
+      // relatedEntityId is "<account id>:<cut-off day>:<kind>".
+      const [account, cut] = n.relatedEntityId?.split(':') ?? [];
+      if (!account) return '/accounts';
+      const base = `/accounts/${encodeURIComponent(account)}`;
+      return isDayKey(cut) ? `${base}?period=${cut}` : base;
+    }
     default:
       return null;
   }

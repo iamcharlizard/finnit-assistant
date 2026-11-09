@@ -19,7 +19,11 @@ import {
   type TransactionRow,
 } from '../finance/transactions';
 import {
-  TRANSACTION_FIELDS,
+  CATEGORIZE_FIELDS,
+  type CategorizeTransaction,
+} from '../categorize/types';
+import {
+  type AccountType,
   type ApiAccount,
   type ApiCategory,
   type ApiMonthlyReport,
@@ -29,9 +33,13 @@ import {
 import { canConvertToTransfer, type ConvertSource } from '../transfers/convert';
 import { UNCATEGORIZED } from './filters';
 
+/**
+ * The list's movements, with what "Por clasificar" needs (the AI's pending
+ * suggestion, how the category was set, the bank's text).
+ */
 export const HISTORY_QUERY_FIELDS = `transactions(first: $first, after: $after, filters: $filters) {
     totalCount
-    edges { node { ${TRANSACTION_FIELDS} } }
+    edges { node { ${CATEGORIZE_FIELDS} } }
     pageInfo { endCursor hasNextPage }
   }`;
 
@@ -56,15 +64,20 @@ export interface HistoryRow extends TransactionRow {
   /** Transfers: the transfer both sides share, and this side. */
   transferId: string | null;
   transferSide: 'in' | 'out' | null;
+  /** The account's type (a transfer into a credit card is its payment). */
+  accountType: AccountType | null;
+  /** The AI's pending category suggestion (accept or reject in the row). */
+  suggestion: { categoryId: string; label: string } | null;
 }
 
 export function toHistoryRow(
-  tx: ApiTransaction,
+  tx: ApiTransaction & Pick<CategorizeTransaction, 'suggestedCategory'>,
   categories: CategoryIndex,
   l: Localizer,
 ): HistoryRow {
   const row = toTransactionRow(tx, categories, l);
   const amount = Math.abs(tx.amount);
+  const suggested = tx.suggestedCategory;
   return {
     ...row,
     name: nameSubjectOf(tx),
@@ -92,7 +105,24 @@ export function toHistoryRow(
       tx.type === 'transfer'
         ? ((d) => (d === 'unknown' ? null : d))(direction(tx))
         : null,
+    accountType: tx.account?.type ?? null,
+    suggestion: suggested
+      ? {
+          categoryId: suggested.id,
+          label: categoryLabel(
+            categories.get(suggested.id)?.name ?? suggested.name,
+            l.t,
+          ),
+        }
+      : null,
   };
+}
+
+/** A transfer into a credit card pays it ("Pago de tarjeta"). */
+export function isCardPaymentPair(
+  inbound: Pick<HistoryRow, 'accountType'>,
+): boolean {
+  return inbound.accountType === 'credit';
 }
 
 /**
@@ -104,6 +134,8 @@ export interface TransferGroup {
   key: string;
   /** The Transfer (to delete it whole). */
   transferId: string;
+  /** Into a credit card: a payment of the card ("Pago de tarjeta"). */
+  cardPayment: boolean;
   title: string;
   /** "BBVA Débito → Nu" */
   route: string;
@@ -151,7 +183,10 @@ export function groupTransfers(
       kind: 'transfer',
       key: `transfer:${row.transferId}`,
       transferId: row.transferId!,
-      title: t('history.transfer.title'),
+      cardPayment: isCardPaymentPair(inbound),
+      title: isCardPaymentPair(inbound)
+        ? t('history.transfer.cardPayment')
+        : t('history.transfer.title'),
       route: `${out.accountLabel} → ${inbound.accountLabel}`,
       amount: formatMoney(out.value, out.currency, locale),
       status:

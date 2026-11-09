@@ -43,9 +43,15 @@ export interface HistoryFilters {
   accountIds?: string[];
   /**
    * Expenses in any of these categories, `UNCATEGORIZED` included (absent:
-   * every one). Incomes and transfers are never hidden by it.
+   * every one). The options are expense categories, so narrowing them shows
+   * expenses only: no income, transfers or adjustments.
    */
   categoryIds?: string[];
+  /**
+   * "Por clasificar": only income and expenses without a category that can
+   * take one (what Clasificar used to list). The category filter is ignored.
+   */
+  review?: boolean;
   from?: DayKey;
   to?: DayKey;
   search?: string;
@@ -56,6 +62,29 @@ export interface HistoryFilters {
 }
 
 export const HISTORY_PAGE_SIZE = 30;
+/** The most rows a reload brings back at once (the API's largest page). */
+export const HISTORY_MAX_SHOWN = 200;
+/** The URL key of how many rows are loaded (`?n=90`). */
+export const SHOWN_PARAM = 'n';
+
+/**
+ * How many rows the list had loaded (`?n=`), so a reload (after editing a
+ * movement, or the browser's) brings them all back instead of the first
+ * page. Not a filter: changing it never starts the list over.
+ */
+export function parseShown(params: Params): number {
+  const raw = params[SHOWN_PARAM];
+  const value = Number.parseInt(typeof raw === 'string' ? raw : '', 10);
+  if (!Number.isFinite(value)) return HISTORY_PAGE_SIZE;
+  return Math.min(HISTORY_MAX_SHOWN, Math.max(HISTORY_PAGE_SIZE, value));
+}
+
+/** The `n` to keep in the URL for this many rows (none for the first page). */
+export function shownParam(rows: number): string | null {
+  return rows > HISTORY_PAGE_SIZE
+    ? String(Math.min(HISTORY_MAX_SHOWN, rows))
+    : null;
+}
 
 /** The types, in order; labels are `history.types.<value>`. */
 export const HISTORY_TYPES: ReadonlyArray<HistoryType> = [
@@ -109,6 +138,7 @@ export function parseHistoryFilters(
   const search = one(params.q)?.slice(0, 100);
   const month = one(params.month);
   const aliasId = one(params.alias);
+  const review = one(params.review) === '1';
   return {
     ...(types && types.length < HISTORY_TYPES.length ? { types } : {}),
     ...(accountIds ? { accountIds } : {}),
@@ -117,6 +147,7 @@ export function parseHistoryFilters(
     ...(isDayKey(to) ? { to } : {}),
     ...(search ? { search } : {}),
     ...(aliasId && ID.test(aliasId) ? { aliasId } : {}),
+    ...(review ? { review } : {}),
     period: month === 'all' ? 'all' : parseMonthParam(month, monthOf(today)),
   };
 }
@@ -148,6 +179,7 @@ export function historyQuery(
   if (filters.to) params.set('to', filters.to);
   if (filters.search) params.set('q', filters.search);
   if (filters.aliasId) params.set('alias', filters.aliasId);
+  if (filters.review) params.set('review', '1');
   if (!hasRange(filters)) {
     if (filters.period === 'all') params.set('month', 'all');
     else if (!sameMonth(filters.period, monthOf(today))) {
@@ -173,6 +205,7 @@ export function hasFilters(filters: HistoryFilters): boolean {
     filters.categoryIds ||
     filters.search ||
     filters.aliasId ||
+    filters.review ||
     hasRange(filters),
   );
 }
@@ -297,8 +330,10 @@ export interface ApiHistoryFilters {
   accountIds?: string[];
   categoryIds?: string[];
   includeUncategorized?: boolean;
-  /** The category filter only narrows expenses. */
-  categoriesForExpensesOnly?: boolean;
+  /** No category at all ("Por clasificar"). */
+  uncategorized?: boolean;
+  /** Only movements that can take a category (income and expenses). */
+  categorizable?: boolean;
   startDate?: string;
   endDate?: string;
   search?: string;
@@ -311,18 +346,25 @@ export function toApiFilters(filters: HistoryFilters): ApiHistoryFilters {
   const from = filters.from ?? (month ? firstDayOf(month) : undefined);
   const to = filters.to ?? (month ? lastDayOf(month) : undefined);
   // Empty lists go as they are: the API shows nothing for them.
-  const categories = filters.categoryIds && {
-    categoryIds: filters.categoryIds.filter((id) => id !== UNCATEGORIZED),
-    includeUncategorized: filters.categoryIds.includes(UNCATEGORIZED),
-    categoriesForExpensesOnly: true,
+  const narrowed = !filters.review && filters.categoryIds;
+  // Possible transfers waiting for an answer aren't spending either.
+  const categories = narrowed && {
+    categoryIds: narrowed.filter((id) => id !== UNCATEGORIZED),
+    includeUncategorized: narrowed.includes(UNCATEGORIZED),
+    categorizable: true,
   };
+  // Categories are expense categories: narrowing them leaves expenses only.
+  const types = narrowed
+    ? (filters.types ?? HISTORY_TYPES).filter((t) => t === 'expense')
+    : filters.types;
   return {
-    ...(filters.types && { types: filters.types }),
+    ...(types && { types }),
     ...(filters.accountIds && { accountIds: filters.accountIds }),
     ...categories,
     ...(from && { startDate: startOfDayIso(from) }),
     ...(to && { endDate: endOfDayIso(to) }),
     ...(filters.search && { search: filters.search }),
     ...(filters.aliasId && { aliasId: filters.aliasId }),
+    ...(filters.review && { uncategorized: true, categorizable: true }),
   };
 }

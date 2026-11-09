@@ -11,6 +11,8 @@ import type {
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import {
   HISTORY_PAGE_SIZE,
+  SHOWN_PARAM,
+  shownParam,
   toApiFilters,
   type HistoryFilters,
 } from '@finnit/core/history/filters';
@@ -20,11 +22,12 @@ import {
   type TransactionPage,
 } from '@finnit/core/history/view';
 import { useLocalizer } from '@/lib/i18n/client';
+import { useShownInUrl } from './use-load-more-sentinel';
 
 /**
- * The history list: the first page comes from the server; "Cargar más"
- * fetches the next ones with the cursor. Mount it again (React key) when the
- * filters change.
+ * The history list: the first pages come from the server (as many as
+ * `?n=` says); scrolling to the end fetches the next ones with the cursor,
+ * and `?n=` follows. Mount it again (React key) when the filters change.
  */
 export function useTransactionPages(
   initial: TransactionPage,
@@ -70,6 +73,8 @@ export function useTransactionPages(
       setLoading(false);
     }
   }, [page.hasNextPage, page.endCursor, loading, filters, index, l]);
+
+  useShownInUrl(page.rows.length, shownParam, SHOWN_PARAM);
 
   return { ...page, loading, error, loadMore };
 }

@@ -21,7 +21,6 @@ export type NavSectionKey =
 export type NavItemKey =
   | 'dashboard'
   | 'history'
-  | 'categorize'
   | 'recurring'
   | 'statements'
   | 'cards'
@@ -56,7 +55,6 @@ export const NAV_SECTIONS: ReadonlyArray<NavSection> = [
     key: 'transactions',
     items: [
       { key: 'history', href: '/history' },
-      { key: 'categorize', href: '/transactions/categorize' },
       { key: 'recurring', href: '/recurring' },
       { key: 'statements', href: '/statements' },
     ],

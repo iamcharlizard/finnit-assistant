@@ -15,7 +15,7 @@ import { useNewEntryData } from '@/hooks/use-new-entry-data';
 import { usePendingReceipts } from '@/hooks/use-pending-receipts';
 import { useReceiptReader } from '@/hooks/use-receipt-reader';
 import { accountLabel } from '@finnit/core/finance/accounts';
-import { todayKey } from '@finnit/core/finance/dates';
+import { todayKey, type DayKey } from '@finnit/core/finance/dates';
 import { gql } from '@/lib/graphql/client';
 import {
   duplicateCheck,
@@ -103,6 +103,14 @@ type Busy = null | 'checking' | 'saving';
 /** Where "Nuevo movimiento" can start besides the kind step. */
 export type NewEntryAction = EntryKind | 'receipt' | 'screenshot';
 
+/** Starting values of a shortcut's form (pay a card, record its interest). */
+export interface NewEntryPrefill {
+  transfer?: Partial<TransferDraft>;
+  entry?: Partial<EntryDraft>;
+  /** Paying a card's cycle: its due date (paying later counts for the next). */
+  cardDueDate?: DayKey;
+}
+
 /**
  * Fire and forget: an import nobody will review (failed, cancelled). Waits
  * for the read to end if needed; on failure it only shows up again as
@@ -133,12 +141,15 @@ export function NewEntryFlow({
   onDone,
   onLockChange,
   initialAction,
+  prefill,
 }: {
   onDone: () => void;
   /** True while closing would interrupt a save or an upload. */
   onLockChange: (locked: boolean) => void;
   /** Skip the kind step (the mobile "+" menu): open a form or the scanner. */
   initialAction?: NewEntryAction;
+  /** Starting values of the form `initialAction` opens ("Pagar tarjeta"…). */
+  prefill?: NewEntryPrefill;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -253,13 +264,19 @@ export function NewEntryFlow({
     setReceipt(null);
     setCheck([]);
     const only = onlyAccount;
+    // Only the form the shortcut opened starts filled in.
+    const filled = initialApplied ? undefined : prefill;
     if (kind === 'transfer') {
-      setTransfer(emptyTransferDraft(todayKey()));
+      setTransfer({ ...emptyTransferDraft(todayKey()), ...filled?.transfer });
       setLegPicks({});
       setTransferTried(false);
       setStep({ name: 'transfer' });
     } else {
-      setEntry({ ...emptyEntryDraft(kind, todayKey()), accountId: only });
+      setEntry({
+        ...emptyEntryDraft(kind, todayKey()),
+        accountId: only,
+        ...filled?.entry,
+      });
       setEntryTried(false);
       setStep({ name: 'entry' });
     }
@@ -689,6 +706,7 @@ export function NewEntryFlow({
           onLegPick={(side, id) =>
             setLegPicks((current) => ({ ...current, [side]: id }))
           }
+          cardDueDate={prefill?.cardDueDate}
           draft={transfer}
           onChange={setTransfer}
           accounts={accounts}

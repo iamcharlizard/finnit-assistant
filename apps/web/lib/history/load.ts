@@ -15,10 +15,16 @@ import {
 export type { HistoryData };
 
 /** First page of the filtered history plus what the filters and aside need. */
-export async function loadHistory(filters: HistoryFilters): Promise<HistoryData> {
+export async function loadHistory(
+  filters: HistoryFilters,
+  shown?: number,
+): Promise<HistoryData> {
   const today = todayKey();
   const [data, l] = await Promise.all([
-    serverGraphql<HistoryResult>(HISTORY_QUERY, historyVariables(filters)),
+    serverGraphql<HistoryResult>(
+      HISTORY_QUERY,
+      historyVariables(filters, shown),
+    ),
     getLocalizer(),
   ]);
   return buildHistoryData(data, filters, today, l);

@@ -3,7 +3,7 @@
 import * as React from 'react';
 
 import { fetchPage } from '@finnit/core/categorize/api';
-import type { CategorizeFilters } from '@finnit/core/categorize/filters';
+import type { ApiTransactionFilters } from '@finnit/core/categorize/filters';
 import type {
   CategorizePageData,
   CategorizeTransaction,
@@ -20,7 +20,7 @@ import { useLocalizer } from '@/lib/i18n/client';
  */
 export function useCategorizePages(
   initial: CategorizePageData,
-  filters: CategorizeFilters,
+  filters: ApiTransactionFilters,
 ) {
   const [page, setPage] = React.useState(initial);
   const [loading, setLoading] = React.useState(false);

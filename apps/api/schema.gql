@@ -1057,6 +1057,84 @@ input CreateUserInput {
   role: UserRole
 }
 
+"""
+A credit card's billing cycle (de corte a corte): what was owed at the cut-off, what was paid towards it by the due date and what is left
+"""
+type CreditCardPeriod {
+  accountId: ID!
+
+  """Owed at the cut-off"""
+  balanceAtStatement: Float!
+
+  """The card imports from a bank, which records interest by itself"""
+  connected: Boolean!
+  currency: String!
+
+  """The amounts come from an imported statement"""
+  fromStatement: Boolean!
+
+  """<account id>:<cut-off day>"""
+  id: ID!
+
+  """The "Intereses" category, to record the interest with"""
+  interestCategoryId: ID
+
+  """
+  Unpaid cycles of cards added by hand: estimated interest (with VAT) until the next cut-off; needs the interest rate
+  """
+  interestEstimate: Float
+  interestRateAnnual: Float
+
+  """An expense in the interest category is recorded in the next cycle"""
+  interestRecorded: Boolean!
+
+  """From a statement"""
+  minimumPayment: Float
+
+  """
+  "Pago para no generar intereses"
+  """
+  noInterestPayment: Float!
+
+  """Payments and credits between the cut-off and the due date"""
+  paid: Float!
+
+  """Last day to pay without interest"""
+  paymentDueDate: DateTime!
+
+  """
+  Card installment plans (MSI) due in the cycle and not recorded on the card yet
+  """
+  pendingInstallments: Float!
+
+  """First day of the cycle"""
+  periodStart: DateTime!
+
+  """What is left of the no-interest payment"""
+  remaining: Float!
+
+  """Cut-off: last day of the cycle"""
+  statementDate: DateTime!
+  status: CreditCardPeriodStatus!
+}
+
+type CreditCardPeriodConnection {
+  edges: [CreditCardPeriodEdge!]!
+  pageInfo: PageInfo!
+}
+
+type CreditCardPeriodEdge {
+  cursor: String!
+  node: CreditCardPeriod!
+}
+
+enum CreditCardPeriodStatus {
+  due
+  open
+  paid
+  unpaid
+}
+
 type CreditCardTerms {
   accountId: String!
   gracePeriodDays: Float
@@ -1938,6 +2016,11 @@ type Mutation {
   linkLoanPayment(occurrenceId: ID!, transactionId: ID!): Debt!
 
   """
+  Links an expense to the recurring payment it paid: marks it paid and gives the expense the recurring expense's category (undo with reopenRecurringPayment)
+  """
+  linkRecurringPayment(occurrenceId: ID!, transactionId: ID!): Boolean!
+
+  """
   Admin only: maps a Finnit user (by email) to an existing Syncfy user (id_user or id_external)
   """
   linkSyncfyUser(email: String!, syncfyUser: String!): Boolean!
@@ -2145,6 +2228,9 @@ enum NotificationStatus {
 enum NotificationType {
   balance_mismatch
   budget
+  card_due
+  card_statement
+  card_unpaid
   debt_due
   recurring
   summary
@@ -2269,6 +2355,29 @@ type Query {
 
   """By name"""
   contacts: [Contact!]!
+
+  """
+  One billing cycle (default: the last closed one, whose payment is due now); null for other accounts and cards without cut-off and payment days
+  """
+  creditCardPeriod(
+    accountId: ID!
+
+    """
+    The cycle with this cut-off day (YYYY-MM-DD); default: the last closed one, whose payment is due now
+    """
+    statementDate: String
+  ): CreditCardPeriod
+
+  """
+  A credit card's billing cycles, newest (the running one) first; empty for other accounts and cards without cut-off and payment days
+  """
+  creditCardPeriods(
+    accountId: ID!
+
+    """Cursor: the cycles before this cut-off day (YYYY-MM-DD)"""
+    after: String
+    first: Int! = 6
+  ): CreditCardPeriodConnection!
   currentBudget: Budget
 
   """
@@ -2392,6 +2501,11 @@ type Query {
     trackingMode: RecurringTrackingMode
   ): RecurringExpenseConnection!
   recurringExpensesSummary: RecurringExpensesSummary!
+
+  """
+  Scheduled payments of recurring expenses (not loans) an expense may have paid, closest first
+  """
+  recurringLinkOptions(transactionId: ID!): [RecurringLinkOption!]!
 
   """
   Prefilled loan for a suggestion that pays a loan; accept it with acceptRecurringSuggestionAsLoan
@@ -2641,6 +2755,24 @@ type RecurringKindTotal {
   currency: String!
   kind: RecurringExpenseKind!
   monthlyCost: Float!
+}
+
+"""
+A scheduled payment of a recurring expense (not a loan) that an expense may have paid
+"""
+type RecurringLinkOption {
+  """The category the expense takes when linked"""
+  categoryId: ID
+  dueDate: DateTime!
+  expectedAmount: Float!
+  kind: RecurringExpenseKind!
+  name: String!
+  occurrenceId: ID!
+
+  """Clearly the one (date, amount or name)"""
+  proposed: Boolean!
+  recurringExpenseId: ID!
+  status: OccurrenceStatus!
 }
 
 type RecurringOccurrence {

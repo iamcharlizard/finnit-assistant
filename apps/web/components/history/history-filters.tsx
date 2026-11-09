@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 
 import { useLocalizer } from '@/lib/i18n/client';
-import { ChevronDown, Search, SlidersHorizontal, X } from 'lucide-react';
+import { ChevronDown, Search, SlidersHorizontal, Tags, X } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import { InputWithIcon } from '@finnit/ui/components/ui/input-with-icon';
@@ -37,7 +37,8 @@ import { selectionLabel, type Option } from '@finnit/core/history/view';
  * (exactly where it starts, so it never moves; see useStickyTops): search
  * and the "Filtros" dropdown (accounts, categories, types and dates in
  * tabs, with the active count above the button); one removable chip per
- * group in use, and the month (‹ Noviembre 2026 ›).
+ * group in use, and the month (‹ Noviembre 2026 ›). "Por clasificar"
+ * switches the list to the movements without a category, to categorize them.
  * Every change updates the URL.
  */
 export function HistoryFilters({
@@ -46,6 +47,7 @@ export function HistoryFilters({
   categories,
   today,
   aliasName,
+  reviewCount,
 }: {
   filters: Filters;
   accounts: Option[];
@@ -53,6 +55,8 @@ export function HistoryFilters({
   today: DayKey;
   /** The automatic name the list is filtered by (?alias=). */
   aliasName?: string | null;
+  /** How many "Por clasificar" has with the other filters. */
+  reviewCount: number;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -170,6 +174,33 @@ export function HistoryFilters({
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          aria-pressed={Boolean(filters.review)}
+          onClick={() =>
+            apply({ ...filters, review: filters.review ? undefined : true })
+          }
+          className={cn(
+            'min-h-12 shrink-0',
+            filters.review &&
+              'border-brand/40 bg-brand/10 text-brand-ink hover:bg-brand/15',
+          )}
+          aria-label={t('review.label', { count: reviewCount })}
+        >
+          <Tags aria-hidden />
+          <span className="hidden sm:inline">{t('review.chip')}</span>
+          <span
+            className={cn(
+              'rounded-full px-1.5 text-xs font-semibold tabular-nums',
+              reviewCount > 0
+                ? 'bg-brand text-brand-foreground'
+                : 'bg-muted text-on-surface-variant',
+            )}
+          >
+            {reviewCount > 999 ? '999+' : reviewCount}
+          </span>
+        </Button>
         <Popover>
           <div className="relative shrink-0">
             <PopoverTrigger asChild>

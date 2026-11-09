@@ -216,7 +216,8 @@
       "errors": {
         "mismatch": "That movement no longer matches the transfer. Pick another or create a new one."
       }
-    }
+    },
+    "cardPaymentLate": "This date is after the due date ({date}): the payment counts for the next cycle."
   },
   "errors": {
     "network": "We couldn't reach Finnit. Check your connection.",
@@ -412,7 +413,8 @@
       "title": "Transfer",
       "from": "Out of {account}",
       "to": "Into {account}",
-      "sides": "Transfer movements"
+      "sides": "Transfer movements",
+      "cardPayment": "Card payment"
     },
     "otherCategories": "Other categories",
     "topView": {
@@ -445,7 +447,21 @@
     "deleteTransfer": "Delete transfer",
     "deleteTransferTitle": "Delete this transfer?",
     "deleteTransferDescription": "Movements created for it are deleted and balances adjusted; those from the bank stay as expenses or income.",
-    "transferDeleted": "Transfer deleted"
+    "transferDeleted": "Transfer deleted",
+    "review": {
+      "chip": "To categorize",
+      "label": "To categorize: {count, plural, one {# movement without a category} other {# movements without a category}}"
+    },
+    "accountCard": {
+      "balance": "Current balance",
+      "debt": "Current debt",
+      "inFavor": "Credit balance",
+      "seeAccount": "See account",
+      "used": "{percent}% of the limit used",
+      "available": "{available} available of {limit}",
+      "needsTerms": "Add your cut-off and payment days to see what to pay each cycle.",
+      "setTerms": "Set up"
+    }
   },
   "cards": {
     "count": "{count, plural, one {# card} other {# cards}}",
@@ -458,6 +474,43 @@
       "minimum": "Minimum payment",
       "interestRate": "Annual rate",
       "percent": "{rate}%"
+    },
+    "period": {
+      "title": "Billing cycles",
+      "status": {
+        "open": "Running",
+        "due": "To pay",
+        "paid": "Paid",
+        "unpaid": "Overdue"
+      },
+      "headline": {
+        "open": "Closes on {date}",
+        "paid": "Paid on time (due date: {date})",
+        "unpaid": "{amount} was left unpaid on {date}",
+        "due": "Pay {amount} by {date}"
+      },
+      "balanceSoFar": "Balance so far",
+      "balanceAtStatement": "Balance at cut-off",
+      "cycle": "Cycle {range}",
+      "progress": "{percent}% paid",
+      "noInterest": "Payment to avoid interest",
+      "paid": "Paid",
+      "remaining": "Left",
+      "minimum": "Minimum payment",
+      "pendingInstallments": "Includes {amount} of interest-free installments of the cycle.",
+      "fromStatement": "Amounts from your statement.",
+      "interestHint": "Estimated interest with your annual rate plus VAT: {amount}. Correct it with your statement's.",
+      "interestNoRate": "Record the interest from your statement. Add the card's annual rate to estimate it.",
+      "pay": "Pay card",
+      "recordInterest": "Record interest",
+      "interestName": "Interest",
+      "movements": "Movements of the cycle",
+      "loadMore": "Earlier cycles",
+      "empty": "Add your cut-off and payment days (in Edit) to see your cycles.",
+      "terms": "Cut-off and payment days",
+      "editTerms": "Cut-off and payment days",
+      "saveTerms": "Save",
+      "termsSaved": "Days saved"
     }
   },
   "accounts": {
@@ -2672,7 +2725,27 @@
       "transferKeeps": "It’s a transfer: the movement in {account} stays as an expense or income.",
       "loanPayment": "It paid {name}: the payment stays recorded, without a movement."
     },
-    "markDuplicate": "Mark as duplicate"
+    "markDuplicate": "Mark as duplicate",
+    "linkRecurring": {
+      "action": "Link to recurring expense",
+      "title": "Link to recurring expense",
+      "description": "Pick the payment this {amount} expense covered. It will be marked paid and the expense will take its category.",
+      "due": "Due {date} · {amount}",
+      "missed": "Was due {date} · {amount}",
+      "proposed": "Suggested",
+      "empty": "No pending recurring payments near this date.",
+      "loading": "Looking for recurring payments…",
+      "submit": "Link",
+      "done": "Linked to {name}"
+    },
+    "unlinkRecurring": {
+      "action": "Unlink from recurring expense",
+      "title": "Unlink from the recurring expense?",
+      "description": "The payment will be pending again. The expense keeps its category.",
+      "confirm": "Unlink",
+      "done": "Unlinked from the recurring expense"
+    },
+    "moreActions": "More actions"
   },
   "notifications": {
     "title": "Notifications",
@@ -2698,7 +2771,10 @@
       "debt_due": "Debt",
       "recurring": "Recurring payment",
       "summary": "Summary",
-      "uncategorized": "To review"
+      "uncategorized": "To review",
+      "card_statement": "Card statement",
+      "card_due": "Card payment",
+      "card_unpaid": "Card payment overdue"
     }
   },
   "statements": {

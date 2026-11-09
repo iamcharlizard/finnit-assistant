@@ -2,7 +2,10 @@ import type { GqlRunner } from '@finnit/core/graphql/request';
 import type { Connection } from '@finnit/core/finance/types';
 import { requestErrorMessage } from '@finnit/core/graphql/request';
 import type { Translate } from '@finnit/core/i18n/translator';
-import { pageVariables, type CategorizeFilters } from '@finnit/core/categorize/filters';
+import {
+  pageVariables,
+  type ApiTransactionFilters,
+} from '@finnit/core/categorize/filters';
 import { renameInput, type RenameForm } from '@finnit/core/categorize/rename';
 import { categorizeBatches } from '@finnit/core/categorize/selection';
 import {
@@ -11,7 +14,7 @@ import {
   type CategorizeTransaction,
 } from '@finnit/core/categorize/types';
 
-/** "Clasificar movimientos" GraphQL, run from client components through /api/graphql. */
+/** "Por clasificar" GraphQL, run from client components (web: /api/graphql; mobile: urql). */
 
 export const CATEGORIZE_CONNECTION = `transactions(first: $first, after: $after, filters: $filters) {
     totalCount
@@ -46,7 +49,7 @@ export function toPageData(
 
 /** The next page after `after`, or (without it) the first `loaded` rows again. */
 export async function fetchPage(
-  filters: CategorizeFilters,
+  filters: ApiTransactionFilters,
   options: { after?: string | null; loaded?: number },
   run: GqlRunner,
 ): Promise<CategorizePageData> {

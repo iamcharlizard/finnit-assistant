@@ -369,4 +369,13 @@
     background-attachment: fixed;
     background-size: cover;
   }
+  /*
+   * While a dialog, sheet or drawer is open (Radix locks the scroll), the
+   * page under it must neither bounce nor take the scroll that reaches the
+   * end of the overlay: on macOS trackpads that rubber-band repainted the
+   * page's sticky and translucent layers, so it flickered.
+   */
+  html:has(> body[data-scroll-locked]) {
+    overscroll-behavior: none;
+  }
 }

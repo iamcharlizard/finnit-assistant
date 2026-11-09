@@ -11,6 +11,7 @@ import { LabelSm } from '@finnit/ui/components/ui/typography';
 import { cn } from '@finnit/ui/lib/utils';
 
 import { EmptyState } from '@/components/finance/empty-state';
+import { useLoadMoreSentinel } from '@/hooks/use-load-more-sentinel';
 import { useTransactionPages } from '@/hooks/use-transaction-pages';
 import { monthName, type DayKey } from '@finnit/core/finance/dates';
 import { formatMoney } from '@finnit/core/finance/money';
@@ -50,6 +51,12 @@ export function HistoryList({
 }) {
   const { rows, totalCount, hasNextPage, loading, error, loadMore } =
     useTransactionPages(initial, filters, categories);
+  // Infinite scroll: the next page loads as the end comes into view.
+  const sentinel = useLoadMoreSentinel(
+    () => void loadMore(),
+    // Observed again after each page: if the end is still in view, it goes on.
+    hasNextPage && !error && !loading,
+  );
   const t = useTranslations();
   const locale = useLocale();
   const l = useLocalizer();
@@ -158,7 +165,7 @@ export function HistoryList({
                   <HistoryRow
                     key={item.row.id}
                     row={item.row}
-                    onRenamed={() => router.refresh()}
+                    onChanged={() => router.refresh()}
                   />
                 ),
               )}
@@ -172,14 +179,17 @@ export function HistoryList({
         </p>
       ) : null}
       {hasNextPage ? (
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={loadMore}
-          disabled={loading}
-        >
-          {loading ? t('common.loading') : t('common.loadMore')}
-        </Button>
+        <div ref={sentinel} className="flex justify-center py-4">
+          {loading ? (
+            <p className="text-xs text-on-surface-variant" aria-live="polite">
+              {t('common.loading')}
+            </p>
+          ) : error ? (
+            <Button variant="outline" size="sm" onClick={loadMore}>
+              {t('common.retry')}
+            </Button>
+          ) : null}
+        </div>
       ) : previous ? (
         <Button variant="outline" className="w-full" asChild>
           <Link href={previous.href}>{previous.label}</Link>

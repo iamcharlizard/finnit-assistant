@@ -104,6 +104,7 @@ enum LoanType {
   institutional // bank or lending company: fixed payments and term
   personal // family or friends: flexible payments, may grow
   purchase_financing // Kueski, Didi Paga Después: each purchase adds installments on the same due dates
+  card_installments // a purchase on a credit card paid in monthly installments (meses con o sin intereses), due on the card's cut-off dates
 }
 
 // How the amount to repay of a loan (or charge) was given.
@@ -546,6 +547,7 @@ model Transaction {
   debtPayment               DebtPayment?
   debtCharge                DebtCharge?
   debtDisbursement          Debt?                 @relation("debt_disbursement")
+  debtPurchase              Debt?                 @relation("debt_purchase")
   bankDifferenceOf          Account?              @relation("account_bank_difference")
   goalContributions         GoalContribution[] // <-- ahora 1–N (fix)
   transactionTags           TransactionTag[]
@@ -920,6 +922,8 @@ model Debt {
   depositAddsToBalance      Boolean                @default(true)
   // The deposit of the borrowed money into an account (destination = deposit).
   disbursementTransactionId String?                @unique
+  // card_installments: the card's charge of the whole purchase, when recorded.
+  purchaseTransactionId     String?                @unique
   // What the borrowed money was for (informative: the expense is the payments).
   purposeCategoryId         String?
   // Personal loans: the contact who lent it (lenderName keeps their name).
@@ -934,6 +938,7 @@ model Debt {
   charges                 DebtCharge[]
   linkedAccount           Account?          @relation("debt_linked_account", fields: [linkedAccountId], references: [id], onDelete: SetNull)
   disbursementTransaction Transaction?      @relation("debt_disbursement", fields: [disbursementTransactionId], references: [id], onDelete: SetNull)
+  purchaseTransaction     Transaction?      @relation("debt_purchase", fields: [purchaseTransactionId], references: [id], onDelete: SetNull)
   purposeCategory         Category?         @relation("debt_purpose_category", fields: [purposeCategoryId], references: [id], onDelete: SetNull)
   lenderContact           Contact?          @relation(fields: [lenderContactId], references: [id], onDelete: SetNull)
   recurringExpense        RecurringExpense?

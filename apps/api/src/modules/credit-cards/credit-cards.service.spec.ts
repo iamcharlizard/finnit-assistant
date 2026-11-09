@@ -40,6 +40,7 @@ describe('CreditCardsService', () => {
     service = new CreditCardsService(prisma);
     prisma.statementImport.findMany.mockResolvedValue([]);
     prisma.recurringOccurrence.findMany.mockResolvedValue([]);
+    prisma.debt.findMany.mockResolvedValue([]);
     prisma.category.findFirst.mockResolvedValue({ id: 'interest' } as never);
     // After the Nov 7 cut-off: a 1,000 charge and a 3,000 payment.
     prisma.transaction.findMany.mockResolvedValue([

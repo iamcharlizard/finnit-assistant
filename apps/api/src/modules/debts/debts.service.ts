@@ -742,6 +742,7 @@ export class DebtsService {
       destination: debt.destination ?? undefined,
       purposeCategoryId: debt.purposeCategoryId ?? undefined,
       disbursementTransactionId: debt.disbursementTransactionId ?? undefined,
+      purchaseTransactionId: debt.purchaseTransactionId ?? undefined,
       depositAddsToBalance: debt.depositAddsToBalance,
       recurringExpenseId: debt.recurringExpense?.id,
       nextPaymentDate: debt.recurringExpense?.nextDueDate ?? undefined,

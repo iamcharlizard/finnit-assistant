@@ -4,6 +4,7 @@ import {
   OccurrenceStatus,
   RecurringTrackingMode,
   type ImportedTransaction as ImportedTransactionRow,
+  RecurringExpenseKind,
 } from '@finnit/database';
 import { PrismaService } from '../../../services/prisma.service';
 import { CategoriesService } from '../../categories/categories.service';
@@ -77,6 +78,7 @@ export class ReconciliationService {
       kind: line.kind,
       description: line.description,
       merchant: line.merchant,
+      installmentTotal: line.installmentTotal,
     }));
     const from = addDays(lines[0].date, -WINDOW_DAYS);
     const to = addDays(lines[lines.length - 1].date, WINDOW_DAYS);
@@ -107,6 +109,9 @@ export class ReconciliationService {
             userId,
             trackingMode: { not: RecurringTrackingMode.reminder },
             OR: [{ accountId }, { accountId: null }],
+            // A purchase whose whole charge is on the card: the card bills
+            // its installments, no movement pays them.
+            NOT: { debt: { purchaseTransactionId: { not: null } } },
           },
         },
         include: { recurringExpense: true },
@@ -136,6 +141,10 @@ export class ReconciliationService {
         expenseName: o.recurringExpense.name,
         merchantPattern: o.recurringExpense.merchantPattern,
         isVariableAmount: o.recurringExpense.isVariableAmount,
+        installmentsTotal:
+          o.recurringExpense.kind === RecurringExpenseKind.installment
+            ? o.recurringExpense.installmentsTotal
+            : null,
       })),
     );
     const expenseCategory = new Map(

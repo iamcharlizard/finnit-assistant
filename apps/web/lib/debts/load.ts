@@ -9,9 +9,19 @@ import { todayKey } from '@finnit/core/finance/dates';
 import type { ApiAccount, Connection } from '@finnit/core/finance/types';
 import type { BudgetCategory } from '@finnit/core/budgets/types';
 import { loadPayoffComparison } from '@finnit/core/debts/api';
-import { DEBTS_PAGE, DEBTS_QUERY, DEBT_DETAIL_QUERY } from '@finnit/core/debts/request';
-import { buildPayoffComparison, type PayoffComparison } from '@finnit/core/debts/payoff';
-import { buildLoanDetailView, type LoanDetailView } from '@finnit/core/debts/detail-view';
+import {
+  DEBTS_PAGE,
+  DEBTS_QUERY,
+  DEBT_DETAIL_QUERY,
+} from '@finnit/core/debts/request';
+import {
+  buildPayoffComparison,
+  type PayoffComparison,
+} from '@finnit/core/debts/payoff';
+import {
+  buildLoanDetailView,
+  type LoanDetailView,
+} from '@finnit/core/debts/detail-view';
 import {
   type ApiDebtInsights,
   type ApiDebt,
@@ -19,6 +29,7 @@ import {
   type ApiLoanScheduleItem,
 } from '@finnit/core/debts/types';
 import { buildDebtsView, type DebtsView } from '@finnit/core/debts/view';
+import { isLoanTabDebt } from '@finnit/core/debts/types';
 
 /** Tabs of Deudas; the URL's ?tab= picks one. */
 export const DEBT_TABS = ['summary', 'loans', 'other'] as const;
@@ -63,7 +74,7 @@ export async function loadDebts(): Promise<DebtsScreenData> {
   const accounts = data.accounts.edges.map((e) => e.node);
   const view = buildDebtsView({ debts, accounts }, { today }, l);
   const loansView = buildDebtsView(
-    { debts: debts.filter((d) => d.kind === 'loan'), accounts },
+    { debts: debts.filter(isLoanTabDebt), accounts },
     { today },
     l,
   );

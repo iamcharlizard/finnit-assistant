@@ -2,13 +2,15 @@ import * as React from 'react';
 import { ScrollView, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
-import { Gauge, Landmark, Percent, Wallet } from 'lucide-react-native';
+import { Gauge, Landmark, Percent, Plus, Wallet } from 'lucide-react-native';
 
 import { buildDebtInsightsView } from '@finnit/core/debts/insights-view';
 import { DEBTS_PAGE, DEBTS_QUERY, type DebtsResult } from '@finnit/core/debts/request';
 import { buildDebtsView, type DebtItem } from '@finnit/core/debts/view';
+import { isLoanTabDebt, type NewDebtKind } from '@finnit/core/debts/types';
 import { todayKey } from '@finnit/core/finance/dates';
 import { TwView } from '@finnit/ui-native/lib/tw';
+import { Button } from '@finnit/ui-native/components/ui/button';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
 import { Segmented } from '@finnit/ui-native/components/ui/segmented';
 
@@ -44,11 +46,21 @@ export function DebtsScreen() {
   useOnTransactionsChanged(refresh);
   const cardWidth = Math.round(width * 0.72);
   const open = (item: DebtItem) => router.push({ pathname: '/planning/debts/[id]', params: { id: item.id } });
-  const loans = view?.all.debts.filter((d) => d.kind === 'loan') ?? [];
-  const others = view?.all.debts.filter((d) => d.kind !== 'loan') ?? [];
+  const loans = view?.all.debts.filter((d) => isLoanTabDebt(d.debt)) ?? [];
+  // Cards, card purchases in installments and other debts.
+  const others = view?.all.debts.filter((d) => !isLoanTabDebt(d.debt)) ?? [];
+  const create = (kind: NewDebtKind) => router.push({ pathname: '/new-debt', params: { kind } });
 
   return (
-    <Screen title={t('title')} subtitle={t('subtitle')} loading={loading} error={error} refreshing={refreshing} onRefresh={refresh}>
+    <Screen
+      title={t('title')}
+      subtitle={t('subtitle')}
+      actions={<Button size="sm" variant="secondary" icon={Plus} label={t('new')} onPress={() => create(tab === 'other' ? 'card_installments' : 'institutional')} />}
+      loading={loading}
+      error={error}
+      refreshing={refreshing}
+      onRefresh={refresh}
+    >
       {view ? (
         view.all.debts.length === 0 ? (
           <EmptyState icon={Landmark} title={t('empty.title')} description={t('empty.description')} />

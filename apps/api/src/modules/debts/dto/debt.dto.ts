@@ -47,7 +47,7 @@ registerEnumType(DebtKind, {
 registerEnumType(LoanType, {
   name: 'LoanType',
   description:
-    'institutional: bank or lending company, fixed payments; personal: family or friends, flexible and may grow; purchase_financing: Kueski / Didi, each purchase adds installments on the same due dates',
+    'institutional: bank or lending company, fixed payments; personal: family or friends, flexible and may grow; purchase_financing: Kueski / Didi, each purchase adds installments on the same due dates; card_installments: a credit card purchase in monthly installments (with or without interest), due on the card cut-off dates',
 });
 registerEnumType(LoanInterestMode, {
   name: 'LoanInterestMode',
@@ -166,6 +166,13 @@ export class Debt {
 
   @Field({ nullable: true })
   disbursementTransactionId?: string;
+
+  @Field({
+    nullable: true,
+    description:
+      "Card installments: the card's charge of the whole purchase, when recorded",
+  })
+  purchaseTransactionId?: string;
 
   @Field({
     description:
@@ -466,6 +473,15 @@ export class CreateDebtInput {
   @IsOptional()
   @IsEnum(LoanType)
   loanType?: LoanType;
+
+  @Field({
+    nullable: true,
+    description:
+      "Card installments: the card's expense of the whole purchase (the card is linkedAccountId; startDate is the purchase date)",
+  })
+  @IsOptional()
+  @IsString()
+  purchaseTransactionId?: string;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -1328,6 +1344,13 @@ export class DebtUpcomingTotals {
 export class MsiPlan {
   @Field(() => ID)
   id: string;
+
+  @Field({
+    nullable: true,
+    description:
+      'The card installments debt of the plan (null for an old plan that is only a recurring expense)',
+  })
+  debtId?: string;
 
   @Field()
   name: string;

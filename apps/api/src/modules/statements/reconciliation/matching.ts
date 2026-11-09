@@ -19,6 +19,8 @@ export interface LineToMatch {
   kind: ImportedLineKind;
   description: string | null;
   merchant: string | null;
+  /** A card installment's "N de M": its M. */
+  installmentTotal?: number | null;
 }
 
 export interface CandidateTransaction {
@@ -65,6 +67,8 @@ export interface CandidateOccurrence {
   expenseName: string;
   merchantPattern: string | null;
   isVariableAmount: boolean;
+  /** A card purchase in installments: how many installments it has. */
+  installmentsTotal?: number | null;
 }
 
 const daysBetween = (a: Date, b: Date) =>
@@ -176,6 +180,15 @@ function identifies(
   line: LineToMatch,
   occurrence: CandidateOccurrence,
 ): boolean {
+  // The bank names an installment "N de M" with the store's name changed:
+  // the same M on the same card (and the amount) is enough.
+  if (
+    line.installmentTotal &&
+    occurrence.installmentsTotal &&
+    line.installmentTotal === occurrence.installmentsTotal
+  ) {
+    return true;
+  }
   return identifiesRecurring(lineText(line), occurrence);
 }
 

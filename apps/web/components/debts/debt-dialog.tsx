@@ -1,11 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@finnit/ui/components/ui/button';
-import { Combobox } from '@finnit/ui/components/ui/combobox';
-import { DatePicker } from '@finnit/ui/components/ui/date-picker';
 import {
   Dialog,
   DialogBody,
@@ -17,27 +15,25 @@ import {
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
 import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
-import { Input } from '@finnit/ui/components/ui/input';
-import { NumberInput } from '@finnit/ui/components/ui/number-input';
-import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 
-import { SelectField } from '@/components/recurring/select-field';
-import { debtErrorMessage, saveDebt, type DebtTarget } from '@finnit/core/debts/api';
 import {
-  NAME_MAX,
+  debtErrorMessage,
+  saveDebt,
+  type DebtTarget,
+} from '@finnit/core/debts/api';
+import {
   formOfDebt,
   hasErrors,
   newDebtForm,
   validateDebtForm,
-  type DebtErrorCode,
   type DebtForm,
   type DebtFormErrors,
 } from '@finnit/core/debts/form';
-import { DEBT_KINDS, type ApiDebt } from '@finnit/core/debts/types';
+import type { ApiDebt } from '@finnit/core/debts/types';
+import { OtherDebtFields } from './other-debt-fields';
 import type { ApiAccount } from '@finnit/core/finance/types';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
-import { accountOptions } from '@finnit/core/new-entry/options';
 
 /**
  * Create or edit a debt. Mounted while open, so it starts from the debt's
@@ -60,7 +56,6 @@ export function DebtDialog({
   const exit = useDialogExit();
   const { t } = useLocalizer();
   const tf = useTranslations('debts.form');
-  const locale = useLocale();
   const [{ initial, target }] = React.useState(() => {
     if (!debt) {
       return {
@@ -78,18 +73,6 @@ export function DebtDialog({
   const [errors, setErrors] = React.useState<DebtFormErrors>({});
   const [saving, setSaving] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
-
-  const accountItems = React.useMemo(
-    () =>
-      accountOptions(
-        accounts,
-        // Keep the linked account listed even if it was archived.
-        (a) => !a.archived || a.id === debt?.linkedAccountId,
-      ),
-    [accounts, debt?.linkedAccountId],
-  );
-  const errorText = (code: DebtErrorCode | undefined) =>
-    code ? t(`debts.validation.${code}`) : undefined;
 
   function update(patch: Partial<DebtForm>) {
     setForm((current) => ({ ...current, ...patch }));
@@ -117,7 +100,6 @@ export function DebtDialog({
     }
   }
 
-  const linked = accounts.find((a) => a.id === form.linkedAccountId);
   // A loan with terms keeps them; only its name, dates and account change.
   const locked = debt?.totalToRepay != null;
 
@@ -144,112 +126,15 @@ export function DebtDialog({
           </DialogHeader>
 
           <DialogBody>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input
-                label={tf('name')}
-                value={form.name}
-                maxLength={NAME_MAX}
-                autoComplete="off"
-                placeholder={tf('namePlaceholder')}
-                onChange={(e) => update({ name: e.target.value })}
-                error={errorText(errors.name)}
-              />
-              <SelectField
-                label={tf('kind')}
-                disabled={locked}
-                value={form.kind}
-                options={DEBT_KINDS.map((kind) => ({
-                  value: kind,
-                  label: t(`debts.kinds.${kind}`),
-                }))}
-                onChange={(kind) => update({ kind })}
-              />
-            </div>
-
-            {locked ? (
-              <p className="rounded-input bg-track/60 p-3 text-xs text-on-background">
-                {tf('lockedTerms')}
-              </p>
-            ) : null}
-            <div className={locked ? 'hidden' : 'flex flex-col gap-1'}>
-              <MoneyInput
-                label={tf('principal')}
-                value={form.principal}
-                onValueChange={(value) => update({ principal: value })}
-                error={errorText(errors.principal)}
-              />
-              <p className="px-1 text-xs text-on-surface-variant">
-                {tf('principalHint')}
-              </p>
-            </div>
-
-            <div className={locked ? 'hidden' : 'grid gap-4 sm:grid-cols-2'}>
-              <NumberInput
-                decimals={4}
-                suffix="%"
-                label={tf('rate')}
-                placeholder={tf('ratePlaceholder')}
-                value={form.rate}
-                onValueChange={(value) => update({ rate: value })}
-                error={errorText(errors.rate)}
-              />
-              <MoneyInput
-                label={tf('minPayment')}
-                value={form.minPayment}
-                onValueChange={(value) => update({ minPayment: value })}
-                error={errorText(errors.minPayment)}
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <DatePicker
-                label={tf('startDate')}
-                value={form.startDate || undefined}
-                onChange={(day) => update({ startDate: day ?? '' })}
-                locale={locale}
-                placeholder={tf('datePlaceholder')}
-              />
-              <div className="flex flex-col gap-1">
-                <DatePicker
-                  label={tf('dueDate')}
-                  value={form.dueDate || undefined}
-                  onChange={(day) => update({ dueDate: day ?? '' })}
-                  min={form.startDate || undefined}
-                  locale={locale}
-                  placeholder={tf('datePlaceholder')}
-                  error={errorText(errors.dueDate)}
-                />
-                {form.dueDate ? (
-                  <button
-                    type="button"
-                    onClick={() => update({ dueDate: '' })}
-                    className="self-start px-1 text-xs font-medium text-income hover:underline"
-                  >
-                    {tf('clearDate')}
-                  </button>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <Combobox
-                label={tf('account')}
-                options={accountItems}
-                value={form.linkedAccountId || undefined}
-                onChange={(linkedAccountId) =>
-                  update({ linkedAccountId: linkedAccountId ?? '' })
-                }
-                placeholder={tf('accountPlaceholder')}
-                searchPlaceholder={tf('accountSearch')}
-                emptyText={tf('noResults')}
-                clearable
-              />
-              <p className="px-1 text-xs text-on-surface-variant">
-                {linked?.type === 'credit'
-                  ? tf('accountCardHint')
-                  : tf('accountHint')}
-              </p>
-            </div>
+            <OtherDebtFields
+              form={form}
+              errors={errors}
+              update={update}
+              accounts={accounts}
+              keepAccountId={debt?.linkedAccountId ?? null}
+              showKind
+              locked={locked}
+            />
 
             {hasErrors(errors) ? (
               <p role="alert" className="text-[13px] text-expense">

@@ -118,6 +118,28 @@ describe('matchTransactions', () => {
 });
 
 describe('matchOccurrences', () => {
+  it('matches a card installment by its "N de M" and amount, whatever the store\'s name', () => {
+    const installment = line({
+      kind: ImportedLineKind.installment,
+      description: 'LIVERPOOL INSURGENTES 03 DE 12',
+      amount: 1000,
+      installmentTotal: 12,
+    });
+    const plan = occurrence({
+      expectedAmount: 1000,
+      expenseName: 'Pantalla',
+      merchantPattern: null,
+      installmentsTotal: 12,
+    });
+    expect(matchOccurrences([installment], [plan]).size).toBe(1);
+    expect(
+      matchOccurrences([installment], [{ ...plan, installmentsTotal: 6 }]).size,
+    ).toBe(0);
+    expect(
+      matchOccurrences([{ ...installment, amount: 1500 }], [plan]).size,
+    ).toBe(0);
+  });
+
   it('matches by merchant pattern within the date window', () => {
     expect(matchOccurrences([line()], [occurrence()])).toEqual(
       new Map([['line-1', 'occ-1']]),

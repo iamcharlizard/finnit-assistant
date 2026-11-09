@@ -43,6 +43,7 @@ const data: ApiDebtInsights = {
   msi: [
     {
       id: 'tv',
+      debtId: null,
       name: 'Pantalla',
       accountName: 'Oro',
       installmentAmount: 500,

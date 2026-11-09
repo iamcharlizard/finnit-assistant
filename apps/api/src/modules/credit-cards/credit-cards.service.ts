@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import {
   AccountType,
+  LoanType,
   OccurrenceStatus,
   RecurringExpenseKind,
   StatementStatus,
   TransactionType,
 } from '@finnit/database';
+import { cycleInstallments, InstallmentPlan } from '../debts/card-installments';
 
 import { PrismaService } from '../../services/prisma.service';
 import { NotFoundError } from '../../common/exceptions/graphql-error.exception';
@@ -163,7 +165,7 @@ export class CreditCardsService {
       cycles[0].statementDate,
     );
 
-    const [rows, statements, installments, interestCategory] =
+    const [rows, statements, installments, interestCategory, plans] =
       await Promise.all([
         // Every movement since the oldest cycle began: the balance at each
         // cut-off is today's minus what came after it.
@@ -204,13 +206,47 @@ export class CreditCardsService {
               kind: RecurringExpenseKind.installment,
             },
           },
-          select: { dueDate: true, expectedAmount: true },
+          select: {
+            dueDate: true,
+            expectedAmount: true,
+            recurringExpense: { select: { debtId: true } },
+          },
         }),
         this.prisma.category.findFirst({
           where: { key: INTEREST_CATEGORY_KEY, userId: null },
           select: { id: true },
         }),
+        // Purchases in installments on this card.
+        this.prisma.debt.findMany({
+          where: {
+            linkedAccountId: card.id,
+            loanType: LoanType.card_installments,
+            startDate: { not: null },
+            installmentsTotal: { not: null },
+          },
+          select: {
+            id: true,
+            name: true,
+            startDate: true,
+            installmentsTotal: true,
+            installmentAmount: true,
+            totalToRepay: true,
+            principal: true,
+            purchaseTransaction: { select: { txnDate: true } },
+          },
+        }),
       ]);
+    const installmentPlans: InstallmentPlan[] = plans.map((plan) => ({
+      debtId: plan.id,
+      name: plan.name,
+      purchaseDay: dayOf(plan.startDate!),
+      count: plan.installmentsTotal!,
+      totalToRepay: Number(plan.totalToRepay ?? plan.principal),
+      installmentAmount: Number(plan.installmentAmount ?? 0),
+      purchaseChargedOn: plan.purchaseTransaction
+        ? dayOf(plan.purchaseTransaction.txnDate)
+        : null,
+    }));
 
     const movements: CycleMovement[] = rows.map((row) => ({
       day: dayOf(row.txnDate),
@@ -249,10 +285,17 @@ export class CreditCardsService {
     );
 
     return cycles.map((dates) => {
+      const ofCycle = cycleInstallments(installmentPlans, card.terms, dates);
+      // Plans billed month by month whose installment has no movement yet;
+      // a whole purchase in the balance already has it.
       const pending = installments
         .filter((o) => {
           const day = dayOf(o.dueDate);
-          return day >= dates.periodStart && day <= dates.statementDate;
+          return (
+            day >= dates.periodStart &&
+            day <= dates.statementDate &&
+            !ofCycle.inBalance.has(o.recurringExpense.debtId ?? '')
+          );
         })
         .reduce((sum, o) => sum + Number(o.expectedAmount), 0);
       const figures = cycleFigures(dates, {
@@ -260,6 +303,9 @@ export class CreditCardsService {
         currentBalance: card.balance,
         movements,
         pendingInstallments: pending,
+        deferredInstallments: ofCycle.deferred,
+        installmentsInCycle: ofCycle.inCycle,
+        installmentBalance: ofCycle.balance,
         statement: statementByCut.get(dates.statementDate) ?? null,
       });
       const following = cycleOf(
@@ -278,6 +324,11 @@ export class CreditCardsService {
         paymentDueDate: dateOf(figures.paymentDueDate),
         balanceAtStatement: figures.balanceAtStatement,
         pendingInstallments: figures.pendingInstallments,
+        deferredInstallments: figures.deferredInstallments,
+        installmentsInCycle: figures.installmentsInCycle,
+        installmentBalance: figures.installmentBalance,
+        cashBalance: figures.cashBalance,
+        installments: ofCycle.rows,
         noInterestPayment: figures.noInterestPayment,
         minimumPayment: figures.minimumPayment,
         paid: figures.paid,

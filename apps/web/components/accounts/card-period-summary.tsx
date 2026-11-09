@@ -87,6 +87,53 @@ export function CardPeriodSummary({
           ))}
         </dl>
       ) : null}
+      {period.split ? (
+        <div className="flex flex-col gap-2 rounded-xl bg-track/50 p-3">
+          <dl className="grid grid-cols-3 gap-x-3 text-sm">
+            {[
+              { label: t('cash'), value: period.split.cash },
+              {
+                label: t('installmentsInCycle'),
+                value: period.split.installments,
+              },
+              { label: t('installmentBalance'), value: period.split.balance },
+            ].map((f) => (
+              <div key={f.label} className="flex flex-col">
+                <dt className="text-xs text-on-surface-variant">{f.label}</dt>
+                <dd className="font-semibold tabular-nums text-on-background">
+                  {f.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          {!compact && period.split.plans.length > 0 ? (
+            <details className="group text-xs">
+              <summary className="cursor-pointer font-medium text-brand-ink">
+                {t('plans')}
+              </summary>
+              <ul className="mt-2 flex flex-col gap-1.5">
+                {period.split.plans.map((plan) => (
+                  <li
+                    key={`${plan.debtId}:${plan.label}`}
+                    className="flex items-baseline justify-between gap-2"
+                  >
+                    <Link
+                      href={plan.href}
+                      className="min-w-0 truncate text-on-background hover:underline"
+                    >
+                      {plan.label}
+                    </Link>
+                    <span className="shrink-0 text-right tabular-nums text-on-surface-variant">
+                      {plan.amount}
+                      {plan.left ? ` · ${plan.left}` : null}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
+        </div>
+      ) : null}
       {!compact && period.pendingInstallments ? (
         <p className="text-xs text-on-surface-variant">
           {t('pendingInstallments', { amount: period.pendingInstallments })}

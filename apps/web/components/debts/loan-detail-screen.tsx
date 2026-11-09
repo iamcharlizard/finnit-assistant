@@ -34,6 +34,7 @@ import {
   type ScheduleRow,
 } from '@finnit/core/debts/detail-view';
 import type { LoanDetailData } from '@/lib/debts/load';
+import { isCardInstallments } from '@finnit/core/debts/types';
 import { DEBTS_PATH, LOANS_PATH } from '@finnit/core/debts/view';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
@@ -73,6 +74,8 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
   const [adding, setAdding] = React.useState<boolean | string>(false);
   const [tab, setTab] = React.useState('details');
   const personal = debt.loanType === 'personal';
+  // A card purchase in installments: the card bills it, no charges.
+  const cardPurchase = isCardInstallments(debt);
   // Personal loans and purchase financing list each amount in its own tab.
   const lentTab = personal || debt.loanType === 'purchase_financing';
   const [moving, setMoving] = React.useState<ScheduleRow | null>(null);
@@ -195,13 +198,13 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
         title={view.name}
         subtitle={subtitle}
         back={
-          debt.kind === 'loan'
+          debt.kind === 'loan' && !cardPurchase
             ? { href: LOANS_PATH, label: td('backLoans') }
-            : { href: DEBTS_PATH, label: td('back') }
+            : { href: `${DEBTS_PATH}?tab=other`, label: td('back') }
         }
         actions={
           <div className="flex gap-2">
-            {debt.kind === 'loan' ? (
+            {debt.kind === 'loan' && !cardPurchase ? (
               <Button
                 type="button"
                 variant="outline"
@@ -213,7 +216,7 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
                   : td('addCharge')}
               </Button>
             ) : null}
-            {view.paidOff ? null : (
+            {view.paidOff || cardPurchase ? null : (
               <Button
                 type="button"
                 variant="secondary"
@@ -249,6 +252,26 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
                 : td('noNext')
           }
         />
+
+        {cardPurchase ? (
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-card bg-track/60 p-3 text-sm text-on-background">
+            <span>
+              {debt.purchaseTransactionId
+                ? td('cardPurchase.linked')
+                : td('cardPurchase.unlinked')}
+            </span>
+            {debt.purchaseTransactionId ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => openMovement(debt.purchaseTransactionId!)}
+              >
+                {td('cardPurchase.open')}
+              </Button>
+            ) : null}
+          </p>
+        ) : null}
 
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="self-start">

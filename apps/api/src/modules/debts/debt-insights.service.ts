@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   DebtKind,
+  LoanType,
   OccurrenceStatus,
   RecurringExpenseKind,
   TransactionType,
@@ -54,8 +55,20 @@ export class DebtInsightsService {
     const loansOnly = args.loansOnly ?? false;
     const [debts, plans, msiPaid, income] = await Promise.all([
       this.prisma.debt.findMany({
-        where: { userId, ...(loansOnly && { kind: DebtKind.loan }) },
-        include: DEBT_INCLUDE,
+        where: {
+          userId,
+          ...(loansOnly && {
+            kind: DebtKind.loan,
+            loanType: { not: LoanType.card_installments },
+          }),
+        },
+        include: {
+          ...DEBT_INCLUDE,
+          recurringExpense: {
+            select: { id: true, nextDueDate: true, installmentsPaid: true },
+          },
+          linkedAccount: { select: { name: true } },
+        },
       }),
       // The loans page has no card MSI plans.
       loansOnly
@@ -65,6 +78,8 @@ export class DebtInsightsService {
               userId,
               kind: RecurringExpenseKind.installment,
               installmentsTotal: { not: null },
+              // Card purchases in installments are debts now.
+              debtId: null,
             },
             include: { account: { select: { name: true } } },
             orderBy: { nextDueDate: 'asc' },
@@ -78,6 +93,7 @@ export class DebtInsightsService {
               recurringExpense: {
                 userId,
                 kind: RecurringExpenseKind.installment,
+                debtId: null,
               },
             },
             select: {
@@ -128,9 +144,12 @@ export class DebtInsightsService {
       [];
     let monthlyPayments = 0;
 
+    let msiMonthly = 0;
+    const msi: DebtInsights['msi'] = [];
     for (const debt of debts) {
       const remaining = balanceOf(debt);
       const paid = debt.payments.reduce((s, p) => s + Number(p.amount), 0);
+      const isMsi = debt.loanType === LoanType.card_installments;
       add(categoryOf(debt.kind, debt.loanType), {
         remaining,
         totalOwed: totalOwedOf(debt),
@@ -140,12 +159,29 @@ export class DebtInsightsService {
         payments.push({
           date: p.date,
           amount: Number(p.amount),
-          bucket: p.isHistorical ? 'historical' : 'counted',
+          bucket: isMsi ? 'msi' : p.isHistorical ? 'historical' : 'counted',
+        });
+      }
+      if (isMsi) {
+        msi.push({
+          id: debt.id,
+          debtId: debt.id,
+          name: debt.name,
+          accountName: debt.linkedAccount?.name ?? undefined,
+          installmentAmount: Number(debt.installmentAmount ?? 0),
+          installmentsTotal: debt.installmentsTotal ?? 0,
+          installmentsPaid: debt.recurringExpense?.installmentsPaid ?? 0,
+          remaining,
+          nextDueDate:
+            remaining > 0
+              ? (debt.recurringExpense?.nextDueDate ?? undefined)
+              : undefined,
         });
       }
       if (remaining <= 0) continue;
       const monthly = monthlyPaymentOf(debt);
-      monthlyPayments += monthly;
+      if (isMsi) msiMonthly += monthly;
+      else monthlyPayments += monthly;
       const schedule = debt.recurringExpense
         ? (await this.tracking.schedule(userId, debt.id))
             .filter(
@@ -156,7 +192,7 @@ export class DebtInsightsService {
             .map((i) => ({ dueDate: i.dueDate, amount: i.amount }))
         : null;
       streams.push({
-        isMsi: false,
+        isMsi,
         remaining,
         schedule,
         monthly,
@@ -166,8 +202,7 @@ export class DebtInsightsService {
       });
     }
 
-    let msiMonthly = 0;
-    const msi = plans.map((plan) => {
+    for (const plan of plans) {
       const left = Math.max(0, plan.installmentsTotal! - plan.installmentsPaid);
       const amount = Number(plan.amount);
       const remaining = cents(amount * left);
@@ -190,7 +225,7 @@ export class DebtInsightsService {
           monthlyRate: 0,
         });
       }
-      return {
+      msi.push({
         id: plan.id,
         name: plan.name,
         accountName: plan.account?.name ?? undefined,
@@ -199,8 +234,8 @@ export class DebtInsightsService {
         installmentsPaid: plan.installmentsPaid,
         remaining,
         nextDueDate: plan.active ? (plan.nextDueDate ?? undefined) : undefined,
-      };
-    });
+      });
+    }
     for (const occurrence of msiPaid) {
       payments.push({
         date: occurrence.transaction?.txnDate ?? occurrence.dueDate,
@@ -237,6 +272,7 @@ export class DebtInsightsService {
 
 function categoryOf(kind: DebtKind, loanType: string | null): DebtCategory {
   if (kind === DebtKind.card) return 'card';
+  if (loanType === LoanType.card_installments) return 'msi';
   if (kind === DebtKind.loan && loanType) return loanType as DebtCategory;
   return 'other';
 }

@@ -510,7 +510,13 @@
       "terms": "Días de corte y de pago",
       "editTerms": "Días de corte y de pago",
       "saveTerms": "Guardar",
-      "termsSaved": "Días guardados"
+      "termsSaved": "Días guardados",
+      "cash": "De contado",
+      "installmentsInCycle": "Mensualidades de este corte",
+      "installmentBalance": "Saldo a meses",
+      "plans": "Compras a meses del corte",
+      "planRow": "{name} · {number} de {total}",
+      "planLeft": "Quedan {amount}"
     }
   },
   "accounts": {
@@ -1346,16 +1352,18 @@
       "notLinked": "Ese pago no tiene un gasto ligado."
     },
     "newLoan": "Préstamo",
-    "newOther": "Tarjeta u otra deuda",
+    "newOther": "Compra a meses u otra deuda",
     "loanTypes": {
       "institutional": "Banco o financiera",
       "personal": "Personal",
-      "purchase_financing": "Compra a plazos"
+      "purchase_financing": "Compra a plazos",
+      "card_installments": "Compra a meses"
     },
     "loanTypeHints": {
       "institutional": "Un banco o financiera (p. ej. YoTePresto): pagos fijos durante un plazo.",
       "personal": "Un familiar, amigo o conocido: los pagos pueden variar y la deuda puede crecer si te vuelve a prestar.",
-      "purchase_financing": "Kueski, Didi Paga Después y similares: cada compra suma sus pagos a las mismas fechas."
+      "purchase_financing": "Kueski, Didi Paga Después y similares: cada compra suma sus pagos a las mismas fechas.",
+      "card_installments": "Una compra con tu tarjeta de crédito a meses, con o sin intereses: cada corte la tarjeta cobra una mensualidad."
     },
     "loanFrequencies": {
       "weekly": "semanal",
@@ -1742,7 +1750,12 @@
       "rescheduleHint": "Solo cambia este pago; los demás siguen en sus fechas.",
       "rescheduleSave": "Guardar",
       "rescheduled": "Cambiamos la fecha del pago.",
-      "movedFrom": "Antes: {date}"
+      "movedFrom": "Antes: {date}",
+      "cardPurchase": {
+        "linked": "La compra completa está ligada: la tarjeta cobra cada mensualidad en su corte.",
+        "unlinked": "Cada mensualidad se liga con su cargo en la tarjeta (automático al sincronizar, o desde el gasto en el historial).",
+        "open": "Ver gasto de la compra"
+      }
     },
     "categories": {
       "institutional": "Bancos y financieras",
@@ -1795,12 +1808,13 @@
       "loadNoIncome": "Pagas {monthly} al mes. Registra tus ingresos para ver qué parte de ellos se va en deudas."
     },
     "msi": {
-      "title": "Meses sin intereses en tus tarjetas",
+      "title": "Compras a meses en tus tarjetas",
       "manage": "Ver en pagos recurrentes",
-      "hint": "No son préstamos: ocupan parte de tu línea de crédito. Se registran desde tus pagos recurrentes o estados de cuenta.",
+      "hint": "No son préstamos: ocupan parte de tu línea de crédito y cada corte la tarjeta cobra su mensualidad.",
       "progress": "{paid} de {total} pagos",
       "installment": "{amount} por pago",
-      "next": "Próximo: {date}"
+      "next": "Próximo: {date}",
+      "open": "Ver compra"
     },
     "loanEditValidation": {
       "nameRequired": "Escribe un nombre.",
@@ -1892,7 +1906,70 @@
         "saving": "Desligando…",
         "done": "Gasto desligado"
       }
-    }
+    },
+    "newKinds": {
+      "institutional": "Banco o financiera",
+      "personal": "Personal",
+      "purchase_financing": "Compra a plazos",
+      "card_installments": "Compra a meses",
+      "other": "Otra deuda"
+    },
+    "newKindHints": {
+      "institutional": "Un banco o financiera (p. ej. YoTePresto): pagos fijos durante un plazo.",
+      "personal": "Un familiar, amigo o conocido: los pagos pueden variar y la deuda puede crecer si te vuelve a prestar.",
+      "purchase_financing": "Kueski, Didi Paga Después y similares: cada compra suma sus pagos a las mismas fechas.",
+      "card_installments": "Una compra con tu tarjeta de crédito a meses, con o sin intereses: cada corte la tarjeta cobra una mensualidad.",
+      "other": "Cualquier otro dinero que debas: solo el monto, la tasa y el pago mínimo."
+    },
+    "newTitle": "Nueva deuda",
+    "newDescription": "Un préstamo, una compra a meses con tarjeta o cualquier dinero que debas.",
+    "cardInstallments": {
+      "card": "Tarjeta de crédito",
+      "cardPlaceholder": "Elige la tarjeta",
+      "cardHint": "La tarjeta con la que compraste. Sus fechas de corte marcan cada mensualidad.",
+      "noCards": "Primero agrega una tarjeta de crédito en Cuentas y tarjetas.",
+      "name": "Concepto",
+      "namePlaceholder": "Ej. Pantalla Liverpool",
+      "principal": "Monto total de la compra",
+      "months": "Meses",
+      "monthsPlaceholder": "Ej. 12",
+      "monthsOption": "{count} meses",
+      "monthsOther": "Otro",
+      "interest": "Intereses",
+      "noInterest": "Sin intereses",
+      "withInterest": "Con intereses",
+      "purchaseDate": "Fecha de compra",
+      "installmentsPaid": "Mensualidades ya cobradas",
+      "installmentsPaidHint": "Calculadas con los cortes de la tarjeta desde la fecha de compra. Corrígelas si no coinciden con tu estado de cuenta.",
+      "preview": "{count} mensualidades de {amount} · total {total}",
+      "previewInterest": "Intereses: {interest}",
+      "span": "Primera mensualidad en el corte del {first}; última el {last}.",
+      "spanNoTerms": "La tarjeta no tiene días de corte: una mensualidad cada mes desde la compra (primera el {first}, última el {last}).",
+      "purchaseLinked": "Se ligará con el gasto de la compra: la tarjeta cobra cada mensualidad y la compra no cuenta dos veces como gasto.",
+      "create": "Registrar compra a meses",
+      "saving": "Guardando…"
+    },
+    "cardInstallmentValidation": {
+      "nameRequired": "Escribe el concepto.",
+      "nameTooLong": "El concepto es demasiado largo.",
+      "accountRequired": "Elige la tarjeta.",
+      "principalRequired": "Escribe el monto total.",
+      "principalInvalid": "El monto debe ser mayor que 0.",
+      "principalTooLarge": "El monto es demasiado grande.",
+      "monthsRequired": "Escribe a cuántos meses.",
+      "monthsInvalid": "Elige entre 1 y 60 meses.",
+      "purchaseDateRequired": "Elige la fecha de compra.",
+      "purchaseDateInFuture": "La fecha de compra no puede ser futura.",
+      "rateRequired": "Escribe la tasa anual.",
+      "rateInvalid": "La tasa debe ser mayor que 0.",
+      "totalRequired": "Escribe el total a pagar.",
+      "totalBelowPrincipal": "El total no puede ser menor que el monto de la compra.",
+      "installmentAmountRequired": "Escribe la mensualidad.",
+      "installmentAmountTooLow": "Las mensualidades no alcanzan el monto de la compra.",
+      "installmentsPaidInvalid": "Escribe un número entero.",
+      "installmentsPaidTooMany": "No pueden ser más que los meses."
+    },
+    "newKindLabel": "Tipo"
   },
   "analytics": {
     "emptyTitle": "Aún no hay datos para analizar",
@@ -2753,7 +2830,30 @@
       "confirm": "Desligar",
       "done": "Se desligó del gasto recurrente"
     },
-    "moreActions": "Más acciones"
+    "moreActions": "Más acciones",
+    "linkCardInstallment": {
+      "action": "Ligar a compra a meses",
+      "title": "Ligar a compra a meses",
+      "description": "Elige si este gasto de {amount} del {date} es la compra completa o una mensualidad.",
+      "loading": "Buscando compras a meses…",
+      "empty": "No hay compras a meses en esta tarjeta.",
+      "purchase": "Es la compra completa",
+      "purchaseMeta": "Compra de {amount} del {date}",
+      "installment": "Mensualidad {number} de {total}",
+      "installmentMeta": "{amount} · corte del {date}",
+      "paidWithout": "{amount} · cobrada sin movimiento",
+      "overdue": "{amount} · corte del {date}, sin cargo",
+      "billedByCard": "La compra completa ya está ligada: la tarjeta cobra sus mensualidades.",
+      "purchaseBlocked": "Sus mensualidades ya están ligadas a cargos.",
+      "proposed": "Sugerida",
+      "submit": "Ligar",
+      "create": "Crear compra a meses con este gasto",
+      "linkedPurchase": "Es la compra de {name}.",
+      "linkedInstallment": "Es la mensualidad {number} de {total} de {name}.",
+      "unlink": "Desligar",
+      "done": "Ligado a {name}",
+      "unlinked": "Desligado de {name}"
+    }
   },
   "notifications": {
     "title": "Notificaciones",

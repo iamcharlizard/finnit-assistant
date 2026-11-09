@@ -26,6 +26,7 @@ import { addDays, toDateOnly } from '../recurring-expenses/schedule.util';
 import { localToday } from '../../common/utils/local-date.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SyncReviewService } from './sync-review.service';
+import { CardInstallmentsService } from '../debts/card-installments.service';
 import { mismatchTexts, reconcileBalance } from './balance-reconciliation';
 import {
   BankConnection,
@@ -97,6 +98,7 @@ export class BankConnectionsService {
     private readonly materializer: LineMaterializerService,
     private readonly notifications: NotificationsService,
     private readonly syncReview: SyncReviewService,
+    private readonly cardInstallments: CardInstallmentsService,
   ) {}
 
   /**
@@ -107,6 +109,15 @@ export class BankConnectionsService {
     userId: string,
     createdIds: string[],
   ): Promise<void> {
+    try {
+      // A purchase in installments gets its card's charge of the whole
+      // purchase (its installments are billed by the card from then on).
+      await this.cardInstallments.linkSyncedPurchases(userId, createdIds);
+    } catch (error) {
+      this.logger.warn(
+        `Card installments linking failed for user ${userId}: ${(error as Error).message}`,
+      );
+    }
     try {
       await this.syncReview.review(userId, createdIds);
     } catch (error) {

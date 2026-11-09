@@ -11,13 +11,49 @@ export const DEBT_KINDS = [
 ] as const satisfies ReadonlyArray<DebtKind>;
 
 /** Only for kind = loan; null on cards, other debts and older loans. */
-export type LoanType = 'institutional' | 'personal' | 'purchase_financing';
+export type LoanType =
+  | 'institutional'
+  | 'personal'
+  | 'purchase_financing'
+  | 'card_installments';
+
+/** Loan types of the loan form (card purchases have their own fields). */
+export type LoanFormType = Exclude<LoanType, 'card_installments'>;
 
 export const LOAN_TYPES = [
   'institutional',
   'personal',
   'purchase_financing',
-] as const satisfies ReadonlyArray<LoanType>;
+] as const satisfies ReadonlyArray<LoanFormType>;
+
+/** A purchase on a credit card paid in monthly installments. */
+export function isCardInstallments(debt: {
+  loanType: LoanType | null;
+}): boolean {
+  return debt.loanType === 'card_installments';
+}
+
+/** Loans of the Préstamos tab (card purchases go with the cards). */
+export function isLoanTabDebt(debt: {
+  kind: DebtKind;
+  loanType: LoanType | null;
+}): boolean {
+  return debt.kind === 'loan' && debt.loanType !== 'card_installments';
+}
+
+/**
+ * What "Nueva deuda" registers: a loan by type, a purchase on a credit
+ * card in monthly installments, or any other debt.
+ */
+export type NewDebtKind = LoanType | 'other';
+
+export const NEW_DEBT_KINDS = [
+  'institutional',
+  'personal',
+  'purchase_financing',
+  'card_installments',
+  'other',
+] as const satisfies ReadonlyArray<NewDebtKind>;
 
 /** Which value gives the amount to repay. */
 export type LoanInterestMode = 'rate' | 'total_amount' | 'installment_amount';
@@ -146,6 +182,8 @@ export interface ApiDebt {
   depositAddsToBalance: boolean;
   /** What the borrowed money was for (informative; the expense is the payments). */
   purposeCategoryId: string | null;
+  /** Card purchases in installments: the card's charge of the whole purchase. */
+  purchaseTransactionId: string | null;
   nextPaymentDate: string | null;
   recurringExpenseId: string | null;
   /** Initial total + charges − every payment, never negative. */
@@ -161,7 +199,7 @@ export interface ApiDebt {
 }
 
 export const DEBT_FIELDS =
-  'id name description kind principal interestRateAnnual minPaymentAmount startDate dueDate linkedAccountId loanType status lenderName lenderContactId lendingMethod paymentFrequency installmentsTotal installmentsPaid installmentAmount totalToRepay interestMode includesVat openingFee periodicFee destination depositAddsToBalance purposeCategoryId nextPaymentDate recurringExpenseId remainingBalance totalPaid historicalPaid totalOwed monthlyPayment createdAt';
+  'id name description kind principal interestRateAnnual minPaymentAmount startDate dueDate linkedAccountId loanType status lenderName lenderContactId lendingMethod paymentFrequency installmentsTotal installmentsPaid installmentAmount totalToRepay interestMode includesVat openingFee periodicFee destination depositAddsToBalance purposeCategoryId purchaseTransactionId nextPaymentDate recurringExpenseId remainingBalance totalPaid historicalPaid totalOwed monthlyPayment createdAt';
 
 /** A debt with its payments and charges (the loan's page). */
 export interface ApiDebtDetail extends ApiDebt {
@@ -233,7 +271,7 @@ export interface ApiLoanDraft {
   fingerprint: string;
   name: string;
   lenderName: string;
-  loanType: LoanType;
+  loanType: LoanFormType;
   paymentFrequency: string;
   interval: number;
   installmentAmount: number;
@@ -295,6 +333,8 @@ export interface ApiDebtUpcoming {
 
 export interface ApiMsiPlan {
   id: string;
+  /** The card purchase's debt (null: an old plan, only a recurring expense). */
+  debtId: string | null;
   name: string;
   accountName: string | null;
   installmentAmount: number;
@@ -330,4 +370,4 @@ export interface ApiDebtInsights {
 
 const UPCOMING = 'days30 days60 days90';
 
-export const DEBT_INSIGHTS_FIELDS = `byType { type remaining totalOwed paid count } paidByMonth { month counted historical msi } projection { month debt msi } upcoming { ${UPCOMING} } upcomingMsi { ${UPCOMING} } monthlyPayments msiMonthlyPayments averageMonthlyIncome msi { id name accountName installmentAmount installmentsTotal installmentsPaid remaining nextDueDate }`;
+export const DEBT_INSIGHTS_FIELDS = `byType { type remaining totalOwed paid count } paidByMonth { month counted historical msi } projection { month debt msi } upcoming { ${UPCOMING} } upcomingMsi { ${UPCOMING} } monthlyPayments msiMonthlyPayments averageMonthlyIncome msi { id debtId name accountName installmentAmount installmentsTotal installmentsPaid remaining nextDueDate }`;

@@ -49,6 +49,16 @@ export default function AppLayout() {
           }}
         />
         <Stack.Screen
+          name="new-debt"
+          options={{
+            presentation: 'formSheet',
+            sheetAllowedDetents: [0.92],
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 28,
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+        <Stack.Screen
           name="profile"
           options={{
             presentation: 'formSheet',

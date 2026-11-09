@@ -1,5 +1,9 @@
 /** The debts screens' requests, shared by the web loader and the mobile app. */
-import { ACCOUNT_FIELDS, type ApiAccount, type Connection } from '../finance/types';
+import {
+  ACCOUNT_FIELDS,
+  type ApiAccount,
+  type Connection,
+} from '../finance/types';
 import type { BudgetCategory } from '../budgets/types';
 import {
   DEBT_DETAIL_FIELDS,
@@ -41,6 +45,17 @@ export const DEBT_DETAIL_QUERY = `query DebtDetail($id: String!, $debtId: ID!) {
 export interface DebtDetailResult {
   debt: ApiDebtDetail;
   loanSchedule: ApiLoanScheduleItem[];
+  accounts: Connection<ApiAccount>;
+  categories: BudgetCategory[];
+}
+
+/** What "Nueva deuda" needs when opened away from the debts screen. */
+export const NEW_DEBT_FORM_QUERY = `query NewDebtForm {
+  accounts(first: 100) { edges { node { ${ACCOUNT_FIELDS} } } }
+  categories { id name parentId key kind icon }
+}`;
+
+export interface NewDebtFormResult {
   accounts: Connection<ApiAccount>;
   categories: BudgetCategory[];
 }

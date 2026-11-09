@@ -208,6 +208,11 @@ export interface TransactionDetailView {
   canLinkLoan: boolean;
   /** The same: it can be linked to a recurring payment (subscription…). */
   canLinkRecurring: boolean;
+  /**
+   * An expense on a credit card: it can be (or is) the whole purchase or an
+   * installment of a purchase in installments.
+   */
+  canLinkCardInstallment: boolean;
   attachments: AttachmentView[];
   rules: EditRules;
   deleteBlock: DeleteBlock;
@@ -308,6 +313,11 @@ export function toTransactionDetailView(
     canLinkLoan: tx.type === 'expense' && !tx.isPending && !loan && !recurring,
     canLinkRecurring:
       tx.type === 'expense' && !tx.isPending && !loan && !recurring,
+    canLinkCardInstallment:
+      tx.type === 'expense' &&
+      !tx.isPending &&
+      tx.account?.type === 'credit' &&
+      !recurring,
     attachments: (tx.attachments ?? []).map((a) =>
       toAttachmentView(a, t('transaction.attachments.unnamed')),
     ),

@@ -1,7 +1,7 @@
 import { useTranslations } from 'use-intl';
-import { ChevronRight, CreditCard, HandCoins, Landmark, ShoppingBag, UserRound } from 'lucide-react-native';
+import { CalendarClock, ChevronRight, CreditCard, HandCoins, Landmark, ShoppingBag, UserRound } from 'lucide-react-native';
 
-import type { DebtCategory } from '@finnit/core/debts/types';
+import { isCardInstallments, type DebtCategory } from '@finnit/core/debts/types';
 import type { DebtItem } from '@finnit/core/debts/view';
 import { withAlpha } from '@finnit/ui-native/lib/color';
 import { cn } from '@finnit/ui-native/lib/utils';
@@ -12,8 +12,8 @@ import { Icon } from '@finnit/ui-native/components/ui/icon';
 import { Progress } from '@finnit/ui-native/components/ui/progress';
 import { Text } from '@finnit/ui-native/components/ui/text';
 
-type DebtType = Exclude<DebtCategory, 'msi'>;
-const TYPE_ICONS = { institutional: Landmark, personal: UserRound, purchase_financing: ShoppingBag, card: CreditCard, other: HandCoins };
+type DebtType = DebtCategory;
+const TYPE_ICONS = { institutional: Landmark, personal: UserRound, purchase_financing: ShoppingBag, card: CreditCard, other: HandCoins, msi: CalendarClock };
 /** The loan charts' colors, by type (same order as the web). */
 const TYPE_TOKENS: Record<DebtType, `--${string}`> = {
   institutional: '--chart-1',
@@ -21,8 +21,10 @@ const TYPE_TOKENS: Record<DebtType, `--${string}`> = {
   purchase_financing: '--chart-3',
   card: '--chart-4',
   other: '--chart-5',
+  msi: '--chart-6',
 };
-const typeOf = (item: DebtItem): DebtType => (item.debt.loanType ? item.debt.loanType : item.kind === 'card' ? 'card' : 'other');
+const typeOf = (item: DebtItem): DebtType =>
+  isCardInstallments(item.debt) ? 'msi' : item.debt.loanType ? (item.debt.loanType as DebtType) : item.kind === 'card' ? 'card' : 'other';
 
 /** One debt: what's left of it, how much is paid and its facts; opens its screen. */
 export function DebtCard({ item, onOpen }: { item: DebtItem; onOpen: () => void }) {

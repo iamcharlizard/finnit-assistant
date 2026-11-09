@@ -25,7 +25,10 @@ import {
   validateDebtForm,
   validatePaymentForm,
 } from '@finnit/core/debts/form';
-import { buildPayoffComparison, parseExtraPayment } from '@finnit/core/debts/payoff';
+import {
+  buildPayoffComparison,
+  parseExtraPayment,
+} from '@finnit/core/debts/payoff';
 import type { ApiDebt, ApiPayoffProjection } from '@finnit/core/debts/types';
 import { buildDebtsView, summarizeDebts } from '@finnit/core/debts/view';
 
@@ -37,6 +40,7 @@ const debt = (overrides: Partial<ApiDebt> = {}): ApiDebt => ({
   id: 'car',
   name: 'Crédito auto',
   description: null,
+  purchaseTransactionId: null,
   kind: 'loan',
   principal: 100000,
   interestRateAnnual: 12,

@@ -74,6 +74,8 @@ export interface ProjectionPoint {
 export interface MsiRow {
   id: string;
   name: string;
+  /** The purchase's page (null: an old plan, only a recurring expense). */
+  href: string | null;
   accountName: string | null;
   progress: string;
   paidPercent: number;
@@ -210,6 +212,9 @@ export function buildDebtInsightsView(
     msi: data.msi.map((plan) => ({
       id: plan.id,
       name: plan.name,
+      href: plan.debtId
+        ? `/planning/debts/${encodeURIComponent(plan.debtId)}`
+        : null,
       accountName: plan.accountName,
       progress: t('debts.msi.progress', {
         paid: plan.installmentsPaid,

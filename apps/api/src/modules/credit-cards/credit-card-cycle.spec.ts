@@ -136,6 +136,28 @@ describe('credit card cycles', () => {
     expect(figures.remaining).toBe(4250);
   });
 
+  it('leaves out the installments after the cut-off of whole purchases in the balance', () => {
+    // Owed 7,000 at the cut-off: 6,000 is a 6-month purchase whose first
+    // installment (1,000) is billed this cycle; 5,000 is billed later.
+    const figures = cycleFigures(cycleOf('2026-11-07', terms), {
+      today: '2026-11-20',
+      currentBalance: -5000,
+      movements,
+      deferredInstallments: 5000,
+      installmentsInCycle: 1000,
+      installmentBalance: 5000,
+    });
+    expect(figures).toMatchObject({
+      balanceAtStatement: 7000,
+      noInterestPayment: 2000,
+      installmentsInCycle: 1000,
+      installmentBalance: 5000,
+      cashBalance: 1000,
+      remaining: 0,
+      status: 'paid',
+    });
+  });
+
   it("uses the statement's figures when one was imported", () => {
     const figures = cycleFigures(cycleOf('2026-11-07', terms), {
       today: '2026-11-20',

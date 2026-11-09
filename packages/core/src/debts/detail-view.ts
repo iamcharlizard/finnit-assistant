@@ -306,9 +306,11 @@ export function buildLoanDetailView(
         item.occurrenceId && (status === 'upcoming' || status === 'overdue')
           ? item.occurrenceId
           : null,
+      // A card purchase whose whole charge is linked: the card bills them.
       linkOccurrenceId:
         item.occurrenceId &&
         !item.transactionId &&
+        !debt.purchaseTransactionId &&
         (status === 'upcoming' ||
           status === 'overdue' ||
           status === 'historical')

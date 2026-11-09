@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import {
   ArrowLeftRight,
+  CalendarClock,
   CheckCheck,
   CopyCheck,
   Landmark,
@@ -45,6 +46,9 @@ import { MergeDuplicateDialog } from '@/components/duplicates/merge-duplicate-di
 import { LinkLoanDialog } from '@/components/loan-links/link-loan-dialog';
 import { UnlinkLoanDialog } from '@/components/loan-links/unlink-loan-dialog';
 import { LinkRecurringDialog } from '@/components/recurring-links/link-recurring-dialog';
+import { LinkCardInstallmentDialog } from '@/components/card-installments/link-card-installment-dialog';
+import { NewDebtDialog } from '@/components/debts/new-debt-dialog';
+import { cardInstallmentPrefill } from '@finnit/core/debts/card-installment-links';
 import { runPaymentAction } from '@finnit/core/recurring/api';
 import { AttachmentsCard } from './attachments-card';
 import { useDetailHost } from './detail-host';
@@ -70,6 +74,8 @@ export function TransactionDetailScreen({
     | 'linkLoan'
     | 'unlinkLoan'
     | 'linkRecurring'
+    | 'linkCardInstallment'
+    | 'newCardInstallment'
     | 'merge'
     | null
   >(null);
@@ -208,6 +214,16 @@ export function TransactionDetailScreen({
             icon: Unlink,
             run: () => askUnlinkRecurring(recurringLink.occurrenceId),
             disabled: applying,
+          },
+        ]
+      : []),
+    ...(view.canLinkCardInstallment
+      ? [
+          {
+            key: 'linkCardInstallment',
+            label: tt('linkCardInstallment.action'),
+            icon: CalendarClock,
+            run: () => setDialog('linkCardInstallment'),
           },
         ]
       : []),
@@ -377,6 +393,37 @@ export function TransactionDetailScreen({
           onLinked={(name) => {
             setDialog(null);
             toast.success(tt('linkRecurring.done', { name }));
+            host.refresh();
+          }}
+        />
+      ) : null}
+      {dialog === 'linkCardInstallment' ? (
+        <LinkCardInstallmentDialog
+          transaction={data.transaction}
+          onClose={() => setDialog(null)}
+          onChanged={(message) => {
+            setDialog(null);
+            toast.success(message);
+            host.refresh();
+          }}
+          onCreate={() => setDialog('newCardInstallment')}
+        />
+      ) : null}
+      {dialog === 'newCardInstallment' ? (
+        <NewDebtDialog
+          initialKind="card_installments"
+          cardPrefill={cardInstallmentPrefill({
+            id: data.transaction.id,
+            accountId: data.transaction.accountId,
+            amount: data.transaction.amount,
+            txnDate: data.transaction.txnDate,
+            name: view.title,
+          })}
+          today={data.today}
+          onClose={() => setDialog(null)}
+          onSaved={(_id, name) => {
+            setDialog(null);
+            toast.success(t('debts.toasts.created', { name }));
             host.refresh();
           }}
         />

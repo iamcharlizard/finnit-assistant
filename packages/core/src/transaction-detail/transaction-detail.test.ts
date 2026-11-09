@@ -253,6 +253,7 @@ describe('transaction detail: view', () => {
       accountId: 'acc-1',
       currency: 'MXN',
       amount: 80,
+      txnDate: '2026-10-12T00:00:00.000Z',
     });
     assert.deepEqual(view.recurring, {
       href: '/recurring?date=2026-10-05',

@@ -189,6 +189,7 @@ export function mapCategory(
     parentId: category.parentId || undefined,
     name: category.name,
     isDefault: category.isDefault,
+    excludeFromTotals: category.excludeFromTotals,
     kind: category.kind,
     icon: category.icon,
     color: category.color,

@@ -4,7 +4,12 @@ import { describe, it } from 'node:test';
 import { categoryOptions } from '@finnit/core/new-entry/options';
 import { categoryInput, validateCategoryForm } from './api';
 import type { SettingsCategory } from '@finnit/core/categories/types';
-import { categoryTree, isInUse, moveTargets, parentOptions } from '@finnit/core/categories/view';
+import {
+  categoryTree,
+  isInUse,
+  moveTargets,
+  parentOptions,
+} from '@finnit/core/categories/view';
 
 const cat = (
   id: string,
@@ -20,6 +25,7 @@ const cat = (
   isDefault: true,
   hidden: false,
   editable: false,
+  excludeFromTotals: false,
   ...overrides,
 });
 
@@ -109,6 +115,7 @@ describe('category form', () => {
       kind: 'expense' as const,
       parentId: '',
       icon: '',
+      excludeFromTotals: false,
     };
     assert.equal(validateCategoryForm(form), 'nameRequired');
     assert.equal(
@@ -120,8 +127,20 @@ describe('category form', () => {
 
   it("sends the kind only for a main category (a sub takes its parent's)", () => {
     assert.deepEqual(
-      categoryInput({ name: ' Gym ', kind: 'expense', parentId: '', icon: '' }),
-      { name: 'Gym', parentId: null, kind: 'expense', icon: null },
+      categoryInput({
+        name: ' Gym ',
+        kind: 'expense',
+        parentId: '',
+        icon: '',
+        excludeFromTotals: false,
+      }),
+      {
+        name: 'Gym',
+        parentId: null,
+        kind: 'expense',
+        icon: null,
+        excludeFromTotals: false,
+      },
     );
     assert.deepEqual(
       categoryInput({
@@ -129,8 +148,14 @@ describe('category form', () => {
         kind: 'expense',
         parentId: 'Ingresos',
         icon: 'income',
+        excludeFromTotals: true,
       }),
-      { name: 'Bonos', parentId: 'Ingresos', icon: 'income' },
+      {
+        name: 'Bonos',
+        parentId: 'Ingresos',
+        icon: 'income',
+        excludeFromTotals: true,
+      },
     );
   });
 });

@@ -68,7 +68,10 @@ import {
   mapAttachment,
   mapTransaction,
 } from './transaction.mapper';
-import { visibleCategoryWhere } from '../categories/category-scope';
+import {
+  countedInTotalsWhere,
+  visibleCategoryWhere,
+} from '../categories/category-scope';
 import { categorizableWhere } from '../categorization/categorizable';
 import {
   DISSOLVE_SIDE_SELECT,
@@ -245,6 +248,7 @@ export class TransactionsService {
     where.AND = [
       ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
       categorizableWhere(),
+      countedInTotalsWhere(),
     ];
 
     const groups = await this.prisma.transaction.groupBy({
@@ -886,6 +890,7 @@ export class TransactionsService {
         },
         isPending: false,
         type: { not: 'transfer' }, // Exclude transfers to avoid double counting
+        AND: [countedInTotalsWhere()],
       },
       _sum: {
         amount: true,
@@ -905,6 +910,7 @@ export class TransactionsService {
           lte: dateTo,
         },
         isPending: false,
+        AND: [countedInTotalsWhere()],
       },
       _sum: {
         amount: true,
@@ -920,6 +926,7 @@ export class TransactionsService {
           lte: dateTo,
         },
         isPending: false,
+        AND: [countedInTotalsWhere()],
       },
       _sum: {
         amount: true,

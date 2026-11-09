@@ -375,6 +375,19 @@ describe('history: transfers and top categories', () => {
   const row = (over: Partial<ApiTransaction>) =>
     toHistoryRow(tx(over), indexCategories([]), es);
 
+  it('leaves categories out of the totals out of the day net', () => {
+    const category = { id: 'c', name: 'Sin seguimiento', parentId: null };
+    assert.notEqual(row({ type: 'expense', amount: 50, category }).net, 0);
+    assert.equal(
+      row({
+        type: 'expense',
+        amount: 50,
+        category: { ...category, excludeFromTotals: true },
+      }).net,
+      0,
+    );
+  });
+
   it("joins a transfer's two sides where the first one was", () => {
     const items = groupTransfers(
       [

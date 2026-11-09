@@ -17,6 +17,8 @@ export interface CategoryRow {
   isDefault: boolean;
   hidden: boolean;
   editable: boolean;
+  /** Left out of the totals and charts ("No cuenta en sumas"). */
+  excludeFromTotals: boolean;
   /** Movements this month. */
   count: number;
 }
@@ -53,6 +55,7 @@ export function categoryTree(
     isDefault: c.isDefault,
     hidden: c.hidden,
     editable: c.editable,
+    excludeFromTotals: c.excludeFromTotals ?? false,
     count: usage[c.id] ?? 0,
   });
 

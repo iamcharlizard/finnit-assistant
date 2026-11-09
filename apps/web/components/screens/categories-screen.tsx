@@ -201,6 +201,9 @@ export function CategoriesScreen({ data }: { data: CategoriesData }) {
             {row.isDefault ? null : (
               <Badge variant="highlight">{t('own')}</Badge>
             )}
+            {row.excludeFromTotals ? (
+              <Badge variant="muted">{t('untracked')}</Badge>
+            ) : null}
           </span>
           <span className="text-xs text-on-surface-variant">
             {row.hidden

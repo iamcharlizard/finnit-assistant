@@ -5,11 +5,14 @@ import type { ApiTransaction } from '../finance/types';
 import type { EntryAccount } from '../new-entry/graphql';
 import {
   canConvertToTransfer,
+  canRecordCardPayment,
   candidatesIn,
   convertDirection,
   convertInput,
   convertTargets,
   initialConvertChoice,
+  isNearCandidate,
+  proposedCandidate,
 } from './convert';
 
 const account = (
@@ -26,8 +29,11 @@ const account = (
   ...over,
 });
 
-const candidate = (id: string, accountId: string) =>
-  ({ id, accountId }) as ApiTransaction;
+const candidate = (
+  id: string,
+  accountId: string,
+  txnDate = '2026-10-31T00:00:00.000Z',
+) => ({ id, accountId, txnDate }) as ApiTransaction;
 
 const source = {
   id: 'tx',
@@ -35,6 +41,7 @@ const source = {
   accountId: 'debit',
   currency: 'MXN',
   amount: 25_686,
+  txnDate: '2026-11-03T00:00:00.000Z',
 };
 
 describe('convert to transfer', () => {
@@ -70,11 +77,11 @@ describe('convert to transfer', () => {
       candidate('c1', 'savings'),
       candidate('c2', 'nu'),
     ];
-    assert.deepEqual(initialConvertChoice(candidates, targets), {
+    assert.deepEqual(initialConvertChoice(candidates, targets, source), {
       accountId: 'savings',
       candidateId: 'c1',
     });
-    assert.deepEqual(initialConvertChoice([], targets), {
+    assert.deepEqual(initialConvertChoice([], targets, source), {
       accountId: null,
       candidateId: null,
     });
@@ -94,6 +101,56 @@ describe('convert to transfer', () => {
     assert.equal(
       convertInput(source, 'nu', 'c2').counterpartTransactionId,
       'c2',
+    );
+  });
+
+  it('proposes only a candidate within a week', () => {
+    // A card payment made on Friday the 31st shows up on Monday the 3rd.
+    assert.equal(isNearCandidate(source, candidate('c', 'nu')), true);
+    const far = candidate('old', 'nu', '2026-09-02T00:00:00.000Z');
+    assert.equal(isNearCandidate(source, far), false);
+    assert.deepEqual(initialConvertChoice([far], [account('nu')], source), {
+      accountId: null,
+      candidateId: null,
+    });
+    // Shown in its account, but not chosen for the user.
+    assert.equal(proposedCandidate([far], 'nu', source), null);
+    assert.equal(
+      proposedCandidate([candidate('c', 'nu'), far], 'nu', source),
+      'c',
+    );
+  });
+
+  it('records a card payment only toward credit cards', () => {
+    const accounts = [
+      account('debit'),
+      account('savings'),
+      account('nu', { type: 'credit' }),
+    ];
+    assert.deepEqual(
+      convertTargets(accounts, source, 'cardPayment').map((a) => a.id),
+      ['nu'],
+    );
+    // Received on the card: it comes from any other account.
+    const received = { ...source, type: 'income', accountId: 'nu' };
+    assert.deepEqual(
+      convertTargets(accounts, received, 'cardPayment').map((a) => a.id),
+      ['debit', 'savings'],
+    );
+  });
+
+  it('offers the card payment with a card to pay, or an income on a card', () => {
+    assert.equal(canRecordCardPayment(source, 'debit', ['nu']), true);
+    assert.equal(canRecordCardPayment(source, 'debit', []), false);
+    // An expense on the only card can't pay that same card.
+    const onCard = { ...source, accountId: 'nu' };
+    assert.equal(canRecordCardPayment(onCard, 'credit', ['nu']), false);
+    const income = { ...source, type: 'income' };
+    assert.equal(canRecordCardPayment(income, 'credit', ['debit']), true);
+    assert.equal(canRecordCardPayment(income, 'debit', ['nu']), false);
+    assert.equal(
+      canRecordCardPayment({ ...source, type: 'transfer' }, 'debit', ['nu']),
+      false,
     );
   });
 });

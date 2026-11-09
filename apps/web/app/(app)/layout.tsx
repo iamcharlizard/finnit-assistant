@@ -14,7 +14,7 @@ import {
   parseOpenGroups,
   parseSidebarCollapsed,
 } from '@finnit/core/nav/sidebar';
-import { unreadNotificationCount } from '@/lib/notifications/unread';
+import { loadShellCounts } from '@/lib/notifications/unread';
 import {
   HIDE_AMOUNTS_COOKIE,
   PIN_SUGGESTION_COOKIE,
@@ -27,9 +27,9 @@ export default async function AppLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   // proxy.ts already redirects visitors without a session; this also covers
   // a token the API no longer accepts (e.g. the user was deleted).
-  const [user, unread, store] = await Promise.all([
+  const [user, counts, store] = await Promise.all([
     getCurrentUser(),
-    unreadNotificationCount(),
+    loadShellCounts(),
     cookies(),
   ]);
   if (!user) redirect('/login');
@@ -50,7 +50,8 @@ export default async function AppLayout({
           )}
         >
           <AppShell
-            notificationCount={unread}
+            notificationCount={counts.unread}
+            hasCreditCard={counts.hasCreditCard}
             sidebarCollapsed={sidebarCollapsed}
             openNavGroups={openNavGroups}
           >

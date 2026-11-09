@@ -2,7 +2,10 @@ import type { GqlRunner } from '@finnit/core/graphql/request';
 import { requestErrorMessage } from '@finnit/core/graphql/request';
 import type { Translate } from '@finnit/core/i18n/translator';
 import type { CategoryReferences } from '@finnit/core/categories/view';
-import { CATEGORY_NAME_MAX, type CategoryKind } from '@finnit/core/categories/types';
+import {
+  CATEGORY_NAME_MAX,
+  type CategoryKind,
+} from '@finnit/core/categories/types';
 
 /** Category settings GraphQL, run from client components through /api/graphql. */
 
@@ -20,6 +23,11 @@ export interface CategoryForm {
   parentId: string;
   /** Empty: picked by name. */
   icon: string;
+  /**
+   * Its movements stay in the history (and move balances) but no total,
+   * report or chart counts them; a subcategory follows its parent.
+   */
+  excludeFromTotals: boolean;
 }
 
 export type CategoryFormError = 'nameRequired' | 'nameTooLong';
@@ -40,6 +48,7 @@ export function categoryInput(form: CategoryForm) {
     parentId: form.parentId || null,
     ...(form.parentId ? {} : { kind: form.kind }),
     icon: form.icon || null,
+    excludeFromTotals: form.excludeFromTotals,
   };
 }
 

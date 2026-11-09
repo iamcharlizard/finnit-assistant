@@ -1,3 +1,4 @@
+import { countedInTotalsWhere } from '../categories/category-scope';
 import { ReportsService, monthsOfData } from './reports.service';
 import { PrismaService } from '../../services/prisma.service';
 
@@ -30,11 +31,23 @@ describe('ReportsService', () => {
       lt: new Date('2026-11-01T00:00:00.000Z'),
     };
     expect(prisma.transaction.aggregate).toHaveBeenCalledWith({
-      where: { userId: 'user-1', isPending: false, txnDate, type: 'income' },
+      where: {
+        userId: 'user-1',
+        isPending: false,
+        txnDate,
+        type: 'income',
+        AND: [countedInTotalsWhere()],
+      },
       _sum: { amount: true },
     });
     expect(prisma.transaction.aggregate).toHaveBeenCalledWith({
-      where: { userId: 'user-1', isPending: false, txnDate, type: 'expense' },
+      where: {
+        userId: 'user-1',
+        isPending: false,
+        txnDate,
+        type: 'expense',
+        AND: [countedInTotalsWhere()],
+      },
       _sum: { amount: true },
     });
     expect(prisma.transaction.groupBy).toHaveBeenCalledWith({
@@ -45,6 +58,7 @@ describe('ReportsService', () => {
         txnDate,
         type: 'expense',
         categoryId: { not: null },
+        AND: [countedInTotalsWhere()],
       },
       _sum: { amount: true },
     });
@@ -216,6 +230,7 @@ describe('monthsOfData', () => {
             gte: new Date('2026-11-01T00:00:00.000Z'),
             lt: new Date('2026-11-04T00:00:00.000Z'),
           },
+          AND: [countedInTotalsWhere()],
         },
         _sum: { amount: true },
       });

@@ -814,6 +814,11 @@ type Category {
   """The user's own category (the catalog's are read-only)"""
   editable: Boolean!
 
+  """
+  The user's own category left out of income/expense totals, reports and charts (its movements stay in the history and move balances)
+  """
+  excludeFromTotals: Boolean!
+
   """Whether the user hid it from their pickers"""
   hidden: Boolean!
 
@@ -944,6 +949,11 @@ input CreateBudgetInput {
 
 input CreateCategoryInput {
   color: String
+
+  """
+  Leave its movements out of income/expense totals, reports and charts (own categories only; subcategories follow their parent)
+  """
+  excludeFromTotals: Boolean
   icon: String
 
   """
@@ -3713,6 +3723,11 @@ input UpdateCardInstallmentInput {
 
 input UpdateCategoryInput {
   color: String
+
+  """
+  Leave its movements out of income/expense totals, reports and charts (own categories only; subcategories follow their parent)
+  """
+  excludeFromTotals: Boolean
   icon: String
   kind: CategoryKind
   name: String

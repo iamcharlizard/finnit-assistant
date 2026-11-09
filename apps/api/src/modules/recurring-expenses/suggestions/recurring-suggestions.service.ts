@@ -707,6 +707,7 @@ export class RecurringSuggestionsService {
       parentId: row.parentId ?? undefined,
       sortOrder: row.sortOrder ?? undefined,
       isDefault: row.isDefault,
+      excludeFromTotals: row.excludeFromTotals,
       kind: row.kind,
       icon: row.icon,
       color: row.color,

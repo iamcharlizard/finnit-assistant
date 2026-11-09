@@ -11,12 +11,14 @@ export interface SettingsCategory {
   isDefault: boolean;
   hidden: boolean;
   editable: boolean;
+  /** Left out of income/expense totals, reports and charts. */
+  excludeFromTotals: boolean;
 }
 
 export type CategoryKind = 'expense' | 'income';
 
 export const SETTINGS_CATEGORY_FIELDS =
-  'id name parentId key kind icon sortOrder isDefault hidden editable';
+  'id name parentId key kind icon sortOrder isDefault hidden editable excludeFromTotals';
 
 export const CATEGORY_KINDS: ReadonlyArray<CategoryKind> = [
   'expense',

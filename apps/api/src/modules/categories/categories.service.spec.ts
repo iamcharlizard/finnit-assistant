@@ -16,6 +16,7 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   icon: null,
   color: null,
   sortOrder: null,
+  excludeFromTotals: false,
   createdAt: new Date('2026-10-13'),
   children: [],
   translations: [
@@ -44,6 +45,22 @@ describe('CategoriesService', () => {
   });
 
   describe('create', () => {
+    it('leaves a subcategory of an excluded category out too', async () => {
+      prisma.category.findFirst
+        .mockResolvedValueOnce(
+          row({ id: 'parent', excludeFromTotals: true }) as never,
+        )
+        .mockResolvedValueOnce(null);
+      prisma.category.create.mockResolvedValue(row());
+
+      await service.create('user-1', { name: 'Mascotas', parentId: 'parent' });
+
+      expect(prisma.category.create.mock.calls[0][0].data).toMatchObject({
+        parentId: 'parent',
+        excludeFromTotals: true,
+      });
+    });
+
     it('stores the English name and both translations', async () => {
       prisma.category.findFirst.mockResolvedValue(null);
       prisma.category.create.mockResolvedValue(row());
@@ -99,6 +116,35 @@ describe('CategoriesService', () => {
   });
 
   describe('update', () => {
+    it('leaves a category and its subcategories out of the totals', async () => {
+      prisma.category.findFirst.mockResolvedValueOnce(row());
+      prisma.category.update.mockResolvedValue(
+        row({ excludeFromTotals: true }),
+      );
+
+      const result = await service.update('cat-1', 'user-1', {
+        excludeFromTotals: true,
+      });
+
+      expect(prisma.category.update.mock.calls[0][0].data).toMatchObject({
+        excludeFromTotals: true,
+      });
+      expect(prisma.category.updateMany).toHaveBeenCalledWith({
+        where: { parentId: 'cat-1', userId: 'user-1' },
+        data: { excludeFromTotals: true },
+      });
+      expect(result.excludeFromTotals).toBe(true);
+    });
+
+    it('does not touch the subcategories when the flag stays', async () => {
+      prisma.category.findFirst.mockResolvedValueOnce(row());
+      prisma.category.update.mockResolvedValue(row());
+
+      await service.update('cat-1', 'user-1', { icon: 'pets' });
+
+      expect(prisma.category.updateMany).not.toHaveBeenCalled();
+    });
+
     it('re-translates on rename and upserts both locales', async () => {
       prisma.category.findFirst
         .mockResolvedValueOnce(
@@ -147,6 +193,7 @@ describe('CategoriesService', () => {
       expect(prisma.category.update.mock.calls[0][0].data).toEqual({
         parentId: null,
         kind: 'expense',
+        excludeFromTotals: false,
         sortOrder: 2,
       });
     });

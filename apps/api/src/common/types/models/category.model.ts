@@ -60,6 +60,12 @@ export class Category {
   })
   color?: string | null;
 
+  @Field({
+    description:
+      "The user's own category left out of income/expense totals, reports and charts (its movements stay in the history and move balances)",
+  })
+  excludeFromTotals: boolean;
+
   @Field({ nullable: true })
   userId?: string;
 

@@ -1,3 +1,4 @@
+import { countedInTotalsWhere } from '../categories/category-scope';
 import { Test, TestingModule } from '@nestjs/testing';
 import { mockDeep, DeepMockProxy } from 'jest-mock-extended';
 import { BudgetsService, budgetMonthRange } from './budgets.service';
@@ -501,10 +502,15 @@ describe('BudgetsService', () => {
             gte: new Date('2024-01-01T00:00:00.000Z'),
             lt: new Date('2024-02-01T00:00:00.000Z'),
           },
-          OR: [
-            { categoryId: mockCategoryId },
-            { category: { parentId: mockCategoryId } },
-            { category: { parent: { parentId: mockCategoryId } } },
+          AND: [
+            {
+              OR: [
+                { categoryId: mockCategoryId },
+                { category: { parentId: mockCategoryId } },
+                { category: { parent: { parentId: mockCategoryId } } },
+              ],
+            },
+            countedInTotalsWhere(),
           ],
         },
         _sum: { amount: true },
@@ -583,6 +589,7 @@ describe('BudgetsService', () => {
             gte: new Date('2024-01-01T00:00:00.000Z'),
             lt: new Date('2024-02-01T00:00:00.000Z'),
           },
+          AND: [countedInTotalsWhere()],
         },
         _sum: { amount: true },
       });

@@ -157,6 +157,9 @@ export class CategoriesService {
       ? await this.rootParent(userId, input.parentId)
       : null;
     const kind = parent?.kind ?? input.kind ?? CategoryKind.expense;
+    // A subcategory of one left out of the totals is left out too.
+    const excludeFromTotals =
+      parent?.excludeFromTotals || (input.excludeFromTotals ?? false);
 
     const names = await this.translation.translateName(typedName);
     const name = names.en.name;
@@ -172,6 +175,7 @@ export class CategoriesService {
           icon: input.icon ?? null,
           color: input.color ?? null,
           sortOrder: input.sortOrder,
+          excludeFromTotals,
           isDefault: false,
           translations: {
             create: APP_LOCALES.map((locale) => ({
@@ -235,6 +239,8 @@ export class CategoriesService {
     // subcategories can become one.
     let parentId = existing.parentId;
     let kind = existing.kind;
+    let excludeFromTotals =
+      input.excludeFromTotals ?? existing.excludeFromTotals;
     if (input.parentId !== undefined) {
       if (input.parentId === id) {
         throw new ValidationError('Category cannot be its own parent');
@@ -248,6 +254,7 @@ export class CategoriesService {
         const parent = await this.rootParent(userId, input.parentId);
         parentId = parent.id;
         kind = parent.kind;
+        if (parent.excludeFromTotals) excludeFromTotals = true;
       } else {
         parentId = null;
       }
@@ -268,6 +275,7 @@ export class CategoriesService {
           data: {
             parentId,
             kind,
+            excludeFromTotals,
             ...(input.icon !== undefined && { icon: input.icon }),
             ...(input.color !== undefined && { color: input.color }),
             ...(input.sortOrder !== undefined && {
@@ -301,6 +309,13 @@ export class CategoriesService {
           await tx.category.updateMany({
             where: { parentId: id, userId },
             data: { kind },
+          });
+        }
+        // Its subcategories follow it in or out of the totals.
+        if (excludeFromTotals !== existing.excludeFromTotals) {
+          await tx.category.updateMany({
+            where: { parentId: id, userId },
+            data: { excludeFromTotals },
           });
         }
         return row;
@@ -605,10 +620,15 @@ export class CategoriesService {
   private async rootParent(
     userId: string,
     parentId: string,
-  ): Promise<{ id: string; kind: CategoryKind }> {
+  ): Promise<{ id: string; kind: CategoryKind; excludeFromTotals: boolean }> {
     const parent = await this.prisma.category.findFirst({
       where: { id: parentId, ...visibleCategoryWhere(userId) },
-      select: { id: true, kind: true, parentId: true },
+      select: {
+        id: true,
+        kind: true,
+        parentId: true,
+        excludeFromTotals: true,
+      },
     });
     if (!parent) {
       throw new NotFoundError('Parent category not found');
@@ -700,6 +720,7 @@ export class CategoriesService {
       name: category.name,
       key: category.key,
       isDefault: category.isDefault,
+      excludeFromTotals: category.excludeFromTotals,
       kind: category.kind,
       icon: category.icon,
       color: category.color,

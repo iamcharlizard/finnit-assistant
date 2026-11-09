@@ -89,10 +89,12 @@
     "expense": "Gasto",
     "income": "Ingreso",
     "transfer": "Transferencia",
+    "cardPayment": "Pago a tarjeta",
     "kindHints": {
       "expense": "Una compra o un pago",
       "income": "Dinero que recibiste",
-      "transfer": "Entre tus cuentas o pago de tarjeta"
+      "transfer": "Entre tus cuentas",
+      "cardPayment": "Abono a tu tarjeta"
     },
     "back": "Regresar",
     "titles": {
@@ -3503,6 +3505,18 @@
     "add": "Agregar «{name}»"
   },
   "transfers": {
+    "cardPayment": {
+      "title": "Registrar como pago a tarjeta",
+      "action": "Registrar como pago a tarjeta de crédito",
+      "descriptionOut": "Estos {amount} pagaron una de tus tarjetas de crédito: dejan de contar como gasto y bajan lo que debes en la tarjeta.",
+      "descriptionIn": "Estos {amount} son un pago que recibió esta tarjeta desde otra de tus cuentas: dejan de contar como ingreso.",
+      "noAccounts": "No tienes otra tarjeta de crédito en la misma moneda.",
+      "toAccount": "Tarjeta que pagaste",
+      "fromAccount": "Cuenta desde la que pagaste",
+      "submit": "Registrar pago",
+      "saving": "Registrando…",
+      "done": "Registrado como pago de tarjeta"
+    },
     "convert": {
       "title": "Convertir en transferencia",
       "action": "Convertir en transferencia",
@@ -3590,6 +3604,9 @@
       "income": "Ingresos"
     },
     "own": "Tuya",
+    "untracked": "No cuenta en sumas",
+    "countInTotals": "Contar en sumas",
+    "leaveOutOfTotals": "No contar en sumas",
     "thisMonth": "{count, plural, =0 {Sin movimientos este mes} one {# movimiento este mes} other {# movimientos este mes}}",
     "hiddenHint": "Oculta: no aparece al elegir categoría",
     "subcategories": "{count, plural, =0 {Sin subcategorías} one {# subcategoría} other {# subcategorías}}",
@@ -3623,6 +3640,9 @@
       "noParent": "Ninguna (categoría principal)",
       "searchParent": "Buscar categoría…",
       "noParents": "Sin resultados.",
+      "excludeFromTotals": "No cuenta en sumas",
+      "excludeFromTotalsHint": "Sus movimientos quedan en el historial y mueven el saldo de su cuenta, pero no suman como ingreso o gasto en totales, análisis, presupuestos ni gráficas. Sus subcategorías hacen lo mismo.",
+      "excludeFromTotalsInherited": "Su categoría principal no cuenta en sumas, así que esta tampoco.",
       "mainHint": "Sin categoría principal, será una nueva categoría principal.",
       "parentHint": "Será una subcategoría de {kind}.",
       "icon": "Icono",

@@ -21,6 +21,7 @@ import type { EntryAccount } from '@finnit/core/new-entry/graphql';
 import {
   isCardPayment,
   transferSources,
+  cardPaymentTargets,
   transferTargets,
 } from '@finnit/core/new-entry/options';
 import { CandidateOption } from '@/components/transfers/convert-transfer-dialog';
@@ -56,7 +57,10 @@ export function TransferForm({
   legPicks,
   onLegPick,
   cardDueDate,
+  onlyCards = false,
 }: {
+  /** "Pago a tarjeta de crédito": the money can only go to a credit card. */
+  onlyCards?: boolean;
   /** Paying a card's cycle: after this day it counts for the next one. */
   cardDueDate?: DayKey;
   /** Movements already recorded that may be its sides (null: not searched). */
@@ -79,8 +83,12 @@ export function TransferForm({
 
   const sources = React.useMemo(() => transferSources(accounts), [accounts]);
   const targets = React.useMemo(
-    () => transferTargets(accounts, draft.fromAccountId),
-    [accounts, draft.fromAccountId],
+    () =>
+      (onlyCards ? cardPaymentTargets : transferTargets)(
+        accounts,
+        draft.fromAccountId,
+      ),
+    [accounts, draft.fromAccountId, onlyCards],
   );
   const from = accounts.find((a) => a.id === draft.fromAccountId);
   const to = accounts.find((a) => a.id === draft.toAccountId);
@@ -142,7 +150,9 @@ export function TransferForm({
           options={sources}
           value={draft.fromAccountId}
           onChange={(fromAccountId) => {
-            const stillValid = transferTargets(accounts, fromAccountId).some(
+            const stillValid = (
+              onlyCards ? cardPaymentTargets : transferTargets
+            )(accounts, fromAccountId).some(
               (o) => o.value === draft.toAccountId,
             );
             set({

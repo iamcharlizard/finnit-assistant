@@ -86,6 +86,25 @@ export async function saveDebt(
   return true;
 }
 
+export const UPDATE_CARD_INSTALLMENT_MUTATION = `mutation UpdateCardInstallment($input: UpdateCardInstallmentInput!) { updateCardInstallment(input: $input) { id } }`;
+
+/**
+ * Changes one installment of a card purchase: its day (with
+ * `shiftFollowing`, the next ones go to that day of the following months)
+ * and its amount.
+ */
+export async function updateCardInstallment(
+  input: {
+    occurrenceId: string;
+    dueDate: DayKey;
+    amount: number;
+    shiftFollowing: boolean;
+  },
+  run: GqlRunner,
+): Promise<void> {
+  await run(UPDATE_CARD_INSTALLMENT_MUTATION, { input });
+}
+
 /** A new debt that is not a loan ("Otra deuda"); returns its id. */
 export async function createOtherDebt(
   form: DebtForm,

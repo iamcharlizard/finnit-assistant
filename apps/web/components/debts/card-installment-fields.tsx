@@ -2,6 +2,9 @@
 
 import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+import { Button } from '@finnit/ui/components/ui/button';
 
 import { Combobox } from '@finnit/ui/components/ui/combobox';
 import { DatePicker } from '@finnit/ui/components/ui/date-picker';
@@ -18,8 +21,12 @@ import { SwitchField } from '@/components/finance/switch-field';
 import { SelectField } from '@/components/recurring/select-field';
 import {
   INSTALLMENT_MONTHS,
+  SCHEDULE_PAGE,
   cardInstallmentPreview,
   cardInstallmentSpan,
+  cardScheduleRows,
+  schedulePage,
+  type ScheduleRow,
   cardTermsOf,
   installmentCards,
   type CardInstallmentErrorCode,
@@ -46,12 +53,15 @@ export function CardInstallmentFields({
   form,
   errors,
   update,
+  updateRow,
   accounts,
   today,
 }: {
   form: CardInstallmentForm;
   errors: CardInstallmentErrors;
   update: (patch: Partial<CardInstallmentForm>) => void;
+  /** One installment changed (a new day moves the next ones too). */
+  updateRow: (index: number, patch: Partial<ScheduleRow>) => void;
   accounts: ApiAccount[];
   today: DayKey;
 }) {
@@ -76,6 +86,9 @@ export function CardInstallmentFields({
   const monthsChoice = customMonths ? OTHER : preset;
 
   const preview = cardInstallmentPreview(form);
+  const rows = cardScheduleRows(form, accounts);
+  const [page, setPage] = React.useState(0);
+  const shown = rows ? schedulePage(rows, page) : null;
   const span = cardInstallmentSpan(form, accounts);
   const hasTerms = Boolean(cardTermsOf(card));
 
@@ -268,6 +281,99 @@ export function CardInstallmentFields({
           </div>
         ) : null}
       </section>
+
+      {rows && shown ? (
+        <section
+          aria-labelledby="card-installments-schedule"
+          className="flex flex-col gap-3 rounded-card border border-outline p-4"
+        >
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3
+              id="card-installments-schedule"
+              className="text-sm font-bold text-on-background"
+            >
+              {tf('scheduleTitle')}
+            </h3>
+            {form.schedule ? (
+              <button
+                type="button"
+                onClick={() => update({ schedule: null })}
+                className="text-xs font-medium text-income hover:underline"
+              >
+                {tf('scheduleReset')}
+              </button>
+            ) : null}
+          </div>
+          <p className="text-xs text-on-surface-variant">
+            {tf('scheduleHint')}
+          </p>
+          <ol className="flex flex-col gap-2">
+            {shown.rows.map((row, i) => {
+              const index = shown.start + i;
+              const number = index + 1;
+              return (
+                <li
+                  key={index}
+                  className="grid items-center gap-2 sm:grid-cols-[4.5rem_1fr_1fr]"
+                >
+                  <span className="text-xs font-medium text-on-surface-variant">
+                    {tf('scheduleNumber', { number, total: rows.length })}
+                  </span>
+                  <DatePicker
+                    aria-label={tf('scheduleDate', { number })}
+                    value={row.day}
+                    onChange={(day) => day && updateRow(index, { day })}
+                    min={form.purchaseDate || undefined}
+                    locale={locale}
+                  />
+                  <MoneyInput
+                    aria-label={tf('scheduleAmount', { number })}
+                    value={row.amount}
+                    currency={currency}
+                    onValueChange={(amount) => updateRow(index, { amount })}
+                  />
+                </li>
+              );
+            })}
+          </ol>
+          {shown.pages > 1 ? (
+            <div className="flex items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={shown.start === 0}
+                onClick={() =>
+                  setPage(Math.max(0, shown.start / SCHEDULE_PAGE - 1))
+                }
+              >
+                <ChevronLeft aria-hidden /> {tf('schedulePrevious')}
+              </Button>
+              <span className="text-xs text-on-surface-variant tabular-nums">
+                {tf('schedulePage', {
+                  from: shown.start + 1,
+                  to: shown.start + shown.rows.length,
+                  total: rows.length,
+                })}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={shown.start + shown.rows.length >= rows.length}
+                onClick={() => setPage(shown.start / SCHEDULE_PAGE + 1)}
+              >
+                {tf('scheduleNext')} <ChevronRight aria-hidden />
+              </Button>
+            </div>
+          ) : null}
+          {errors.schedule ? (
+            <p role="alert" className="text-[13px] text-expense">
+              {errorText(errors.schedule)}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       <div className="flex flex-col gap-1">
         <NumberInput

@@ -1755,6 +1755,19 @@
         "linked": "The whole purchase is linked: the card bills each installment at its cut-off.",
         "unlinked": "Each installment is linked to its charge on the card (automatically when syncing, or from the expense in the history).",
         "open": "See the purchase expense"
+      },
+      "editInstallment": {
+        "action": "Edit installment",
+        "title": "Installment {number} of {total}",
+        "description": "Change the day it is billed and its amount.",
+        "date": "Billing date",
+        "amount": "Amount",
+        "shift": "Move the next ones to that same day of the following months",
+        "save": "Save",
+        "saving": "Saving…",
+        "saved": "Installment saved",
+        "amountRequired": "Type an amount above 0.",
+        "dateRequired": "Choose the billing date."
       }
     },
     "categories": {
@@ -1947,7 +1960,16 @@
       "spanNoTerms": "The card has no cut-off day: one installment a month from the purchase (first on {first}, last on {last}).",
       "purchaseLinked": "It will be linked to the purchase expense: the card bills each installment and the purchase never counts twice as spending.",
       "create": "Save card installments",
-      "saving": "Saving…"
+      "saving": "Saving…",
+      "scheduleTitle": "Installments",
+      "scheduleHint": "Change a date or amount if it doesn't match your statement. Changing a date moves the next ones to that same day of the following months.",
+      "scheduleNumber": "{number} of {total}",
+      "scheduleDate": "Billing date {number}",
+      "scheduleAmount": "Amount {number}",
+      "scheduleReset": "Back to the cut-off dates",
+      "schedulePage": "{from}–{to} of {total}",
+      "schedulePrevious": "Previous",
+      "scheduleNext": "Next"
     },
     "cardInstallmentValidation": {
       "nameRequired": "Type the item.",
@@ -1967,7 +1989,10 @@
       "installmentAmountRequired": "Type the installment.",
       "installmentAmountTooLow": "The installments don't cover the purchase.",
       "installmentsPaidInvalid": "Type a whole number.",
-      "installmentsPaidTooMany": "They cannot be more than the months."
+      "installmentsPaidTooMany": "They cannot be more than the months.",
+      "scheduleDates": "Dates must be in order, from the purchase on, without repeating.",
+      "scheduleAmounts": "Each installment must be above 0.",
+      "scheduleBelowPrincipal": "The installments don't cover the purchase."
     },
     "newKindLabel": "Type"
   },

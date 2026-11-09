@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  LoanType,
   NotificationType,
   OccurrenceMatchSource,
   OccurrenceStatus,
@@ -761,6 +762,16 @@ export class RecurringExpensesService {
     if (
       !expense.active ||
       expense.trackingMode === RecurringTrackingMode.reminder
+    ) {
+      return 0;
+    }
+    // A card purchase in installments stores every installment itself.
+    if (
+      expense.kind === RecurringExpenseKind.installment &&
+      expense.debtId &&
+      (await this.prisma.debt.count({
+        where: { id: expense.debtId, loanType: LoanType.card_installments },
+      })) > 0
     ) {
       return 0;
     }

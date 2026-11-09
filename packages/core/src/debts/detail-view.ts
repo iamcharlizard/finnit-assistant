@@ -45,6 +45,11 @@ export interface ScheduleRow {
   linkOccurrenceId: string | null;
   /** Set when it is paid by a movement, which can be unlinked. */
   unlinkOccurrenceId: string | null;
+  /**
+   * Card purchases in installments: every installment's day and amount can
+   * be changed (`updateCardInstallment`).
+   */
+  editOccurrenceId: string | null;
   /** The movement that paid it (opens its detail). */
   transactionId: string | null;
   /** Moved by the user: the date the schedule gave it, with the year. */
@@ -318,6 +323,10 @@ export function buildLoanDetailView(
           : null,
       unlinkOccurrenceId:
         item.occurrenceId && item.transactionId && status === 'paid'
+          ? item.occurrenceId
+          : null,
+      editOccurrenceId:
+        debt.loanType === 'card_installments' && item.occurrenceId
           ? item.occurrenceId
           : null,
       transactionId: item.transactionId ?? null,

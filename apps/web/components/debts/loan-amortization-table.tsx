@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
-import { CalendarClock, Link2, Receipt, Unlink } from 'lucide-react';
+import { CalendarClock, Link2, Pencil, Receipt, Unlink } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
 import { Button } from '@finnit/ui/components/ui/button';
@@ -47,6 +47,7 @@ export function LoanAmortizationTable({
   onLinkExpense,
   onUnlink,
   onOpenMovement,
+  onEditInstallment,
 }: {
   rows: ScheduleRow[];
   hasBreakdown: boolean;
@@ -59,6 +60,8 @@ export function LoanAmortizationTable({
   /** Takes the expense off a payment. */
   onUnlink: (row: ScheduleRow) => void;
   onOpenMovement: (transactionId: string) => void;
+  /** Card purchases: changes an installment's day and amount. */
+  onEditInstallment?: (row: ScheduleRow) => void;
 }) {
   const td = useTranslations('debts.detail');
   const tl = useTranslations('debts.links');
@@ -166,6 +169,62 @@ export function LoanAmortizationTable({
         header: () => <span className="sr-only">{td('columns.actions')}</span>,
         cell: ({ row }) => {
           const r = row.original;
+          const edit =
+            r.editOccurrenceId && onEditInstallment ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                aria-label={td('editInstallment.action')}
+                title={td('editInstallment.action')}
+                onClick={() => onEditInstallment(r)}
+              >
+                <Pencil aria-hidden />
+              </Button>
+            ) : null;
+          // A card purchase's installment is billed by the card: it is
+          // edited, or linked to its charge, not paid from here.
+          if (r.editOccurrenceId) {
+            return (
+              <span className="flex items-center justify-end gap-1">
+                {edit}
+                {r.unlinkOccurrenceId && r.transactionId ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label={tl('viewMovement')}
+                      title={tl('viewMovement')}
+                      onClick={() => onOpenMovement(r.transactionId!)}
+                    >
+                      <Receipt aria-hidden />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label={tl('unlink.action')}
+                      title={tl('unlink.action')}
+                      onClick={() => onUnlink(r)}
+                    >
+                      <Unlink aria-hidden />
+                    </Button>
+                  </>
+                ) : r.linkOccurrenceId ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="min-h-8 py-1"
+                    onClick={() => onLinkExpense(r)}
+                  >
+                    <Link2 aria-hidden /> {tl('linkPaid')}
+                  </Button>
+                ) : null}
+              </span>
+            );
+          }
           if (r.occurrenceId) {
             return (
               <span className="flex items-center justify-end gap-1">
@@ -245,6 +304,7 @@ export function LoanAmortizationTable({
     onLinkExpense,
     onUnlink,
     onOpenMovement,
+    onEditInstallment,
     td,
     tl,
   ]);

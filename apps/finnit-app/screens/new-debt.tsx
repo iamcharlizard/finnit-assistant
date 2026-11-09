@@ -18,6 +18,7 @@ import {
   newCardInstallmentForm,
   validateCardInstallmentForm,
   withCardInstallmentChange,
+  withScheduleRowChange,
   type CardInstallmentErrors,
   type CardInstallmentForm,
 } from '@finnit/core/debts/card-installments';
@@ -259,6 +260,15 @@ function NewDebtForm({
                 withCardInstallmentChange(current, patch, { accounts, today }),
               );
               clear(setCardErrors, patch);
+            }}
+            updateRow={(index, patch) => {
+              setCard((current) =>
+                withScheduleRowChange(current, index, patch, {
+                  accounts,
+                  today,
+                }),
+              );
+              clear(setCardErrors, { schedule: null });
             }}
             accounts={accounts}
             today={today}

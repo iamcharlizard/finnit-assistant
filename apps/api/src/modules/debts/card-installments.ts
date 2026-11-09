@@ -75,6 +75,8 @@ export interface InstallmentPlan {
    * then on the card's balance has the whole purchase in it.
    */
   purchaseChargedOn: DayKey | null;
+  /** Its stored installments (edited days or amounts), oldest first. */
+  schedule?: ScheduleEntry[];
 }
 
 export interface ScheduledInstallment {
@@ -88,6 +90,9 @@ export function planInstallments(
   plan: InstallmentPlan,
   terms: CardTerms | null,
 ): ScheduledInstallment[] {
+  if (plan.schedule && plan.schedule.length > 0) {
+    return plan.schedule.map((s, i) => ({ ...s, number: i + 1 }));
+  }
   const each = plan.installmentAmount;
   const last = cents(plan.totalToRepay - each * (plan.count - 1));
   return installmentDays(plan.purchaseDay, plan.count, terms).map((day, i) => ({
@@ -150,7 +155,7 @@ export function cycleInstallments(
         debtId: plan.debtId,
         name: plan.name,
         number: item.number,
-        total: plan.count,
+        total: schedule.length,
         amount: item.amount,
         left: cents(futureSum),
       });
@@ -197,4 +202,61 @@ export function fitsInstallment(
     near(charge.amount, target.amount, INSTALLMENT_AMOUNT_TOLERANCE) &&
     daysApart(charge.day, target.day) <= INSTALLMENT_DAYS
   );
+}
+
+/** One installment as stored: the day it is billed and its amount. */
+export interface ScheduleEntry {
+  day: DayKey;
+  amount: number;
+}
+
+/**
+ * The installments a plan starts with: on the card's cut-offs, equal ones
+ * with the last taking the cents left (total − each × (n − 1)).
+ */
+export function defaultSchedule(
+  purchase: DayKey,
+  count: number,
+  terms: CardTerms | null,
+  totalToRepay: number,
+  installmentAmount: number,
+): ScheduleEntry[] {
+  const last = cents(totalToRepay - installmentAmount * (count - 1));
+  return installmentDays(purchase, count, terms).map((day, i) => ({
+    day,
+    amount: i === count - 1 ? last : installmentAmount,
+  }));
+}
+
+/**
+ * Moves installment `index` to `day`; with `following`, the ones after it
+ * go to that same day of the next months (clamped to short months).
+ */
+export function moveInstallment(
+  days: readonly DayKey[],
+  index: number,
+  day: DayKey,
+  following: boolean,
+): DayKey[] {
+  const next = [...days];
+  next[index] = day;
+  if (!following) return next;
+  const { year, month, date } = parts(day);
+  for (let j = index + 1; j < next.length; j++) {
+    next[j] = dayOfMonth(year, month + (j - index), date);
+  }
+  return next;
+}
+
+/** Why a schedule can't be saved, or null: days ascending, amounts > 0. */
+export function scheduleError(
+  schedule: readonly ScheduleEntry[],
+  purchase: DayKey,
+): 'dates' | 'amounts' | null {
+  if (schedule.some((s) => !(s.amount > 0))) return 'amounts';
+  for (let i = 0; i < schedule.length; i++) {
+    if (schedule[i].day < purchase) return 'dates';
+    if (i > 0 && schedule[i].day <= schedule[i - 1].day) return 'dates';
+  }
+  return null;
 }

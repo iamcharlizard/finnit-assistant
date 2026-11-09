@@ -233,6 +233,15 @@ export class CreditCardsService {
             totalToRepay: true,
             principal: true,
             purchaseTransaction: { select: { txnDate: true } },
+            recurringExpense: {
+              select: {
+                occurrences: {
+                  where: { status: { not: OccurrenceStatus.skipped } },
+                  orderBy: { dueDate: 'asc' },
+                  select: { dueDate: true, expectedAmount: true },
+                },
+              },
+            },
           },
         }),
       ]);
@@ -246,6 +255,11 @@ export class CreditCardsService {
       purchaseChargedOn: plan.purchaseTransaction
         ? dayOf(plan.purchaseTransaction.txnDate)
         : null,
+      // Every installment is stored, with the days and amounts the user set.
+      schedule: plan.recurringExpense?.occurrences.map((o) => ({
+        day: dayOf(o.dueDate),
+        amount: Number(o.expectedAmount),
+      })),
     }));
 
     const movements: CycleMovement[] = rows.map((row) => ({

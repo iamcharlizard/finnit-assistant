@@ -412,6 +412,48 @@ export class DebtEdge {
   cursor: string;
 }
 
+@InputType({ description: 'One installment of a card purchase' })
+export class CardInstallmentInput {
+  @Field()
+  @IsDateString()
+  dueDate: Date;
+
+  @Field(() => Float)
+  @IsNumber()
+  @IsPositive()
+  amount: number;
+}
+
+@InputType({
+  description:
+    'Changes one installment of a card purchase: its day (optionally moving the next ones to that day of the following months) and its amount',
+})
+export class UpdateCardInstallmentInput {
+  @Field(() => ID)
+  @IsString()
+  occurrenceId: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsDateString()
+  dueDate?: Date;
+
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  amount?: number;
+
+  @Field({
+    nullable: true,
+    description:
+      'The next installments go to the same day of the following months',
+  })
+  @IsOptional()
+  @IsBoolean()
+  shiftFollowing?: boolean;
+}
+
 @InputType()
 export class CreateDebtInput {
   @Field()
@@ -581,6 +623,14 @@ export class CreateDebtInput {
   })
   @IsOptional()
   historicalPayments?: HistoricalDebtPaymentInput[];
+
+  @Field(() => [CardInstallmentInput], {
+    nullable: true,
+    description:
+      "Card installments: each installment's day and amount when the user changed them (as many as installmentsTotal); none = on the card's cut-offs",
+  })
+  @IsOptional()
+  installmentSchedule?: CardInstallmentInput[];
 
   @Field({
     nullable: true,

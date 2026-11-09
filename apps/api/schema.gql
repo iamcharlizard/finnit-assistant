@@ -56,6 +56,11 @@ input AcceptSuggestionAsLoanInput {
   installmentAmount: Float
 
   """
+  Card installments: each installment's day and amount when the user changed them (as many as installmentsTotal); none = on the card's cut-offs
+  """
+  installmentSchedule: [CardInstallmentInput!]
+
+  """
   Scheduled payments already made before registering the loan; recorded as historical (outside totals)
   """
   installmentsPaid: Int
@@ -666,6 +671,12 @@ type BudgetUsage {
   spent: Float!
 }
 
+"""One installment of a card purchase"""
+input CardInstallmentInput {
+  amount: Float!
+  dueDate: DateTime!
+}
+
 """Purchases in installments an expense on a card can be linked to"""
 type CardInstallmentLinkOptions {
   accountId: ID!
@@ -985,6 +996,11 @@ input CreateDebtInput {
   """Add 16% VAT to the interest"""
   includesVat: Boolean
   installmentAmount: Float
+
+  """
+  Card installments: each installment's day and amount when the user changed them (as many as installmentsTotal); none = on the card's cut-offs
+  """
+  installmentSchedule: [CardInstallmentInput!]
 
   """
   Scheduled payments already made before registering the loan; recorded as historical (outside totals)
@@ -2301,6 +2317,11 @@ type Mutation {
   """
   updateAiModel(id: ID!, input: UpdateAiModelInput!): AiModel!
   updateBudget(id: String!, input: UpdateBudgetInput!): Budget!
+
+  """
+  Changes the day and amount of one installment of a card purchase (optionally moving the next ones to that day of the following months)
+  """
+  updateCardInstallment(input: UpdateCardInstallmentInput!): Debt!
   updateCategory(id: String!, input: UpdateCategoryInput!): Category!
   updateDebt(id: String!, input: UpdateDebtInput!): Debt!
 
@@ -3676,6 +3697,18 @@ input UpdateAiModelInput {
 input UpdateBudgetInput {
   amountTotal: Float
   categories: [BudgetCategoryInput!]
+}
+
+"""
+Changes one installment of a card purchase: its day (optionally moving the next ones to that day of the following months) and its amount
+"""
+input UpdateCardInstallmentInput {
+  amount: Float
+  dueDate: DateTime
+  occurrenceId: ID!
+
+  """The next installments go to the same day of the following months"""
+  shiftFollowing: Boolean
 }
 
 input UpdateCategoryInput {

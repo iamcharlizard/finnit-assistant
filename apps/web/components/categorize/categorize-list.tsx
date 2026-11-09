@@ -231,9 +231,15 @@ export function CategorizeList({
       <div aria-busy={busy === 'suggest' || undefined}>
         {groups.map((group) => (
           <section key={group.day} className="mb-8">
-            <LabelSm as="h2" className="mb-3 block px-1">
-              {group.heading}
-            </LabelSm>
+            {/*
+              Like the history's: the day stays under the toolbar until its
+              last movement scrolls past (--history-day-top, useStickyTops).
+            */}
+            <div className="glass sticky top-[var(--history-day-top,12rem)] z-10 mb-3 flex items-baseline rounded-full border border-glass-border bg-glass px-4 py-2 shadow-elevation">
+              <LabelSm as="h2" className="block">
+                {group.heading}
+              </LabelSm>
+            </div>
             <div className="flex flex-col gap-2">
               {group.rows.map((row) => (
                 <CategorizeRow

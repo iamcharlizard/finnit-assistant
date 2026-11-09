@@ -10,8 +10,8 @@ import type { MsiRow } from '@finnit/core/debts/insights-view';
 
 /**
  * Card purchases in interest-free (or with-interest) monthly installments.
- * They live in recurring payments and use the card's credit line, so they
- * are listed apart from loans.
+ * They use the card's credit line, so they are listed apart from loans;
+ * each opens its page (older plans live only in recurring payments).
  */
 export function MsiPlans({ rows }: { rows: MsiRow[] }) {
   const t = useTranslations('debts.msi');
@@ -25,12 +25,14 @@ export function MsiPlans({ rows }: { rows: MsiRow[] }) {
         >
           {t('title')}
         </h2>
-        <Link
-          href="/recurring?tab=list"
-          className="text-xs font-medium text-income hover:underline"
-        >
-          {t('manage')}
-        </Link>
+        {rows.some((row) => !row.href) ? (
+          <Link
+            href="/recurring?tab=list"
+            className="text-xs font-medium text-income hover:underline"
+          >
+            {t('manage')}
+          </Link>
+        ) : null}
       </div>
       <p className="px-1 text-xs text-on-surface-variant">{t('hint')}</p>
       <ul className="grid gap-3 @2xl:grid-cols-2 @4xl:grid-cols-3">
@@ -48,7 +50,13 @@ export function MsiPlans({ rows }: { rows: MsiRow[] }) {
               </span>
               <div className="flex min-w-0 flex-1 flex-col">
                 <h3 className="truncate text-sm font-bold text-on-background">
-                  {row.name}
+                  {row.href ? (
+                    <Link href={row.href} className="hover:underline">
+                      {row.name}
+                    </Link>
+                  ) : (
+                    row.name
+                  )}
                 </h3>
                 {row.accountName ? (
                   <p className="truncate text-xs text-on-surface-variant">

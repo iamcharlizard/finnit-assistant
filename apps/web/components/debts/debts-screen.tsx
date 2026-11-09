@@ -2,22 +2,9 @@
 
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  CreditCard,
-  HandCoins,
-  Landmark,
-  Percent,
-  Plus,
-  Wallet,
-} from 'lucide-react';
+import { HandCoins, Landmark, Percent, Plus, Wallet } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@finnit/ui/components/ui/dropdown-menu';
 import {
   Tabs,
   TabsContent,
@@ -31,11 +18,11 @@ import { PageHeader } from '@/components/page-header';
 import { SummaryCard } from '@/components/recurring/summary-card';
 import type { DebtTab, DebtsScreenData } from '@/lib/debts/load';
 import { DEBTS_PATH } from '@finnit/core/debts/view';
+import { isLoanTabDebt, type NewDebtKind } from '@finnit/core/debts/types';
 import { useLocalizer } from '@/lib/i18n/client';
-import { DebtDialog } from './debt-dialog';
 import { DebtList } from './debt-list';
 import { DebtInsights } from './insights/debt-insights';
-import { LoanDialog } from './loan-dialog';
+import { NewDebtDialog } from './new-debt-dialog';
 import { LoansTab } from './loans-tab';
 import { PayoffPlan } from './payoff-plan';
 
@@ -71,42 +58,27 @@ export function DebtsScreen({
   };
   const { t } = useLocalizer();
   const [pending, startTransition] = React.useTransition();
-  const [creating, setCreating] = React.useState(false);
-  const [creatingLoan, setCreatingLoan] = React.useState(false);
+  // "Nueva deuda", open on a kind.
+  const [creating, setCreating] = React.useState<NewDebtKind | null>(null);
 
   const refresh = () => startTransition(() => router.refresh());
-  const others = view.debts.filter((d) => d.kind !== 'loan');
+  // Cards, card purchases in installments and other debts.
+  const others = view.debts.filter((d) => !isLoanTabDebt(d.debt));
 
-  function onCreated(changed: boolean, name: string) {
-    setCreating(false);
-    if (changed) {
-      toast.success(t('debts.toasts.created', { name }));
-      refresh();
-    }
-  }
-
-  function onLoanSaved(id: string, name: string) {
-    setCreatingLoan(false);
+  function onCreated(id: string, name: string) {
+    setCreating(null);
     toast.success(t('debts.toasts.created', { name }));
     router.push(`${DEBTS_PATH}/${id}`);
   }
 
   const newButton = (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button type="button" variant="secondary">
-          <Plus aria-hidden /> {t('debts.new')}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onSelect={() => setCreatingLoan(true)}>
-          <Landmark aria-hidden /> {t('debts.newLoan')}
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => setCreating(true)}>
-          <CreditCard aria-hidden /> {t('debts.newOther')}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      type="button"
+      variant="secondary"
+      onClick={() => setCreating('institutional')}
+    >
+      <Plus aria-hidden /> {t('debts.new')}
+    </Button>
   );
 
   // Changes whenever a number the plan depends on does.
@@ -227,7 +199,7 @@ export function DebtsScreen({
                       <Button
                         type="button"
                         variant="secondary"
-                        onClick={() => setCreatingLoan(true)}
+                        onClick={() => setCreating('institutional')}
                       >
                         <Plus aria-hidden /> {t('loans.new')}
                       </Button>
@@ -254,7 +226,7 @@ export function DebtsScreen({
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => setCreating(true)}
+                      onClick={() => setCreating('card_installments')}
                     >
                       <Plus aria-hidden /> {t('debts.newOther')}
                     </Button>
@@ -267,20 +239,13 @@ export function DebtsScreen({
       )}
 
       {creating ? (
-        <DebtDialog
-          debt={null}
-          accounts={view.accounts}
-          onClose={() => setCreating(false)}
-          onSaved={onCreated}
-        />
-      ) : null}
-      {creatingLoan ? (
-        <LoanDialog
+        <NewDebtDialog
+          initialKind={creating}
           accounts={view.accounts}
           categories={categories}
           today={view.today}
-          onClose={() => setCreatingLoan(false)}
-          onSaved={onLoanSaved}
+          onClose={() => setCreating(null)}
+          onSaved={onCreated}
         />
       ) : null}
     </div>

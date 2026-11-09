@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 
 import { toast } from '@finnit/ui/components/ui/toaster';
 
@@ -10,7 +11,7 @@ import {
 } from '@/components/admin/confirm-dialog';
 import type { BudgetCategory } from '@finnit/core/budgets/types';
 import { debtErrorMessage, deleteDebt } from '@finnit/core/debts/api';
-import type { ApiDebt } from '@finnit/core/debts/types';
+import { isCardInstallments, type ApiDebt } from '@finnit/core/debts/types';
 import type { DebtItem } from '@finnit/core/debts/view';
 import type { DayKey } from '@finnit/core/finance/dates';
 import type { ApiAccount } from '@finnit/core/finance/types';
@@ -38,6 +39,7 @@ export function DebtList({
   onChanged: () => void;
 }) {
   const { t } = useLocalizer();
+  const router = useRouter();
   const [editing, setEditing] = React.useState<ApiDebt | null>(null);
   const [paying, setPaying] = React.useState<DebtItem | null>(null);
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
@@ -91,7 +93,12 @@ export function DebtList({
             item={item}
             busy={busyId === item.id}
             onPay={() => setPaying(item)}
-            onEdit={() => setEditing(item.debt)}
+            // A card purchase is edited on its page (its terms and installments).
+            onEdit={() =>
+              isCardInstallments(item.debt)
+                ? router.push(item.href)
+                : setEditing(item.debt)
+            }
             onDelete={() => askDelete(item)}
           />
         ))}

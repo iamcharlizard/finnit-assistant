@@ -22,6 +22,13 @@ export interface ApiCardPeriod {
   paymentDueDate: string;
   balanceAtStatement: number;
   pendingInstallments: number;
+  /** Installments billed in the cycle (all purchases in installments). */
+  installmentsInCycle: number;
+  /** Installments still to bill after the cut-off. */
+  installmentBalance: number;
+  /** De contado: the no-interest payment without the installments. */
+  cashBalance: number;
+  installments: ApiCardPeriodInstallment[];
   noInterestPayment: number;
   minimumPayment: number | null;
   paid: number;
@@ -36,8 +43,19 @@ export interface ApiCardPeriod {
   currency: string;
 }
 
+/** One installment of a card purchase billed in the cycle. */
+export interface ApiCardPeriodInstallment {
+  debtId: string;
+  name: string;
+  number: number;
+  total: number;
+  amount: number;
+  /** Left to bill after this one. */
+  left: number;
+}
+
 export const CARD_PERIOD_FIELDS =
-  'id accountId periodStart statementDate paymentDueDate balanceAtStatement pendingInstallments noInterestPayment minimumPayment paid remaining status fromStatement connected interestEstimate interestRecorded interestCategoryId interestRateAnnual currency';
+  'id accountId periodStart statementDate paymentDueDate balanceAtStatement pendingInstallments installmentsInCycle installmentBalance cashBalance installments { debtId name number total amount left } noInterestPayment minimumPayment paid remaining status fromStatement connected interestEstimate interestRecorded interestCategoryId interestRateAnnual currency';
 
 /** How many cycles the card's detail loads at a time. */
 export const CARD_PERIODS_PAGE = 6;
@@ -78,6 +96,16 @@ export interface CardPaymentDraft {
   dueDate: DayKey;
 }
 
+export interface CardPeriodPlan {
+  debtId: string;
+  /** "Pantalla · 3 de 12" */
+  label: string;
+  amount: string;
+  /** "Quedan $9,000.00" (null on the last one). */
+  left: string | null;
+  href: string;
+}
+
 export interface CardPeriodView {
   id: string;
   statementDay: DayKey;
@@ -101,6 +129,16 @@ export interface CardPeriodView {
   minimumPayment: string | null;
   /** MSI of the cycle not on the card yet, included in the payment. */
   pendingInstallments: string | null;
+  /**
+   * The payment split in de contado and this cut-off's installments, and
+   * what is left in installments; null without purchases in installments.
+   */
+  split: {
+    cash: string;
+    installments: string;
+    balance: string;
+    plans: CardPeriodPlan[];
+  } | null;
   /** "27 nov" · "En 3 días" */
   dueDate: string;
   dueRelative: string;
@@ -175,6 +213,28 @@ export function toCardPeriodView(
       period.minimumPayment !== null ? money(period.minimumPayment) : null,
     pendingInstallments:
       period.pendingInstallments > 0 ? money(period.pendingInstallments) : null,
+    split:
+      period.installments.length > 0 || period.installmentBalance > 0
+        ? {
+            cash: money(period.cashBalance),
+            installments: money(period.installmentsInCycle),
+            balance: money(period.installmentBalance),
+            plans: period.installments.map((i) => ({
+              debtId: i.debtId,
+              label: t('cards.period.planRow', {
+                name: i.name,
+                number: i.number,
+                total: i.total,
+              }),
+              amount: money(i.amount),
+              left:
+                i.left > 0
+                  ? t('cards.period.planLeft', { amount: money(i.left) })
+                  : null,
+              href: `/planning/debts/${encodeURIComponent(i.debtId)}`,
+            })),
+          }
+        : null,
     dueDate,
     dueRelative: relativeDayLabel(due, today, locale),
     statementDate: shortDate(cut, locale),

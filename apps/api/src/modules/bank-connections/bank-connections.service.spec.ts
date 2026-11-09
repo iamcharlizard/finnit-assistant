@@ -18,6 +18,7 @@ import {
 } from '../../common/exceptions/graphql-error.exception';
 import { BankConnectionsService } from './bank-connections.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { CardInstallmentsService } from '../debts/card-installments.service';
 import { SyncReviewService } from './sync-review.service';
 import {
   SyncfyClient,
@@ -112,6 +113,7 @@ describe('BankConnectionsService', () => {
       materializer,
       notifications,
       syncReview,
+      mockDeep<CardInstallmentsService>(),
     );
   });
 

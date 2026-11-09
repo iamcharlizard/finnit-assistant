@@ -15,7 +15,7 @@ import {
   type LendingMethod,
   type LoanFrequency,
   type LoanInterestMode,
-  type LoanType,
+  type LoanFormType as LoanType,
 } from './types';
 
 /**
@@ -481,7 +481,9 @@ export const DESCRIPTION_MAX = 200;
  * Purchase financing and personal loans name their first amount, the label
  * of its installments (bank loans are one amount: the name says it).
  */
-export const hasDescription = (loanType: LoanType | null) =>
+export const hasDescription = (
+  loanType: string | null,
+): loanType is 'purchase_financing' | 'personal' =>
   loanType === 'purchase_financing' || loanType === 'personal';
 
 /** CreateDebtInput (and AcceptSuggestionAsLoanInput) of a valid form. */

@@ -19,6 +19,8 @@ import { DebtsService } from './debts.service';
 import { LoansService } from './loans.service';
 import { LoanTrackingService } from './loan-tracking.service';
 import { LoanLinksService } from './loan-links.service';
+import { CardInstallmentsService } from './card-installments.service';
+import { billedInstallments } from './card-installments';
 import { DebtInsightsService } from './debt-insights.service';
 import { RecurringExpensesService } from '../recurring-expenses/recurring-expenses.service';
 import { RecurringSuggestionsService } from '../recurring-expenses/suggestions/recurring-suggestions.service';
@@ -45,6 +47,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
   let loans: LoansService;
   let tracking: LoanTrackingService;
   let links: LoanLinksService;
+  let cardInstallments: CardInstallmentsService;
   let insights: DebtInsightsService;
   let debts: DebtsService;
   let recurring: RecurringExpensesService;
@@ -62,6 +65,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
         LoansService,
         LoanTrackingService,
         LoanLinksService,
+        CardInstallmentsService,
         DebtInsightsService,
         RecurringExpensesService,
         RecurringSuggestionsService,
@@ -87,6 +91,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
     loans = module.get(LoansService);
     tracking = module.get(LoanTrackingService);
     links = module.get(LoanLinksService);
+    cardInstallments = module.get(CardInstallmentsService);
     insights = module.get(DebtInsightsService);
     debts = module.get(DebtsService);
     recurring = module.get(RecurringExpensesService);
@@ -1463,5 +1468,144 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       data: { transactionId: null },
     });
     await debts.delete(debt.id, userId);
+  });
+
+  it('card purchase in installments: cut-off schedule, billed installments, its charge and the card bills the rest', async () => {
+    const card = await prisma.account.create({
+      data: {
+        userId,
+        type: AccountType.credit,
+        name: 'Tarjeta MSI',
+        currency: 'MXN',
+        balanceCurrent: 0,
+        creditCardTerms: { create: { statementDay: 7, paymentDueDay: 27 } },
+      },
+    });
+    const purchase = await prisma.transaction.create({
+      data: {
+        userId,
+        accountId: card.id,
+        type: TransactionType.expense,
+        amount: 6000,
+        balanceEffect: -6000,
+        currency: 'MXN',
+        txnDate: d('2026-06-10'),
+        description: 'LIVERPOOL PANTALLA',
+        merchantName: 'LIVERPOOL',
+        source: TransactionSource.manual,
+      },
+    });
+
+    const debt = await loans.create(userId, {
+      name: 'Pantalla Liverpool',
+      kind: DebtKind.loan,
+      loanType: LoanType.card_installments,
+      principal: 6000,
+      installmentsTotal: 6,
+      startDate: d('2026-06-10'),
+      linkedAccountId: card.id,
+    });
+    const billed = billedInstallments(
+      '2026-06-10',
+      6,
+      { statementDay: 7, paymentDueDay: 27 },
+      iso(new Date()),
+    );
+    expect(debt).toMatchObject({
+      loanType: LoanType.card_installments,
+      totalToRepay: 6000,
+      installmentAmount: 1000,
+      installmentsTotal: 6,
+    });
+    expect(debt.dueDate && iso(debt.dueDate)).toBe('2026-12-07');
+    expect(debt.payments).toHaveLength(billed);
+    expect(debt.payments.every((p) => p.isHistorical)).toBe(true);
+    const rule = await prisma.recurringExpense.findUniqueOrThrow({
+      where: { debtId: debt.id },
+    });
+    expect(rule).toMatchObject({
+      kind: 'installment',
+      accountId: card.id,
+      installmentsTotal: 6,
+    });
+    expect(iso(rule.startDate)).toBe('2026-07-07');
+
+    // The movement can be its whole purchase (it fits) or an installment.
+    const options = await cardInstallments.linkOptions(userId, purchase.id);
+    expect(options.suggestedDebtId).toBe(debt.id);
+    expect(options.suggestedOccurrenceId).toBeUndefined();
+    expect(options.plans[0]).toMatchObject({
+      canLinkPurchase: true,
+      purchaseFits: true,
+    });
+
+    const linked = await cardInstallments.linkPurchase(
+      userId,
+      debt.id,
+      purchase.id,
+    );
+    expect(linked.purchaseTransactionId).toBe(purchase.id);
+    const after = await cardInstallments.linkOptions(userId, purchase.id);
+    expect(after.linked).toMatchObject({ debtId: debt.id, purchase: true });
+    expect(after.plans[0].installments).toEqual([]);
+
+    // Its installments are billed by the card: no movement can pay one.
+    const open = await prisma.recurringOccurrence.findFirst({
+      where: { recurringExpenseId: rule.id, status: OccurrenceStatus.upcoming },
+    });
+    const charge = await prisma.transaction.create({
+      data: {
+        userId,
+        accountId: card.id,
+        type: TransactionType.expense,
+        amount: 1000,
+        balanceEffect: -1000,
+        currency: 'MXN',
+        txnDate: d('2026-12-07'),
+        description: 'LIVERPOOL 06 DE 06',
+        source: TransactionSource.manual,
+      },
+    });
+    if (open) {
+      await expect(links.link(userId, open.id, charge.id)).rejects.toThrow(
+        ConflictError,
+      );
+    }
+    // On its cut-off the card bills it (paid without a movement).
+    const billedNow = await cardInstallments.billInstallments(
+      prisma,
+      debt.id,
+      d('2026-12-31'),
+    );
+    expect(billedNow).toBe(6 - billed);
+    const done = await debts.findById(debt.id, userId);
+    expect(done.remainingBalance).toBe(0);
+    expect(done.status).toBe('paid_off');
+
+    // With interest: given by its rate.
+    const withInterest = await loans.create(userId, {
+      name: 'Laptop 12 meses',
+      kind: DebtKind.loan,
+      loanType: LoanType.card_installments,
+      principal: 12_000,
+      installmentsTotal: 12,
+      interestMode: LoanInterestMode.rate,
+      interestRateAnnual: 30,
+      startDate: d('2026-11-01'),
+      linkedAccountId: card.id,
+      installmentsPaid: 0,
+    });
+    expect(withInterest.totalToRepay).toBeGreaterThan(12_000);
+    await expect(
+      loans.create(userId, {
+        name: 'Sin tarjeta',
+        kind: DebtKind.loan,
+        loanType: LoanType.card_installments,
+        principal: 1000,
+        installmentsTotal: 3,
+        startDate: d('2026-11-01'),
+        linkedAccountId: debitId,
+      }),
+    ).rejects.toThrow(ValidationError);
   });
 });

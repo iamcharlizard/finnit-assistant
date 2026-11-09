@@ -22,7 +22,7 @@ import {
   ExpenseDialog,
   type ExpenseDialogSubject,
 } from '@/components/recurring/expense-dialog';
-import { LoanDialog } from '@/components/debts/loan-dialog';
+import { NewDebtDialog } from '@/components/debts/new-debt-dialog';
 import { ExpenseList } from '@/components/recurring/expense-list';
 import { SuggestionsSection } from '@/components/recurring/suggestions-section';
 import { TabCount } from '@/components/recurring/tab-count';
@@ -281,7 +281,7 @@ export function RecurringScreen({
         />
       ) : null}
       {loanFor ? (
-        <LoanDialog
+        <NewDebtDialog
           fingerprint={loanFor.fingerprint}
           accounts={data.accounts}
           categories={data.categories}

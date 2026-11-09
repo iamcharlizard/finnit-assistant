@@ -6,6 +6,7 @@ import { Link2, Receipt, Unlink } from 'lucide-react-native';
 
 import { buildLoanDetailView, type ScheduleRow, type ScheduleRowStatus } from '@finnit/core/debts/detail-view';
 import { DEBT_DETAIL_QUERY, type DebtDetailResult } from '@finnit/core/debts/request';
+import { isCardInstallments } from '@finnit/core/debts/types';
 import { todayKey } from '@finnit/core/finance/dates';
 import { cn } from '@finnit/ui-native/lib/utils';
 import { TwView } from '@finnit/ui-native/lib/tw';
@@ -99,6 +100,21 @@ export function DebtDetailScreen() {
               </TwView>
             </TwView>
           </Card>
+
+          {isCardInstallments(view.debt) ? (
+            <Card className="gap-2">
+              <Text className="text-sm">{view.debt.purchaseTransactionId ? t('cardPurchase.linked') : t('cardPurchase.unlinked')}</Text>
+              {view.debt.purchaseTransactionId ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  icon={Receipt}
+                  label={t('cardPurchase.open')}
+                  onPress={() => router.push({ pathname: '/transaction/[id]', params: { id: view.debt.purchaseTransactionId! } })}
+                />
+              ) : null}
+            </Card>
+          ) : null}
 
           {view.facts.length > 0 ? (
             <Card className="gap-1">

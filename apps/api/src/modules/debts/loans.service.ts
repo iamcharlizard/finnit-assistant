@@ -71,6 +71,9 @@ import {
   totalOwedOf,
 } from './debt-ledger';
 import { LoanTermsError, resolveLoanTerms } from './loan-math';
+import { billedInstallments, installmentDays } from './card-installments';
+import { dayKey } from '../credit-cards/credit-card-cycle';
+import { localToday } from '../../common/utils/local-date.util';
 import { visibleCategoryWhere } from '../categories/category-scope';
 
 type Tx = Prisma.TransactionClient;
@@ -117,6 +120,9 @@ export class LoansService {
     fromSuggestion?: FromSuggestion,
   ): Promise<Debt> {
     const loanType = input.loanType;
+    if (loanType === LoanType.card_installments) {
+      input = await this.cardInstallmentsInput(userId, input);
+    }
     const name = input.name?.trim();
     if (!loanType) throw new ValidationError('The loan type is required');
     if (input.kind !== DebtKind.loan) {
@@ -168,16 +174,17 @@ export class LoansService {
     });
 
     const isPurchase = loanType === LoanType.purchase_financing;
+    const isCardInstallments = loanType === LoanType.card_installments;
     const startDate = input.startDate
       ? toDateOnly(new Date(input.startDate))
       : isPurchase && firstPaymentDate
         ? defaultPurchaseDate(firstPaymentDate)
         : undefined;
     if (
-      isPurchase &&
+      (isPurchase || isCardInstallments) &&
       startDate &&
       firstPaymentDate &&
-      startDate >= firstPaymentDate
+      startDate > firstPaymentDate
     ) {
       throw new ValidationError(
         'The purchase date must be before the first payment',
@@ -334,6 +341,7 @@ export class LoansService {
           depositAddsToBalance:
             destination !== DebtChargeDestination.deposit || deposits,
           purposeCategoryId,
+          purchaseTransactionId: input.purchaseTransactionId ?? null,
         },
       });
 
@@ -412,7 +420,9 @@ export class LoansService {
         userId,
         {
           name,
-          kind: RecurringExpenseKind.loan,
+          kind: isCardInstallments
+            ? RecurringExpenseKind.installment
+            : RecurringExpenseKind.loan,
           trackingMode:
             input.trackingMode ??
             (paymentAccount?.type === AccountType.credit ||
@@ -1154,10 +1164,14 @@ export class LoansService {
               : Number(debt.interestRateAnnual),
           includesVat: debt.includesVat,
           totalToRepay:
-            debt.interestMode === LoanInterestMode.total_amount ||
-            !debt.interestMode
-              ? Number(debt.totalToRepay ?? principal)
-              : null,
+            // A card purchase without interest is its price, split.
+            debt.loanType === LoanType.card_installments &&
+            Number(debt.totalToRepay) === Number(debt.principal)
+              ? principal
+              : debt.interestMode === LoanInterestMode.total_amount ||
+                  !debt.interestMode
+                ? Number(debt.totalToRepay ?? principal)
+                : null,
           // Ignored in rate and total modes; a personal loan keeps its payment.
           installmentAmount:
             debt.installmentAmount === null
@@ -1406,16 +1420,126 @@ export class LoansService {
     }
   }
 
-  /** Loan Payments, or Installment Payments for purchase financing. */
+  /** Loan Payments, or Installment Payments for purchases in installments. */
   private paymentCategoryId(
     loanType: LoanType | null,
   ): Promise<string | undefined> {
     return defaultCategoryId(
       this.prisma,
       debtPaymentCategoryKey(
-        loanType === LoanType.purchase_financing ? 'installment' : 'loan',
+        loanType === LoanType.purchase_financing ||
+          loanType === LoanType.card_installments
+          ? 'installment'
+          : 'loan',
       ),
     );
+  }
+
+  /**
+   * A purchase on a credit card in monthly installments, as a fixed-term
+   * loan: the card pays it (and is the linked account), the installments
+   * fall on the card's cut-offs from the purchase date, without interest
+   * unless given, and the installments already billed are worked out when
+   * not given. The purchase's expense, when given, must be on that card.
+   */
+  private async cardInstallmentsInput(
+    userId: string,
+    input: CreateDebtInput,
+  ): Promise<CreateDebtInput> {
+    if (!input.linkedAccountId) {
+      throw new ValidationError('Choose the credit card of the purchase');
+    }
+    const card = await this.prisma.account.findFirst({
+      where: { id: input.linkedAccountId, userId },
+      select: {
+        id: true,
+        type: true,
+        creditCardTerms: {
+          select: { statementDay: true, paymentDueDay: true },
+        },
+      },
+    });
+    if (!card) throw new NotFoundError('Linked account not found');
+    if (card.type !== AccountType.credit) {
+      throw new ValidationError('Purchases in installments need a credit card');
+    }
+    if (!input.startDate) {
+      throw new ValidationError('The purchase date is required');
+    }
+    const count = input.installmentsTotal;
+    if (!count || count < 1) {
+      throw new ValidationError('The number of months is required');
+    }
+
+    let merchantPattern = input.merchantPattern;
+    if (input.purchaseTransactionId) {
+      const purchase = await this.purchaseExpense(
+        userId,
+        card.id,
+        input.purchaseTransactionId,
+      );
+      merchantPattern ??= purchase.merchantName ?? undefined;
+    }
+
+    const terms = card.creditCardTerms ?? null;
+    const purchaseDay = dayKey(toDateOnly(new Date(input.startDate)));
+    const days = installmentDays(purchaseDay, count, terms);
+    const interestMode = input.interestMode ?? LoanInterestMode.total_amount;
+    return {
+      ...input,
+      kind: DebtKind.loan,
+      paymentFrequency: RecurringFrequency.monthly,
+      firstPaymentDate: new Date(`${days[0]}T00:00:00.000Z`),
+      interestMode,
+      // Without interest it is the price split in equal installments.
+      totalToRepay:
+        interestMode === LoanInterestMode.total_amount
+          ? (input.totalToRepay ?? input.principal)
+          : input.totalToRepay,
+      installmentsPaid:
+        input.installmentsPaid ??
+        billedInstallments(purchaseDay, count, terms, dayKey(localToday())),
+      paymentAccountId: card.id,
+      trackingMode: input.trackingMode ?? RecurringTrackingMode.automatic,
+      destination: DebtChargeDestination.purchase,
+      openingFee: undefined,
+      periodicFee: undefined,
+      merchantPattern,
+    };
+  }
+
+  /** An expense of the user on `cardId` not already the purchase of a debt. */
+  private async purchaseExpense(
+    userId: string,
+    cardId: string,
+    transactionId: string,
+    exceptDebtId?: string,
+  ) {
+    const purchase = await this.prisma.transaction.findFirst({
+      where: { id: transactionId, userId },
+      select: {
+        id: true,
+        accountId: true,
+        type: true,
+        merchantName: true,
+        debtPurchase: { select: { id: true } },
+      },
+    });
+    if (!purchase) throw new NotFoundError('Transaction not found');
+    if (
+      purchase.accountId !== cardId ||
+      purchase.type !== TransactionType.expense
+    ) {
+      throw new ValidationError(
+        'The purchase must be an expense on the same card',
+      );
+    }
+    if (purchase.debtPurchase && purchase.debtPurchase.id !== exceptDebtId) {
+      throw new ConflictError(
+        'This expense is already the purchase of another plan',
+      );
+    }
+    return purchase;
   }
 
   /** What the money was for: one of the user's categories (informative). */

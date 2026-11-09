@@ -4,6 +4,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { StatementsModule } from '../statements/statements.module';
 import { TransfersModule } from '../transfers/transfers.module';
 import { CategorizationModule } from '../categorization/categorization.module';
+import { DebtsModule } from '../debts/debts.module';
 import { SyncReviewService } from './sync-review.service';
 import { SyncReviewResolver } from './sync-review.resolver';
 import { BankConnectionsResolver } from './bank-connections.resolver';
@@ -17,6 +18,7 @@ import { SyncfyClient } from './syncfy/syncfy.client';
     NotificationsModule,
     TransfersModule,
     CategorizationModule,
+    DebtsModule,
   ],
   providers: [
     { provide: SyncfyClient, useFactory: () => new SyncfyClient() },

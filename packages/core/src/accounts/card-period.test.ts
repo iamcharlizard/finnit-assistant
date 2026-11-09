@@ -14,6 +14,10 @@ const period = (over: Partial<ApiCardPeriod> = {}): ApiCardPeriod => ({
   paymentDueDate: '2026-11-27T00:00:00.000Z',
   balanceAtStatement: 7000,
   pendingInstallments: 0,
+  installmentsInCycle: 0,
+  installmentBalance: 0,
+  cashBalance: 7000,
+  installments: [],
   noInterestPayment: 7000,
   minimumPayment: null,
   paid: 3000,
@@ -73,6 +77,44 @@ describe('credit card cycles', () => {
         .interest,
       null,
     );
+  });
+
+  it('splits the payment in de contado and the installments of the cut-off', () => {
+    assert.equal(toCardPeriodView(period(), '2026-11-20', es).split, null);
+    const view = toCardPeriodView(
+      period({
+        noInterestPayment: 2000,
+        installmentsInCycle: 1000,
+        installmentBalance: 5000,
+        cashBalance: 1000,
+        installments: [
+          {
+            debtId: 'tv',
+            name: 'Pantalla',
+            number: 1,
+            total: 6,
+            amount: 1000,
+            left: 5000,
+          },
+        ],
+      }),
+      '2026-11-20',
+      es,
+    );
+    assert.deepEqual(view.split, {
+      cash: '$1,000.00',
+      installments: '$1,000.00',
+      balance: '$5,000.00',
+      plans: [
+        {
+          debtId: 'tv',
+          label: 'Pantalla · 1 de 6',
+          amount: '$1,000.00',
+          left: 'Quedan $5,000.00',
+          href: '/planning/debts/tv',
+        },
+      ],
+    });
   });
 
   it('shows a running cycle without payment', () => {

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  LoanType,
   OccurrenceMatchSource,
   OccurrenceStatus,
   Prisma,
@@ -70,7 +71,15 @@ export class LoanLinksService {
     const movement = await this.linkableMovement(userId, transactionId);
     const today = toDateOnly(new Date());
     const debts = await this.prisma.debt.findMany({
-      where: { userId, recurringExpense: { isNot: null } },
+      where: {
+        userId,
+        recurringExpense: { isNot: null },
+        // Card purchases in installments have their own flow.
+        OR: [
+          { loanType: null },
+          { loanType: { not: LoanType.card_installments } },
+        ],
+      },
       include: {
         recurringExpense: {
           include: {
@@ -233,6 +242,26 @@ export class LoanLinksService {
     const movement = await this.linkableMovement(userId, transactionId);
     const expense = occurrence.recurringExpense;
     const debtId = expense.debtId!;
+    const debt = await this.prisma.debt.findUniqueOrThrow({
+      where: { id: debtId },
+      select: {
+        loanType: true,
+        linkedAccountId: true,
+        purchaseTransactionId: true,
+      },
+    });
+    if (debt.loanType === LoanType.card_installments) {
+      if (debt.purchaseTransactionId) {
+        throw new ConflictError(
+          'The whole purchase is on the card: the card bills its installments',
+        );
+      }
+      if (movement.accountId !== debt.linkedAccountId) {
+        throw new ValidationError(
+          'An installment is charged on the card of the purchase',
+        );
+      }
+    }
 
     if (occurrence.status !== OccurrenceStatus.paid) {
       return this.tracking.confirmPayment(userId, occurrenceId, transactionId);

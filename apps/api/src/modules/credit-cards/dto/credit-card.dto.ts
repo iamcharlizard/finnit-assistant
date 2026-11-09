@@ -31,6 +31,29 @@ export enum CreditCardPeriodStatus {
 registerEnumType(CreditCardPeriodStatus, { name: 'CreditCardPeriodStatus' });
 
 @ObjectType({
+  description: "One purchase in installments' installment billed in a cycle",
+})
+export class CreditCardInstallment {
+  @Field(() => ID)
+  debtId: string;
+
+  @Field()
+  name: string;
+
+  @Field(() => Int, { description: 'Which installment: 3 of 12' })
+  number: number;
+
+  @Field(() => Int)
+  total: number;
+
+  @Field(() => Float)
+  amount: number;
+
+  @Field(() => Float, { description: 'Left to bill after this one' })
+  left: number;
+}
+
+@ObjectType({
   description:
     "A credit card's billing cycle (de corte a corte): what was owed at the cut-off, what was paid towards it by the due date and what is left",
 })
@@ -58,6 +81,33 @@ export class CreditCardPeriod {
       'Card installment plans (MSI) due in the cycle and not recorded on the card yet',
   })
   pendingInstallments: number;
+
+  @Field(() => Float, {
+    description:
+      'Installments after the cut-off of purchases already in the balance (owed, not due this cycle)',
+  })
+  deferredInstallments: number;
+
+  @Field(() => Float, {
+    description: 'Installments (MSI and with interest) billed in the cycle',
+  })
+  installmentsInCycle: number;
+
+  @Field(() => Float, {
+    description: 'Installments still to bill after the cut-off',
+  })
+  installmentBalance: number;
+
+  @Field(() => Float, {
+    description:
+      'De contado: the part of the no-interest payment that is not installments',
+  })
+  cashBalance: number;
+
+  @Field(() => [CreditCardInstallment], {
+    description: 'Installments of purchases billed in the cycle',
+  })
+  installments: CreditCardInstallment[];
 
   @Field(() => Float, { description: '"Pago para no generar intereses"' })
   noInterestPayment: number;

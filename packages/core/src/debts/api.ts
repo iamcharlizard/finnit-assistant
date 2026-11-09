@@ -14,6 +14,10 @@ import {
 } from '@finnit/core/debts/charge-form';
 import { buildLoanInput, type LoanForm } from '@finnit/core/debts/loan-form';
 import {
+  buildCardInstallmentInput,
+  type CardInstallmentForm,
+} from '@finnit/core/debts/card-installments';
+import {
   LOAN_CANDIDATE_FIELDS,
   LOAN_DRAFT_FIELDS,
   PAYOFF_FIELDS,
@@ -80,6 +84,28 @@ export async function saveDebt(
   if (!input) return false;
   await run(UPDATE_DEBT_MUTATION, { id: target.id, input });
   return true;
+}
+
+/** A new debt that is not a loan ("Otra deuda"); returns its id. */
+export async function createOtherDebt(
+  form: DebtForm,
+  run: GqlRunner,
+): Promise<string> {
+  const data = await run<{ createDebt: { id: string } }>(CREATE_DEBT_MUTATION, {
+    input: buildCreateDebtInput({ ...form, kind: 'other' }),
+  });
+  return data.createDebt.id;
+}
+
+/** A new card purchase in monthly installments; returns its id. */
+export async function saveCardInstallments(
+  form: CardInstallmentForm,
+  run: GqlRunner,
+): Promise<string> {
+  const data = await run<{ createDebt: { id: string } }>(CREATE_DEBT_MUTATION, {
+    input: buildCardInstallmentInput(form),
+  });
+  return data.createDebt.id;
 }
 
 /** Saves the details tab; the API recomputes the terms if needed. */

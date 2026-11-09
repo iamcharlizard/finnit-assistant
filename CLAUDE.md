@@ -38,7 +38,7 @@ All 11 original GraphQL modules implemented, plus recurring expenses in `apps/ap
 | Statements (PDF import + reconciliation) | `src/modules/statements/` (+ `src/modules/storage/` for S3) |
 | AI model catalog + providers (Anthropic, OpenAI, Gemini) | `src/modules/ai/` |
 | Bank connections (Syncfy aggregation) | `src/modules/bank-connections/` |
-| Loans (types, terms, schedule, charges, historical payments, payment matching, linking expenses to payments, charts) | `src/modules/debts/` (`loans.service.ts`, `loan-tracking.service.ts`, `loan-links.service.ts`, `debt-insights.service.ts`; pure rules in `loan-math.ts`, `loan-links.ts`) |
+| Loans (types, terms, schedule, charges, historical payments, payment matching, linking expenses to payments, charts) and card purchases in installments (`loanType: card_installments`: installments on the card's cut-offs, the whole purchase or an installment linked from an expense, auto-linked after a sync) | `src/modules/debts/` (`loans.service.ts`, `loan-tracking.service.ts`, `loan-links.service.ts`, `card-installments.service.ts`, `debt-insights.service.ts`; pure rules in `loan-math.ts`, `loan-links.ts`, `card-installments.ts`) |
 | Receipts (photo → draft expense: CFDI QR, OCR + rules, AI fallback) | `src/modules/receipts/` |
 | Screenshots (bank app movement list → several movements; account by last digits; "en proceso" movements) | `src/modules/screenshots/` |
 | OCR client (internal `ocr` service, `OCR_SERVICE_URL` / `OCR_SERVICE_TOKEN`) | `src/modules/ocr/` |
@@ -132,6 +132,7 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261118090000_account_include_in_total` (`Account.includeInTotal`, default true: whether the account adds up to the total balance on Inicio and Cuentas y tarjetas; `summarizeBalances` and `accountsBalanceHistory` skip excluded accounts; rollback in `packages/database/scripts/rollbacks/`)
 - `20261119090000_duplicate_suggestions` (`DuplicateSuggestion` + `DuplicateSuggestionStatus`: possible duplicates of one account, merged by `src/modules/duplicates/` (the bank's movement stays) or dismissed as "No es duplicado"; rollback in `packages/database/scripts/rollbacks/`)
 - `20261120090000_card_notifications` (`NotificationType.card_statement`, `card_due`, `card_unpaid`: credit card reminders from `src/modules/credit-cards/`; rollback in `packages/database/scripts/rollbacks/`)
+- `20261121090000_card_installments` + `20261121090100_card_installments_data` (`LoanType.card_installments`, `Debt.purchaseTransactionId`: a credit card purchase in monthly installments is a loan linked to the card; the old MSI plans (recurring expenses of kind installment on a credit card) became such debts; one rollback covers both)
 - `20261013120000_private_attachments`
 - `20261014090000_admin_access_and_ai_features`
 - `20261015090000_category_i18n_and_ai_features` + `20261015090100_ai_feature_defaults` (enum values added in one file can't be used in the same transaction, so the seed rows live in a second file)

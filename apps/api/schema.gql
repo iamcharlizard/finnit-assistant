@@ -103,6 +103,11 @@ input AcceptSuggestionAsLoanInput {
   """
   principal: Float
 
+  """
+  Card installments: the card's expense of the whole purchase (the card is linkedAccountId; startDate is the purchase date)
+  """
+  purchaseTransactionId: String
+
   """What the money was for (informative; the expense is the payments)"""
   purposeCategoryId: String
   startDate: DateTime
@@ -661,6 +666,77 @@ type BudgetUsage {
   spent: Float!
 }
 
+"""Purchases in installments an expense on a card can be linked to"""
+type CardInstallmentLinkOptions {
+  accountId: ID!
+  linked: CardInstallmentLinked
+
+  """Best first"""
+  plans: [CardInstallmentLinkPlan!]!
+  suggestedDebtId: ID
+
+  """The installment to suggest; none = the purchase"""
+  suggestedOccurrenceId: ID
+}
+
+"""A purchase in installments on the same card"""
+type CardInstallmentLinkPlan {
+  """
+  The movement can be its purchase: the purchase has no charge and no installment was linked to a movement
+  """
+  canLinkPurchase: Boolean!
+  debtId: ID!
+  installmentAmount: Float!
+
+  """
+  Installments the movement can be (none once the purchase has its charge: the card bills them)
+  """
+  installments: [CardInstallmentLinkTarget!]!
+  installmentsTotal: Int!
+  name: String!
+
+  """The movement's text names it"""
+  nameMatches: Boolean!
+
+  """The whole purchase"""
+  principal: Float!
+  purchaseDate: DateTime!
+
+  """The movement is close to the whole purchase"""
+  purchaseFits: Boolean!
+
+  """Its purchase already has its charge"""
+  purchaseLinked: Boolean!
+}
+
+"""An installment of a card purchase to link"""
+type CardInstallmentLinkTarget {
+  amount: Float!
+  dueDate: DateTime!
+
+  """Close in amount and date to the movement"""
+  fits: Boolean!
+
+  """Which installment: 3 of 12"""
+  number: Int!
+  occurrenceId: ID!
+
+  """open, overdue or paid_without_movement"""
+  state: String!
+}
+
+"""What the movement is linked to now"""
+type CardInstallmentLinked {
+  debtId: ID!
+  installmentsTotal: Int!
+  name: String!
+  number: Int
+  occurrenceId: ID
+
+  """True: the purchase; false: an installment"""
+  purchase: Boolean!
+}
+
 """
 A card's month: what the statement asks to pay versus the recurring charges expected on it.
 """
@@ -958,6 +1034,11 @@ input CreateDebtInput {
   """
   principal: Float!
 
+  """
+  Card installments: the card's expense of the whole purchase (the card is linkedAccountId; startDate is the purchase date)
+  """
+  purchaseTransactionId: String
+
   """What the money was for (informative; the expense is the payments)"""
   purposeCategoryId: String
   startDate: DateTime
@@ -1057,6 +1138,20 @@ input CreateUserInput {
   role: UserRole
 }
 
+"""One purchase in installments' installment billed in a cycle"""
+type CreditCardInstallment {
+  amount: Float!
+  debtId: ID!
+
+  """Left to bill after this one"""
+  left: Float!
+  name: String!
+
+  """Which installment: 3 of 12"""
+  number: Int!
+  total: Int!
+}
+
 """
 A credit card's billing cycle (de corte a corte): what was owed at the cut-off, what was paid towards it by the due date and what is left
 """
@@ -1066,15 +1161,34 @@ type CreditCardPeriod {
   """Owed at the cut-off"""
   balanceAtStatement: Float!
 
+  """
+  De contado: the part of the no-interest payment that is not installments
+  """
+  cashBalance: Float!
+
   """The card imports from a bank, which records interest by itself"""
   connected: Boolean!
   currency: String!
+
+  """
+  Installments after the cut-off of purchases already in the balance (owed, not due this cycle)
+  """
+  deferredInstallments: Float!
 
   """The amounts come from an imported statement"""
   fromStatement: Boolean!
 
   """<account id>:<cut-off day>"""
   id: ID!
+
+  """Installments still to bill after the cut-off"""
+  installmentBalance: Float!
+
+  """Installments of purchases billed in the cycle"""
+  installments: [CreditCardInstallment!]!
+
+  """Installments (MSI and with interest) billed in the cycle"""
+  installmentsInCycle: Float!
 
   """The "Intereses" category, to record the interest with"""
   interestCategoryId: ID
@@ -1229,6 +1343,11 @@ type Debt {
   """
   periodicFee: Float
   principal: Float!
+
+  """
+  Card installments: the card's charge of the whole purchase, when recorded
+  """
+  purchaseTransactionId: String
 
   """
   What the borrowed money was for (informative; the expense is the payments)
@@ -1730,9 +1849,10 @@ type LoanSuggestionDraft {
 }
 
 """
-institutional: bank or lending company, fixed payments; personal: family or friends, flexible and may grow; purchase_financing: Kueski / Didi, each purchase adds installments on the same due dates
+institutional: bank or lending company, fixed payments; personal: family or friends, flexible and may grow; purchase_financing: Kueski / Didi, each purchase adds installments on the same due dates; card_installments: a credit card purchase in monthly installments (with or without interest), due on the card cut-off dates
 """
 enum LoanType {
+  card_installments
   institutional
   personal
   purchase_financing
@@ -1851,6 +1971,11 @@ type MonthlyReport {
 """A card purchase in interest-free installments"""
 type MsiPlan {
   accountName: String
+
+  """
+  The card installments debt of the plan (null for an old plan that is only a recurring expense)
+  """
+  debtId: String
   id: ID!
   installmentAmount: Float!
   installmentsPaid: Int!
@@ -2011,6 +2136,11 @@ type Mutation {
   linkBankAccount(input: LinkBankAccountInput!, linkedAccountId: ID!): BankSyncResult!
 
   """
+  Links an expense as the card's charge of a whole purchase in installments; the card bills its installments from then on
+  """
+  linkCardInstallmentPurchase(debtId: ID!, transactionId: ID!): Debt!
+
+  """
   Links an expense movement to a loan payment (open, or paid without a movement)
   """
   linkLoanPayment(occurrenceId: ID!, transactionId: ID!): Debt!
@@ -2141,6 +2271,9 @@ type Mutation {
   """Gives the movements of a converted transfer their type back"""
   undoTransferConversion(transferId: ID!): Boolean!
   unlinkBankAccount(linkedAccountId: ID!): BankConnection!
+
+  """Takes the charge off a purchase in installments"""
+  unlinkCardInstallmentPurchase(debtId: ID!): Debt!
 
   """
   Takes the movement off a loan payment; the payment reopens or stays paid without a movement
@@ -2344,6 +2477,11 @@ type Query {
   budgetSummary(month: Float!, year: Float!): BudgetSummary!
   budgetUsage(id: String!): [BudgetUsage!]!
   budgets: [Budget!]!
+
+  """
+  Purchases in installments on an expense's card it can be: the whole purchase or one installment (link an installment with linkLoanPayment)
+  """
+  cardInstallmentLinkOptions(transactionId: ID!): CardInstallmentLinkOptions!
   cardMonthSummary(accountId: String!, month: Int!, year: Int!): CardMonthSummary!
   cashFlowBaseline: CashFlowBaseline!
   cashFlowProjection(monthsAhead: Int! = 6): [CashFlowProjection!]!

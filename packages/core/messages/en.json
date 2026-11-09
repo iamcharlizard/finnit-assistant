@@ -510,7 +510,13 @@
       "terms": "Cut-off and payment days",
       "editTerms": "Cut-off and payment days",
       "saveTerms": "Save",
-      "termsSaved": "Days saved"
+      "termsSaved": "Days saved",
+      "cash": "Regular purchases",
+      "installmentsInCycle": "This cut-off's installments",
+      "installmentBalance": "Installment balance",
+      "plans": "Installments of this cut-off",
+      "planRow": "{name} · {number} of {total}",
+      "planLeft": "{amount} left"
     }
   },
   "accounts": {
@@ -1346,16 +1352,18 @@
       "notLinked": "That payment has no expense linked."
     },
     "newLoan": "Loan",
-    "newOther": "Card or other debt",
+    "newOther": "Compra a meses u otra deuda",
     "loanTypes": {
       "institutional": "Bank or lender",
       "personal": "Personal",
-      "purchase_financing": "Buy now, pay later"
+      "purchase_financing": "Buy now, pay later",
+      "card_installments": "Card installments"
     },
     "loanTypeHints": {
       "institutional": "A bank or lending company (e.g. YoTePresto): fixed payments over a term.",
       "personal": "A relative, friend or acquaintance: payments can vary and the debt can grow if they lend you more.",
-      "purchase_financing": "Kueski, Didi Paga Después and the like: each purchase adds its payments on the same dates."
+      "purchase_financing": "Kueski, Didi Paga Después and the like: each purchase adds its payments on the same dates.",
+      "card_installments": "A purchase on your credit card in monthly installments, with or without interest: the card bills one at each cut-off."
     },
     "loanFrequencies": {
       "weekly": "weekly",
@@ -1742,7 +1750,12 @@
       "rescheduleHint": "Only this payment changes; the rest keep their dates.",
       "rescheduleSave": "Save",
       "rescheduled": "Payment date changed.",
-      "movedFrom": "Was: {date}"
+      "movedFrom": "Was: {date}",
+      "cardPurchase": {
+        "linked": "The whole purchase is linked: the card bills each installment at its cut-off.",
+        "unlinked": "Each installment is linked to its charge on the card (automatically when syncing, or from the expense in the history).",
+        "open": "See the purchase expense"
+      }
     },
     "categories": {
       "institutional": "Banks and lenders",
@@ -1795,12 +1808,13 @@
       "loadNoIncome": "You pay {monthly} a month. Record your income to see how much of it goes to debts."
     },
     "msi": {
-      "title": "Installments on your cards",
+      "title": "Installment purchases on your cards",
       "manage": "See in recurring payments",
-      "hint": "They aren't loans: they use part of your credit line. They come from your recurring payments or statements.",
+      "hint": "They are not loans: they use part of your credit line and the card bills an installment at each cut-off.",
       "progress": "{paid} of {total} payments",
       "installment": "{amount} per payment",
-      "next": "Next: {date}"
+      "next": "Next: {date}",
+      "open": "See purchase"
     },
     "loanEditValidation": {
       "nameRequired": "Enter a name.",
@@ -1892,7 +1906,70 @@
         "saving": "Unlinking…",
         "done": "Expense unlinked"
       }
-    }
+    },
+    "newKinds": {
+      "institutional": "Bank or lender",
+      "personal": "Personal",
+      "purchase_financing": "Buy now, pay later",
+      "card_installments": "Card installments",
+      "other": "Other debt"
+    },
+    "newKindHints": {
+      "institutional": "A bank or lender (e.g. YoTePresto): fixed payments over a term.",
+      "personal": "Family, a friend or someone you know: payments may vary and the debt may grow if they lend you more.",
+      "purchase_financing": "Kueski, Didi Paga Después and the like: every purchase adds its payments on the same dates.",
+      "card_installments": "A purchase on your credit card in monthly installments, with or without interest: the card bills one at each cut-off.",
+      "other": "Any other money you owe: just the amount, the rate and the minimum payment."
+    },
+    "newTitle": "New debt",
+    "newDescription": "A loan, a card purchase in installments or any money you owe.",
+    "cardInstallments": {
+      "card": "Credit card",
+      "cardPlaceholder": "Choose the card",
+      "cardHint": "The card you paid with. Its cut-off dates set each installment.",
+      "noCards": "Add a credit card in Accounts and cards first.",
+      "name": "Item",
+      "namePlaceholder": "E.g. Liverpool TV",
+      "principal": "Purchase total",
+      "months": "Months",
+      "monthsPlaceholder": "E.g. 12",
+      "monthsOption": "{count} months",
+      "monthsOther": "Other",
+      "interest": "Interest",
+      "noInterest": "Interest-free",
+      "withInterest": "With interest",
+      "purchaseDate": "Purchase date",
+      "installmentsPaid": "Installments already billed",
+      "installmentsPaidHint": "Worked out from the card's cut-offs since the purchase date. Correct them if they don't match your statement.",
+      "preview": "{count} installments of {amount} · total {total}",
+      "previewInterest": "Interest: {interest}",
+      "span": "First installment on the {first} cut-off; last on {last}.",
+      "spanNoTerms": "The card has no cut-off day: one installment a month from the purchase (first on {first}, last on {last}).",
+      "purchaseLinked": "It will be linked to the purchase expense: the card bills each installment and the purchase never counts twice as spending.",
+      "create": "Save card installments",
+      "saving": "Saving…"
+    },
+    "cardInstallmentValidation": {
+      "nameRequired": "Type the item.",
+      "nameTooLong": "The item is too long.",
+      "accountRequired": "Choose the card.",
+      "principalRequired": "Type the total.",
+      "principalInvalid": "The amount must be greater than 0.",
+      "principalTooLarge": "The amount is too large.",
+      "monthsRequired": "Type how many months.",
+      "monthsInvalid": "Choose between 1 and 60 months.",
+      "purchaseDateRequired": "Choose the purchase date.",
+      "purchaseDateInFuture": "The purchase date cannot be in the future.",
+      "rateRequired": "Type the annual rate.",
+      "rateInvalid": "The rate must be greater than 0.",
+      "totalRequired": "Type the total to repay.",
+      "totalBelowPrincipal": "The total cannot be less than the purchase.",
+      "installmentAmountRequired": "Type the installment.",
+      "installmentAmountTooLow": "The installments don't cover the purchase.",
+      "installmentsPaidInvalid": "Type a whole number.",
+      "installmentsPaidTooMany": "They cannot be more than the months."
+    },
+    "newKindLabel": "Type"
   },
   "analytics": {
     "emptyTitle": "No data to analyze yet",
@@ -2753,7 +2830,30 @@
       "confirm": "Unlink",
       "done": "Unlinked from the recurring expense"
     },
-    "moreActions": "More actions"
+    "moreActions": "More actions",
+    "linkCardInstallment": {
+      "action": "Link to card installments",
+      "title": "Link to card installments",
+      "description": "Choose whether this {amount} expense on {date} is the whole purchase or one installment.",
+      "loading": "Looking for card installments…",
+      "empty": "There are no installment purchases on this card.",
+      "purchase": "It is the whole purchase",
+      "purchaseMeta": "{amount} purchase on {date}",
+      "installment": "Installment {number} of {total}",
+      "installmentMeta": "{amount} · cut-off {date}",
+      "paidWithout": "{amount} · billed without a movement",
+      "overdue": "{amount} · cut-off {date}, no charge",
+      "billedByCard": "The whole purchase is linked: the card bills its installments.",
+      "purchaseBlocked": "Its installments are already linked to charges.",
+      "proposed": "Suggested",
+      "submit": "Link",
+      "create": "Create card installments from this expense",
+      "linkedPurchase": "It is the purchase of {name}.",
+      "linkedInstallment": "It is installment {number} of {total} of {name}.",
+      "unlink": "Unlink",
+      "done": "Linked to {name}",
+      "unlinked": "Unlinked from {name}"
+    }
   },
   "notifications": {
     "title": "Notifications",

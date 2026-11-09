@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
   Banknote,
+  CalendarClock,
   ChevronRight,
   CreditCard,
   HandCoins,
@@ -28,20 +29,25 @@ import { Progress } from '@finnit/ui/components/ui/progress';
 import { cn } from '@finnit/ui/lib/utils';
 
 import { CATEGORY_COLOR } from '@finnit/core/debts/insights-view';
-import type { DebtCategory } from '@finnit/core/debts/types';
+import {
+  isCardInstallments,
+  type DebtCategory,
+} from '@finnit/core/debts/types';
 import type { DebtItem } from '@finnit/core/debts/view';
 
-const TYPE_ICONS: Record<Exclude<DebtCategory, 'msi'>, typeof Landmark> = {
+const TYPE_ICONS: Record<DebtCategory, typeof Landmark> = {
   institutional: Landmark,
   personal: UserRound,
   purchase_financing: ShoppingBag,
   card: CreditCard,
   other: HandCoins,
+  msi: CalendarClock,
 };
 
 /** Its type for icon and color (same colors as the loan charts). */
-function typeOf(item: DebtItem): Exclude<DebtCategory, 'msi'> {
-  if (item.debt.loanType) return item.debt.loanType;
+function typeOf(item: DebtItem): DebtCategory {
+  if (isCardInstallments(item.debt)) return 'msi';
+  if (item.debt.loanType) return item.debt.loanType as DebtCategory;
   return item.kind === 'card' ? 'card' : 'other';
 }
 
@@ -143,7 +149,7 @@ export function DebtCard({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {item.paidOff ? null : (
+            {item.paidOff || isCardInstallments(item.debt) ? null : (
               <DropdownMenuItem onSelect={onPay}>
                 <Banknote aria-hidden /> {t('card.pay')}
               </DropdownMenuItem>

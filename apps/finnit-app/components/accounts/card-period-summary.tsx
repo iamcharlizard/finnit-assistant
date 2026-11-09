@@ -82,6 +82,51 @@ export function CardPeriodSummary({
           ))}
         </TwView>
       ) : null}
+      {period.split ? (
+        <TwView className="gap-2 rounded-2xl bg-track p-3">
+          <TwView className="flex-row gap-2">
+            {[
+              { label: t('cash'), value: period.split.cash },
+              {
+                label: t('installmentsInCycle'),
+                value: period.split.installments,
+              },
+              { label: t('installmentBalance'), value: period.split.balance },
+            ].map((f) => (
+              <TwView key={f.label} className="flex-1">
+                <Text className="text-xs text-on-surface-variant">
+                  {f.label}
+                </Text>
+                <Text weight="bold" className="text-sm">
+                  {f.value}
+                </Text>
+              </TwView>
+            ))}
+          </TwView>
+          {!compact
+            ? period.split.plans.map((plan) => (
+                <TwView
+                  key={`${plan.debtId}:${plan.label}`}
+                  className="flex-row items-baseline justify-between gap-2"
+                >
+                  <TextLink
+                    label={plan.label}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/planning/debts/[id]',
+                        params: { id: plan.debtId },
+                      })
+                    }
+                  />
+                  <Text className="text-xs text-on-surface-variant">
+                    {plan.amount}
+                    {plan.left ? ` · ${plan.left}` : ''}
+                  </Text>
+                </TwView>
+              ))
+            : null}
+        </TwView>
+      ) : null}
       {!compact && period.pendingInstallments ? (
         <Text className="text-xs text-on-surface-variant">
           {t('pendingInstallments', { amount: period.pendingInstallments })}

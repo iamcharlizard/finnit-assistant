@@ -7,6 +7,8 @@ import { LoanTrackingService } from './loan-tracking.service';
 import { DebtInsightsService } from './debt-insights.service';
 import { LoanLinksResolver } from './loan-links.resolver';
 import { LoanLinksService } from './loan-links.service';
+import { CardInstallmentsService } from './card-installments.service';
+import { CardInstallmentsResolver } from './card-installments.resolver';
 import { AiModule } from '../ai/ai.module';
 import { PrismaService } from '../../services/prisma.service';
 import { RecurringExpensesModule } from '../recurring-expenses/recurring-expenses.module';
@@ -27,8 +29,10 @@ import { TransactionsModule } from '../transactions/transactions.module';
     DebtsResolver,
     LoanLinksService,
     LoanLinksResolver,
+    CardInstallmentsService,
+    CardInstallmentsResolver,
     PrismaService,
   ],
-  exports: [DebtsService],
+  exports: [DebtsService, CardInstallmentsService],
 })
 export class DebtsModule {}

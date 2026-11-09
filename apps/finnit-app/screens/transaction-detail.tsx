@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
 import {
+  CalendarClock,
   CheckCheck,
   CopyCheck,
   Landmark,
@@ -14,7 +15,7 @@ import {
   Unlink,
 } from 'lucide-react-native';
 
-import { todayKey } from '@finnit/core/finance/dates';
+import { dayKeyOf, todayKey } from '@finnit/core/finance/dates';
 import {
   deleteTransaction,
   transactionErrorMessage,
@@ -36,6 +37,7 @@ import { MergeDuplicateSheet } from '@/components/duplicates/merge-duplicate-she
 import { LinkLoanSheet } from '@/components/loan-links/link-loan-sheet';
 import { UnlinkLoanSheet } from '@/components/loan-links/unlink-loan-sheet';
 import { LinkRecurringSheet } from '@/components/recurring-links/link-recurring-sheet';
+import { LinkCardInstallmentSheet } from '@/components/card-installments/link-card-installment-sheet';
 import {
   ActionsSheet,
   type DetailAction,
@@ -64,6 +66,7 @@ export function TransactionDetailScreen() {
   const router = useRouter();
   const today = todayKey();
   const [editing, setEditing] = React.useState(false);
+  const [cardSheet, setCardSheet] = React.useState(false);
   const [loanSheet, setLoanSheet] = React.useState<'link' | 'unlink' | null>(
     null,
   );
@@ -194,6 +197,16 @@ export function TransactionDetailScreen() {
                 icon: Unlink,
                 disabled: busy,
                 run: () => askUnlinkRecurring(view.recurring!.occurrenceId),
+              },
+            ]
+          : []),
+        ...(view.canLinkCardInstallment
+          ? [
+              {
+                key: 'linkCardInstallment',
+                label: t('linkCardInstallment.action'),
+                icon: CalendarClock,
+                run: () => setCardSheet(true),
               },
             ]
           : []),
@@ -334,6 +347,31 @@ export function TransactionDetailScreen() {
                 setRecurringSheet(false);
                 toast.success(t('linkRecurring.done', { name }));
                 changed();
+              }}
+            />
+          ) : null}
+          {cardSheet ? (
+            <LinkCardInstallmentSheet
+              transaction={data.transaction}
+              onClose={() => setCardSheet(false)}
+              onChanged={(message) => {
+                setCardSheet(false);
+                toast.success(message);
+                changed();
+              }}
+              onCreate={() => {
+                setCardSheet(false);
+                router.push({
+                  pathname: '/new-debt',
+                  params: {
+                    kind: 'card_installments',
+                    account: data.transaction.accountId,
+                    amount: data.transaction.amount.toFixed(2),
+                    date: dayKeyOf(data.transaction.txnDate),
+                    name: view.title,
+                    tx: data.transaction.id,
+                  },
+                });
               }}
             />
           ) : null}

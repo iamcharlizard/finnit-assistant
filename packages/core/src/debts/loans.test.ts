@@ -688,6 +688,7 @@ describe('loan detail view', () => {
   const debt: ApiDebtDetail = {
     id: 'loan',
     name: 'YoTePresto',
+    purchaseTransactionId: null,
     description: null,
     kind: 'loan',
     principal: 10_000,

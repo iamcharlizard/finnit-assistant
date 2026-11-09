@@ -13,6 +13,9 @@
 
 export type DayKey = string;
 
+/** The `YYYY-MM-DD` of a date-only value (midnight UTC). */
+export const dayKey = (date: Date): DayKey => date.toISOString().slice(0, 10);
+
 export interface CardTerms {
   statementDay: number;
   paymentDueDay: number;
@@ -53,6 +56,17 @@ export interface CycleFigures extends CycleDates {
   balanceAtStatement: number;
   /** Card installment plans (MSI) of the cycle not recorded on the card yet. */
   pendingInstallments: number;
+  /**
+   * Installments after the cut-off of purchases already in the balance:
+   * owed, but not due this cycle.
+   */
+  deferredInstallments: number;
+  /** Installments billed in this cycle (all plans). */
+  installmentsInCycle: number;
+  /** Installments still to bill after the cut-off (all plans). */
+  installmentBalance: number;
+  /** The part of the no-interest payment that is not installments. */
+  cashBalance: number;
   /** "Pago para no generar intereses". */
   noInterestPayment: number;
   minimumPayment: number | null;
@@ -198,12 +212,18 @@ export function cycleFigures(
     currentBalance,
     movements,
     pendingInstallments = 0,
+    deferredInstallments = 0,
+    installmentsInCycle = 0,
+    installmentBalance = 0,
     statement,
   }: {
     today: DayKey;
     currentBalance: number;
     movements: ReadonlyArray<CycleMovement>;
     pendingInstallments?: number;
+    deferredInstallments?: number;
+    installmentsInCycle?: number;
+    installmentBalance?: number;
     statement?: StatementFigures | null;
   },
 ): CycleFigures {
@@ -218,8 +238,12 @@ export function cycleFigures(
     -balanceAt(cycle.statementDate, currentBalance, movements),
   );
   const balanceAtStatement = cents(statement?.statementBalance ?? computedOwed);
+  // The balance has whole purchases in installments: only this cycle's
+  // installment is due; plans billed month by month add theirs when the
+  // card has no movement for it yet.
   const noInterestPayment = cents(
-    statement?.noInterestPayment ?? computedOwed + pendingInstallments,
+    statement?.noInterestPayment ??
+      Math.max(0, computedOwed + pendingInstallments - deferredInstallments),
   );
   const paid = creditsIn(cycle.statementDate, cycle.paymentDueDate, movements);
   const remaining = cents(Math.max(0, noInterestPayment - paid));
@@ -237,6 +261,10 @@ export function cycleFigures(
     ...cycle,
     balanceAtStatement,
     pendingInstallments: cents(pendingInstallments),
+    deferredInstallments: cents(deferredInstallments),
+    installmentsInCycle: cents(installmentsInCycle),
+    installmentBalance: cents(installmentBalance),
+    cashBalance: cents(Math.max(0, noInterestPayment - installmentsInCycle)),
     noInterestPayment,
     minimumPayment: statement?.minimumPayment ?? null,
     paid,

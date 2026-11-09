@@ -162,7 +162,7 @@ export function LoanDetailsTab({
         />
         {hasDescription(debt.loanType) ? (
           <Input
-            label={t(`debts.loan.description.${debt.loanType!}`)}
+            label={t(`debts.loan.description.${debt.loanType}`)}
             value={form.description}
             maxLength={DESCRIPTION_MAX}
             autoComplete="off"

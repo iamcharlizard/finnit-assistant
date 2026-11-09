@@ -1,17 +1,31 @@
 'use client';
 
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   ArrowDownLeft,
   ArrowLeftRight,
   ArrowUpRight,
   ChevronRight,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react';
 
+import { toast } from '@finnit/ui/components/ui/toaster';
 import { cn } from '@finnit/ui/lib/utils';
 
+import {
+  ConfirmDialog,
+  type ConfirmRequest,
+} from '@/components/admin/confirm-dialog';
 import { useTransactionDrawer } from '@/components/transaction-detail/transaction-drawer';
+import { gql } from '@/lib/graphql/client';
+import { useLocalizer } from '@/lib/i18n/client';
+import {
+  deleteTransfer,
+  transactionErrorMessage,
+} from '@finnit/core/transaction-detail/api';
 import type { HistoryRow, TransferGroup } from '@finnit/core/history/view';
 
 const STATUS_COLOR: Record<HistoryRow['status'], string> = {
@@ -33,6 +47,34 @@ export function TransferGroupCard({
   onDetailChange?: () => void;
 }) {
   const t = useTranslations();
+  const l = useLocalizer();
+  const router = useRouter();
+  const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
+
+  function askDelete() {
+    setConfirm({
+      title: t('history.deleteTransferTitle'),
+      description: t('history.deleteTransferDescription'),
+      confirmLabel: t('history.deleteTransfer'),
+      destructive: true,
+      onConfirm: () => {
+        setConfirm(null);
+        setDeleting(true);
+        deleteTransfer(group.transferId, gql)
+          .then(() => {
+            toast.success(t('history.transferDeleted'));
+            onDetailChange?.();
+            router.refresh();
+          })
+          .catch((error: unknown) => {
+            toast.error(transactionErrorMessage(error, l.t));
+          })
+          .finally(() => setDeleting(false));
+      },
+    });
+  }
+
   const status =
     group.status === 'pending'
       ? t('finance.pending')
@@ -70,6 +112,16 @@ export function TransferGroupCard({
             {status}
           </span>
         </span>
+        <button
+          type="button"
+          onClick={askDelete}
+          disabled={deleting}
+          aria-label={t('history.deleteTransfer')}
+          title={t('history.deleteTransfer')}
+          className="flex size-10 shrink-0 items-center justify-center rounded-full text-on-surface-variant outline-none transition-colors hover:bg-expense/10 hover:text-expense focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-40"
+        >
+          <Trash2 aria-hidden className="size-4" />
+        </button>
       </div>
       <ul
         aria-label={t('history.transfer.sides')}
@@ -88,6 +140,7 @@ export function TransferGroupCard({
           onDetailChange={onDetailChange}
         />
       </ul>
+      <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

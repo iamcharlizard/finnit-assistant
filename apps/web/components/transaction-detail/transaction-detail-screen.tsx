@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import {
   ArrowLeftRight,
   CheckCheck,
+  CopyCheck,
   Landmark,
   PencilLine,
   Trash2,
@@ -29,6 +30,7 @@ import {
 import type { TransactionDetailData } from '@/lib/transaction-detail/load';
 import { UNDO_TRANSFER_CONVERSION_MUTATION } from '@finnit/core/transfers/convert';
 import { ConvertTransferDialog } from '@/components/transfers/convert-transfer-dialog';
+import { MergeDuplicateDialog } from '@/components/duplicates/merge-duplicate-dialog';
 import { LinkLoanDialog } from '@/components/loan-links/link-loan-dialog';
 import { UnlinkLoanDialog } from '@/components/loan-links/unlink-loan-dialog';
 import { AttachmentsCard } from './attachments-card';
@@ -50,7 +52,7 @@ export function TransactionDetailScreen({
   const tl = useTranslations('debts.links');
   const { view } = data;
   const [dialog, setDialog] = React.useState<
-    'edit' | 'convert' | 'linkLoan' | 'unlinkLoan' | null
+    'edit' | 'convert' | 'linkLoan' | 'unlinkLoan' | 'merge' | null
   >(null);
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
   const [deleting, setDeleting] = React.useState(false);
@@ -95,7 +97,10 @@ export function TransactionDetailScreen({
   function askDelete() {
     setConfirm({
       title: tt('deleteTitle'),
-      description: tt('deleteDescription', { account: view.accountLabel }),
+      description: [
+        tt('deleteDescription', { account: view.accountLabel }),
+        ...view.deleteNotes,
+      ].join(' '),
       confirmLabel: tt('delete'),
       destructive: true,
       onConfirm: () => {
@@ -149,6 +154,11 @@ export function TransactionDetailScreen({
         {view.inProcess ? (
           <Button variant="outline" onClick={markApplied} disabled={applying}>
             <CheckCheck aria-hidden /> {tt('markApplied')}
+          </Button>
+        ) : null}
+        {view.mergeable ? (
+          <Button variant="outline" onClick={() => setDialog('merge')}>
+            <CopyCheck aria-hidden /> {tt('markDuplicate')}
           </Button>
         ) : null}
         {view.deleteBlock === null ? (
@@ -229,6 +239,19 @@ export function TransactionDetailScreen({
             setDialog(null);
             toast.success(tl('unlink.done'));
             host.refresh();
+          }}
+        />
+      ) : null}
+      {dialog === 'merge' ? (
+        <MergeDuplicateDialog
+          transaction={data.transaction}
+          onClose={() => setDialog(null)}
+          onMerged={(keptId) => {
+            setDialog(null);
+            toast.success(t('duplicates.toasts.merged'));
+            // This one may be the copy that went: show the one that stays.
+            if (keptId === view.id) host.refresh();
+            else host.show(keptId);
           }}
         />
       ) : null}

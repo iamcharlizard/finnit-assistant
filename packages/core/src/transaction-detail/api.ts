@@ -12,6 +12,8 @@ export const SET_ALIAS_MUTATION = `mutation SetTransactionAlias($id: ID!, $input
 
 export const DELETE_TRANSACTION_MUTATION = `mutation DeleteTransaction($id: String!) { deleteTransaction(id: $id) }`;
 
+export const DELETE_TRANSFER_MUTATION = `mutation DeleteTransfer($transferId: ID!) { deleteTransfer(transferId: $transferId) }`;
+
 export const REMOVE_ATTACHMENT_MUTATION = `mutation RemoveTransactionAttachment($id: String!) { removeTransactionAttachment(id: $id) }`;
 
 export const SIMILAR_CATEGORY_QUERY = `query SimilarCategory($id: ID!) { similarCategory(transactionId: $id) { categoryId source count } }`;
@@ -60,6 +62,14 @@ export async function deleteTransaction(
   await run(DELETE_TRANSACTION_MUTATION, { id });
 }
 
+/** Deletes a whole transfer (from the history's transfer group). */
+export async function deleteTransfer(
+  transferId: string,
+  run: GqlRunner,
+): Promise<void> {
+  await run(DELETE_TRANSFER_MUTATION, { transferId });
+}
+
 export async function removeAttachment(
   id: string,
   run: GqlRunner,
@@ -69,6 +79,17 @@ export async function removeAttachment(
 
 /** API messages are English; show ours in the user's language. */
 const MESSAGES: [RegExp, Parameters<Translate>[0]][] = [
+  [/money of a loan/i, 'transaction.errors.loanMoney'],
+  [/both movements came from the bank/i, 'duplicates.errors.bothBank'],
+  [/only the same amount/i, 'duplicates.errors.notSame'],
+  [/already in a transfer/i, 'duplicates.errors.bothTransfer'],
+  [/already pay a loan/i, 'duplicates.errors.bothLoan'],
+  [/already pay a recurring/i, 'duplicates.errors.bothRecurring'],
+  [/cannot be merged/i, 'duplicates.errors.notMergeable'],
+  [
+    /doesn't match this side|already linked/i,
+    'newEntry.transferLegs.errors.mismatch',
+  ],
   [/part of a transfer|amount of a transfer/i, 'transaction.errors.transfer'],
   [/debt payment/i, 'transaction.errors.debtPayment'],
   [/goal contribution/i, 'transaction.errors.goal'],

@@ -23,7 +23,23 @@ import {
   transferSources,
   transferTargets,
 } from '@finnit/core/new-entry/options';
+import { CandidateOption } from '@/components/transfers/convert-transfer-dialog';
+import { gql } from '@/lib/graphql/client';
+import { useLocalizer } from '@/lib/i18n/client';
+import { accountLabel } from '@finnit/core/finance/accounts';
+import {
+  NEW_LEG,
+  TRANSFER_LEG_CANDIDATES_QUERY,
+  legCandidatesArgs,
+  legChoice,
+  type TransferLegCandidates,
+} from '@finnit/core/transfers/legs';
+import { toMergeSide } from '@finnit/core/duplicates/view';
+import type { ApiTransaction } from '@finnit/core/finance/types';
 import { AmountField } from './amount-field';
+
+/** The user's pick for each side: a movement's id, NEW_LEG, or none yet. */
+export type LegPicks = { from?: string; to?: string };
 
 /** Transferencia between the user's accounts; into a credit card it is a card payment. */
 export function TransferForm({
@@ -35,7 +51,16 @@ export function TransferForm({
   busyLabel,
   submitError,
   onSubmit,
+  legs,
+  onLegs,
+  legPicks,
+  onLegPick,
 }: {
+  /** Movements already recorded that may be its sides (null: not searched). */
+  legs: TransferLegCandidates | null;
+  onLegs: (legs: TransferLegCandidates | null) => void;
+  legPicks: LegPicks;
+  onLegPick: (side: 'from' | 'to', id: string) => void;
   draft: TransferDraft;
   onChange: (draft: TransferDraft) => void;
   accounts: EntryAccount[];
@@ -62,6 +87,35 @@ export function TransferForm({
 
   const set = (patch: Partial<TransferDraft>) =>
     onChange({ ...draft, ...patch });
+
+  // Look for the sides already recorded (e.g. the bank brought the
+  // deposit) a moment after the accounts, amount or date change.
+  const args = legCandidatesArgs({
+    fromAccountId: draft.fromAccountId ?? null,
+    toAccountId: draft.toAccountId ?? null,
+    amount: draft.amount,
+    date: draft.date ?? null,
+  });
+  const argsKey = args ? JSON.stringify(args) : null;
+  React.useEffect(() => {
+    if (!argsKey) {
+      onLegs(null);
+      return;
+    }
+    let live = true;
+    const timer = window.setTimeout(() => {
+      gql<{ transferLegCandidates: TransferLegCandidates }>(
+        TRANSFER_LEG_CANDIDATES_QUERY,
+        JSON.parse(argsKey) as Record<string, unknown>,
+      )
+        .then((data) => live && onLegs(data.transferLegCandidates))
+        .catch(() => live && onLegs(null));
+    }, 400);
+    return () => {
+      live = false;
+      window.clearTimeout(timer);
+    };
+  }, [argsKey, onLegs]);
 
   return (
     <form
@@ -154,6 +208,22 @@ export function TransferForm({
         maxLength={120}
         autoComplete="off"
       />
+      {legs && from && legs.from.length > 0 ? (
+        <LegField
+          account={accountLabel(from)}
+          candidates={legs.from}
+          picked={legPicks.from}
+          onPick={(id) => onLegPick('from', id)}
+        />
+      ) : null}
+      {legs && to && legs.to.length > 0 ? (
+        <LegField
+          account={accountLabel(to)}
+          candidates={legs.to}
+          picked={legPicks.to}
+          onPick={(id) => onLegPick('to', id)}
+        />
+      ) : null}
       {submitError ? (
         <p role="alert" className="text-sm text-expense">
           {submitError}
@@ -167,5 +237,56 @@ export function TransferForm({
             : t('submit.transfer')}
       </Button>
     </form>
+  );
+}
+
+/**
+ * "Ya existe en Mi Cuenta": movements of that side already recorded with
+ * this amount. Using one makes it that side instead of creating a copy;
+ * the only match comes chosen.
+ */
+function LegField({
+  account,
+  candidates,
+  picked,
+  onPick,
+}: {
+  account: string;
+  candidates: ApiTransaction[];
+  picked: string | undefined;
+  onPick: (id: string) => void;
+}) {
+  const t = useTranslations('newEntry.transferLegs');
+  const l = useLocalizer();
+  const chosen = legChoice(candidates, picked) ?? NEW_LEG;
+  return (
+    <div
+      role="radiogroup"
+      aria-label={t('existing', { account })}
+      className="flex flex-col gap-2 rounded-xl border border-outline-variant p-3"
+    >
+      <p className="text-sm font-medium text-on-background">
+        {t('existing', { account })}
+      </p>
+      <p className="text-xs text-on-surface-variant">{t('hint')}</p>
+      {candidates.map((candidate) => {
+        const side = toMergeSide(candidate, l);
+        return (
+          <CandidateOption
+            key={candidate.id}
+            selected={chosen === candidate.id}
+            title={`${t('use')}: ${side.title}`}
+            meta={[side.amount, side.date, side.origin].join(' · ')}
+            onSelect={() => onPick(candidate.id)}
+          />
+        );
+      })}
+      <CandidateOption
+        selected={chosen === NEW_LEG}
+        title={t('new')}
+        meta=""
+        onSelect={() => onPick(NEW_LEG)}
+      />
+    </div>
   );
 }

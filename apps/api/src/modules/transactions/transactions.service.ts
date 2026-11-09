@@ -70,6 +70,13 @@ import {
 } from './transaction.mapper';
 import { visibleCategoryWhere } from '../categories/category-scope';
 import { categorizableWhere } from '../categorization/categorizable';
+import {
+  DISSOLVE_SIDE_SELECT,
+  dissolveTransfer,
+  keptWhenDissolved,
+  transferOfMovement,
+} from '../transfers/transfer-dissolve';
+import { removeMovement } from '../../common/utils/remove-movement.util';
 
 @Injectable()
 export class TransactionsService {
@@ -238,7 +245,10 @@ export class TransactionsService {
       where,
       _sum: { amount: true },
     });
-    const total = groups.reduce((sum, g) => sum + Number(g._sum.amount ?? 0), 0);
+    const total = groups.reduce(
+      (sum, g) => sum + Number(g._sum.amount ?? 0),
+      0,
+    );
     const ids = groups.flatMap((g) => (g.categoryId ? [g.categoryId] : []));
     const names = await loadCategoryI18n(this.prisma, ids, locale);
     return {
@@ -430,6 +440,9 @@ export class TransactionsService {
       select: {
         id: true,
         accountId: true,
+        source: true,
+        originalType: true,
+        _count: { select: { importedMatches: true } },
         account: { select: { name: true, metadata: true } },
       },
     } as const;
@@ -459,6 +472,7 @@ export class TransactionsService {
       accountId: other.accountId,
       accountName: nickname || other.account.name,
       direction: isSource ? 'out' : 'in',
+      keptOnDelete: keptWhenDissolved(other),
     };
   }
 
@@ -540,16 +554,24 @@ export class TransactionsService {
     return transactions.map((transaction) => mapTransaction(transaction));
   }
 
+  /**
+   * Deletes a movement, whatever its source (adjustments excepted):
+   * - a bank or statement one is never imported again;
+   * - one side of a transfer deletes the whole transfer: the other side is
+   *   kept as an expense/income when it came from the bank or was
+   *   converted, and deleted otherwise;
+   * - a loan payment it paid stays as a payment without a movement, and
+   *   goal contributions stay without one;
+   * - the money of a loan is deleted from the loan.
+   */
   async delete(id: string, userId: string): Promise<boolean> {
     const transaction = await this.prisma.transaction.findFirst({
       where: { id, userId },
-      include: {
-        transferFrom: true,
-        transferTo: true,
-        debtPayment: true,
+      select: {
+        ...DISSOLVE_SIDE_SELECT,
         debtCharge: { select: { id: true } },
         debtDisbursement: { select: { id: true } },
-        goalContributions: true,
+        bankDifferenceOf: { select: { id: true } },
       },
     });
 
@@ -565,48 +587,32 @@ export class TransactionsService {
       );
     }
 
-    if (transaction.source !== TransactionSource.manual) {
-      throw new ValidationError('Cannot delete imported transactions');
-    }
-
     // Older adjustments don't record which way they moved the balance, so
     // undoing one could get it wrong: the balance is set again instead.
-    if (transaction.type === TransactionType.adjustment) {
+    if (
+      transaction.type === TransactionType.adjustment ||
+      transaction.bankDifferenceOf
+    ) {
       throw new ValidationError(
         'Balance adjustments cannot be deleted; update the balance instead',
       );
     }
 
-    if (transaction.transferFrom || transaction.transferTo) {
-      throw new ValidationError(
-        'Cannot delete transaction that is part of a transfer',
-      );
-    }
-
-    if (transaction.debtPayment) {
-      throw new ValidationError(
-        'Cannot delete transaction that is a debt payment',
-      );
-    }
-
-    if (transaction.goalContributions.length > 0) {
-      throw new ValidationError(
-        'Cannot delete transaction that has goal contributions',
-      );
-    }
-
     await this.prisma.$transaction(async (tx) => {
-      // Adjust account balance
-      await moveBalance(
-        tx,
-        transaction.accountId,
-        -appliedEffect(effectOf(transaction), transaction.isPending),
-      );
-
-      // Delete transaction
-      await tx.transaction.delete({
-        where: { id },
+      const transfer = await transferOfMovement(tx, {
+        OR: [{ fromTxnId: id }, { toTxnId: id }],
       });
+      if (transfer) {
+        await dissolveTransfer(tx, transfer);
+        // This side may have been kept as an expense/income: it goes too.
+        const still = await tx.transaction.findUnique({
+          where: { id },
+          select: DISSOLVE_SIDE_SELECT,
+        });
+        if (still) await removeMovement(tx, still);
+        return;
+      }
+      await removeMovement(tx, transaction);
     });
 
     return true;
@@ -1054,10 +1060,7 @@ export class TransactionsService {
       and.push(
         filters.categoriesForExpensesOnly
           ? {
-              OR: [
-                { type: { not: TransactionType.expense } },
-                inCategories,
-              ],
+              OR: [{ type: { not: TransactionType.expense } }, inCategories],
             }
           : inCategories,
       );

@@ -1,14 +1,15 @@
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Float, ID } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { TransfersService } from './transfers.service';
 import { TransferConversionService } from './transfer-conversion.service';
 import { TransferSuggestionsService } from './transfer-suggestions.service';
+import { DuplicatesService } from '../duplicates/duplicates.service';
 import { Transfer } from '../../common/types/models/transfer.model';
 import { Transaction } from '../../common/types/models/transaction.model';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../../common/types/models/user.model';
-import { CreateTransferInput } from './dto/transfer.dto';
+import { CreateTransferInput, TransferLegCandidates } from './dto/transfer.dto';
 import {
   ConvertToTransferInput,
   ResolveTransferSuggestionInput,
@@ -23,6 +24,7 @@ export class TransfersResolver {
     private readonly transfersService: TransfersService,
     private readonly conversion: TransferConversionService,
     private readonly suggestions: TransferSuggestionsService,
+    private readonly duplicates: DuplicatesService,
   ) {}
 
   @Query(() => [Transfer])
@@ -43,7 +45,44 @@ export class TransfersResolver {
     @CurrentUser() user: User,
     @Args('input') input: CreateTransferInput,
   ): Promise<any> {
-    return this.transfersService.create(user.id, input);
+    const transfer = await this.transfersService.create(user.id, input);
+    // A side made by hand may be a movement the bank already brought.
+    const made = [
+      input.fromTransactionId ? null : transfer.fromTxnId,
+      input.toTransactionId ? null : transfer.toTxnId,
+    ].filter((id): id is string => Boolean(id));
+    await this.duplicates.detect(user.id, made);
+    return transfer;
+  }
+
+  @Query(() => TransferLegCandidates, {
+    description:
+      'Movements already recorded that may be the sides of a new transfer (same amount, a few days around the date)',
+  })
+  transferLegCandidates(
+    @CurrentUser() user: User,
+    @Args('fromAccountId', { type: () => ID }) fromAccountId: string,
+    @Args('toAccountId', { type: () => ID }) toAccountId: string,
+    @Args('amount', { type: () => Float }) amount: number,
+    @Args('date', { nullable: true }) date?: Date,
+  ): Promise<TransferLegCandidates> {
+    return this.transfersService.legCandidates(user.id, {
+      fromAccountId,
+      toAccountId,
+      amount,
+      date,
+    });
+  }
+
+  @Mutation(() => Boolean, {
+    description:
+      'Deletes a transfer: sides it created are deleted; sides that were expenses/income (or came from the bank) go back to being them',
+  })
+  deleteTransfer(
+    @CurrentUser() user: User,
+    @Args('transferId', { type: () => ID }) transferId: string,
+  ): Promise<boolean> {
+    return this.transfersService.delete(user.id, transferId);
   }
 
   @Query(() => [Transaction], {

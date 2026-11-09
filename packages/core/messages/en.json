@@ -207,6 +207,15 @@
       "withoutAttachment": "Without receipt: it couldn't be uploaded.",
       "attached": "Receipt added to the transaction you already had.",
       "alreadyRegistered": "Done, that transaction was already recorded."
+    },
+    "transferLegs": {
+      "existing": "Already in {account}",
+      "use": "Use this movement",
+      "new": "Create a new one",
+      "hint": "If it’s already recorded (e.g. the bank brought it), use it so the money isn’t counted twice.",
+      "errors": {
+        "mismatch": "That movement no longer matches the transfer. Pick another or create a new one."
+      }
     }
   },
   "errors": {
@@ -432,7 +441,11 @@
       "selectionNamed": "{group}: {names}",
       "selectionCount": "{group}: {count} of {total}"
     },
-    "categorySearch": "Search category"
+    "categorySearch": "Search category",
+    "deleteTransfer": "Delete transfer",
+    "deleteTransferTitle": "Delete this transfer?",
+    "deleteTransferDescription": "Movements created for it are deleted and balances adjusted; those from the bank stay as expenses or income.",
+    "transferDeleted": "Transfer deleted"
   },
   "cards": {
     "count": "{count, plural, one {# card} other {# cards}}",
@@ -2589,9 +2602,7 @@
     "deleteTitle": "Delete this movement?",
     "deleteDescription": "It will be removed from your movements and the balance of {account} will be adjusted. This can't be undone.",
     "deleteBlocked": {
-      "adjustment": "Balance adjustments can't be deleted: fix the balance with “Update balance” on the account.",
-      "imported": "Movements from the bank or card statements can't be deleted.",
-      "transfer": "Transfers can't be deleted from here."
+      "adjustment": "Balance adjustments can’t be deleted: fix the balance with “Update balance” on the account."
     },
     "attachments": {
       "title": "Attachments",
@@ -2617,7 +2628,8 @@
       "imported": "Bank movements only allow changing the category.",
       "category": "That category no longer exists. Pick another one.",
       "attachmentNotFound": "That file no longer exists.",
-      "notFound": "This movement no longer exists."
+      "notFound": "This movement no longer exists.",
+      "loanMoney": "This movement is the money of a loan; delete it from the loan."
     },
     "name": {
       "bankText": "Bank text",
@@ -2653,7 +2665,14 @@
       "failed": "We couldn't load the movement. Try again."
     },
     "loanPaid": "{name} payment due {date}",
-    "loanPaidUnscheduled": "{name} payment"
+    "loanPaidUnscheduled": "{name} payment",
+    "deleteNotes": {
+      "bank": "It came from the bank: it won’t be imported again. If the account is connected, the bank still counts it and it will show as “Difference with the bank”.",
+      "transferBoth": "It’s a transfer: the movement in {account} is deleted too and its balance adjusted.",
+      "transferKeeps": "It’s a transfer: the movement in {account} stays as an expense or income.",
+      "loanPayment": "It paid {name}: the payment stays recorded, without a movement."
+    },
+    "markDuplicate": "Mark as duplicate"
   },
   "notifications": {
     "title": "Notifications",
@@ -3728,6 +3747,44 @@
       "name": "Name",
       "amount": "Per month",
       "monthLabel": "{month}: {amount}"
+    }
+  },
+  "duplicates": {
+    "title": "Possible duplicates",
+    "description": "Movements that look like the same money recorded twice in one account (one by hand, one from the bank).",
+    "origin": {
+      "bank": "Bank",
+      "manual": "Manual"
+    },
+    "merge": "Merge",
+    "notDuplicate": "Not a duplicate",
+    "dialog": {
+      "title": "Mark as duplicate",
+      "pick": "Which one is the same movement?",
+      "pickHint": "Same account, same amount and direction, up to {days} days apart.",
+      "none": "We didn’t find another movement like it in this account.",
+      "keep": "Stays",
+      "drop": "Deleted",
+      "keepHint": "The bank’s stays so syncing keeps adding up.",
+      "name": "Which name to show?",
+      "outcome": "“{name}” ({amount}) will be deleted and the balance of {account} corrected. Its category, notes, attachments and links move to the one that stays.",
+      "bothBank": "Both came from the bank: they can’t be merged. Delete the extra one.",
+      "confirm": "Merge",
+      "merging": "Merging…",
+      "back": "Pick another",
+      "next": "Next"
+    },
+    "toasts": {
+      "merged": "Movements merged",
+      "dismissed": "Done, we won’t suggest them again"
+    },
+    "errors": {
+      "bothBank": "Both movements came from the bank; delete the extra one.",
+      "notSame": "Only movements of the same account, same amount and direction, and close dates can be merged.",
+      "bothTransfer": "Both movements are already part of a transfer.",
+      "bothLoan": "Both movements already pay a loan.",
+      "bothRecurring": "Both movements already pay a recurring bill.",
+      "notMergeable": "Balance adjustments and loan money can’t be merged."
     }
   }
 }

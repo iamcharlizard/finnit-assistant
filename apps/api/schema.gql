@@ -1031,7 +1031,17 @@ input CreateTransferInput {
   amount: Float!
   description: String
   fromAccountId: String!
+
+  """
+  A movement already recorded in the source account that becomes the outgoing side (none is created)
+  """
+  fromTransactionId: ID
   toAccountId: String!
+
+  """
+  A movement already recorded in the destination account that becomes the incoming side (none is created)
+  """
+  toTransactionId: ID
   txnDate: DateTime
 }
 
@@ -1324,6 +1334,36 @@ type DebtUpcomingTotals {
   days30: Float!
   days60: Float!
   days90: Float!
+}
+
+enum DuplicateAction {
+  dismiss
+  merge
+}
+
+"""
+Two movements of one account that look like the same money recorded twice
+"""
+type DuplicateSuggestion {
+  createdAt: DateTime!
+
+  """The one merging deletes"""
+  drop: Transaction!
+  id: ID!
+
+  """The one that stays (the bank’s)"""
+  keep: Transaction!
+}
+
+type DuplicateSuggestionConnection {
+  edges: [DuplicateSuggestionEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type DuplicateSuggestionEdge {
+  cursor: String!
+  node: DuplicateSuggestion!
 }
 
 type Goal {
@@ -1697,6 +1737,29 @@ type MerchantRule {
   updatedAt: DateTime!
 }
 
+"""
+keep: the name of the movement that stays (the bank one); drop: the name of the one deleted
+"""
+enum MergeNameFrom {
+  drop
+  keep
+}
+
+"""
+Two movements of one account that are the same money: one stays (the bank one, when there is one), the other is deleted
+"""
+input MergeTransactionsInput {
+  """The other movement, the same money"""
+  duplicateId: ID!
+
+  """
+  Which one stays when neither came from the bank (default: transactionId)
+  """
+  keepId: ID
+  nameFrom: MergeNameFrom! = keep
+  transactionId: ID!
+}
+
 type MonthlyReport {
   categoryBreakdown: [CategoryExpense!]!
   currency: String!
@@ -1840,6 +1903,11 @@ type Mutation {
   deleteStatementImport(id: ID!): Boolean!
   deleteTransaction(id: String!): Boolean!
 
+  """
+  Deletes a transfer: sides it created are deleted; sides that were expenses/income (or came from the bank) go back to being them
+  """
+  deleteTransfer(transferId: ID!): Boolean!
+
   """Admin only. Blocks sign-in and ends their open sessions."""
   disableUser(id: ID!): AdminUser!
 
@@ -1878,6 +1946,11 @@ type Mutation {
 
   """Marks a manual (or unmatched automatic) payment as paid"""
   markRecurringPaymentPaid(occurrenceId: ID!, transactionId: ID): RecurringOccurrence!
+
+  """
+  Merges two records of the same money: the bank one stays, the other is deleted with its balance; returns the one kept
+  """
+  mergeTransactions(input: MergeTransactionsInput!): Transaction!
 
   """Pays a debt from an account: creates the expense movement and links it"""
   recordDebtPayment(input: RecordDebtPaymentInput!): Debt!
@@ -1922,6 +1995,9 @@ type Mutation {
 
   """Sets a new privacy PIN with the emailed link"""
   resetPrivacyPin(pin: String!, token: String!): Boolean!
+
+  """Merge a suggested pair, or say it is not a duplicate"""
+  resolveDuplicateSuggestion(input: ResolveDuplicateSuggestionInput!): Boolean!
   resolveTransferSuggestion(id: ID!, input: ResolveTransferSuggestionInput!): Boolean!
 
   """
@@ -2216,6 +2292,14 @@ type Query {
   ): DebtInsights!
   debtSummary: DebtSummary!
   debts(after: String, before: String, first: Int, includePayoffProjections: Boolean, kind: DebtKind, last: Int): DebtConnection!
+
+  """
+  Movements of the same account that may be this one recorded again (same amount and direction, a few days apart), closest first
+  """
+  duplicateCandidates(transactionId: ID!): [Transaction!]!
+
+  """Possible duplicates waiting for the user"""
+  duplicateSuggestions(after: String, first: Int = 20): DuplicateSuggestionConnection!
   goal(id: String!): Goal!
 
   """Newest first"""
@@ -2361,6 +2445,11 @@ type Query {
   Movements in other accounts that may be the other side of this expense/income, best first
   """
   transferCandidates(accountId: ID, transactionId: ID!): [Transaction!]!
+
+  """
+  Movements already recorded that may be the sides of a new transfer (same amount, a few days around the date)
+  """
+  transferLegCandidates(amount: Float!, date: DateTime, fromAccountId: ID!, toAccountId: ID!): TransferLegCandidates!
 
   """Bank movements that look like transfers, waiting for review"""
   transferSuggestions(after: String, first: Int = 20): TransferSuggestionConnection!
@@ -2628,6 +2717,12 @@ input RequestPasswordResetInput {
 input ResetPasswordInput {
   newPassword: String!
   token: String!
+}
+
+input ResolveDuplicateSuggestionInput {
+  action: DuplicateAction!
+  id: ID!
+  nameFrom: MergeNameFrom! = keep
 }
 
 input ResolveTransferSuggestionInput {
@@ -3167,8 +3262,24 @@ type TransferCounterpart {
 
   """"out" when this movement is the source side"""
   direction: String!
+
+  """
+  Deleting the transfer keeps the other side as an expense/income (it came from the bank or was converted); false: it is deleted too
+  """
+  keptOnDelete: Boolean!
   transactionId: ID!
   transferId: ID!
+}
+
+"""
+Movements already recorded that may be the sides of a new transfer, best first
+"""
+type TransferLegCandidates {
+  """Money leaving the source"""
+  from: [Transaction!]!
+
+  """Money arriving at the destination"""
+  to: [Transaction!]!
 }
 
 """A bank movement that looks like a transfer between the user's accounts"""

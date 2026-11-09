@@ -28,7 +28,7 @@ All 11 original GraphQL modules implemented, plus recurring expenses in `apps/ap
 | Accounts | `src/modules/accounts/` |
 | Categories | `src/modules/categories/` |
 | Transactions | `src/modules/transactions/` |
-| Transfers (create; convert an expense/income into a transfer and undo it; transfer suggestions after a bank sync) | `src/modules/transfers/` |
+| Transfers (create, also from movements already recorded; delete a whole transfer; convert an expense/income into a transfer and undo it; transfer suggestions after a bank sync) | `src/modules/transfers/` |
 | Budgets | `src/modules/budgets/` |
 | Goals | `src/modules/goals/` |
 | Debts | `src/modules/debts/` |
@@ -45,6 +45,7 @@ All 11 original GraphQL modules implemented, plus recurring expenses in `apps/ap
 | Admin (user access; master/admin rules) | `src/modules/admin/` |
 | Contacts (people the user deals with; lender of personal loans; name only for now) | `src/modules/contacts/` |
 | Categorization (merchant rules, aliases, AI suggestions) | `src/modules/categorization/` |
+| Duplicates (the same money recorded twice: candidates, suggestions after sync/creation, merging; a bank movement replaces a hand-made transfer side) | `src/modules/duplicates/` |
 | Waitlist (public landing sign-ups; `joinWaitlist` public + rate-limited, `waitlistEntries` admin) | `src/modules/waitlist/` |
 
 Auto-generated schema at `apps/api/src/schema.gql`.
@@ -128,6 +129,7 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261103090000_contacts` (`Contact`, `Debt.lenderContactId`; existing personal-loan lenders become contacts; rollback in `packages/database/scripts/rollbacks/`)
 - `20261117090000_default_cash_account` (`Account.isDefaultCash` + partial unique index per user: every user has one cash account, "Efectivo", that can't be deleted, archived or change type; the migration marked each user's oldest open cash account or created one; new users get it on creation and, as a safety net, on sign-in via `ensureDefaultCashAccount` in `modules/accounts/default-cash.ts`; rollback in `packages/database/scripts/rollbacks/`)
 - `20261118090000_account_include_in_total` (`Account.includeInTotal`, default true: whether the account adds up to the total balance on Inicio and Cuentas y tarjetas; `summarizeBalances` and `accountsBalanceHistory` skip excluded accounts; rollback in `packages/database/scripts/rollbacks/`)
+- `20261119090000_duplicate_suggestions` (`DuplicateSuggestion` + `DuplicateSuggestionStatus`: possible duplicates of one account, merged by `src/modules/duplicates/` (the bank's movement stays) or dismissed as "No es duplicado"; rollback in `packages/database/scripts/rollbacks/`)
 - `20261013120000_private_attachments`
 - `20261014090000_admin_access_and_ai_features`
 - `20261015090000_category_i18n_and_ai_features` + `20261015090100_ai_feature_defaults` (enum values added in one file can't be used in the same transaction, so the seed rows live in a second file)

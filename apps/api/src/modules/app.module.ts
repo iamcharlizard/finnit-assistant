@@ -11,6 +11,7 @@ import { AccountsModule } from './accounts/accounts.module';
 import { CategoriesModule } from './categories/categories.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { TransfersModule } from './transfers/transfers.module';
+import { DuplicatesModule } from './duplicates/duplicates.module';
 import { BudgetsModule } from './budgets/budgets.module';
 import { GoalsModule } from './goals/goals.module';
 import { ContactsModule } from './contacts/contacts.module';
@@ -58,6 +59,7 @@ function envFlag(name: string, fallback: boolean): boolean {
     CategoriesModule,
     TransactionsModule,
     TransfersModule,
+    DuplicatesModule,
     BudgetsModule,
     GoalsModule,
     ContactsModule,

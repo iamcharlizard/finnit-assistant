@@ -102,6 +102,8 @@ export function toHistoryRow(
 export interface TransferGroup {
   kind: 'transfer';
   key: string;
+  /** The Transfer (to delete it whole). */
+  transferId: string;
   title: string;
   /** "BBVA Débito → Nu" */
   route: string;
@@ -148,6 +150,7 @@ export function groupTransfers(
     items.push({
       kind: 'transfer',
       key: `transfer:${row.transferId}`,
+      transferId: row.transferId!,
       title: t('history.transfer.title'),
       route: `${out.accountLabel} → ${inbound.accountLabel}`,
       amount: formatMoney(out.value, out.currency, locale),

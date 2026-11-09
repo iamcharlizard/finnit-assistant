@@ -300,7 +300,7 @@ export function ConvertTransferDialog({
   );
 }
 
-function CandidateOption({
+export function CandidateOption({
   selected,
   title,
   meta,

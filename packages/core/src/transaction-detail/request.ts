@@ -17,6 +17,8 @@ export interface TransactionDetailResult {
 
 export interface TransactionDetailData {
   today: DayKey;
+  /** The movement as the API returned it (e.g. for "Marcar como duplicado"). */
+  transaction: TransactionDetail;
   view: TransactionDetailView;
   form: DetailForm;
   currency: string;
@@ -33,6 +35,7 @@ export function buildTransactionDetailData(
   const tx = data.transaction;
   return {
     today,
+    transaction: tx,
     view: toTransactionDetailView(tx, today, l),
     form: detailFormOf(tx),
     currency: tx.currency,

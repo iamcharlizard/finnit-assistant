@@ -1,4 +1,5 @@
-import { InputType, Field } from '@nestjs/graphql';
+import { InputType, Field, ID, ObjectType } from '@nestjs/graphql';
+import { Transaction } from '../../../common/types/models/transaction.model';
 import {
   IsString,
   IsNumber,
@@ -31,4 +32,36 @@ export class CreateTransferInput {
   @IsOptional()
   @IsDateString()
   txnDate?: Date;
+
+  @Field(() => ID, {
+    nullable: true,
+    description:
+      'A movement already recorded in the source account that becomes the outgoing side (none is created)',
+  })
+  @IsOptional()
+  @IsString()
+  fromTransactionId?: string;
+
+  @Field(() => ID, {
+    nullable: true,
+    description:
+      'A movement already recorded in the destination account that becomes the incoming side (none is created)',
+  })
+  @IsOptional()
+  @IsString()
+  toTransactionId?: string;
+}
+
+@ObjectType({
+  description:
+    'Movements already recorded that may be the sides of a new transfer, best first',
+})
+export class TransferLegCandidates {
+  @Field(() => [Transaction], { description: 'Money leaving the source' })
+  from: Transaction[];
+
+  @Field(() => [Transaction], {
+    description: 'Money arriving at the destination',
+  })
+  to: Transaction[];
 }

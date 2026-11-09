@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
-import { CheckCheck, Landmark, PencilLine, Trash2, Undo2, Unlink } from 'lucide-react-native';
+import { CheckCheck, CopyCheck, Landmark, PencilLine, Trash2, Undo2, Unlink } from 'lucide-react-native';
 
 import { todayKey } from '@finnit/core/finance/dates';
 import { deleteTransaction, transactionErrorMessage, updateTransaction } from '@finnit/core/transaction-detail/api';
@@ -17,6 +17,7 @@ import { Button } from '@finnit/ui-native/components/ui/button';
 import { Text } from '@finnit/ui-native/components/ui/text';
 import { toast } from '@finnit/ui-native/components/ui/toaster';
 
+import { MergeDuplicateSheet } from '@/components/duplicates/merge-duplicate-sheet';
 import { LinkLoanSheet } from '@/components/loan-links/link-loan-sheet';
 import { UnlinkLoanSheet } from '@/components/loan-links/unlink-loan-sheet';
 import { Screen } from '@/components/shell/screen';
@@ -42,6 +43,7 @@ export function TransactionDetailScreen() {
   const [editing, setEditing] = React.useState(false);
   const [loanSheet, setLoanSheet] = React.useState<'link' | 'unlink' | null>(null);
   const [busy, setBusy] = React.useState(false);
+  const [merging, setMerging] = React.useState(false);
 
   const { view: data, loading, error, refreshing, refresh } = useView({
     query: TRANSACTION_DETAIL_QUERY,
@@ -72,7 +74,8 @@ export function TransactionDetailScreen() {
 
   function askDelete() {
     if (!data) return;
-    Alert.alert(t('deleteTitle'), t('deleteDescription', { account: data.view.accountLabel }), [
+    const description = [t('deleteDescription', { account: data.view.accountLabel }), ...data.view.deleteNotes].join('\n\n');
+    Alert.alert(t('deleteTitle'), description, [
       { text: tc('cancel'), style: 'cancel' },
       {
         text: t('delete'),
@@ -137,6 +140,7 @@ export function TransactionDetailScreen() {
                 onPress={() => run(() => updateTransaction(view.id, { inProcess: false }, gql), t('markedApplied'))}
               />
             ) : null}
+            {view.mergeable ? <Button variant="outline" icon={CopyCheck} label={t('markDuplicate')} onPress={() => setMerging(true)} /> : null}
             {view.deleteBlock === null ? (
               <Button variant="destructive" icon={Trash2} label={t('delete')} disabled={busy} onPress={askDelete} />
             ) : null}
@@ -145,6 +149,20 @@ export function TransactionDetailScreen() {
             <Text className="-mt-2 text-xs text-on-surface-variant">{t(`deleteBlocked.${view.deleteBlock}`)}</Text>
           ) : null}
           <TransactionFacts view={view} merchant={data.form.merchantName} description={data.form.description} />
+          {merging ? (
+            <MergeDuplicateSheet
+              transaction={data.transaction}
+              onClose={() => setMerging(false)}
+              onMerged={(keptId) => {
+                setMerging(false);
+                toast.success(l.t('duplicates.toasts.merged'));
+                emitTransactionsChanged(null);
+                // This one may be the copy that went: show the one that stays.
+                if (keptId === view.id) refresh();
+                else router.replace({ pathname: '/transaction/[id]', params: { id: keptId } });
+              }}
+            />
+          ) : null}
           {loanSheet === 'link' ? (
             <LinkLoanSheet
               transactionId={view.id}

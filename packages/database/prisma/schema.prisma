@@ -333,6 +333,7 @@ model User {
   merchantTaxIds            MerchantTaxId[]
   hiddenCategories          CategoryHidden[]
   privacyPinResets          PrivacyPinReset[]
+  duplicateSuggestions      DuplicateSuggestion[]
 }
 
 model Account {
@@ -551,12 +552,41 @@ model Transaction {
   receiptMatches            ReceiptImport[]       @relation("receipt_matched_transaction")
   transferSuggestion        TransferSuggestion?   @relation("transfer_suggestion_transaction")
   transferSuggestionMatches TransferSuggestion[]  @relation("transfer_suggestion_counterpart")
+  duplicateKeeps            DuplicateSuggestion[] @relation("duplicate_keep")
+  duplicateDrops            DuplicateSuggestion[] @relation("duplicate_drop")
 
   @@index([userId, txnDate(sort: Desc)])
   @@index([userId, accountId, txnDate(sort: Desc)])
   @@index([source])
   @@index([aliasId])
   @@index([suggestedCategoryId])
+}
+
+enum DuplicateSuggestionStatus {
+  pending
+  dismissed // "No es duplicado": never suggested again
+}
+
+/// Two movements of the same account that look like the same money recorded
+/// twice (usually one by hand and one from the bank). Merging keeps
+/// `keepTxn` (the bank's) and deletes `dropTxn`, so a merged pair disappears
+/// with it; a dismissed one stays to not suggest it again.
+model DuplicateSuggestion {
+  id         String                    @id @default(uuid())
+  userId     String
+  keepTxnId  String
+  dropTxnId  String
+  status     DuplicateSuggestionStatus @default(pending)
+  createdAt  DateTime                  @default(now())
+  resolvedAt DateTime?
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  keepTxn Transaction @relation("duplicate_keep", fields: [keepTxnId], references: [id], onDelete: Cascade)
+  dropTxn Transaction @relation("duplicate_drop", fields: [dropTxnId], references: [id], onDelete: Cascade)
+
+  @@unique([keepTxnId, dropTxnId])
+  @@index([userId, status])
+  @@index([dropTxnId])
 }
 
 /// Display name (and optional category / privacy) for the movements whose

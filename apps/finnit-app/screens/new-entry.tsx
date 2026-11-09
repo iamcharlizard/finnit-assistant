@@ -46,9 +46,10 @@ import { ReceiptCapture } from '@/components/receipts/receipt-capture';
 import { useReceiptReader } from '@/lib/receipts/use-receipt-reader';
 import { EntryForm } from '@/components/new-entry/entry-form';
 import { EntryKindPicker } from '@/components/new-entry/entry-kind-picker';
-import { TransferForm } from '@/components/new-entry/transfer-form';
+import { TransferForm, type LegPicks } from '@/components/new-entry/transfer-form';
 import { useGql } from '@/lib/graphql/runner';
 import { emitTransactionsChanged } from '@/lib/transactions/events';
+import { legChoice, type TransferLegCandidates } from '@finnit/core/transfers/legs';
 
 type Step = { name: 'kind' } | { name: 'entry' } | { name: 'transfer' } | { name: 'receipt' } | { name: 'duplicates'; matches: SimilarTransaction[] };
 type Busy = 'checking' | 'saving' | null;
@@ -72,6 +73,8 @@ export function NewEntryScreen() {
   const [step, setStep] = React.useState<Step>({ name: 'kind' });
   const [entry, setEntry] = React.useState<EntryDraft>(() => emptyEntryDraft('expense', todayKey()));
   const [transfer, setTransfer] = React.useState<TransferDraft>(() => emptyTransferDraft(todayKey()));
+  const [legs, setLegs] = React.useState<TransferLegCandidates | null>(null);
+  const [legPicks, setLegPicks] = React.useState<LegPicks>({});
   const [entryTried, setEntryTried] = React.useState(false);
   const [transferTried, setTransferTried] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -107,6 +110,7 @@ export function NewEntryScreen() {
     setCheck([]);
     if (kind === 'transfer') {
       setTransfer(emptyTransferDraft(todayKey()));
+      setLegPicks({});
       setTransferTried(false);
       setStep({ name: 'transfer' });
     } else {
@@ -210,6 +214,7 @@ export function NewEntryScreen() {
       t(cardPayment ? 'newEntry.defaultCardPaymentDescription' : 'newEntry.defaultTransferDescription', {
         account: accountLabel(to),
       }),
+      { from: legs ? legChoice(legs.from, legPicks.from) : null, to: legs ? legChoice(legs.to, legPicks.to) : null },
     );
     setBusy('saving');
     try {
@@ -289,6 +294,10 @@ export function NewEntryScreen() {
   else if (step.name === 'transfer')
     body = (
       <TransferForm
+        legs={legs}
+        onLegs={setLegs}
+        legPicks={legPicks}
+        onLegPick={(side, id) => setLegPicks((current) => ({ ...current, [side]: id }))}
         draft={transfer}
         onChange={setTransfer}
         accounts={accounts}

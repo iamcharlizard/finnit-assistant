@@ -27,6 +27,7 @@ import {
 } from '../../common/types/models/transaction.model';
 import { TransferDirectionLoader } from './transfer-direction.loader';
 import { PrivacyService } from '../privacy/privacy.service';
+import { DuplicatesService } from '../duplicates/duplicates.service';
 import { TransactionAliasInput } from '../categorization/dto/merchant-alias.dto';
 import {
   TransactionLoanPayment,
@@ -51,6 +52,7 @@ export class TransactionsResolver {
     private readonly transactionsService: TransactionsService,
     private readonly transferDirections: TransferDirectionLoader,
     private readonly privacy: PrivacyService,
+    private readonly duplicates: DuplicatesService,
   ) {}
 
   @ResolveField('displayName', () => String, {
@@ -197,7 +199,10 @@ export class TransactionsResolver {
     @CurrentUser() user: User,
     @Args('input') input: CreateTransactionInput,
   ): Promise<Transaction> {
-    return this.transactionsService.create(user.id, input);
+    const created = await this.transactionsService.create(user.id, input);
+    // The bank may already have it: suggest merging them.
+    await this.duplicates.detect(user.id, [created.id]);
+    return created;
   }
 
   @Mutation(() => Transaction)

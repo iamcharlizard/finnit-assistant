@@ -207,6 +207,15 @@
       "withoutAttachment": "Sin comprobante: no se pudo subir.",
       "attached": "Comprobante agregado al movimiento que ya tenías.",
       "alreadyRegistered": "Listo, ese movimiento ya estaba registrado."
+    },
+    "transferLegs": {
+      "existing": "Ya existe en {account}",
+      "use": "Usar este movimiento",
+      "new": "Crear uno nuevo",
+      "hint": "Si ya está registrado (por ejemplo, lo trajo el banco), úsalo para no contar el dinero dos veces.",
+      "errors": {
+        "mismatch": "Ese movimiento ya no coincide con la transferencia. Elige otro o crea uno nuevo."
+      }
     }
   },
   "errors": {
@@ -432,7 +441,11 @@
       "selectionNamed": "{group}: {names}",
       "selectionCount": "{group}: {count} de {total}"
     },
-    "categorySearch": "Buscar categoría"
+    "categorySearch": "Buscar categoría",
+    "deleteTransfer": "Eliminar transferencia",
+    "deleteTransferTitle": "¿Eliminar esta transferencia?",
+    "deleteTransferDescription": "Los movimientos creados para ella se eliminan y los saldos se ajustan; los que vinieron del banco se quedan como gasto o ingreso.",
+    "transferDeleted": "Transferencia eliminada"
   },
   "cards": {
     "count": "{count, plural, one {# tarjeta} other {# tarjetas}}",
@@ -2589,9 +2602,7 @@
     "deleteTitle": "¿Eliminar este movimiento?",
     "deleteDescription": "Se quitará de tus movimientos y el saldo de {account} se ajustará. No se puede deshacer.",
     "deleteBlocked": {
-      "adjustment": "Los ajustes de saldo no se pueden eliminar: corrige el saldo con «Actualizar saldo» en la cuenta.",
-      "imported": "Los movimientos del banco o de estados de cuenta no se pueden eliminar.",
-      "transfer": "Las transferencias no se pueden eliminar desde aquí."
+      "adjustment": "Los ajustes de saldo no se pueden eliminar: corrige el saldo con «Actualizar saldo» en la cuenta."
     },
     "attachments": {
       "title": "Archivos adjuntos",
@@ -2617,7 +2628,8 @@
       "imported": "Los movimientos del banco solo permiten cambiar la categoría.",
       "category": "Ya no encontramos esa categoría. Elige otra.",
       "attachmentNotFound": "Ese archivo ya no existe.",
-      "notFound": "Este movimiento ya no existe."
+      "notFound": "Este movimiento ya no existe.",
+      "loanMoney": "Este movimiento es el dinero de un préstamo; elimínalo desde el préstamo."
     },
     "name": {
       "bankText": "Texto del banco",
@@ -2653,7 +2665,14 @@
       "failed": "No pudimos cargar el movimiento. Intenta de nuevo."
     },
     "loanPaid": "Pago de {name} del {date}",
-    "loanPaidUnscheduled": "Pago de {name}"
+    "loanPaidUnscheduled": "Pago de {name}",
+    "deleteNotes": {
+      "bank": "Vino del banco: no se volverá a importar. Si la cuenta está conectada, el banco lo sigue contando y aparecerá como «Diferencia con el banco».",
+      "transferBoth": "Es una transferencia: también se elimina el movimiento en {account} y se ajusta su saldo.",
+      "transferKeeps": "Es una transferencia: el movimiento en {account} se queda como gasto o ingreso.",
+      "loanPayment": "Era un pago de {name}: el pago queda registrado, sin movimiento."
+    },
+    "markDuplicate": "Marcar como duplicado"
   },
   "notifications": {
     "title": "Notificaciones",
@@ -3728,6 +3747,44 @@
       "name": "Nombre",
       "amount": "Al mes",
       "monthLabel": "{month}: {amount}"
+    }
+  },
+  "duplicates": {
+    "title": "Posibles duplicados",
+    "description": "Movimientos que parecen el mismo dinero registrado dos veces en una cuenta (uno a mano y otro del banco).",
+    "origin": {
+      "bank": "Banco",
+      "manual": "Manual"
+    },
+    "merge": "Fusionar",
+    "notDuplicate": "No es duplicado",
+    "dialog": {
+      "title": "Marcar como duplicado",
+      "pick": "¿Cuál es el mismo movimiento?",
+      "pickHint": "Misma cuenta, mismo monto y dirección, hasta {days} días de diferencia.",
+      "none": "No encontramos otro movimiento igual en esta cuenta.",
+      "keep": "Se queda",
+      "drop": "Se elimina",
+      "keepHint": "Se queda el del banco para que la sincronización siga cuadrando.",
+      "name": "¿Qué nombre mostrar?",
+      "outcome": "Se eliminará «{name}» ({amount}) y el saldo de {account} se corregirá. La categoría, notas, adjuntos y vínculos pasan al que se queda.",
+      "bothBank": "Los dos vinieron del banco: no se pueden fusionar. Elimina el que sobra.",
+      "confirm": "Fusionar",
+      "merging": "Fusionando…",
+      "back": "Elegir otro",
+      "next": "Siguiente"
+    },
+    "toasts": {
+      "merged": "Movimientos fusionados",
+      "dismissed": "Listo, no volveremos a sugerirlos"
+    },
+    "errors": {
+      "bothBank": "Los dos movimientos vinieron del banco; elimina el que sobra.",
+      "notSame": "Solo se fusionan movimientos de la misma cuenta, con el mismo monto y dirección, y fechas cercanas.",
+      "bothTransfer": "Los dos movimientos ya son parte de una transferencia.",
+      "bothLoan": "Los dos movimientos ya pagan un préstamo.",
+      "bothRecurring": "Los dos movimientos ya pagan un pago recurrente.",
+      "notMergeable": "Los ajustes de saldo y el dinero de un préstamo no se fusionan."
     }
   }
 }

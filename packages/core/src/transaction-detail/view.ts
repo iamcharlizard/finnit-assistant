@@ -68,16 +68,45 @@ export function editRules(
 }
 
 /** Why the movement can't be deleted here, or null when it can. */
-export type DeleteBlock = 'imported' | 'transfer' | 'adjustment' | null;
+export type DeleteBlock = 'adjustment' | null;
 
-export function deleteBlock(
-  tx: Pick<TransactionDetail, 'source' | 'type'>,
-): DeleteBlock {
-  if (tx.source !== 'manual') return 'imported';
-  if (tx.type === 'transfer') return 'transfer';
+export function deleteBlock(tx: Pick<TransactionDetail, 'type'>): DeleteBlock {
   // The balance is fixed again instead (older ones have no direction).
   if (tx.type === 'adjustment') return 'adjustment';
   return null;
+}
+
+/**
+ * What else happens when the movement is deleted, for the confirmation: a
+ * bank one isn't imported again; a transfer goes whole (the other side is
+ * deleted, or stays as an expense/income when it came from the bank); a
+ * loan payment stays without a movement.
+ */
+export function deleteNotes(
+  tx: Pick<TransactionDetail, 'source' | 'transferCounterpart' | 'loanPayment'>,
+  t: Localizer['t'],
+): string[] {
+  const notes: string[] = [];
+  const counterpart = tx.transferCounterpart;
+  if (counterpart) {
+    notes.push(
+      t(
+        counterpart.keptOnDelete
+          ? 'transaction.deleteNotes.transferKeeps'
+          : 'transaction.deleteNotes.transferBoth',
+        { account: counterpart.accountName },
+      ),
+    );
+  }
+  if (tx.source !== 'manual') notes.push(t('transaction.deleteNotes.bank'));
+  if (tx.loanPayment) {
+    notes.push(
+      t('transaction.deleteNotes.loanPayment', {
+        name: tx.loanPayment.debtName,
+      }),
+    );
+  }
+  return notes;
 }
 
 export interface AttachmentView {
@@ -180,6 +209,10 @@ export interface TransactionDetailView {
   attachments: AttachmentView[];
   rules: EditRules;
   deleteBlock: DeleteBlock;
+  /** What else deleting does (shown in the confirmation). */
+  deleteNotes: string[];
+  /** It may be a copy of another movement: "Marcar como duplicado". */
+  mergeable: boolean;
 }
 
 export function toTransactionDetailView(
@@ -285,5 +318,7 @@ export function toTransactionDetailView(
         : null,
     rules: editRules(tx),
     deleteBlock: deleteBlock(tx),
+    deleteNotes: deleteNotes(tx, t),
+    mergeable: tx.type !== 'adjustment',
   };
 }

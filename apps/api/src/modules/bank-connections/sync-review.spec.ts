@@ -5,6 +5,7 @@ import { PrismaService } from '../../services/prisma.service';
 import { CategorizationService } from '../categorization/categorization.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TransferSuggestionsService } from '../transfers/transfer-suggestions.service';
+import { DuplicatesService } from '../duplicates/duplicates.service';
 import { REVIEW_ENTITY_TYPE, reviewTexts } from './sync-review';
 import { AutoCategorizeMode, SyncReviewService } from './sync-review.service';
 
@@ -32,6 +33,7 @@ describe('SyncReviewService', () => {
   let suggestions: DeepMockProxy<TransferSuggestionsService>;
   let categorization: DeepMockProxy<CategorizationService>;
   let notifications: DeepMockProxy<NotificationsService>;
+  let duplicates: DeepMockProxy<DuplicatesService>;
   let service: SyncReviewService;
 
   beforeEach(() => {
@@ -39,13 +41,32 @@ describe('SyncReviewService', () => {
     suggestions = mockDeep<TransferSuggestionsService>();
     categorization = mockDeep<CategorizationService>();
     notifications = mockDeep<NotificationsService>();
+    duplicates = mockDeep<DuplicatesService>();
+    duplicates.mergeIntoTransfers.mockResolvedValue([]);
+    duplicates.detect.mockResolvedValue(0);
     prisma.user.findUnique.mockResolvedValue({ locale: 'es' } as never);
     service = new SyncReviewService(
       prisma,
       suggestions,
       categorization,
       notifications,
+      duplicates,
     );
+  });
+
+  it('links bank movements to transfers recorded by hand before suggesting', async () => {
+    duplicates.mergeIntoTransfers.mockResolvedValue(['t1']);
+    suggestions.detect.mockResolvedValue(0);
+    categorization.autoCategorize.mockResolvedValue({
+      categorized: 0,
+      remaining: 0,
+    });
+    suggestions.pendingCount.mockResolvedValue(0);
+
+    await service.review('u1', ['t1', 't2']);
+
+    expect(suggestions.detect).toHaveBeenCalledWith('u1', ['t2']);
+    expect(duplicates.detect).toHaveBeenCalledWith('u1', ['t2']);
   });
 
   it('suggests transfers, categorizes, then updates the live notification', async () => {

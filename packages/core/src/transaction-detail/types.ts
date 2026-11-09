@@ -33,6 +33,8 @@ export interface TransactionDetail extends ApiTransaction {
     accountId: string;
     accountName: string;
     direction: 'in' | 'out';
+    /** Deleting keeps the other side as an expense/income (bank or converted). */
+    keptOnDelete?: boolean;
   } | null;
   recurringPayment: {
     occurrenceId: string;
@@ -49,7 +51,7 @@ export interface TransactionDetail extends ApiTransaction {
   } | null;
 }
 
-export const TRANSACTION_DETAIL_FIELDS = `${TRANSACTION_FIELDS} originalDescription originalLocked notes categorySource attachments { id fileName fileType fileSize downloadPath uploadedAt } transferCounterpart { transferId converted transactionId accountId accountName direction } recurringPayment { occurrenceId recurringExpenseId name dueDate } loanPayment { debtId debtName occurrenceId dueDate }`;
+export const TRANSACTION_DETAIL_FIELDS = `${TRANSACTION_FIELDS} originalDescription originalLocked notes categorySource attachments { id fileName fileType fileSize downloadPath uploadedAt } transferCounterpart { transferId converted transactionId accountId accountName direction keptOnDelete } recurringPayment { occurrenceId recurringExpenseId name dueDate } loanPayment { debtId debtName occurrenceId dueDate }`;
 
 /** Where the editor's suggested category comes from (never AI). */
 export type SimilarCategorySource = 'rule' | 'automatic_name' | 'history';

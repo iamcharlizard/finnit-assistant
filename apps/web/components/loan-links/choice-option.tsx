@@ -17,6 +17,7 @@ export function ChoiceOption({
   amount,
   badges,
   onSelect,
+  disabled = false,
 }: {
   selected: boolean;
   title: string;
@@ -24,16 +25,21 @@ export function ChoiceOption({
   amount?: string;
   badges?: React.ReactNode;
   onSelect: () => void;
+  /** Can't be chosen (shown for context). */
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
+      aria-disabled={disabled || undefined}
+      disabled={disabled}
       onClick={onSelect}
       className={cn(
         'flex min-h-11 w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
         selected ? 'border-brand bg-brand/5' : 'border-outline hover:bg-track',
+        disabled && 'pointer-events-none opacity-50',
       )}
     >
       <span

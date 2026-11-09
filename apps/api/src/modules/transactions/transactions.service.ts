@@ -239,6 +239,13 @@ export class TransactionsService {
     if (filters) await this.applyFilters(userId, where, filters);
     where.type = TransactionType.expense;
     where.isPending = false;
+    // A bank movement that looks like a transfer between the user's own
+    // accounts (waiting for their answer) isn't spending: leave it out
+    // until they say it's an expense.
+    where.AND = [
+      ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+      categorizableWhere(),
+    ];
 
     const groups = await this.prisma.transaction.groupBy({
       by: ['categoryId'],

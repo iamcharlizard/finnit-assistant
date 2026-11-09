@@ -1,5 +1,9 @@
 import * as React from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from 'urql';
@@ -8,7 +12,10 @@ import { ArrowLeft, Landmark } from 'lucide-react-native';
 
 import { accountLabel } from '@finnit/core/finance/accounts';
 import { todayKey } from '@finnit/core/finance/dates';
-import { duplicateCheck, planForDuplicateAnswer } from '@finnit/core/new-entry/duplicates';
+import {
+  duplicateCheck,
+  planForDuplicateAnswer,
+} from '@finnit/core/new-entry/duplicates';
 import { createErrorKey } from '@finnit/core/new-entry/errors';
 import {
   buildTransactionInput,
@@ -33,8 +40,15 @@ import {
   type SimilarTransaction,
 } from '@finnit/core/new-entry/graphql';
 import { isCardPayment } from '@finnit/core/new-entry/options';
-import { CONFIRM_RECEIPT_MUTATION, type ReceiptImport } from '@finnit/core/receipts/graphql';
-import { buildConfirmInput, prefillFromReceipt, type CheckField } from '@finnit/core/receipts/prefill';
+import {
+  CONFIRM_RECEIPT_MUTATION,
+  type ReceiptImport,
+} from '@finnit/core/receipts/graphql';
+import {
+  buildConfirmInput,
+  prefillFromReceipt,
+  type CheckField,
+} from '@finnit/core/receipts/prefill';
 import { TwPressable, TwScrollView, TwView } from '@finnit/ui-native/lib/tw';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
@@ -46,12 +60,23 @@ import { ReceiptCapture } from '@/components/receipts/receipt-capture';
 import { useReceiptReader } from '@/lib/receipts/use-receipt-reader';
 import { EntryForm } from '@/components/new-entry/entry-form';
 import { EntryKindPicker } from '@/components/new-entry/entry-kind-picker';
-import { TransferForm, type LegPicks } from '@/components/new-entry/transfer-form';
+import {
+  TransferForm,
+  type LegPicks,
+} from '@/components/new-entry/transfer-form';
 import { useGql } from '@/lib/graphql/runner';
 import { emitTransactionsChanged } from '@/lib/transactions/events';
-import { legChoice, type TransferLegCandidates } from '@finnit/core/transfers/legs';
+import {
+  legChoice,
+  type TransferLegCandidates,
+} from '@finnit/core/transfers/legs';
 
-type Step = { name: 'kind' } | { name: 'entry' } | { name: 'transfer' } | { name: 'receipt' } | { name: 'duplicates'; matches: SimilarTransaction[] };
+type Step =
+  | { name: 'kind' }
+  | { name: 'entry' }
+  | { name: 'transfer' }
+  | { name: 'receipt' }
+  | { name: 'duplicates'; matches: SimilarTransaction[] };
 type Busy = 'checking' | 'saving' | null;
 
 /**
@@ -64,22 +89,45 @@ export function NewEntryScreen() {
   const router = useRouter();
   const gql = useGql();
   const insets = useSafeAreaInsets();
-  const { action } = useLocalSearchParams<{ action?: string }>();
-  const [{ data, fetching }] = useQuery<NewEntryData>({ query: NEW_ENTRY_DATA_QUERY, requestPolicy: 'cache-and-network' });
-  const accounts = React.useMemo(() => (data?.accounts.edges ?? []).map((e) => e.node), [data]);
+  // Shortcuts may fill the form in: "Pagar tarjeta" (a transfer to the card
+  // with what is left of its cycle) and "Registrar intereses" (an expense).
+  const { action, to, account, amount, category, merchant, due } =
+    useLocalSearchParams<{
+      action?: string;
+      to?: string;
+      account?: string;
+      amount?: string;
+      category?: string;
+      merchant?: string;
+      due?: string;
+    }>();
+  const [{ data, fetching }] = useQuery<NewEntryData>({
+    query: NEW_ENTRY_DATA_QUERY,
+    requestPolicy: 'cache-and-network',
+  });
+  const accounts = React.useMemo(
+    () => (data?.accounts.edges ?? []).map((e) => e.node),
+    [data],
+  );
   const categories = data?.categories ?? [];
   const onlyAccount = accounts.length === 1 ? accounts[0]!.id : undefined;
 
   const [step, setStep] = React.useState<Step>({ name: 'kind' });
-  const [entry, setEntry] = React.useState<EntryDraft>(() => emptyEntryDraft('expense', todayKey()));
-  const [transfer, setTransfer] = React.useState<TransferDraft>(() => emptyTransferDraft(todayKey()));
+  const [entry, setEntry] = React.useState<EntryDraft>(() =>
+    emptyEntryDraft('expense', todayKey()),
+  );
+  const [transfer, setTransfer] = React.useState<TransferDraft>(() =>
+    emptyTransferDraft(todayKey()),
+  );
   const [legs, setLegs] = React.useState<TransferLegCandidates | null>(null);
   const [legPicks, setLegPicks] = React.useState<LegPicks>({});
   const [entryTried, setEntryTried] = React.useState(false);
   const [transferTried, setTransferTried] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState<Busy>(null);
-  const [pending, setPending] = React.useState<CreateTransactionPayload | null>(null);
+  const [pending, setPending] = React.useState<CreateTransactionPayload | null>(
+    null,
+  );
   const [receipt, setReceipt] = React.useState<ReceiptImport | null>(null);
   const [check, setCheck] = React.useState<CheckField[]>([]);
   const reader = useReceiptReader();
@@ -104,27 +152,44 @@ export function NewEntryScreen() {
     reader.reset();
   }, [reader.state, reader, accounts, categories, onlyAccount]);
 
+  const [initialApplied, setInitialApplied] = React.useState(!action);
+
   function pickKind(kind: EntryKind) {
     setSubmitError(null);
     setReceipt(null);
     setCheck([]);
+    // Only the form the shortcut opened starts filled in.
+    const filled = !initialApplied;
     if (kind === 'transfer') {
-      setTransfer(emptyTransferDraft(todayKey()));
+      setTransfer({
+        ...emptyTransferDraft(todayKey()),
+        ...(filled && to ? { toAccountId: to } : {}),
+        ...(filled && amount ? { amount } : {}),
+      });
       setLegPicks({});
       setTransferTried(false);
       setStep({ name: 'transfer' });
     } else {
-      setEntry({ ...emptyEntryDraft(kind, todayKey()), accountId: onlyAccount });
+      setEntry({
+        ...emptyEntryDraft(kind, todayKey()),
+        accountId: onlyAccount,
+        ...(filled && account ? { accountId: account } : {}),
+        ...(filled && amount ? { amount } : {}),
+        ...(filled && category
+          ? { categoryId: category, categoryPicked: true }
+          : {}),
+        ...(filled && merchant ? { merchant } : {}),
+      });
       setEntryTried(false);
       setStep({ name: 'entry' });
     }
   }
 
   // Opened from a "+" shortcut: straight to that step once accounts load.
-  const [initialApplied, setInitialApplied] = React.useState(!action);
   if (!initialApplied && data) {
     setInitialApplied(true);
-    if (action === 'expense' || action === 'income' || action === 'transfer') pickKind(action);
+    if (action === 'expense' || action === 'income' || action === 'transfer')
+      pickKind(action);
     else if (action === 'receipt') setStep({ name: 'receipt' });
   }
 
@@ -152,7 +217,10 @@ export function NewEntryScreen() {
     setBusy('saving');
     setSubmitError(null);
     try {
-      await gql(CONFIRM_RECEIPT_MUTATION, { id: receipt.id, input: buildConfirmInput(entry) });
+      await gql(CONFIRM_RECEIPT_MUTATION, {
+        id: receipt.id,
+        input: buildConfirmInput(entry),
+      });
       setBusy(null);
       toast.success(t('receipts.toasts.created'));
       finish(t('newEntry.toasts.expense'));
@@ -177,10 +245,9 @@ export function NewEntryScreen() {
     setBusy('checking');
     let matches: SimilarTransaction[] = [];
     try {
-      ({ similarTransactions: matches } = await gql<{ similarTransactions: SimilarTransaction[] }>(
-        SIMILAR_TRANSACTIONS_QUERY,
-        similarTransactionsArgs(payload),
-      ));
+      ({ similarTransactions: matches } = await gql<{
+        similarTransactions: SimilarTransaction[];
+      }>(SIMILAR_TRANSACTIONS_QUERY, similarTransactionsArgs(payload)));
     } catch {
       // The look-alike check is a convenience: create anyway.
     }
@@ -193,7 +260,11 @@ export function NewEntryScreen() {
     await createEntry(payload);
   }
 
-  function answerDuplicate(answer: { kind: 'createAnyway' } | { kind: 'isThis'; transactionId: string }) {
+  function answerDuplicate(
+    answer:
+      | { kind: 'createAnyway' }
+      | { kind: 'isThis'; transactionId: string },
+  ) {
     const plan = planForDuplicateAnswer(answer, false);
     if (plan.kind === 'create') {
       if (pending) void createEntry(pending);
@@ -211,16 +282,30 @@ export function NewEntryScreen() {
     const cardPayment = to.type === 'credit';
     const input = buildTransferInput(
       transfer,
-      t(cardPayment ? 'newEntry.defaultCardPaymentDescription' : 'newEntry.defaultTransferDescription', {
-        account: accountLabel(to),
-      }),
-      { from: legs ? legChoice(legs.from, legPicks.from) : null, to: legs ? legChoice(legs.to, legPicks.to) : null },
+      t(
+        cardPayment
+          ? 'newEntry.defaultCardPaymentDescription'
+          : 'newEntry.defaultTransferDescription',
+        {
+          account: accountLabel(to),
+        },
+      ),
+      {
+        from: legs ? legChoice(legs.from, legPicks.from) : null,
+        to: legs ? legChoice(legs.to, legPicks.to) : null,
+      },
     );
     setBusy('saving');
     try {
       await gql(CREATE_TRANSFER_MUTATION, { input });
       setBusy(null);
-      finish(t(cardPayment ? 'newEntry.toasts.cardPayment' : 'newEntry.toasts.transfer'));
+      finish(
+        t(
+          cardPayment
+            ? 'newEntry.toasts.cardPayment'
+            : 'newEntry.toasts.transfer',
+        ),
+      );
     } catch (error) {
       setBusy(null);
       setSubmitError(t(`newEntry.errors.${createErrorKey(error)}`));
@@ -239,10 +324,12 @@ export function NewEntryScreen() {
           : step.name === 'receipt'
             ? t('receipts.titles.capture')
             : t('newEntry.title');
-  const busyLabel = busy === 'checking' ? t('newEntry.checking') : t('newEntry.saving');
+  const busyLabel =
+    busy === 'checking' ? t('newEntry.checking') : t('newEntry.saving');
 
   let body: React.ReactNode;
-  if (!data && fetching) body = <ActivityIndicator style={{ marginVertical: 32 }} />;
+  if (!data && fetching)
+    body = <ActivityIndicator style={{ marginVertical: 32 }} />;
   else if (accounts.length === 0)
     body = (
       <EmptyState
@@ -259,7 +346,11 @@ export function NewEntryScreen() {
       />
     );
   else if (action === 'screenshot' && step.name === 'kind')
-    body = <Text className="py-6 text-center text-on-surface-variant">{t('common.comingSoon')}</Text>;
+    body = (
+      <Text className="py-6 text-center text-on-surface-variant">
+        {t('common.comingSoon')}
+      </Text>
+    );
   else if (step.name === 'receipt')
     body = (
       <ReceiptCapture
@@ -297,15 +388,20 @@ export function NewEntryScreen() {
         legs={legs}
         onLegs={setLegs}
         legPicks={legPicks}
-        onLegPick={(side, id) => setLegPicks((current) => ({ ...current, [side]: id }))}
+        onLegPick={(side, id) =>
+          setLegPicks((current) => ({ ...current, [side]: id }))
+        }
         draft={transfer}
         onChange={setTransfer}
         accounts={accounts}
-        errors={transferTried ? validateTransfer(transfer, accounts, today) : {}}
+        errors={
+          transferTried ? validateTransfer(transfer, accounts, today) : {}
+        }
         busy={busy !== null}
         busyLabel={busyLabel}
         submitError={submitError}
         onSubmit={submitTransfer}
+        cardDueDate={due && /^\d{4}-\d{2}-\d{2}$/.test(due) ? due : undefined}
       />
     );
   else
@@ -314,13 +410,18 @@ export function NewEntryScreen() {
         matches={step.matches}
         busy={busy !== null}
         error={submitError}
-        onIsThis={(transactionId) => answerDuplicate({ kind: 'isThis', transactionId })}
+        onIsThis={(transactionId) =>
+          answerDuplicate({ kind: 'isThis', transactionId })
+        }
         onCreateAnyway={() => answerDuplicate({ kind: 'createAnyway' })}
       />
     );
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
       <TwScrollView
         keyboardShouldPersistTaps="handled"
         className="flex-1 bg-popover"
@@ -334,18 +435,30 @@ export function NewEntryScreen() {
               accessibilityLabel={t('newEntry.back')}
               onPress={() => {
                 setSubmitError(null);
-                setStep(step.name === 'duplicates' ? { name: 'entry' } : { name: 'kind' });
+                setStep(
+                  step.name === 'duplicates'
+                    ? { name: 'entry' }
+                    : { name: 'kind' },
+                );
               }}
               className="-ml-2 size-11 items-center justify-center rounded-full active:bg-accent"
             >
               <Icon icon={ArrowLeft} size={22} />
             </TwPressable>
           ) : null}
-          <Text accessibilityRole="header" weight="bold" className="flex-1 text-lg">
+          <Text
+            accessibilityRole="header"
+            weight="bold"
+            className="flex-1 text-lg"
+          >
             {title}
           </Text>
         </TwView>
-        {step.name === 'kind' ? <Text className="-mt-2 text-sm text-on-surface-variant">{t('newEntry.description')}</Text> : null}
+        {step.name === 'kind' ? (
+          <Text className="-mt-2 text-sm text-on-surface-variant">
+            {t('newEntry.description')}
+          </Text>
+        ) : null}
         {body}
       </TwScrollView>
     </KeyboardAvoidingView>

@@ -43,7 +43,17 @@ describe('notifications', () => {
     );
     assert.equal(
       notificationHref(n({ type: 'uncategorized', relatedEntityId: 'u-1' })),
-      '/transactions/categorize?month=all',
+      '/history?review=1&month=all',
+    );
+    assert.equal(
+      notificationHref(
+        n({ type: 'card_due', relatedEntityId: 'c-1:2026-11-07:due_soon' }),
+      ),
+      '/accounts/c-1?period=2026-11-07',
+    );
+    assert.equal(
+      notificationHref(n({ type: 'card_unpaid', relatedEntityId: null })),
+      '/accounts',
     );
   });
 

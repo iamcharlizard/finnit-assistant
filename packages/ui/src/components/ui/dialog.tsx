@@ -47,7 +47,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          'fixed top-1/2 left-1/2 z-50 flex max-h-[min(92dvh,calc(100dvh-2rem))] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-5 overflow-y-auto rounded-card border border-glass-border bg-popover p-6 text-popover-foreground shadow-lg outline-none',
+          'fixed top-1/2 left-1/2 z-50 flex max-h-[min(92dvh,calc(100dvh-2rem))] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-5 overflow-y-auto overscroll-contain rounded-card border border-glass-border bg-popover p-6 text-popover-foreground shadow-lg outline-none',
           // With a DialogBody only the body scrolls; header and footer stay put.
           'has-[[data-slot=dialog-body]]:overflow-hidden',
           // A form wrapping header, body and footer must shrink with the dialog.

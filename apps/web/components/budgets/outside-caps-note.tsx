@@ -29,7 +29,7 @@ export function OutsideCapsNote({
           <p className="text-on-surface-variant">
             {t('uncategorized', { amount: uncategorized })}{' '}
             <Link
-              href="/transactions/categorize"
+              href="/history?review=1"
               className="font-medium text-income hover:underline"
             >
               {t('categorize')}

@@ -25,6 +25,7 @@ import { AccountCardStack } from '@/components/accounts/account-card-stack';
 import { AccountsOverview } from '@/components/accounts/accounts-overview';
 import { AccountMovements } from '@/components/accounts/account-movements';
 import { AccountStats } from '@/components/accounts/account-stats';
+import { CardPeriods } from '@/components/accounts/card-periods';
 import {
   AccountStatusBadge,
   ExcludedFromTotalBadge,
@@ -429,6 +430,13 @@ export function AccountsScreen({
           ) : (
             <AccountStats detail={detail} />
           )}
+          {selected.type === 'credit' ? (
+            // A new balance (a payment, a charge): ask for the cycles again.
+            <CardPeriods
+              key={`${selected.id}:${selected.amount}`}
+              accountId={selected.id}
+            />
+          ) : null}
           {timeline ? (
             <DailyBalanceChart
               title={t(

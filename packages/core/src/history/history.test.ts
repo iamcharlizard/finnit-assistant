@@ -11,6 +11,8 @@ import {
   selectCategory,
   selectValues,
   parseHistoryFilters,
+  parseShown,
+  shownParam,
   toApiFilters,
   withPeriod,
 } from './filters';
@@ -110,9 +112,10 @@ describe('history filters', () => {
 
   it('asks the API for the month, the range or everything', () => {
     assert.deepEqual(toApiFilters({ categoryIds: ['c'], period: november }), {
+      types: ['expense'],
       categoryIds: ['c'],
       includeUncategorized: false,
-      categoriesForExpensesOnly: true,
+      categorizable: true,
       startDate: '2026-11-01T00:00:00.000Z',
       endDate: '2026-11-30T23:59:59.999Z',
     });
@@ -156,12 +159,13 @@ describe('history filters', () => {
       historyQuery(filters, today),
       '?type=expense%2Cincome&account=a1%2Ca2&category=c1%2Cnone',
     );
+    // Categories narrow to expenses: no income, transfers or adjustments.
     assert.deepEqual(toApiFilters(filters), {
-      types: ['expense', 'income'],
+      types: ['expense'],
       accountIds: ['a1', 'a2'],
       categoryIds: ['c1'],
       includeUncategorized: true,
-      categoriesForExpensesOnly: true,
+      categorizable: true,
       startDate: '2026-11-01T00:00:00.000Z',
       endDate: '2026-11-30T23:59:59.999Z',
     });
@@ -194,8 +198,46 @@ describe('history filters', () => {
       accountIds: [],
       categoryIds: [],
       includeUncategorized: false,
-      categoriesForExpensesOnly: true,
+      categorizable: true,
     });
+  });
+
+  it('"Sin categoría" alone shows expenses without one, never transfers or income', () => {
+    const filters = parseHistoryFilters({ category: 'none' }, today);
+    assert.deepEqual(toApiFilters({ ...filters, period: 'all' }), {
+      types: ['expense'],
+      categoryIds: [],
+      includeUncategorized: true,
+      categorizable: true,
+    });
+    // Only income chosen: categories leave nothing.
+    assert.deepEqual(
+      toApiFilters({ ...filters, types: ['income'], period: 'all' }).types,
+      [],
+    );
+  });
+
+  it('keeps how many rows were loaded in the URL, within the API page', () => {
+    assert.equal(parseShown({}), 30);
+    assert.equal(parseShown({ n: '90' }), 90);
+    assert.equal(parseShown({ n: '5' }), 30);
+    assert.equal(parseShown({ n: '9999' }), 200);
+    assert.equal(parseShown({ n: 'x' }), 30);
+    assert.equal(shownParam(30), null);
+    assert.equal(shownParam(60), '60');
+    assert.equal(shownParam(260), '200');
+  });
+
+  it('"Por clasificar" lists what can take a category and has none', () => {
+    const filters = parseHistoryFilters({ review: '1', category: 'c1' }, today);
+    assert.equal(filters.review, true);
+    assert.equal(historyQuery(filters, today), '?category=c1&review=1');
+    assert.ok(hasFilters({ review: true, period: november }));
+    assert.deepEqual(toApiFilters({ ...filters, period: 'all' }), {
+      uncategorized: true,
+      categorizable: true,
+    });
+    assert.equal(parseHistoryFilters({ review: '0' }, today).review, undefined);
   });
 
   it('checks everything by default and gives "everything" back', () => {
@@ -369,6 +411,47 @@ describe('history: transfers and top categories', () => {
     assert.equal(group.outLabel, 'Sale de BBVA Débito');
     assert.equal(group.inLabel, 'Entra a Nu');
     assert.equal(group.out.id, 'out');
+    assert.equal(group.title, 'Transferencia');
+    assert.equal(group.cardPayment, false);
+  });
+
+  it('calls a transfer into a credit card its payment', () => {
+    const [group] = groupTransfers(
+      [
+        row({
+          id: 'out',
+          type: 'transfer',
+          transferId: 'tr-3',
+          transferDirection: 'out',
+        }),
+        row({
+          id: 'in',
+          type: 'transfer',
+          transferId: 'tr-3',
+          transferDirection: 'in',
+          accountId: 'c1',
+          account: { id: 'c1', name: 'Nu', type: 'credit', metadata: null },
+        }),
+      ],
+      es,
+    );
+    assert.equal(group?.kind, 'transfer');
+    if (group?.kind !== 'transfer') return;
+    assert.equal(group.title, 'Pago de tarjeta');
+    assert.equal(group.cardPayment, true);
+  });
+
+  it("shows a row's pending AI suggestion", () => {
+    const shown = toHistoryRow(
+      {
+        ...tx({}),
+        suggestedCategory: { id: 'food', name: 'Comida', parentId: null },
+      },
+      indexCategories([]),
+      es,
+    );
+    assert.deepEqual(shown.suggestion, { categoryId: 'food', label: 'Comida' });
+    assert.equal(row({}).suggestion, null);
   });
 
   it('keeps a side alone when its pair is not in the list', () => {

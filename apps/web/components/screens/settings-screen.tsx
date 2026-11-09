@@ -117,7 +117,7 @@ export function SettingsScreen() {
           </SettingRow>
         </Link>
         <Link
-          href="/transactions/categorize"
+          href="/history?review=1"
           className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
         >
           <SettingRow

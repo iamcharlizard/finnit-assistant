@@ -3,7 +3,7 @@ import { useTranslations } from 'use-intl';
 import { CreditCard } from 'lucide-react-native';
 
 import { accountLabel, creditOwed } from '@finnit/core/finance/accounts';
-import { todayKey } from '@finnit/core/finance/dates';
+import { shortDate, todayKey, type DayKey } from '@finnit/core/finance/dates';
 import { formatMoney } from '@finnit/core/finance/money';
 import {
   currencyOf,
@@ -56,7 +56,10 @@ export function TransferForm({
   onLegs,
   legPicks,
   onLegPick,
+  cardDueDate,
 }: {
+  /** Paying a card's cycle: after this day it counts for the next one. */
+  cardDueDate?: DayKey;
   /** Movements already recorded that may be its sides (null: not searched). */
   legs: TransferLegCandidates | null;
   onLegs: (legs: TransferLegCandidates | null) => void;
@@ -202,6 +205,14 @@ export function TransferForm({
         error={errors.date && t(`validation.${errors.date}`)}
         closeLabel={tc('close')}
       />
+      {cardPayment && cardDueDate && draft.date && draft.date > cardDueDate ? (
+        <Text
+          accessibilityLiveRegion="polite"
+          className="text-xs text-on-surface-variant"
+        >
+          {t('cardPaymentLate', { date: shortDate(cardDueDate, locale) })}
+        </Text>
+      ) : null}
       <Input
         label={t('fields.transferDescription')}
         placeholder={t('fields.transferDescriptionPlaceholder')}

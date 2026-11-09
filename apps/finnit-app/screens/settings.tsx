@@ -1,7 +1,20 @@
 import * as React from 'react';
 import { useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
-import { Landmark, Languages, LockKeyhole, LockKeyholeOpen, LogOut, Moon, Paintbrush, Shapes, ShieldCheck, Tags, Text as TextIcon, Type } from 'lucide-react-native';
+import {
+  Landmark,
+  Languages,
+  LockKeyhole,
+  LockKeyholeOpen,
+  LogOut,
+  Moon,
+  Paintbrush,
+  Shapes,
+  ShieldCheck,
+  Tags,
+  Text as TextIcon,
+  Type,
+} from 'lucide-react-native';
 
 import { LOCALES, type Locale } from '@finnit/core/i18n/locales';
 import { TwView } from '@finnit/ui-native/lib/tw';
@@ -20,7 +33,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLocale } from '@/lib/i18n/i18n-provider';
 import { avatarSource } from '@/lib/profile/avatar';
 import { savePrivacyUnlock } from '@/lib/session/storage';
-import { useAppearance, type AppearancePreference } from '@/lib/theme/appearance';
+import {
+  useAppearance,
+  type AppearancePreference,
+} from '@/lib/theme/appearance';
 import { emitTransactionsChanged } from '@/lib/transactions/events';
 
 /** Configuración: banks, categories and names, security, language and appearance, sign out. */
@@ -50,20 +66,63 @@ export function SettingsScreen() {
   return (
     <Screen title={tpm('settings')}>
       <TwView className="gap-4">
-        <ProfileCard name={user.name} email={user.email} avatarSource={avatarSource(user.avatar)} />
+        <ProfileCard
+          name={user.name}
+          email={user.email}
+          avatarSource={avatarSource(user.avatar)}
+        />
 
-        <SettingsSection title={t('banks')} icon={Landmark} iconColor="var(--brand)">
-          <SettingRow label={t('connectedBanks')} description={t('connectedBanksDescription')} icon={Landmark} onPress={() => router.push('/connect-bank')} />
+        <SettingsSection
+          title={t('banks')}
+          icon={Landmark}
+          iconColor="var(--brand)"
+        >
+          <SettingRow
+            label={t('connectedBanks')}
+            description={t('connectedBanksDescription')}
+            icon={Landmark}
+            onPress={() => router.push('/connect-bank')}
+          />
         </SettingsSection>
 
-        <SettingsSection title={t('movements')} icon={Tags} iconColor="var(--highlight)">
-          <SettingRow label={t('categories')} description={t('categoriesDescription')} icon={Shapes} onPress={() => router.push('/settings/categories')} />
-          <SettingRow label={t('aliases')} description={t('aliasesDescription')} icon={TextIcon} onPress={() => router.push('/settings/aliases')} />
-          <SettingRow label={t('categorize')} description={t('categorizeDescription')} icon={Tags} onPress={() => router.navigate('/transactions/categorize')} />
+        <SettingsSection
+          title={t('movements')}
+          icon={Tags}
+          iconColor="var(--highlight)"
+        >
+          <SettingRow
+            label={t('categories')}
+            description={t('categoriesDescription')}
+            icon={Shapes}
+            onPress={() => router.push('/settings/categories')}
+          />
+          <SettingRow
+            label={t('aliases')}
+            description={t('aliasesDescription')}
+            icon={TextIcon}
+            onPress={() => router.push('/settings/aliases')}
+          />
+          <SettingRow
+            label={t('categorize')}
+            description={t('categorizeDescription')}
+            icon={Tags}
+            onPress={() =>
+              router.navigate({ pathname: '/history', params: { review: '1' } })
+            }
+          />
         </SettingsSection>
 
-        <SettingsSection title={t('security')} icon={ShieldCheck} iconColor="var(--tertiary)">
-          <SettingRow label={tp(hasPin ? 'change' : 'create')} description={tp('hint')} icon={LockKeyhole} onPress={() => setPinOpen(true)} />
+        <SettingsSection
+          title={t('security')}
+          icon={ShieldCheck}
+          iconColor="var(--tertiary)"
+        >
+          <SettingRow
+            label={tp(hasPin ? 'change' : 'create')}
+            description={tp('hint')}
+            icon={LockKeyhole}
+            onPress={() => setPinOpen(true)}
+          />
           {hasPin && user.privacy.unlocked ? (
             <TwView className="flex-row justify-end px-1">
               <Button
@@ -81,12 +140,19 @@ export function SettingsScreen() {
           ) : null}
         </SettingsSection>
 
-        <SettingsSection title={t('appearance')} icon={Paintbrush} iconColor="var(--highlight)">
+        <SettingsSection
+          title={t('appearance')}
+          icon={Paintbrush}
+          iconColor="var(--highlight)"
+        >
           <SettingRow label={t('language')} icon={Languages}>
             <Segmented
               accessibilityLabel={t('language')}
               className="w-40"
-              options={LOCALES.map((value) => ({ value, label: t(`languages.${value}`) }))}
+              options={LOCALES.map((value) => ({
+                value,
+                label: t(`languages.${value}`),
+              }))}
               value={locale}
               onValueChange={(next) => void changeLanguage(next)}
             />
@@ -94,11 +160,15 @@ export function SettingsScreen() {
           <TwView className="gap-2 rounded-xl bg-track px-3 py-3">
             <TwView className="flex-row items-center gap-3">
               <Icon icon={Moon} size={20} color="--on-surface-variant" />
-              <Text className="text-base text-on-surface-variant">{t('colorMode')}</Text>
+              <Text className="text-base text-on-surface-variant">
+                {t('colorMode')}
+              </Text>
             </TwView>
             <Segmented
               accessibilityLabel={t('colorMode')}
-              options={(['light', 'dark', 'system'] as AppearancePreference[]).map((value) => ({
+              options={(
+                ['light', 'dark', 'system'] as AppearancePreference[]
+              ).map((value) => ({
                 value,
                 label: value === 'system' ? tpm('systemMode') : tm(value),
               }))}
@@ -125,7 +195,9 @@ export function SettingsScreen() {
             await logout();
           }}
         />
-        <Text className="text-center text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">{t('version')}</Text>
+        <Text className="text-center text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">
+          {t('version')}
+        </Text>
         {pinOpen ? (
           <PrivacyPinSheet
             hasPin={hasPin}

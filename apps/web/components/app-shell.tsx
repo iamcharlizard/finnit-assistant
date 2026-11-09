@@ -18,7 +18,11 @@ import { AppSideNav } from '@/components/navigation/app-side-nav';
 import { ProfileMenu } from '@/components/navigation/profile-menu';
 import { useNavGroups } from '@/components/navigation/use-nav-groups';
 import { useSidebarState } from '@/components/navigation/use-sidebar-state';
-import type { NewEntryAction } from '@/components/new-entry/new-entry-flow';
+import type {
+  NewEntryAction,
+  NewEntryPrefill,
+} from '@/components/new-entry/new-entry-flow';
+import { NewEntryProvider } from '@/components/new-entry/new-entry-context';
 import { NewEntrySheet } from '@/components/new-entry/new-entry-sheet';
 import { NotificationsSheet } from '@/components/notifications/notifications-sheet';
 import { useSessionUser } from '@/components/session-provider';
@@ -61,8 +65,13 @@ export function AppShell({
   // Open, optionally on a kind's form or the scanner (the mobile "+" menu).
   const [adding, setAdding] = React.useState<{
     action?: NewEntryAction;
+    prefill?: NewEntryPrefill;
   } | null>(null);
-  const handleAdd = (action?: NewEntryAction) => setAdding({ action });
+  const handleAdd = React.useCallback(
+    (action?: NewEntryAction, prefill?: NewEntryPrefill) =>
+      setAdding({ action, prefill }),
+    [],
+  );
   const sidebar = useSidebarState(sidebarCollapsed);
   const groups = useNavGroups(
     openNavGroups,
@@ -121,19 +130,21 @@ export function AppShell({
           out by the width left by the sidebar (expanded or collapsed), not
           by the window.
         */}
-          <div className="group/shell @container mx-auto flex w-full max-w-[100rem] min-w-0 flex-1 flex-col px-4 pt-3 sm:px-6 lg:px-8">
-            <TopAppBar
-              {...chrome}
-              title={t(pageTitleKey(pathname))}
-              className={cn(
-                'group-has-[.page-header]/shell:hidden',
-                HEADER_TRANSITION_CLASS,
-              )}
-            />
-            <main className="w-full flex-1 pt-5 pb-40 group-has-[.page-header]/shell:pt-0 lg:pb-10">
-              {children}
-            </main>
-          </div>
+          <NewEntryProvider value={handleAdd}>
+            <div className="group/shell @container mx-auto flex w-full max-w-[100rem] min-w-0 flex-1 flex-col px-4 pt-3 sm:px-6 lg:px-8">
+              <TopAppBar
+                {...chrome}
+                title={t(pageTitleKey(pathname))}
+                className={cn(
+                  'group-has-[.page-header]/shell:hidden',
+                  HEADER_TRANSITION_CLASS,
+                )}
+              />
+              <main className="w-full flex-1 pt-5 pb-40 group-has-[.page-header]/shell:pt-0 lg:pb-10">
+                {children}
+              </main>
+            </div>
+          </NewEntryProvider>
         </HeaderChromeContext.Provider>
 
         <AppBottomNav
@@ -148,6 +159,7 @@ export function AppShell({
             if (!open) setAdding(null);
           }}
           initialAction={adding?.action}
+          prefill={adding?.prefill}
         />
         <NotificationsSheet
           open={notificationsOpen}

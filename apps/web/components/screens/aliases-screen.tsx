@@ -24,7 +24,10 @@ import {
   setAliasActive,
 } from '@finnit/core/aliases/api';
 import type { AliasesData } from '@/lib/aliases/load';
-import type { ApiMerchantAlias, ApiMerchantRule } from '@finnit/core/aliases/types';
+import type {
+  ApiMerchantAlias,
+  ApiMerchantRule,
+} from '@finnit/core/aliases/types';
 import { gql } from '@/lib/graphql/client';
 import { PrivacyUnlockDialog } from '@/components/privacy/privacy-unlock-dialog';
 import { isPrivacyLocked } from '@finnit/core/privacy/pin';
@@ -131,7 +134,7 @@ export function AliasesScreen({ data }: { data: AliasesData }) {
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-8">
         <div className="flex flex-col gap-4">
           <Button variant="link" asChild className="self-start">
-            <Link href="/transactions/categorize">
+            <Link href="/history?review=1">
               <Tags aria-hidden /> {t('aliases.categorizeLink')}
             </Link>
           </Button>

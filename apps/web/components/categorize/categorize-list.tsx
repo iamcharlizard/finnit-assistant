@@ -9,12 +9,17 @@ import { toast } from '@finnit/ui/components/ui/toaster';
 
 import { useCategorizePages } from '@/hooks/use-categorize-pages';
 import {
+  useLoadMoreSentinel,
+  useShownInUrl,
+} from '@/hooks/use-load-more-sentinel';
+import { SHOWN_PARAM, shownParam } from '@finnit/core/history/filters';
+import {
   categorize,
   categorizeErrorMessage,
   reviewSuggestions,
   suggestCategories,
 } from '@finnit/core/categorize/api';
-import type { CategorizeFilters } from '@finnit/core/categorize/filters';
+import type { ApiTransactionFilters } from '@finnit/core/categorize/filters';
 import {
   SUGGEST_MAX,
   isAllSelected,
@@ -39,7 +44,6 @@ import { useLocalizer } from '@/lib/i18n/client';
 import { categoryOptions } from '@finnit/core/new-entry/options';
 import { AiNotice } from './ai-notice';
 import { CategorizeRow } from './categorize-row';
-import { EmptyList } from './empty-list';
 import { MoveBar } from './move-bar';
 import { renameTransaction } from '@finnit/core/categorize/api';
 import { SelectAllToggle } from './select-all-toggle';
@@ -47,24 +51,38 @@ import { SelectAllToggle } from './select-all-toggle';
 type Busy = 'move' | 'suggest' | 'accept' | 'reject' | `row:${string}` | null;
 
 /**
- * The movements to categorize, grouped by day: select one or many, move
- * them to a category, ask the AI for suggestions and accept or reject them.
+ * "Por clasificar" in the history: the movements without a category,
+ * grouped by day: select one or many, move them to a category, ask the AI
+ * for suggestions and accept or reject them.
  */
 export function CategorizeList({
   initial,
   filters,
   categories,
   today,
+  empty,
+  onChange,
 }: {
   initial: CategorizePageData;
-  filters: CategorizeFilters;
+  /** The API's TransactionFilters of the list (the history's, in review). */
+  filters: ApiTransactionFilters;
   categories: CategorizeCategory[];
   today: DayKey;
+  /** Shown when nothing is left. */
+  empty: React.ReactNode;
+  /** Something was categorized (the page's counts and charts change). */
+  onChange?: () => void;
 }) {
   const l = useLocalizer();
   const { t, locale } = l;
   const pages = useCategorizePages(initial, filters);
   const { transactions, totalCount, hasNextPage, loading, error } = pages;
+  useShownInUrl(transactions.length, shownParam, SHOWN_PARAM);
+  // Infinite scroll, like the history.
+  const sentinel = useLoadMoreSentinel(
+    () => void pages.loadMore(),
+    hasNextPage && !error && !loading,
+  );
   const [selection, setSelection] = React.useState<ReadonlySet<string>>(
     () => new Set(),
   );
@@ -112,6 +130,7 @@ export function CategorizeList({
       toast.success(t('categorize.toasts.categorized', { count: changed }));
       setSelection(new Set());
       await pages.reload();
+      onChange?.();
     });
 
   const suggest = () =>
@@ -147,11 +166,10 @@ export function CategorizeList({
         ),
       );
       await pages.reload();
+      onChange?.();
     });
 
-  if (rows.length === 0) {
-    return <EmptyList filters={filters} today={today} />;
-  }
+  if (rows.length === 0) return <>{empty}</>;
 
   const suggestTargets = suggestionTargets(rows, selected);
 
@@ -238,7 +256,10 @@ export function CategorizeList({
                     pages.merge([updated]);
                   }}
                   // A movement categorized there leaves the list (filters apply again).
-                  onDetailChange={() => void pages.reload()}
+                  onDetailChange={() => {
+                    void pages.reload();
+                    onChange?.();
+                  }}
                 />
               ))}
             </div>
@@ -252,14 +273,17 @@ export function CategorizeList({
         </p>
       ) : null}
       {hasNextPage ? (
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={pages.loadMore}
-          disabled={loading}
-        >
-          {loading ? t('common.loading') : t('common.loadMore')}
-        </Button>
+        <div ref={sentinel} className="flex justify-center py-4">
+          {loading ? (
+            <p className="text-xs text-on-surface-variant" aria-live="polite">
+              {t('common.loading')}
+            </p>
+          ) : error ? (
+            <Button variant="outline" size="sm" onClick={pages.loadMore}>
+              {t('common.retry')}
+            </Button>
+          ) : null}
+        </div>
       ) : null}
 
       {selected.size > 0 ? (

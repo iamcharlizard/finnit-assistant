@@ -41,7 +41,7 @@ describe('nav sections', () => {
     assert.deepEqual(
       groups.map((g) => [g.key, g.items.map((i) => i.key)]),
       [
-        ['transactions', ['history', 'categorize', 'recurring', 'statements']],
+        ['transactions', ['history', 'recurring', 'statements']],
         ['planning', ['budgets', 'debts', 'goals', 'simulator']],
       ],
     );
@@ -69,12 +69,9 @@ describe('nav sections', () => {
     assert.equal(activeNavHref(hrefs, '/settings/banks'), '/settings');
     assert.equal(activeNavHref(hrefs, '/admin/ai'), '/admin');
     assert.equal(activeNavHref(hrefs, '/settingsx'), null);
-    // History and categorize live side by side in "Movimientos".
-    const tx = ['/history', '/transactions/categorize'];
-    assert.equal(
-      activeNavHref(tx, '/transactions/categorize'),
-      '/transactions/categorize',
-    );
+    // History and recurring live side by side in "Movimientos".
+    const tx = ['/history', '/recurring'];
+    assert.equal(activeNavHref(tx, '/recurring'), '/recurring');
   });
 });
 
@@ -103,7 +100,6 @@ describe('page titles', () => {
   });
 
   it('picks the specific route before the dynamic one', () => {
-    assert.equal(pageTitleKey('/transactions/categorize'), 'categorize');
     assert.equal(pageTitleKey('/settings/banks/connect'), 'connectBank');
     assert.equal(pageTitleKey('/settings/aliases'), 'aliases');
     assert.equal(pageTitleKey('/admin/users'), 'admin');

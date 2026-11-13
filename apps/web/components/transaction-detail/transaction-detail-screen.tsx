@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import {
   ArrowLeftRight,
+  Ban,
   CalendarClock,
   CheckCheck,
   CopyCheck,
@@ -12,6 +13,7 @@ import {
   MoreHorizontal,
   PencilLine,
   Repeat,
+  RotateCcw,
   Trash2,
   Undo2,
   Unlink,
@@ -29,6 +31,7 @@ import {
 import { cn } from '@finnit/ui/lib/utils';
 import { toast } from '@finnit/ui/components/ui/toaster';
 
+import { useMovementActions } from './use-movement-actions';
 import {
   ConfirmDialog,
   type ConfirmRequest,
@@ -36,7 +39,6 @@ import {
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
 import {
-  deleteTransaction,
   transactionErrorMessage,
   updateTransaction,
 } from '@finnit/core/transaction-detail/api';
@@ -82,7 +84,6 @@ export function TransactionDetailScreen({
     | null
   >(null);
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
-  const [deleting, setDeleting] = React.useState(false);
   const [applying, setApplying] = React.useState(false);
 
   /** "Marcar como aplicado": the bank already applied it. */
@@ -143,30 +144,17 @@ export function TransactionDetailScreen({
     });
   }
 
-  function askDelete() {
-    setConfirm({
-      title: tt('deleteTitle'),
-      description: [
-        tt('deleteDescription', { account: view.accountLabel }),
-        ...view.deleteNotes,
-      ].join(' '),
-      confirmLabel: tt('delete'),
-      destructive: true,
-      onConfirm: () => {
-        setConfirm(null);
-        setDeleting(true);
-        deleteTransaction(view.id, gql)
-          .then(() => {
-            toast.success(tt('toasts.deleted'));
-            host.close({ deleted: true });
-          })
-          .catch((error: unknown) => {
-            toast.error(transactionErrorMessage(error, t));
-            setDeleting(false);
-          });
-      },
+  const movement = useMovementActions({
+    onDeleted: () => host.close({ deleted: true }),
+    onChanged: () => host.refresh(),
+  });
+  const askDelete = () =>
+    void movement.askDelete({
+      id: view.id,
+      accountLabel: view.accountLabel,
+      deleteNotes: view.deleteNotes,
+      canCancel: view.canCancel,
     });
-  }
 
   const recurringLink = view.recurring;
   const actions: {
@@ -269,6 +257,28 @@ export function TransactionDetailScreen({
           },
         ]
       : []),
+    ...(view.canCancel
+      ? [
+          {
+            key: 'cancel',
+            label: tt('cancel.action'),
+            icon: Ban,
+            run: () => void movement.askCancel({ id: view.id }),
+            disabled: movement.busy,
+          },
+        ]
+      : []),
+    ...(view.cancelled
+      ? [
+          {
+            key: 'restore',
+            label: tt('cancel.restore'),
+            icon: RotateCcw,
+            run: () => movement.restore(view.id),
+            disabled: movement.busy,
+          },
+        ]
+      : []),
     ...(view.deleteBlock === null
       ? [
           {
@@ -276,7 +286,7 @@ export function TransactionDetailScreen({
             label: tt('delete'),
             icon: Trash2,
             run: askDelete,
-            disabled: deleting,
+            disabled: movement.busy,
             destructive: true,
           },
         ]
@@ -477,6 +487,7 @@ export function TransactionDetailScreen({
         />
       ) : null}
       <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />
+      {movement.dialog}
     </div>
   );
 }

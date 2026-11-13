@@ -25,6 +25,7 @@ import {
   hasFilters,
   hasRange,
   historyQuery,
+  HISTORY_STATUSES,
   HISTORY_TYPES,
   monthLinks,
   withPeriod,
@@ -90,6 +91,10 @@ export function HistoryFilters({
     value,
     label: t(`types.${value}`),
   }));
+  const statusOptions = HISTORY_STATUSES.map((value) => ({
+    value,
+    label: t(`statuses.${value}`),
+  }));
   const datesLabel = hasRange(filters)
     ? t('rangeLabel', {
         from: filters.from ? shortDate(filters.from, locale) : '…',
@@ -106,6 +111,20 @@ export function HistoryFilters({
             key: 'type',
             label: selectionLabel(tf('type'), filters.types, typeOptions, tr),
             remove: () => apply({ ...filters, types: undefined }),
+          },
+        ]
+      : []),
+    ...(filters.statuses
+      ? [
+          {
+            key: 'status',
+            label: selectionLabel(
+              tf('status'),
+              filters.statuses,
+              statusOptions,
+              tr,
+            ),
+            remove: () => apply({ ...filters, statuses: undefined }),
           },
         ]
       : []),

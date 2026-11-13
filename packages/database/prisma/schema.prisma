@@ -47,6 +47,7 @@ enum NotificationType {
   card_statement // a credit card's cycle closed: what to pay without interest
   card_due // a credit card's payment is due in 3 days or today
   card_unpaid // a credit card's payment wasn't covered by the due date
+  movement_cancelled // a bank sync reported a recorded movement deleted: it was marked cancelled
 }
 
 // Why a movement looks like a transfer between the user's own accounts.
@@ -516,6 +517,9 @@ model Transaction {
   // isPending it counts in the balance and totals; it is only marked, and
   // clears when the bank's applied movement is linked to it (or by hand).
   inProcess           Boolean           @default(false)
+  // "Cancelado": the bank cancelled it. It stays in the history but counts
+  // nowhere (balance, card cycles, totals, charts). Null: not cancelled.
+  cancelledAt         DateTime?
   isRecurringInstance Boolean           @default(false)
   source              TransactionSource
   externalId          String?           @unique
@@ -567,6 +571,7 @@ model Transaction {
   @@index([userId, accountId, txnDate(sort: Desc)])
   @@index([source])
   @@index([aliasId])
+  @@index([userId, cancelledAt])
   @@index([suggestedCategoryId])
 }
 

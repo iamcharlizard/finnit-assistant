@@ -11,6 +11,7 @@ import {
   type MonthRef,
 } from '@finnit/core/finance/dates';
 import {
+  HISTORY_STATUSES,
   HISTORY_TYPES,
   activeFilterCount,
   categoryCheck,
@@ -39,8 +40,8 @@ import { Text } from '@finnit/ui-native/components/ui/text';
 import { MonthSwitcher } from '@/components/finance/month-switcher';
 import { useLocale, useLocalizer } from '@/lib/i18n/i18n-provider';
 
-type Tab = 'accounts' | 'categories' | 'type' | 'dates';
-const TABS: Tab[] = ['accounts', 'categories', 'type', 'dates'];
+type Tab = 'accounts' | 'categories' | 'type' | 'status' | 'dates';
+const TABS: Tab[] = ['accounts', 'categories', 'type', 'status', 'dates'];
 
 /** Categories shown before "Ver todas". */
 const FIRST_CATEGORIES = 8;
@@ -99,6 +100,10 @@ export function HistoryFilters({
     value,
     label: t(`types.${value}`),
   }));
+  const statusOptions = HISTORY_STATUSES.map((value) => ({
+    value,
+    label: t(`statuses.${value}`),
+  }));
   const accountIds = accounts.map((a) => a.value);
   const datesLabel = hasRange(filters)
     ? t('rangeLabel', {
@@ -116,6 +121,15 @@ export function HistoryFilters({
             key: 'type',
             label: selectionLabel(tf('type'), filters.types, typeOptions, tr),
             remove: () => onChange({ ...filters, types: undefined }),
+          },
+        ]
+      : []),
+    ...(filters.statuses
+      ? [
+          {
+            key: 'status',
+            label: selectionLabel(tf('status'), filters.statuses, statusOptions, tr),
+            remove: () => onChange({ ...filters, statuses: undefined }),
           },
         ]
       : []),
@@ -189,6 +203,7 @@ export function HistoryFilters({
     accounts: Boolean(filters.accountIds),
     categories: Boolean(filters.categoryIds),
     type: Boolean(filters.types),
+    status: Boolean(filters.statuses),
     dates: dateMode !== 'month',
   };
 
@@ -454,6 +469,25 @@ export function HistoryFilters({
                             on,
                             HISTORY_TYPES,
                           ),
+                        })
+                      }
+                    />
+                  </TwView>
+                ))}
+              </TwView>
+            ) : null}
+
+            {tab === 'status' ? (
+              <TwView className="gap-0.5 pt-2">
+                {statusOptions.map((option) => (
+                  <TwView key={option.value} className="px-1 py-1">
+                    <Checkbox
+                      label={option.label}
+                      checked={isSelected(filters.statuses, option.value)}
+                      onCheckedChange={(on) =>
+                        onChange({
+                          ...filters,
+                          statuses: selectValues(filters.statuses, [option.value], on, HISTORY_STATUSES),
                         })
                       }
                     />

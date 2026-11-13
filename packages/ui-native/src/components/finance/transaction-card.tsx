@@ -10,7 +10,7 @@ import { Icon } from '../ui/icon';
 import { Text } from '../ui/text';
 
 type CardVariant = 'income' | 'expense' | 'pending' | 'failed';
-type CardStatusVariant = 'completado' | 'info' | 'pendiente' | 'fallida';
+type CardStatusVariant = 'completado' | 'info' | 'pendiente' | 'fallida' | 'cancelada';
 
 interface TransactionCardRename {
   editLabel: string;
@@ -62,6 +62,7 @@ const STATUS_COLOR: Record<CardStatusVariant, string> = {
   info: 'text-on-surface-variant',
   pendiente: 'text-on-surface-variant',
   fallida: 'text-expense',
+  cancelada: 'text-on-surface-variant',
 };
 
 /**
@@ -198,7 +199,12 @@ function TransactionCard({
           </Text>
         </TwView>
         <TwView className="ml-2 shrink-0 items-end">
-          <Text weight="bold" className={cn('text-sm', AMOUNT_COLOR[variant])}>
+          {/* Cancelled by the bank: shown, but it counts nowhere. */}
+          <Text
+            weight="bold"
+            className={cn('text-sm', AMOUNT_COLOR[variant])}
+            style={status?.variant === 'cancelada' ? { textDecorationLine: 'line-through', opacity: 0.6 } : undefined}
+          >
             {amount}
           </Text>
           {status ? <Text className={cn('mt-0.5 text-[11px]', STATUS_COLOR[status.variant])}>{status.label}</Text> : null}

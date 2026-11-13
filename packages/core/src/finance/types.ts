@@ -57,6 +57,8 @@ export interface ApiTransaction {
    * balance; only marked (missing in older data).
    */
   inProcess?: boolean;
+  /** "Cancelado": when the bank cancelled it; it counts nowhere. */
+  cancelledAt?: string | null;
   currency: string;
   txnDate: string;
   description: string | null;
@@ -101,7 +103,7 @@ export interface ApiTransaction {
 }
 
 export const TRANSACTION_FIELDS =
-  'id type amount balanceEffect currency txnDate description merchantName displayName isPrivate ownPrivate aliasId aliasRule { id displayName isPrivate isProtected } hasOwnAlias isPending inProcess source transferDirection transferId accountId account { id name type metadata { nickname } } category { id name parentId excludeFromTotals }';
+  'id type amount balanceEffect currency txnDate description merchantName displayName isPrivate ownPrivate aliasId aliasRule { id displayName isPrivate isProtected } hasOwnAlias isPending inProcess cancelledAt source transferDirection transferId accountId account { id name type metadata { nickname } } category { id name parentId excludeFromTotals }';
 
 export type CategorySource = 'manual' | 'rule' | 'ai' | 'bank';
 

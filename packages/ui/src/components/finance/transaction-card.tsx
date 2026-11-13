@@ -7,7 +7,12 @@ import { cn } from '../../lib/utils';
 import { Checkbox } from '../ui/checkbox';
 
 type CardVariant = 'income' | 'expense' | 'pending' | 'failed';
-type CardStatusVariant = 'completado' | 'info' | 'pendiente' | 'fallida';
+type CardStatusVariant =
+  | 'completado'
+  | 'info'
+  | 'pendiente'
+  | 'fallida'
+  | 'cancelada';
 
 interface TransactionCardRename {
   /** Saves the new name; rejecting keeps the field open. */
@@ -43,6 +48,11 @@ interface TransactionCardProps {
   selectLabel?: string;
   /** A pencil next to the name (on hover) edits it right in the card. */
   rename?: TransactionCardRename;
+  /**
+   * Opens the name field from outside (e.g. a context menu's "Renombrar"):
+   * each new value above 0 starts editing.
+   */
+  renameRequest?: number;
   /** Inside the card, under the row (e.g. a category suggestion). */
   footer?: React.ReactNode;
   className?: string;
@@ -67,6 +77,7 @@ const STATUS_COLOR: Record<CardStatusVariant, string> = {
   info: 'text-on-surface-variant',
   pendiente: 'text-on-surface-variant',
   fallida: 'text-expense',
+  cancelada: 'text-on-surface-variant',
 };
 
 /**
@@ -94,6 +105,7 @@ function TransactionCard({
   onSelectedChange,
   selectLabel,
   rename,
+  renameRequest = 0,
   footer,
   className,
 }: TransactionCardProps) {
@@ -109,6 +121,18 @@ function TransactionCard({
   React.useEffect(() => {
     if (editing) inputRef.current?.select();
   }, [editing]);
+
+  // Asked from outside: open the field (the menu that asked closes first).
+  const [handledRequest, setHandledRequest] = React.useState(renameRequest);
+  if (renameRequest !== handledRequest) {
+    setHandledRequest(renameRequest);
+    if (renameRequest > 0 && rename && !editing) {
+      cancelled.current = false;
+      setDraft(rename.value ?? merchant);
+      setFailed(false);
+      setEditing(true);
+    }
+  }
 
   function startEditing() {
     if (!rename) return;
@@ -245,7 +269,14 @@ function TransactionCard({
           </span>
         </span>
         <span className="ml-2 flex shrink-0 flex-col items-end">
-          <span className={cn('text-sm font-bold', AMOUNT_COLOR[variant])}>
+          <span
+            className={cn(
+              'text-sm font-bold',
+              AMOUNT_COLOR[variant],
+              // Cancelled by the bank: shown, but it counts nowhere.
+              status?.variant === 'cancelada' && 'line-through opacity-60',
+            )}
+          >
             {amount}
           </span>
           {status ? (

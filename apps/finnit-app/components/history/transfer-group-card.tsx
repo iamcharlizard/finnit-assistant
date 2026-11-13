@@ -43,7 +43,7 @@ export function TransferGroupCard({ group }: { group: TransferGroup }) {
       },
     ]);
   }
-  const status = group.status === 'pending' ? t('finance.pending') : group.status === 'inProcess' ? t('finance.inProcess') : t('finance.completed');
+  const status = group.status === 'cancelled' ? t('finance.cancelled') : group.status === 'pending' ? t('finance.pending') : group.status === 'inProcess' ? t('finance.inProcess') : t('finance.completed');
   return (
     <TwView accessibilityLabel={`${group.title}: ${group.route}`} className="rounded-2xl bg-surface">
       <TwView className="min-h-11 flex-row items-center gap-3 p-4 pb-2">

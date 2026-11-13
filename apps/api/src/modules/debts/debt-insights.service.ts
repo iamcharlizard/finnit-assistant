@@ -108,6 +108,7 @@ export class DebtInsightsService {
           userId,
           type: TransactionType.income,
           isPending: false,
+          cancelledAt: null,
           AND: [countedInTotalsWhere()],
           txnDate: {
             gte: new Date(

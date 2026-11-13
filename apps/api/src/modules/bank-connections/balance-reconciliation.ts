@@ -75,3 +75,33 @@ export function mismatchTexts(
     adjustment: 'Diferencia con el banco',
   };
 }
+
+/** Texts of the notification for a movement the bank cancelled, in the user's language. */
+export function cancelledTexts(
+  locale: string,
+  {
+    name,
+    amount,
+    currency,
+    marked,
+  }: { name: string; amount: number; currency: string; marked: boolean },
+): { title: string; message: string } {
+  const money = `${Math.abs(amount).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} ${currency}`;
+  if (locale === 'en') {
+    return {
+      title: `The bank cancelled ${name}`,
+      message: marked
+        ? `${name} for ${money} no longer shows at your bank: we marked it Cancelled, so it no longer counts. Check it on your statement; you can reactivate it from the movement.`
+        : `${name} for ${money} no longer shows at your bank, but it is linked to a transfer or a loan: review it.`,
+    };
+  }
+  return {
+    title: `El banco canceló ${name}`,
+    message: marked
+      ? `${name} por ${money} ya no aparece en tu banco: lo marcamos como Cancelado y ya no cuenta. Revísalo en tu estado de cuenta; puedes reactivarlo desde el movimiento.`
+      : `${name} por ${money} ya no aparece en tu banco, pero está ligado a una transferencia o a un préstamo: revísalo.`,
+  };
+}

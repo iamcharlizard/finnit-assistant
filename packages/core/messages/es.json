@@ -300,7 +300,9 @@
       "pending": "Pendiente",
       "scheduled": "Programado",
       "paid": "Pagado"
-    }
+    },
+    "cancelled": "Cancelado",
+    "withCancelled": "{time} · Cancelado"
   },
   "monthSwitcher": {
     "label": "Cambiar de mes",
@@ -443,7 +445,8 @@
       "showFewer": "Ver menos",
       "selectAll": "Seleccionar todas",
       "selectionNamed": "{group}: {names}",
-      "selectionCount": "{group}: {count} de {total}"
+      "selectionCount": "{group}: {count} de {total}",
+      "status": "Estado"
     },
     "categorySearch": "Buscar categoría",
     "deleteTransfer": "Eliminar transferencia",
@@ -463,6 +466,16 @@
       "available": "Disponible {available} de {limit}",
       "needsTerms": "Agrega tus días de corte y de pago para ver cuánto pagar en cada periodo.",
       "setTerms": "Configurar"
+    },
+    "statuses": {
+      "pending": "Pendientes",
+      "completed": "Completados",
+      "cancelled": "Cancelados"
+    },
+    "rowMenu": {
+      "open": "Ver detalle",
+      "rename": "Renombrar",
+      "openSide": "Ver {account}"
     }
   },
   "cards": {
@@ -2880,6 +2893,23 @@
       "unlink": "Desligar",
       "done": "Ligado a {name}",
       "unlinked": "Desligado de {name}"
+    },
+    "cancel": {
+      "action": "Marcar como cancelado",
+      "restore": "Reactivar",
+      "title": "¿Marcar como cancelado?",
+      "description": "Se queda en tu historial como Cancelado, pero deja de contar en el saldo de la tarjeta, en lo que debes y en tus sumas.",
+      "confirm": "Marcar como cancelado",
+      "deleteSuggestion": "Si el banco lo canceló, mejor márcalo como cancelado: se queda en tu historial y deja de contar.",
+      "checking": "Revisando tu estado de cuenta…",
+      "verify": "Confirma en tu estado de cuenta que el banco lo canceló; si no, no cuadrará lo que debes de la tarjeta.",
+      "appearsWithReversal": "Aparece en tu estado de cuenta del {date} junto con su reverso: se ve cancelado.",
+      "appears": "Aparece en tu estado de cuenta del {date} sin un reverso: revisa que el banco sí lo haya cancelado, o no cuadrará lo que debes.",
+      "notOnStatement": "No aparece en tu estado de cuenta del {date}.",
+      "done": "Marcado como cancelado",
+      "restored": "Volvió a contar",
+      "badge": "Cancelado",
+      "banner": "El banco lo canceló: no cuenta en el saldo ni en tus sumas."
     }
   },
   "notifications": {

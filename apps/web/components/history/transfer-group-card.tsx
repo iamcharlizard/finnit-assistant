@@ -12,6 +12,13 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@finnit/ui/components/ui/context-menu';
 import { toast } from '@finnit/ui/components/ui/toaster';
 import { cn } from '@finnit/ui/lib/utils';
 
@@ -32,12 +39,13 @@ const STATUS_COLOR: Record<HistoryRow['status'], string> = {
   completed: 'text-income',
   pending: 'text-on-surface-variant',
   inProcess: 'text-on-surface-variant',
+  cancelled: 'text-on-surface-variant',
 };
 
 /**
  * Both sides of a transfer as one movement: what moved and from which
  * account to which, with each side below as a sub-movement that opens its
- * own detail.
+ * own detail. Right-click opens either side or deletes the transfer.
  */
 export function TransferGroupCard({
   group,
@@ -76,72 +84,97 @@ export function TransferGroupCard({
   }
 
   const status =
-    group.status === 'pending'
-      ? t('finance.pending')
-      : group.status === 'inProcess'
-        ? t('finance.inProcess')
-        : t('finance.completed');
+    group.status === 'cancelled'
+      ? t('finance.cancelled')
+      : group.status === 'pending'
+        ? t('finance.pending')
+        : group.status === 'inProcess'
+          ? t('finance.inProcess')
+          : t('finance.completed');
+  const drawer = useTransactionDrawer();
+  const openSide = (side: HistoryRow) =>
+    drawer.open(side.id, { onChange: onDetailChange });
   return (
-    <div
-      role="group"
-      aria-label={`${group.title}: ${group.route}`}
-      className="flex flex-col rounded-2xl bg-surface"
-    >
-      <div className="flex min-h-11 items-center gap-3 p-4 pb-2">
-        <span className="flex size-12 shrink-0 items-center justify-center rounded-chip bg-track">
-          <ArrowLeftRight
-            aria-hidden
-            className="size-[22px] text-on-surface-variant"
-          />
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm font-medium text-on-background">
-            {group.title}
-          </span>
-          <span className="mt-0.5 block truncate text-xs text-on-surface-variant">
-            {group.route}
-          </span>
-        </span>
-        <span className="ml-2 flex shrink-0 flex-col items-end">
-          <span className="text-sm font-bold text-on-background">
-            {group.amount}
-          </span>
-          <span
-            className={cn('mt-0.5 text-[11px]', STATUS_COLOR[group.status])}
-          >
-            {status}
-          </span>
-        </span>
-        <button
-          type="button"
-          onClick={askDelete}
-          disabled={deleting}
-          aria-label={t('history.deleteTransfer')}
-          title={t('history.deleteTransfer')}
-          className="flex size-10 shrink-0 items-center justify-center rounded-full text-on-surface-variant outline-none transition-colors hover:bg-expense/10 hover:text-expense focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-40"
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          role="group"
+          aria-label={`${group.title}: ${group.route}`}
+          className="flex flex-col rounded-2xl bg-surface"
         >
-          <Trash2 aria-hidden className="size-4" />
-        </button>
-      </div>
-      <ul
-        aria-label={t('history.transfer.sides')}
-        className="relative ml-10 flex flex-col pr-2 pb-2 before:absolute before:top-0 before:bottom-5 before:left-0 before:w-px before:bg-outline"
-      >
-        <SideRow
-          icon={ArrowUpRight}
-          label={group.outLabel}
-          row={group.out}
-          onDetailChange={onDetailChange}
-        />
-        <SideRow
-          icon={ArrowDownLeft}
-          label={group.inLabel}
-          row={group.in}
-          onDetailChange={onDetailChange}
-        />
-      </ul>
-      <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />
-    </div>
+          <div className="flex min-h-11 items-center gap-3 p-4 pb-2">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-chip bg-track">
+              <ArrowLeftRight
+                aria-hidden
+                className="size-[22px] text-on-surface-variant"
+              />
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-sm font-medium text-on-background">
+                {group.title}
+              </span>
+              <span className="mt-0.5 block truncate text-xs text-on-surface-variant">
+                {group.route}
+              </span>
+            </span>
+            <span className="ml-2 flex shrink-0 flex-col items-end">
+              <span className="text-sm font-bold text-on-background">
+                {group.amount}
+              </span>
+              <span
+                className={cn('mt-0.5 text-[11px]', STATUS_COLOR[group.status])}
+              >
+                {status}
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={askDelete}
+              disabled={deleting}
+              aria-label={t('history.deleteTransfer')}
+              title={t('history.deleteTransfer')}
+              className="flex size-10 shrink-0 items-center justify-center rounded-full text-on-surface-variant outline-none transition-colors hover:bg-expense/10 hover:text-expense focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-40"
+            >
+              <Trash2 aria-hidden className="size-4" />
+            </button>
+          </div>
+          <ul
+            aria-label={t('history.transfer.sides')}
+            className="relative ml-10 flex flex-col pr-2 pb-2 before:absolute before:top-0 before:bottom-5 before:left-0 before:w-px before:bg-outline"
+          >
+            <SideRow
+              icon={ArrowUpRight}
+              label={group.outLabel}
+              row={group.out}
+              onDetailChange={onDetailChange}
+            />
+            <SideRow
+              icon={ArrowDownLeft}
+              label={group.inLabel}
+              row={group.in}
+              onDetailChange={onDetailChange}
+            />
+          </ul>
+          <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="min-w-56">
+        {[group.out, group.in].map((side) => (
+          <ContextMenuItem key={side.id} onSelect={() => openSide(side)}>
+            <ArrowLeftRight aria-hidden />{' '}
+            {t('history.rowMenu.openSide', { account: side.accountLabel })}
+          </ContextMenuItem>
+        ))}
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          variant="destructive"
+          disabled={deleting}
+          onSelect={askDelete}
+        >
+          <Trash2 aria-hidden /> {t('history.deleteTransfer')}
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 

@@ -5,6 +5,8 @@ import { categoryLabel } from '../finance/categories';
 import { dayKeyOf, longDate, timeOf, type DayKey } from '../finance/dates';
 import { formatMoney } from '../finance/money';
 import { direction, transactionTitle } from '../finance/transactions';
+import { canCancelMovement } from '../finance/transactions';
+export { canCancelMovement };
 import {
   canConvertToTransfer,
   canRecordCardPayment,
@@ -185,6 +187,13 @@ export interface TransactionDetailView {
   pending: boolean;
   /** "En proceso": counted, the bank hasn't applied it yet. */
   inProcess: boolean;
+  /** "Cancelado": the bank cancelled it; it counts nowhere. */
+  cancelled: boolean;
+  /**
+   * "Marcar como cancelado": an expense or income on a credit card that is
+   * not cancelled yet, nor part of a transfer or a loan.
+   */
+  canCancel: boolean;
   /** The user's notes ("" when none; hidden with the bank text when private). */
   notes: string;
   /** The other side of a transfer (opens its detail). */
@@ -282,7 +291,9 @@ export function toTransactionDetailView(
         : null,
     sourceKind: sourceKind(tx.source),
     pending: tx.isPending,
-    inProcess: Boolean(tx.inProcess),
+    inProcess: Boolean(tx.inProcess) && !tx.cancelledAt,
+    cancelled: Boolean(tx.cancelledAt),
+    canCancel: canCancelMovement(tx) && !counterpart && !tx.loanPayment,
     notes: tx.notes?.trim() ?? '',
     counterpart: counterpart
       ? {
@@ -333,7 +344,7 @@ export function toTransactionDetailView(
       toAttachmentView(a, t('transaction.attachments.unnamed')),
     ),
     convertSource:
-      canConvertToTransfer(tx) && !counterpart
+      canConvertToTransfer(tx) && !counterpart && !tx.cancelledAt
         ? {
             id: tx.id,
             type: tx.type,

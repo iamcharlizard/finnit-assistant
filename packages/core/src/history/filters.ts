@@ -27,6 +27,12 @@ import {
  */
 export type HistoryType = 'income' | 'expense' | 'transfer';
 
+/**
+ * A movement's state for the filter: pending, completed ("en proceso"
+ * included) or cancelled by the bank.
+ */
+export type HistoryStatus = 'pending' | 'completed' | 'cancelled';
+
 /** A month, or the whole history. */
 export type HistoryPeriod = MonthRef | 'all';
 
@@ -39,6 +45,8 @@ export const NONE_SELECTED = '-';
 export interface HistoryFilters {
   /** Any of these types (absent: every type). */
   types?: HistoryType[];
+  /** In any of these states (absent: every state). */
+  statuses?: HistoryStatus[];
   /** Any of these accounts (absent: every account). */
   accountIds?: string[];
   /**
@@ -93,6 +101,13 @@ export const HISTORY_TYPES: ReadonlyArray<HistoryType> = [
   'transfer',
 ];
 
+/** The states, in order; labels are `history.statuses.<value>`. */
+export const HISTORY_STATUSES: ReadonlyArray<HistoryStatus> = [
+  'pending',
+  'completed',
+  'cancelled',
+];
+
 type Params = Record<string, string | string[] | undefined>;
 
 const one = (value: string | string[] | undefined) =>
@@ -131,6 +146,14 @@ export function parseHistoryFilters(
     rawTypes && (rawTypes.length === 0 || validTypes?.length)
       ? validTypes
       : undefined;
+  const rawStatuses = ids(params.status);
+  const validStatuses = rawStatuses?.filter((v): v is HistoryStatus =>
+    HISTORY_STATUSES.includes(v as HistoryStatus),
+  );
+  const statuses =
+    rawStatuses && (rawStatuses.length === 0 || validStatuses?.length)
+      ? validStatuses
+      : undefined;
   const accountIds = ids(params.account);
   const categoryIds = ids(params.category);
   const from = one(params.from);
@@ -141,6 +164,9 @@ export function parseHistoryFilters(
   const review = one(params.review) === '1';
   return {
     ...(types && types.length < HISTORY_TYPES.length ? { types } : {}),
+    ...(statuses && statuses.length < HISTORY_STATUSES.length
+      ? { statuses }
+      : {}),
     ...(accountIds ? { accountIds } : {}),
     ...(categoryIds ? { categoryIds } : {}),
     ...(isDayKey(from) ? { from } : {}),
@@ -169,6 +195,9 @@ export function historyQuery(
 ): string {
   const params = new URLSearchParams();
   if (filters.types) params.set('type', selectionParam(filters.types));
+  if (filters.statuses) {
+    params.set('status', selectionParam(filters.statuses));
+  }
   if (filters.accountIds) {
     params.set('account', selectionParam(filters.accountIds));
   }
@@ -201,6 +230,7 @@ export function historyHref(
 export function hasFilters(filters: HistoryFilters): boolean {
   return Boolean(
     filters.types ||
+    filters.statuses ||
     filters.accountIds ||
     filters.categoryIds ||
     filters.search ||
@@ -212,14 +242,15 @@ export function hasFilters(filters: HistoryFilters): boolean {
 
 /**
  * The number on the "Filtros" button: one per group that narrows the list
- * (accounts, categories, types, and the dates when a range or the whole
- * history).
+ * (accounts, categories, types, states, and the dates when a range or the
+ * whole history).
  */
 export function activeFilterCount(filters: HistoryFilters): number {
   return (
     Number(Boolean(filters.accountIds)) +
     Number(Boolean(filters.categoryIds)) +
     Number(Boolean(filters.types)) +
+    Number(Boolean(filters.statuses)) +
     Number(hasRange(filters) || filters.period === 'all')
   );
 }
@@ -327,6 +358,7 @@ export function monthLinks(
 /** What the API's TransactionFilters receives from the history. */
 export interface ApiHistoryFilters {
   types?: HistoryType[];
+  statuses?: HistoryStatus[];
   accountIds?: string[];
   categoryIds?: string[];
   includeUncategorized?: boolean;
@@ -359,6 +391,7 @@ export function toApiFilters(filters: HistoryFilters): ApiHistoryFilters {
     : filters.types;
   return {
     ...(types && { types }),
+    ...(filters.statuses && { statuses: filters.statuses }),
     ...(filters.accountIds && { accountIds: filters.accountIds }),
     ...categories,
     ...(from && { startDate: startOfDayIso(from) }),

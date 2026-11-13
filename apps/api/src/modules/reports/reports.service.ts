@@ -32,6 +32,7 @@ export class ReportsService {
     const monthWhere = {
       userId,
       isPending: false,
+      cancelledAt: null,
       AND: [countedInTotalsWhere()],
       txnDate: {
         gte: new Date(Date.UTC(year, month - 1, 1)),
@@ -124,6 +125,7 @@ export class ReportsService {
       where: {
         userId,
         isPending: false,
+        cancelledAt: null,
         type: { in: ['income', 'expense'] },
         txnDate: { gte: start, lt: new Date(end.getTime() + DAY_MS) },
         AND: [countedInTotalsWhere()],
@@ -169,6 +171,7 @@ export class ReportsService {
     const window = {
       userId,
       isPending: false,
+      cancelledAt: null,
       txnDate: { gte: sixMonthsAgo },
       AND: [countedInTotalsWhere()],
     };

@@ -127,6 +127,7 @@ export function HistoryScreen({
               initial={data.page}
               filters={filters}
               categories={data.categories}
+              creditCardIds={data.creditCardIds}
               today={data.today}
             />
           )}

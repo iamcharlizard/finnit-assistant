@@ -17,6 +17,7 @@ import { cn } from '@finnit/ui/lib/utils';
 
 import { monthOf, type DayKey } from '@finnit/core/finance/dates';
 import {
+  HISTORY_STATUSES,
   HISTORY_TYPES,
   categoryCheck,
   hasRange,
@@ -29,7 +30,7 @@ import {
 import type { Option } from '@finnit/core/history/view';
 import { rankOptions } from '@finnit/core/text/option-search';
 
-type Tab = 'accounts' | 'categories' | 'type' | 'dates';
+type Tab = 'accounts' | 'categories' | 'type' | 'status' | 'dates';
 
 /** Categories shown before "Ver todas". */
 const FIRST_CATEGORIES = 8;
@@ -77,9 +78,10 @@ export function HistoryFilterPanel({
     accounts: Boolean(filters.accountIds),
     categories: Boolean(filters.categoryIds),
     type: Boolean(filters.types),
+    status: Boolean(filters.statuses),
     dates: dateMode !== 'month',
   };
-  const tabs: Tab[] = ['accounts', 'categories', 'type', 'dates'];
+  const tabs: Tab[] = ['accounts', 'categories', 'type', 'status', 'dates'];
 
   /** "Seleccionar todas" when some box is unchecked, else "Deseleccionar todas". */
   const allToggle = (
@@ -204,6 +206,27 @@ export function HistoryFilterPanel({
                     [value],
                     on,
                     HISTORY_TYPES,
+                  ),
+                })
+              }
+            />
+          ))}
+        </TabsContent>
+
+        <TabsContent value="status" className="flex flex-col gap-0.5">
+          {HISTORY_STATUSES.map((value) => (
+            <CheckRow
+              key={value}
+              label={t(`statuses.${value}`)}
+              checked={isSelected(filters.statuses, value)}
+              onChange={(on) =>
+                onApply({
+                  ...filters,
+                  statuses: selectValues(
+                    filters.statuses,
+                    [value],
+                    on,
+                    HISTORY_STATUSES,
                   ),
                 })
               }

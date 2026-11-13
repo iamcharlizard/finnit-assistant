@@ -498,6 +498,7 @@ describe('BudgetsService', () => {
           userId: mockUserId,
           type: 'expense',
           isPending: false,
+          cancelledAt: null,
           txnDate: {
             gte: new Date('2024-01-01T00:00:00.000Z'),
             lt: new Date('2024-02-01T00:00:00.000Z'),
@@ -585,6 +586,7 @@ describe('BudgetsService', () => {
           userId: mockUserId,
           type: 'expense',
           isPending: false,
+          cancelledAt: null,
           txnDate: {
             gte: new Date('2024-01-01T00:00:00.000Z'),
             lt: new Date('2024-02-01T00:00:00.000Z'),

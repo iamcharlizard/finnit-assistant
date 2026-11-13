@@ -45,6 +45,7 @@ export function capSpendingWhere(
     userId,
     type: 'expense',
     isPending: false,
+    cancelledAt: null,
     txnDate: budgetMonthRange(year, month),
     AND: [
       {
@@ -263,6 +264,7 @@ export class BudgetsService {
         userId,
         type: 'expense',
         isPending: false,
+        cancelledAt: null,
         txnDate: budgetMonthRange(year, month),
         AND: [countedInTotalsWhere()],
       },

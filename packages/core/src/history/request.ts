@@ -58,6 +58,8 @@ export interface HistoryData {
   page: TransactionPage;
   categories: ApiCategory[];
   accounts: Option[];
+  /** The open credit cards ("Registrar como pago a tarjeta" in a row's menu). */
+  creditCardIds: string[];
   categoryOptions: Option[];
   topCategories: {
     title: string;
@@ -222,6 +224,10 @@ export function buildHistoryData(
       data.accounts.edges.map((e) => e.node),
       t,
     ),
+    creditCardIds: data.accounts.edges
+      .map((e) => e.node)
+      .filter((a) => a.type === 'credit' && !a.archived)
+      .map((a) => a.id),
     categoryOptions: categoryOptions(data.categories, t),
     topCategories: {
       title: t('history.topCategories', {

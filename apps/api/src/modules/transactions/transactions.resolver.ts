@@ -18,6 +18,7 @@ import {
   TransactionFilters,
 } from './dto/transaction.dto';
 import { TransactionSpending } from './dto/transaction-spending.dto';
+import { CancellationCheck } from './dto/cancellation-check.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../../common/types/models/user.model';
@@ -232,6 +233,38 @@ export class TransactionsResolver {
     @Args('id') id: string,
   ): Promise<boolean> {
     return this.transactionsService.delete(id, user.id);
+  }
+
+  @Mutation(() => Transaction, {
+    description:
+      '"Marcar como cancelado": a credit card movement the bank cancelled stays in the history but stops counting (balance, card cycles, totals)',
+  })
+  cancelTransaction(
+    @CurrentUser() user: User,
+    @Args('id', { type: () => ID }) id: string,
+  ): Promise<Transaction> {
+    return this.transactionsService.cancel(id, user.id);
+  }
+
+  @Mutation(() => Transaction, {
+    description: '"Reactivar": a cancelled movement counts again',
+  })
+  restoreTransaction(
+    @CurrentUser() user: User,
+    @Args('id', { type: () => ID }) id: string,
+  ): Promise<Transaction> {
+    return this.transactionsService.restore(id, user.id);
+  }
+
+  @Query(() => CancellationCheck, {
+    description:
+      "Before cancelling: whether the movement's confirmed statement lists it and shows its reversal",
+  })
+  cancellationCheck(
+    @CurrentUser() user: User,
+    @Args('id', { type: () => ID }) id: string,
+  ): Promise<CancellationCheck> {
+    return this.transactionsService.cancellationCheck(id, user.id);
   }
 
   @Mutation(() => Boolean, {

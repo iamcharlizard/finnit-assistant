@@ -24,12 +24,57 @@ export interface TransactionRow {
   /** Signed: "-$80.00", "+$1,200.00"; adjustments have no sign. */
   amount: string;
   variant: 'income' | 'expense' | 'neutral';
-  /** pending: not counted yet; inProcess: counted, the bank hasn't applied it. */
-  status: 'completed' | 'pending' | 'inProcess';
+  /**
+   * pending: not counted yet; inProcess: counted, the bank hasn't applied
+   * it; cancelled: the bank cancelled it, it counts nowhere.
+   */
+  status: MovementStatus;
   iconKey: IconKey;
   day: DayKey;
   /** Private alias: show a lock next to the title. */
   isPrivate: boolean;
+}
+
+export type MovementStatus =
+  | 'completed'
+  | 'pending'
+  | 'inProcess'
+  | 'cancelled';
+
+/** A movement's state: cancelled wins, then pending, then "en proceso". */
+export function movementStatus(
+  tx: Pick<ApiTransaction, 'isPending' | 'inProcess' | 'cancelledAt'>,
+): MovementStatus {
+  return tx.cancelledAt
+    ? 'cancelled'
+    : tx.isPending
+      ? 'pending'
+      : tx.inProcess
+        ? 'inProcess'
+        : 'completed';
+}
+
+/** Whether it adds up anywhere (balance, totals): not pending nor cancelled. */
+export function countsInTotals(
+  tx: Pick<ApiTransaction, 'isPending' | 'cancelledAt'>,
+): boolean {
+  return !tx.isPending && !tx.cancelledAt;
+}
+
+/**
+ * Whether "Marcar como cancelado" applies: an expense or income on a credit
+ * card that isn't cancelled yet (transfers and loans are checked apart).
+ */
+export function canCancelMovement(
+  tx: Pick<ApiTransaction, 'type' | 'cancelledAt'> & {
+    account?: { type?: string | null } | null;
+  },
+): boolean {
+  return (
+    (tx.type === 'expense' || tx.type === 'income') &&
+    !tx.cancelledAt &&
+    tx.account?.type === 'credit'
+  );
 }
 
 export interface TransactionGroup<R extends TransactionRow = TransactionRow> {
@@ -121,7 +166,7 @@ export function toTransactionRow(
       .join(' · '),
     amount: formatMoney(signed, tx.currency, locale, { sign }),
     variant: dir === 'in' ? 'income' : dir === 'out' ? 'expense' : 'neutral',
-    status: tx.isPending ? 'pending' : tx.inProcess ? 'inProcess' : 'completed',
+    status: movementStatus(tx),
     iconKey:
       tx.type === 'transfer'
         ? 'transfer'

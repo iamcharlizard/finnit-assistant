@@ -35,6 +35,26 @@ import {
 } from './view';
 
 describe('history filters', () => {
+  it('filters by state (?status=) and sends it to the API', () => {
+    const today = '2026-11-05' as const;
+    const filters = parseHistoryFilters({ status: 'cancelled,pending' }, today);
+    assert.deepEqual(filters.statuses, ['cancelled', 'pending']);
+    assert.equal(historyQuery(filters, today), '?status=cancelled%2Cpending');
+    assert.deepEqual(toApiFilters(filters).statuses, ['cancelled', 'pending']);
+    assert.equal(activeFilterCount(filters), 1);
+    // Every state checked is no filter; `-` is none; unknown ones are ignored.
+    assert.equal(
+      parseHistoryFilters({ status: 'pending,completed,cancelled' }, today)
+        .statuses,
+      undefined,
+    );
+    assert.deepEqual(parseHistoryFilters({ status: '-' }, today).statuses, []);
+    assert.equal(
+      parseHistoryFilters({ status: 'x' }, today).statuses,
+      undefined,
+    );
+  });
+
   it('filters by an automatic name (?alias=) and sends it to the API', () => {
     const today = '2026-11-05' as const;
     const filters = parseHistoryFilters({ alias: 'alias-1' }, today);
@@ -374,6 +394,16 @@ describe('history: transfers and top categories', () => {
   });
   const row = (over: Partial<ApiTransaction>) =>
     toHistoryRow(tx(over), indexCategories([]), es);
+
+  it('marks a cancelled movement and leaves it out of the day net', () => {
+    const cancelled = row({
+      type: 'expense',
+      amount: 50,
+      cancelledAt: '2026-10-20T10:00:00.000Z',
+    });
+    assert.equal(cancelled.status, 'cancelled');
+    assert.equal(cancelled.net, 0);
+  });
 
   it('leaves categories out of the totals out of the day net', () => {
     const category = { id: 'c', name: 'Sin seguimiento', parentId: null };

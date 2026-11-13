@@ -83,6 +83,7 @@ export const mockTransactionData: Transaction = {
   notes: null,
   isPending: false,
   inProcess: false,
+  cancelledAt: null,
   isRecurringInstance: false,
   source: 'manual',
   externalId: null,

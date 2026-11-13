@@ -25,7 +25,21 @@ export function effectOf(movement: {
     : defaultEffect(movement.type, Number(movement.amount));
 }
 
-/** What a movement adds to its account's balance now: nothing while pending. */
+/**
+ * Whether a movement stays out of its account's balance (and every total):
+ * pending, or cancelled by the bank.
+ */
+export function notCounted(movement: {
+  isPending?: boolean | null;
+  cancelledAt?: Date | null;
+}): boolean {
+  return Boolean(movement.isPending || movement.cancelledAt);
+}
+
+/**
+ * What a movement adds to its account's balance now: nothing while pending
+ * or cancelled (pass `notCounted(movement)`).
+ */
 export function appliedEffect(
   effect: number,
   isPending: boolean | null | undefined,

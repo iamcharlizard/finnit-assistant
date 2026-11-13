@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import { testLocalizer } from '@finnit/core/i18n/testing';
 import { GraphqlRequestError } from '@finnit/core/graphql/request';
 import { transactionErrorMessage } from './api';
+import { cancellationNote } from './cancellation';
 import {
   buildUpdateInput,
   detailFormOf,
@@ -21,6 +22,7 @@ import {
   sourceKind,
   toAttachmentView,
   toTransactionDetailView,
+  canCancelMovement,
 } from '@finnit/core/transaction-detail/view';
 
 const tx = (over: Partial<TransactionDetail> = {}): TransactionDetail => ({
@@ -429,5 +431,58 @@ describe('transaction detail: loan payments', () => {
       label: 'Pago de Préstamo DiDi del 3 de octubre',
       occurrenceId: 'occ-1',
     });
+  });
+});
+
+describe('cancelling a card movement', () => {
+  it('applies to expenses and income on a credit card not cancelled yet', () => {
+    const card = { type: 'credit' };
+    assert.equal(
+      canCancelMovement({ type: 'expense', cancelledAt: null, account: card }),
+      true,
+    );
+    assert.equal(
+      canCancelMovement({
+        type: 'expense',
+        cancelledAt: null,
+        account: { type: 'debit' },
+      }),
+      false,
+    );
+    assert.equal(
+      canCancelMovement({
+        type: 'expense',
+        cancelledAt: '2026-10-01T00:00:00.000Z',
+        account: card,
+      }),
+      false,
+    );
+    assert.equal(
+      canCancelMovement({ type: 'transfer', cancelledAt: null, account: card }),
+      false,
+    );
+  });
+
+  it("says what the movement's statement shows", () => {
+    const l = testLocalizer();
+    assert.equal(cancellationNote(null, l), l.t('transaction.cancel.verify'));
+    const on = {
+      statementDate: '2026-10-28',
+      appears: true,
+      reversalFound: false,
+    };
+    assert.match(cancellationNote(on, l), /28 oct/);
+    assert.equal(
+      cancellationNote(on, l),
+      l.t('transaction.cancel.appears', { date: '28 oct' }),
+    );
+    assert.equal(
+      cancellationNote({ ...on, reversalFound: true }, l),
+      l.t('transaction.cancel.appearsWithReversal', { date: '28 oct' }),
+    );
+    assert.equal(
+      cancellationNote({ ...on, appears: false }, l),
+      l.t('transaction.cancel.notOnStatement', { date: '28 oct' }),
+    );
   });
 });

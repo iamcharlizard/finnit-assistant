@@ -309,6 +309,7 @@ export class AccountsService {
     const confirmedFrom = {
       accountId: account.id,
       isPending: false,
+      cancelledAt: null,
       txnDate: { gte: dateOf(from) },
     };
     const [ins, outs, unknown, oldestImported, lastUnknown] = await Promise.all(

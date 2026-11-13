@@ -31,7 +31,9 @@ export function TransactionSummary({
     <Card className="gap-3 rounded-[20px] p-5">
       <TwView className="flex-row flex-wrap items-center gap-2">
         <Badge variant="muted" label={view.typeLabel} />
-        {view.pending ? (
+        {view.cancelled ? (
+          <Badge variant="muted" label={t('finance.cancelled')} />
+        ) : view.pending ? (
           <Badge variant="highlight" label={t('finance.pending')} />
         ) : view.inProcess ? (
           <Badge variant="highlight" label={t('finance.inProcess')} />

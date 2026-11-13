@@ -51,6 +51,7 @@ export function TransactionListCard({
   const router = useRouter();
   const gql = useGql();
   const pending = row.status === 'pending';
+  const cancelled = row.status === 'cancelled';
 
   return (
     <TransactionCard
@@ -62,14 +63,18 @@ export function TransactionListCard({
           ? t('finance.withPending', { time: row.time })
           : row.status === 'inProcess' && !showStatus
             ? t('finance.withInProcess', { time: row.time })
-            : row.time)
+            : cancelled && !showStatus
+              ? t('finance.withCancelled', { time: row.time })
+              : row.time)
       }
       amount={row.amount}
       icon={CATEGORY_ICONS[row.iconKey]}
-      variant={pending || row.variant === 'neutral' ? 'pending' : row.variant}
+      variant={pending || cancelled || row.variant === 'neutral' ? 'pending' : row.variant}
       status={
-        showStatus
-          ? pending
+        showStatus || cancelled
+          ? cancelled
+            ? { label: t('finance.cancelled'), variant: 'cancelada' }
+            : pending
             ? { label: t('finance.pending'), variant: 'pendiente' }
             : row.status === 'inProcess'
               ? { label: t('finance.inProcess'), variant: 'info' }

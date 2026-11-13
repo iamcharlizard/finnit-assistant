@@ -19,6 +19,11 @@ export interface ConfirmRequest {
   confirmLabel: string;
   destructive?: boolean;
   onConfirm: () => void;
+  /**
+   * Another way out next to the confirmation (e.g. "Marcar como cancelado"
+   * instead of deleting).
+   */
+  secondary?: { label: string; onConfirm: () => void };
 }
 
 /**
@@ -45,6 +50,11 @@ export function ConfirmDialog({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            {shown.secondary ? (
+              <AlertDialogAction onClick={shown.secondary.onConfirm}>
+                {shown.secondary.label}
+              </AlertDialogAction>
+            ) : null}
             <AlertDialogAction
               destructive={shown.destructive}
               onClick={shown.onConfirm}

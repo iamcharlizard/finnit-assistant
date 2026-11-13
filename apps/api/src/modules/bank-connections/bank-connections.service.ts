@@ -27,7 +27,16 @@ import { localToday } from '../../common/utils/local-date.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SyncReviewService } from './sync-review.service';
 import { CardInstallmentsService } from '../debts/card-installments.service';
-import { mismatchTexts, reconcileBalance } from './balance-reconciliation';
+import {
+  cancelledTexts,
+  mismatchTexts,
+  reconcileBalance,
+} from './balance-reconciliation';
+import {
+  CANCELLABLE_SELECT,
+  cancelBlockOf,
+  cancelMovement,
+} from '../../common/utils/cancel-movement.util';
 import {
   BankConnection,
   BankSyncResult,
@@ -573,6 +582,7 @@ export class BankConnectionsService {
       where: {
         accountId: account.id,
         isPending: false,
+        cancelledAt: null,
         createdAt: { gt: linked.reconciledAt },
         ...(open && { id: { not: open.id } }),
       },
@@ -660,6 +670,62 @@ export class BankConnectionsService {
     }
   }
 
+  /**
+   * A recorded movement the bank now reports deleted or disabled (a charge
+   * it cancelled after it posted): it is marked cancelled, so it stops
+   * counting in the balance and the card's cycles, and the user is told. One
+   * that belongs to a transfer or a loan is only reported.
+   */
+  private async cancelRemoved(
+    userId: string,
+    transactionId: string,
+  ): Promise<void> {
+    const outcome = await this.prisma.$transaction(async (tx) => {
+      const movement = await tx.transaction.findFirst({
+        where: { id: transactionId, userId },
+        select: {
+          ...CANCELLABLE_SELECT,
+          currency: true,
+          description: true,
+          merchantName: true,
+          aliasName: true,
+          alias: { select: { displayName: true } },
+        },
+      });
+      if (!movement) return null;
+      const block = cancelBlockOf(movement);
+      if (block === 'cancelled') return null;
+      const marked = block === null;
+      if (marked) await cancelMovement(tx, movement);
+      return { movement, marked };
+    });
+    if (!outcome) return;
+    const { movement, marked } = outcome;
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { locale: true },
+    });
+    const texts = cancelledTexts(user?.locale ?? 'es', {
+      name:
+        movement.aliasName ||
+        movement.alias?.displayName ||
+        movement.merchantName ||
+        movement.description ||
+        '—',
+      amount: Number(movement.amount),
+      currency: movement.currency,
+      marked,
+    });
+    await this.notifications.notify({
+      userId,
+      type: NotificationType.movement_cancelled,
+      title: texts.title,
+      message: texts.message,
+      relatedEntityType: 'transaction_cancelled',
+      relatedEntityId: movement.id,
+    });
+  }
+
   private async importTransactions(
     userId: string,
     linked: LinkedAccountRow,
@@ -681,7 +747,19 @@ export class BankConnectionsService {
       });
 
       if (existing) {
-        if (removed && existing.status !== ImportedLineStatus.created) {
+        if (
+          removed &&
+          existing.matchedTransactionId &&
+          existing.status !== ImportedLineStatus.ignored
+        ) {
+          // Already recorded: the bank cancelled it after it posted. The
+          // line is then ignored, so reactivating it by hand sticks.
+          await this.cancelRemoved(userId, existing.matchedTransactionId);
+          await this.prisma.importedTransaction.update({
+            where: { id: existing.id },
+            data: { status: ImportedLineStatus.ignored },
+          });
+        } else if (removed && existing.status !== ImportedLineStatus.created) {
           await this.prisma.importedTransaction.update({
             where: { id: existing.id },
             data: { status: ImportedLineStatus.ignored },

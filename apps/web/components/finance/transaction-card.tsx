@@ -41,6 +41,7 @@ export function TransactionListCard({
   selected,
   onSelectedChange,
   selectLabel,
+  renameRequest,
   footer,
   className,
 }: {
@@ -62,6 +63,8 @@ export function TransactionListCard({
   selected?: boolean;
   onSelectedChange?: (checked: boolean) => void;
   selectLabel?: string;
+  /** Opens the name field from outside (the context menu's "Renombrar"). */
+  renameRequest?: number;
   footer?: React.ReactNode;
   className?: string;
 }) {
@@ -69,6 +72,7 @@ export function TransactionListCard({
   const { t: translate } = useLocalizer();
   const drawer = useTransactionDrawer();
   const pending = row.status === 'pending';
+  const cancelled = row.status === 'cancelled';
 
   return (
     <Card
@@ -80,18 +84,26 @@ export function TransactionListCard({
           ? t('finance.withPending', { time: row.time })
           : row.status === 'inProcess' && !showStatus
             ? t('finance.withInProcess', { time: row.time })
-            : row.time)
+            : cancelled && !showStatus
+              ? t('finance.withCancelled', { time: row.time })
+              : row.time)
       }
       amount={row.amount}
       icon={CATEGORY_ICONS[row.iconKey]}
-      variant={pending || row.variant === 'neutral' ? 'pending' : row.variant}
+      variant={
+        pending || cancelled || row.variant === 'neutral'
+          ? 'pending'
+          : row.variant
+      }
       status={
-        showStatus
-          ? pending
-            ? { label: t('finance.pending'), variant: 'pendiente' }
-            : row.status === 'inProcess'
-              ? { label: t('finance.inProcess'), variant: 'info' }
-              : { label: t('finance.completed'), variant: 'completado' }
+        showStatus || cancelled
+          ? cancelled
+            ? { label: t('finance.cancelled'), variant: 'cancelada' }
+            : pending
+              ? { label: t('finance.pending'), variant: 'pendiente' }
+              : row.status === 'inProcess'
+                ? { label: t('finance.inProcess'), variant: 'info' }
+                : { label: t('finance.completed'), variant: 'completado' }
           : undefined
       }
       isPrivate={row.isPrivate}
@@ -102,6 +114,7 @@ export function TransactionListCard({
       selected={selected}
       onSelectedChange={onSelectedChange}
       selectLabel={selectLabel}
+      renameRequest={renameRequest}
       rename={
         editable
           ? {

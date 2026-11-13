@@ -34,6 +34,7 @@ describe('ReportsService', () => {
       where: {
         userId: 'user-1',
         isPending: false,
+        cancelledAt: null,
         txnDate,
         type: 'income',
         AND: [countedInTotalsWhere()],
@@ -44,6 +45,7 @@ describe('ReportsService', () => {
       where: {
         userId: 'user-1',
         isPending: false,
+        cancelledAt: null,
         txnDate,
         type: 'expense',
         AND: [countedInTotalsWhere()],
@@ -55,6 +57,7 @@ describe('ReportsService', () => {
       where: {
         userId: 'user-1',
         isPending: false,
+        cancelledAt: null,
         txnDate,
         type: 'expense',
         categoryId: { not: null },
@@ -225,6 +228,7 @@ describe('monthsOfData', () => {
         where: {
           userId: 'user-1',
           isPending: false,
+          cancelledAt: null,
           type: { in: ['income', 'expense'] },
           txnDate: {
             gte: new Date('2026-11-01T00:00:00.000Z'),

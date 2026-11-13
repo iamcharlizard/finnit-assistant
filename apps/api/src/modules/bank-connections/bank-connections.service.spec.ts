@@ -501,6 +501,118 @@ describe('BankConnectionsService', () => {
     });
   });
 
+  describe('a recorded movement the bank cancelled', () => {
+    const removed = {
+      id_transaction: 'sy-gone',
+      id_account: 'sy-acc-card',
+      amount: -1250,
+      is_deleted: 1,
+      dt_transaction: Date.UTC(2026, 9, 20) / 1000,
+    };
+    const movement = {
+      id: 't-1',
+      accountId: 'card-1',
+      type: 'expense',
+      amount: 1250,
+      balanceEffect: -1250,
+      isPending: false,
+      cancelledAt: null,
+      createdAt: new Date('2026-10-20'),
+      currency: 'MXN',
+      description: 'AMAZON MX',
+      merchantName: 'AMAZON MX',
+      aliasName: null,
+      alias: null,
+      transferFrom: null,
+      transferTo: null,
+      debtPayment: null,
+      debtCharge: null,
+      debtDisbursement: null,
+      bankDifferenceOf: null,
+      debtPurchase: null,
+      recurringPayment: null,
+    };
+    beforeEach(() => {
+      // Nothing else to import after the removed line.
+      prisma.importedTransaction.findMany.mockResolvedValue([]);
+      reconciliation.reconcileLines.mockResolvedValue(undefined as never);
+    });
+    const run = () =>
+      (
+        service as unknown as {
+          importTransactions: (
+            u: string,
+            l: unknown,
+            t: unknown[],
+          ) => Promise<unknown>;
+        }
+      ).importTransactions(userId, linkedRow(), [removed]);
+
+    it('is marked cancelled, the line ignored, and the user told', async () => {
+      prisma.importedTransaction.findUnique.mockResolvedValue({
+        id: 'line-1',
+        status: ImportedLineStatus.created,
+        matchedTransactionId: 't-1',
+      } as never);
+      prisma.transaction.findFirst.mockResolvedValue(movement as never);
+      prisma.user.findUnique.mockResolvedValue({ locale: 'es' } as never);
+
+      await run();
+
+      expect(prisma.account.update).toHaveBeenCalledWith({
+        where: { id: 'card-1' },
+        data: { balanceCurrent: { increment: 1250 } },
+      });
+      expect(prisma.transaction.update).toHaveBeenCalledWith({
+        where: { id: 't-1' },
+        data: { cancelledAt: expect.any(Date), inProcess: false },
+      });
+      expect(prisma.importedTransaction.update).toHaveBeenCalledWith({
+        where: { id: 'line-1' },
+        data: { status: ImportedLineStatus.ignored },
+      });
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'movement_cancelled',
+          relatedEntityId: 't-1',
+          title: 'El banco canceló AMAZON MX',
+        }),
+      );
+    });
+
+    it('only reports one that belongs to a transfer', async () => {
+      prisma.importedTransaction.findUnique.mockResolvedValue({
+        id: 'line-1',
+        status: ImportedLineStatus.matched,
+        matchedTransactionId: 't-1',
+      } as never);
+      prisma.transaction.findFirst.mockResolvedValue({
+        ...movement,
+        transferFrom: { id: 'tr-1' },
+      } as never);
+
+      await run();
+
+      expect(prisma.transaction.update).not.toHaveBeenCalled();
+      expect(notifications.notify).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'movement_cancelled' }),
+      );
+    });
+
+    it('leaves alone a line already handled (a reactivation sticks)', async () => {
+      prisma.importedTransaction.findUnique.mockResolvedValue({
+        id: 'line-1',
+        status: ImportedLineStatus.ignored,
+        matchedTransactionId: 't-1',
+      } as never);
+
+      await run();
+
+      expect(prisma.transaction.findFirst).not.toHaveBeenCalled();
+      expect(notifications.notify).not.toHaveBeenCalled();
+    });
+  });
+
   describe('linkProviderUser', () => {
     it('maps a Finnit user to an existing Syncfy user by external id', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: userId } as never);
@@ -582,6 +694,7 @@ describe('BankConnectionsService', () => {
         where: {
           accountId: 'card-1',
           isPending: false,
+          cancelledAt: null,
           createdAt: { gt: since },
         },
         _sum: { balanceEffect: true },

@@ -406,6 +406,7 @@ export class RecurringSuggestionsService {
           userId,
           type: TransactionType.expense,
           isPending: false,
+          cancelledAt: null,
           txnDate: { gte: addDays(today, -SUGGESTION_LOOKBACK_DAYS) },
           // Already linked to a recurring payment, or part of a transfer.
           recurringPayment: { is: null },

@@ -279,6 +279,7 @@ export class LoanTrackingService {
           userId,
           type: TransactionType.expense,
           isPending: false,
+          cancelledAt: null,
           txnDate: {
             gte: addDays(
               new Date(Math.min(...dueTimes)),

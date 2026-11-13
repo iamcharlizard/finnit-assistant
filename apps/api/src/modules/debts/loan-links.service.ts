@@ -166,6 +166,7 @@ export class LoanLinksService {
       userId,
       type: TransactionType.expense,
       isPending: false,
+      cancelledAt: null,
       debtPayment: { is: null },
       recurringPayment: { is: null },
       ...(text

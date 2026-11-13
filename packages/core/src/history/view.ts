@@ -14,6 +14,8 @@ import {
   roundCents,
 } from '../finance/money';
 import {
+  canCancelMovement,
+  countsInTotals,
   direction,
   toTransactionRow,
   type TransactionRow,
@@ -52,8 +54,12 @@ export const TRANSACTIONS_PAGE_QUERY = `query TransactionsPage($first: Int!, $af
 export interface HistoryRow extends TransactionRow {
   /** What the name editor ("Editar nombre") starts from. */
   name: NameSubject;
-  /** "Convertir en transferencia"; null for transfers and adjustments. */
+  /** "Convertir en transferencia"; null for transfers, adjustments and cancelled ones. */
   convert: ConvertSource | null;
+  /** "Marcar como cancelado": an expense or income on a credit card. */
+  canCancel: boolean;
+  /** Adjustments can't be deleted (the balance is set again instead). */
+  deletable: boolean;
   /** Signed amount for the day's net: transfers and adjustments are 0. */
   net: number;
   currency: string;
@@ -81,19 +87,23 @@ export function toHistoryRow(
   return {
     ...row,
     name: nameSubjectOf(tx),
-    convert: canConvertToTransfer(tx)
-      ? {
-          id: tx.id,
-          type: tx.type,
-          accountId: tx.accountId,
-          currency: tx.currency,
-          amount,
-          txnDate: tx.txnDate,
-        }
-      : null,
-    // Pending movements and categories left out of the totals add nothing.
+    convert:
+      canConvertToTransfer(tx) && !tx.cancelledAt
+        ? {
+            id: tx.id,
+            type: tx.type,
+            accountId: tx.accountId,
+            currency: tx.currency,
+            amount,
+            txnDate: tx.txnDate,
+          }
+        : null,
+    canCancel: canCancelMovement(tx),
+    deletable: tx.type !== 'adjustment',
+    // Pending and cancelled movements, and categories left out of the
+    // totals, add nothing.
     net:
-      tx.isPending || tx.category?.excludeFromTotals
+      !countsInTotals(tx) || tx.category?.excludeFromTotals
         ? 0
         : tx.type === 'income'
           ? amount
@@ -193,11 +203,13 @@ export function groupTransfers(
       route: `${out.accountLabel} → ${inbound.accountLabel}`,
       amount: formatMoney(out.value, out.currency, locale),
       status:
-        out.status === 'pending' || inbound.status === 'pending'
-          ? 'pending'
-          : out.status === 'inProcess' || inbound.status === 'inProcess'
-            ? 'inProcess'
-            : 'completed',
+        out.status === 'cancelled' || inbound.status === 'cancelled'
+          ? 'cancelled'
+          : out.status === 'pending' || inbound.status === 'pending'
+            ? 'pending'
+            : out.status === 'inProcess' || inbound.status === 'inProcess'
+              ? 'inProcess'
+              : 'completed',
       out,
       in: inbound,
       outLabel: t('history.transfer.from', { account: out.accountLabel }),

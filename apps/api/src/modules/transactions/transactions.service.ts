@@ -26,7 +26,19 @@ import {
   TransactionsArgs,
   TransactionFilters,
   SimilarTransactionsArgs,
+  TransactionStatus,
 } from './dto/transaction.dto';
+import {
+  CANCELLABLE_SELECT,
+  cancelBlockOf,
+  cancelMovement,
+  restoreMovement,
+} from '../../common/utils/cancel-movement.util';
+import {
+  checkCancellation,
+  type CancellationCheckResult,
+} from './cancellation';
+import { DEBIT_KINDS } from '../statements/parsing/parsed-statement';
 import {
   TransactionLoanPayment,
   TransactionRecurringPayment,
@@ -45,6 +57,7 @@ import {
   effectOf,
   moveBalance,
   withAmount,
+  notCounted,
 } from '../../common/utils/balance-effect.util';
 import { Prisma } from '@finnit/database';
 import { loadCategoryI18n } from '../categories/category-names';
@@ -242,6 +255,7 @@ export class TransactionsService {
     if (filters) await this.applyFilters(userId, where, filters);
     where.type = TransactionType.expense;
     where.isPending = false;
+    where.cancelledAt = null;
     // A bank movement that looks like a transfer between the user's own
     // accounts (waiting for their answer) isn't spending: leave it out
     // until they say it's an expense.
@@ -412,8 +426,11 @@ export class TransactionsService {
         existingTransaction.accountId,
         appliedEffect(
           newEffect,
-          input.isPending ?? existingTransaction.isPending,
-        ) - appliedEffect(effect, existingTransaction.isPending),
+          notCounted({
+            isPending: input.isPending ?? existingTransaction.isPending,
+            cancelledAt: existingTransaction.cancelledAt,
+          }),
+        ) - appliedEffect(effect, notCounted(existingTransaction)),
       );
 
       return tx.transaction.update({
@@ -627,6 +644,99 @@ export class TransactionsService {
     });
 
     return true;
+  }
+
+  /**
+   * "Marcar como cancelado": a credit card movement the bank cancelled stays
+   * in the history but stops counting (balance, card cycles, totals). Not
+   * for transfers, loan movements or adjustments.
+   */
+  async cancel(id: string, userId: string): Promise<Transaction> {
+    await this.prisma.$transaction(async (tx) => {
+      const movement = await tx.transaction.findFirst({
+        where: { id, userId },
+        select: { ...CANCELLABLE_SELECT, account: { select: { type: true } } },
+      });
+      if (!movement) throw new NotFoundError('Transaction not found');
+      if (movement.account.type !== 'credit') {
+        throw new ValidationError(
+          'Only credit card movements can be marked cancelled',
+        );
+      }
+      const block = cancelBlockOf(movement);
+      if (block === 'cancelled') return;
+      if (block) {
+        throw new ValidationError(
+          block === 'transfer'
+            ? 'A transfer side cannot be cancelled; delete the transfer instead'
+            : block === 'loan'
+              ? 'This movement belongs to a loan or a purchase in installments; unlink it first'
+              : 'Balance adjustments cannot be cancelled',
+        );
+      }
+      await cancelMovement(tx, movement);
+    });
+    return this.findById(id, userId);
+  }
+
+  /** "Reactivar": a cancelled movement counts again. */
+  async restore(id: string, userId: string): Promise<Transaction> {
+    await this.prisma.$transaction(async (tx) => {
+      const movement = await tx.transaction.findFirst({
+        where: { id, userId },
+        select: CANCELLABLE_SELECT,
+      });
+      if (!movement) throw new NotFoundError('Transaction not found');
+      await restoreMovement(tx, movement);
+    });
+    return this.findById(id, userId);
+  }
+
+  /**
+   * Before cancelling: whether the confirmed statement whose period covers
+   * the movement lists it, and whether it shows its reversal.
+   */
+  async cancellationCheck(
+    id: string,
+    userId: string,
+  ): Promise<CancellationCheckResult> {
+    const movement = await this.prisma.transaction.findFirst({
+      where: { id, userId },
+      select: { id: true, accountId: true, amount: true, txnDate: true },
+    });
+    if (!movement) throw new NotFoundError('Transaction not found');
+    const statement = await this.prisma.statementImport.findFirst({
+      where: {
+        userId,
+        accountId: movement.accountId,
+        status: 'confirmed',
+        periodStart: { lte: movement.txnDate },
+        periodEnd: { gte: movement.txnDate },
+      },
+      orderBy: { periodEnd: 'asc' },
+      select: {
+        statementDate: true,
+        periodEnd: true,
+        lines: {
+          select: { matchedTransactionId: true, kind: true, amount: true },
+        },
+      },
+    });
+    return checkCancellation(
+      { id: movement.id, amount: Number(movement.amount) },
+      statement
+        ? {
+            closedOn: (statement.statementDate ?? statement.periodEnd)!
+              .toISOString()
+              .slice(0, 10),
+            lines: statement.lines.map((line) => ({
+              matchedTransactionId: line.matchedTransactionId,
+              credit: !DEBIT_KINDS.has(line.kind),
+              amount: Number(line.amount),
+            })),
+          }
+        : null,
+    );
   }
 
   /**
@@ -852,7 +962,7 @@ export class TransactionsService {
     return await this.prisma.$transaction(async (tx) => {
       // Adjust account balance based on pending status change
       // Confirming applies its effect; marking it pending takes it back.
-      if (transaction.isPending !== isPending) {
+      if (transaction.isPending !== isPending && !transaction.cancelledAt) {
         const effect = effectOf(transaction);
         await moveBalance(
           tx,
@@ -889,6 +999,7 @@ export class TransactionsService {
           lte: dateTo,
         },
         isPending: false,
+        cancelledAt: null,
         type: { not: 'transfer' }, // Exclude transfers to avoid double counting
         AND: [countedInTotalsWhere()],
       },
@@ -910,6 +1021,7 @@ export class TransactionsService {
           lte: dateTo,
         },
         isPending: false,
+        cancelledAt: null,
         AND: [countedInTotalsWhere()],
       },
       _sum: {
@@ -926,6 +1038,7 @@ export class TransactionsService {
           lte: dateTo,
         },
         isPending: false,
+        cancelledAt: null,
         AND: [countedInTotalsWhere()],
       },
       _sum: {
@@ -1101,6 +1214,17 @@ export class TransactionsService {
       where.isPending = filters.isPending;
     }
 
+    if (filters.statuses) {
+      where.AND = [
+        ...(Array.isArray(where.AND)
+          ? where.AND
+          : where.AND
+            ? [where.AND]
+            : []),
+        { OR: statusWhere(filters.statuses) },
+      ];
+    }
+
     if (filters.aliasId) {
       // The movements that show this rule's name (a one-off name wins).
       where.aliasId = filters.aliasId;
@@ -1175,4 +1299,22 @@ export class TransactionsService {
     }
     return ids;
   }
+}
+
+/**
+ * The movements in any of these states ("Estado" in the history): pending,
+ * completed (confirmed, "en proceso" included) and cancelled. An empty list
+ * matches nothing.
+ */
+export function statusWhere(
+  statuses: readonly TransactionStatus[],
+): Prisma.TransactionWhereInput[] {
+  const by: Record<TransactionStatus, Prisma.TransactionWhereInput> = {
+    [TransactionStatus.pending]: { isPending: true, cancelledAt: null },
+    [TransactionStatus.completed]: { isPending: false, cancelledAt: null },
+    [TransactionStatus.cancelled]: { cancelledAt: { not: null } },
+  };
+  return statuses.length > 0
+    ? [...new Set(statuses)].map((status) => by[status])
+    : [{ id: { in: [] } }];
 }

@@ -105,6 +105,13 @@ export class Transaction {
   })
   inProcess: boolean;
 
+  @Field(() => Date, {
+    nullable: true,
+    description:
+      '"Cancelado": when the bank cancelled it (by hand on a credit card, or reported by a bank sync). It stays in the history but counts nowhere',
+  })
+  cancelledAt?: Date | null;
+
   @Field()
   isRecurringInstance: boolean;
 

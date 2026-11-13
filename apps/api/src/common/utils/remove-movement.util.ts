@@ -1,6 +1,11 @@
 import { ImportedLineStatus, Prisma, TransactionType } from '@finnit/database';
 
-import { appliedEffect, effectOf, moveBalance } from './balance-effect.util';
+import {
+  appliedEffect,
+  effectOf,
+  moveBalance,
+  notCounted,
+} from './balance-effect.util';
 
 type Client = Prisma.TransactionClient;
 
@@ -12,7 +17,39 @@ export interface RemovableMovement {
   amount: Prisma.Decimal | number;
   balanceEffect: Prisma.Decimal | number | null;
   isPending: boolean;
+  /** Cancelled movements no longer count in the balance. */
+  cancelledAt?: Date | null;
   createdAt: Date;
+}
+
+/**
+ * An account linked to a bank keeps reconciling when a movement stops
+ * counting (deleted or cancelled): if the bank already counted it at the
+ * last sync, the reconciled balance changes by the same `removed` amount,
+ * so the next sync shows any money the bank still has as "Diferencia con
+ * el banco" instead of silently putting it back. Restoring passes the
+ * effect with the opposite sign.
+ */
+export async function followReconciledBalance(
+  tx: Client,
+  movement: { accountId: string; createdAt: Date },
+  removed: number,
+): Promise<void> {
+  if (removed === 0) return;
+  const linked = await tx.linkedAccount.findFirst({
+    where: {
+      accountId: movement.accountId,
+      reconciledAt: { gte: movement.createdAt },
+      reconciledBalance: { not: null },
+    },
+    select: { id: true },
+  });
+  if (linked) {
+    await tx.linkedAccount.update({
+      where: { id: linked.id },
+      data: { reconciledBalance: { decrement: removed } },
+    });
+  }
 }
 
 /**
@@ -32,25 +69,9 @@ export async function removeMovement(
   tx: Client,
   movement: RemovableMovement,
 ): Promise<void> {
-  const applied = appliedEffect(effectOf(movement), movement.isPending);
+  const applied = appliedEffect(effectOf(movement), notCounted(movement));
   await moveBalance(tx, movement.accountId, -applied);
-
-  if (applied !== 0) {
-    const linked = await tx.linkedAccount.findFirst({
-      where: {
-        accountId: movement.accountId,
-        reconciledAt: { gte: movement.createdAt },
-        reconciledBalance: { not: null },
-      },
-      select: { id: true },
-    });
-    if (linked) {
-      await tx.linkedAccount.update({
-        where: { id: linked.id },
-        data: { reconciledBalance: { decrement: applied } },
-      });
-    }
-  }
+  await followReconciledBalance(tx, movement, applied);
 
   await tx.importedTransaction.updateMany({
     where: { matchedTransactionId: movement.id },

@@ -300,7 +300,9 @@
       "pending": "Pending",
       "scheduled": "Scheduled",
       "paid": "Paid"
-    }
+    },
+    "cancelled": "Cancelled",
+    "withCancelled": "{time} · Cancelled"
   },
   "monthSwitcher": {
     "label": "Change month",
@@ -443,7 +445,8 @@
       "showFewer": "View fewer",
       "selectAll": "Select all",
       "selectionNamed": "{group}: {names}",
-      "selectionCount": "{group}: {count} of {total}"
+      "selectionCount": "{group}: {count} of {total}",
+      "status": "Status"
     },
     "categorySearch": "Search category",
     "deleteTransfer": "Delete transfer",
@@ -463,6 +466,16 @@
       "available": "{available} available of {limit}",
       "needsTerms": "Add your cut-off and payment days to see what to pay each cycle.",
       "setTerms": "Set up"
+    },
+    "statuses": {
+      "pending": "Pending",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "rowMenu": {
+      "open": "View details",
+      "rename": "Rename",
+      "openSide": "View {account}"
     }
   },
   "cards": {
@@ -2880,6 +2893,23 @@
       "unlink": "Unlink",
       "done": "Linked to {name}",
       "unlinked": "Unlinked from {name}"
+    },
+    "cancel": {
+      "action": "Mark as cancelled",
+      "restore": "Reactivate",
+      "title": "Mark as cancelled?",
+      "description": "It stays in your history as Cancelled, but it no longer counts in the card balance, what you owe or your totals.",
+      "confirm": "Mark as cancelled",
+      "deleteSuggestion": "If the bank cancelled it, mark it as cancelled instead: it stays in your history and stops counting.",
+      "checking": "Checking your statement…",
+      "verify": "Check on your statement that the bank cancelled it; otherwise what you owe on the card won't match.",
+      "appearsWithReversal": "It is on your {date} statement together with its reversal: it looks cancelled.",
+      "appears": "It is on your {date} statement without a reversal: check that the bank did cancel it, or what you owe won't match.",
+      "notOnStatement": "It is not on your {date} statement.",
+      "done": "Marked as cancelled",
+      "restored": "It counts again",
+      "badge": "Cancelled",
+      "banner": "The bank cancelled it: it doesn't count in the balance or your totals."
     }
   },
   "notifications": {

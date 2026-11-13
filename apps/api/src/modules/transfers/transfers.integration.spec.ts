@@ -23,6 +23,13 @@ import { TransferConversionService } from './transfer-conversion.service';
 import { TransferSuggestionsService } from './transfer-suggestions.service';
 import { TransferSuggestionAction } from './dto/transfer-suggestion.dto';
 import { ReportsService } from '../reports/reports.service';
+import {
+  CANCELLABLE_SELECT,
+  cancelMovement,
+  restoreMovement,
+} from '../../common/utils/cancel-movement.util';
+import { statusWhere } from '../transactions/transactions.service';
+import { TransactionStatus } from '../transactions/dto/transaction.dto';
 
 const DATABASE_URL = process.env.TRANSFERS_TEST_DATABASE_URL;
 
@@ -247,6 +254,57 @@ const DATABASE_URL = process.env.TRANSFERS_TEST_DATABASE_URL;
         '2025-03-10',
       );
       expect(flow[0]!.expenses).toBe(100);
+    });
+
+    it('a cancelled card charge counts nowhere until reactivated', async () => {
+      const reports = new ReportsService(prisma);
+      const card = await prisma.account.create({
+        data: {
+          userId,
+          name: 'Tarjeta cancelaciones',
+          type: AccountType.credit,
+          currency: 'MXN',
+          balanceCurrent: 0,
+        },
+      });
+      const day = new Date('2025-05-12T00:00:00.000Z');
+      const charge = await bankMovement(
+        card.id,
+        TransactionType.expense,
+        1_250,
+        'AMAZON CANCELADO',
+        day,
+      );
+      expect(await balance(card.id)).toBe(-1_250);
+      const spentBefore = (await reports.getMonthlyReport(userId, 2025, 5))
+        .totalExpenses;
+
+      const load = () =>
+        prisma.transaction.findUniqueOrThrow({
+          where: { id: charge.id },
+          select: CANCELLABLE_SELECT,
+        });
+      await prisma.$transaction(async (tx) => cancelMovement(tx, await load()));
+      expect(await balance(card.id)).toBe(0);
+      expect(
+        (await reports.getMonthlyReport(userId, 2025, 5)).totalExpenses,
+      ).toBe(spentBefore - 1_250);
+      const cancelled = await prisma.transaction.findMany({
+        where: {
+          accountId: card.id,
+          OR: statusWhere([TransactionStatus.cancelled]),
+        },
+        select: { id: true },
+      });
+      expect(cancelled.map((t) => t.id)).toEqual([charge.id]);
+
+      await prisma.$transaction(async (tx) =>
+        restoreMovement(tx, await load()),
+      );
+      expect(await balance(card.id)).toBe(-1_250);
+      expect(
+        (await reports.getMonthlyReport(userId, 2025, 5)).totalExpenses,
+      ).toBe(spentBefore);
     });
 
     it('suggests the pair found in two synced accounts and links it', async () => {

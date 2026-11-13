@@ -671,6 +671,18 @@ type BudgetUsage {
   spent: Float!
 }
 
+"""What a movement's confirmed statement says before marking it cancelled"""
+type CancellationCheck {
+  """Listed on that statement; null without a statement"""
+  appears: Boolean
+
+  """A credit of the same amount on that statement (its reversal)"""
+  reversalFound: Boolean!
+
+  """The statement's cut-off (YYYY-MM-DD); null without one"""
+  statementDate: String
+}
+
 """One installment of a card purchase"""
 input CardInstallmentInput {
   amount: Float!
@@ -2038,6 +2050,11 @@ type Mutation {
   autoCategorizeTransactions(mode: AutoCategorizeMode = history): AutoCategorizeResult!
 
   """
+  "Marcar como cancelado": a credit card movement the bank cancelled stays in the history but stops counting (balance, card cycles, totals)
+  """
+  cancelTransaction(id: ID!): Transaction!
+
+  """
   Moves movements (max 500) to a category; with createRule, learns a merchant rule per merchant. Returns how many changed
   """
   categorizeTransactions(categoryId: ID!, createRule: Boolean = true, ids: [ID!]!): Int!
@@ -2244,6 +2261,9 @@ type Mutation {
   resolveDuplicateSuggestion(input: ResolveDuplicateSuggestionInput!): Boolean!
   resolveTransferSuggestion(id: ID!, input: ResolveTransferSuggestionInput!): Boolean!
 
+  """"Reactivar": a cancelled movement counts again"""
+  restoreTransaction(id: ID!): Transaction!
+
   """
   Sets the account's balance to the real one; the difference is an adjustment
   """
@@ -2401,6 +2421,7 @@ enum NotificationType {
   card_statement
   card_unpaid
   debt_due
+  movement_cancelled
   recurring
   summary
   uncategorized
@@ -2508,6 +2529,11 @@ type Query {
   budgetSummary(month: Float!, year: Float!): BudgetSummary!
   budgetUsage(id: String!): [BudgetUsage!]!
   budgets: [Budget!]!
+
+  """
+  Before cancelling: whether the movement's confirmed statement lists it and shows its reversal
+  """
+  cancellationCheck(id: ID!): CancellationCheck!
 
   """
   Purchases in installments on an expense's card it can be: the whole purchase or one installment (link an installment with linkLoanPayment)
@@ -3364,6 +3390,11 @@ type Transaction {
   What it adds (+) or takes (−) from its account balance; null for old adjustments of unknown direction
   """
   balanceEffect: Float
+
+  """
+  "Cancelado": when the bank cancelled it (by hand on a credit card, or reported by a bank sync). It stays in the history but counts nowhere
+  """
+  cancelledAt: DateTime
   category: Category
   categoryId: String
   categorySource: CategorySource
@@ -3523,6 +3554,9 @@ input TransactionFilters {
   search: String
   source: TransactionSource
   startDate: DateTime
+
+  """Movements in any of these states (empty: none)"""
+  statuses: [TransactionStatus!]
   type: TransactionType
 
   """Movements of any of these types (empty: none)"""
@@ -3570,6 +3604,13 @@ type TransactionSpending {
 
   """Every matching expense, with or without a category"""
   totalExpenses: Float!
+}
+
+"""Pending, completed (also "en proceso") or cancelled"""
+enum TransactionStatus {
+  cancelled
+  completed
+  pending
 }
 
 """Transaction type"""

@@ -36,6 +36,21 @@ registerEnumType(TransactionSource, {
   description: 'Transaction source',
 });
 
+/** A movement's state, as the history filters it. */
+export enum TransactionStatus {
+  /** Not confirmed yet: counts nowhere. */
+  pending = 'pending',
+  /** Confirmed (also "en proceso"). */
+  completed = 'completed',
+  /** Cancelled by the bank: stays in the history, counts nowhere. */
+  cancelled = 'cancelled',
+}
+
+registerEnumType(TransactionStatus, {
+  name: 'TransactionStatus',
+  description: 'Pending, completed (also "en proceso") or cancelled',
+});
+
 @InputType()
 export class CreateTransactionInput {
   @Field()
@@ -186,6 +201,16 @@ export class TransactionFilters {
   @ArrayMaxSize(10)
   @IsEnum(TransactionType, { each: true })
   types?: TransactionType[];
+
+  @Field(() => [TransactionStatus], {
+    nullable: true,
+    description: 'Movements in any of these states (empty: none)',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(3)
+  @IsEnum(TransactionStatus, { each: true })
+  statuses?: TransactionStatus[];
 
   @Field({ nullable: true })
   @IsOptional()

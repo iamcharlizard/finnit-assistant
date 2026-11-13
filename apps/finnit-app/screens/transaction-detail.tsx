@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
 import {
   ArrowLeftRight,
+  Ban,
   CalendarClock,
   CheckCheck,
   CopyCheck,
@@ -12,6 +13,7 @@ import {
   MoreHorizontal,
   PencilLine,
   Repeat,
+  RotateCcw,
   Trash2,
   Undo2,
   Unlink,
@@ -29,6 +31,12 @@ import {
   type TransactionDetailResult,
 } from '@finnit/core/transaction-detail/request';
 import { runPaymentAction } from '@finnit/core/recurring/api';
+import {
+  cancelTransaction,
+  cancellationNote,
+  loadCancellationCheck,
+  restoreTransaction,
+} from '@finnit/core/transaction-detail/cancellation';
 import {
   UNDO_TRANSFER_CONVERSION_MUTATION,
   type ConvertMode,
@@ -118,14 +126,43 @@ export function TransactionDetailScreen() {
       .finally(() => setBusy(false));
   }
 
-  function askDelete() {
+  /** The statement's word on it, or the reminder to check it. */
+  async function statementNote(movementId: string): Promise<string> {
+    setBusy(true);
+    const check = await loadCancellationCheck(movementId, gql);
+    setBusy(false);
+    return cancellationNote(check, l);
+  }
+
+  const cancelIt = (movementId: string) =>
+    run(() => cancelTransaction(movementId, gql), t('cancel.done'));
+
+  async function askCancel() {
     if (!data) return;
+    const movementId = data.view.id;
+    const note = await statementNote(movementId);
+    Alert.alert(t('cancel.title'), [t('cancel.description'), note].join('\n\n'), [
+      { text: tc('cancel'), style: 'cancel' },
+      { text: t('cancel.confirm'), onPress: () => cancelIt(movementId) },
+    ]);
+  }
+
+  async function askDelete() {
+    if (!data) return;
+    const view = data.view;
+    // On a card, deleting also offers marking it cancelled (with what its
+    // statement shows).
+    const note = view.canCancel ? await statementNote(view.id) : null;
     const description = [
-      t('deleteDescription', { account: data.view.accountLabel }),
-      ...data.view.deleteNotes,
+      t('deleteDescription', { account: view.accountLabel }),
+      ...view.deleteNotes,
+      ...(note ? [t('cancel.deleteSuggestion'), note] : []),
     ].join('\n\n');
     Alert.alert(t('deleteTitle'), description, [
       { text: tc('cancel'), style: 'cancel' },
+      ...(view.canCancel
+        ? [{ text: t('cancel.action'), onPress: () => cancelIt(view.id) }]
+        : []),
       {
         text: t('delete'),
         style: 'destructive',
@@ -269,6 +306,29 @@ export function TransactionDetailScreen() {
               },
             ]
           : []),
+        ...(view.canCancel
+          ? [
+              {
+                key: 'cancel',
+                label: t('cancel.action'),
+                icon: Ban,
+                disabled: busy,
+                run: () => void askCancel(),
+              },
+            ]
+          : []),
+        ...(view.cancelled
+          ? [
+              {
+                key: 'restore',
+                label: t('cancel.restore'),
+                icon: RotateCcw,
+                disabled: busy,
+                run: () =>
+                  run(() => restoreTransaction(view.id, gql), t('cancel.restored')),
+              },
+            ]
+          : []),
         ...(view.deleteBlock === null
           ? [
               {
@@ -277,7 +337,7 @@ export function TransactionDetailScreen() {
                 icon: Trash2,
                 disabled: busy,
                 destructive: true,
-                run: askDelete,
+                run: () => void askDelete(),
               },
             ]
           : []),

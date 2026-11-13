@@ -14,6 +14,7 @@ import { NotFoundError } from '../../common/exceptions/graphql-error.exception';
 import {
   appliedEffect,
   effectOf,
+  notCounted,
 } from '../../common/utils/balance-effect.util';
 import { localToday } from '../../common/utils/local-date.util';
 import {
@@ -180,6 +181,7 @@ export class CreditCardsService {
             amount: true,
             balanceEffect: true,
             isPending: true,
+            cancelledAt: true,
             txnDate: true,
             categoryId: true,
           },
@@ -264,7 +266,8 @@ export class CreditCardsService {
 
     const movements: CycleMovement[] = rows.map((row) => ({
       day: dayOf(row.txnDate),
-      effect: appliedEffect(effectOf(row), row.isPending),
+      // Pending and cancelled movements don't move the card's balance.
+      effect: appliedEffect(effectOf(row), notCounted(row)),
       notPayment: row.id === card.bankDifferenceId,
     }));
     const statementByCut = new Map<DayKey, StatementFigures>();

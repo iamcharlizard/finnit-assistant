@@ -11,6 +11,7 @@ export const DISSOLVE_SIDE_SELECT = {
   amount: true,
   balanceEffect: true,
   isPending: true,
+  cancelledAt: true,
   createdAt: true,
   source: true,
   originalType: true,

@@ -243,6 +243,7 @@ export function mapTransaction(
     notes: shown.notes,
     isPending: transaction.isPending,
     inProcess: transaction.inProcess ?? false,
+    cancelledAt: transaction.cancelledAt ?? null,
     isRecurringInstance: transaction.isRecurringInstance,
     source: transaction.source,
     externalId: transaction.externalId || undefined,

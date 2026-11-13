@@ -42,11 +42,14 @@ export function HistoryList({
   initial,
   filters,
   categories,
+  creditCardIds,
   today,
 }: {
   initial: TransactionPage;
   filters: HistoryFilters;
   categories: ApiCategory[];
+  /** The user's open credit cards (a row's right-click "pago a tarjeta"). */
+  creditCardIds: ReadonlyArray<string>;
   today: DayKey;
 }) {
   const { rows, totalCount, hasNextPage, loading, error, loadMore } =
@@ -163,6 +166,7 @@ export function HistoryList({
                   <TransferGroupCard key={item.key} group={item} />
                 ) : (
                   <HistoryRow
+                    creditCardIds={creditCardIds}
                     key={item.row.id}
                     row={item.row}
                     onChanged={() => router.refresh()}

@@ -26,6 +26,7 @@ const aliasRow = (overrides: Record<string, unknown> = {}) => ({
   priority: 0,
   active: true,
   transferAccountId: null,
+  direction: null,
   isProtected: false,
   createdAt: new Date('2026-10-01'),
   updatedAt: new Date('2026-10-01'),
@@ -74,6 +75,7 @@ describe('MerchantAliasesService', () => {
         priority: 0,
         active: true,
         transferAccountId: null,
+        direction: null,
         isProtected: false,
       });
     });

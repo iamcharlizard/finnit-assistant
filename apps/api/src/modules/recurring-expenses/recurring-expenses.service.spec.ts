@@ -47,6 +47,9 @@ describe('RecurringExpensesService', () => {
       active: true,
       notes: null,
       nextDueDate: d('2026-10-10'),
+      essentialLevel: null,
+      essentialReason: null,
+      essentialAt: null,
       createdAt: d('2026-01-01'),
       updatedAt: d('2026-01-01'),
       ...overrides,
@@ -231,6 +234,21 @@ describe('RecurringExpensesService', () => {
       expect(result.totalCount).toBe(3);
       expect(result.pageInfo.hasNextPage).toBe(true);
       expect(result.edges[0].node.name).toBe('Netflix');
+    });
+
+    it('leaves card purchases in installments out when asked', async () => {
+      prisma.recurringExpense.findMany.mockResolvedValue([]);
+      prisma.recurringExpense.count.mockResolvedValue(0);
+      await service.findMany(userId, { excludeCardInstallments: true });
+      expect(prisma.recurringExpense.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            userId,
+            active: true,
+            NOT: { debt: { is: { loanType: 'card_installments' } } },
+          },
+        }),
+      );
     });
   });
 

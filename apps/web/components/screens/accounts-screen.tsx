@@ -1,11 +1,16 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
+  ArrowRight,
+  CalendarClock,
   FileUp,
   Landmark,
+  LayoutList,
+  ListOrdered,
   Layers,
   Maximize2,
   Minimize2,
@@ -15,6 +20,12 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@finnit/ui/components/ui/tabs';
 import { cn } from '@finnit/ui/lib/utils';
 
 import {
@@ -25,7 +36,10 @@ import { AccountCardStack } from '@/components/accounts/account-card-stack';
 import { AccountsOverview } from '@/components/accounts/accounts-overview';
 import { AccountMovements } from '@/components/accounts/account-movements';
 import { AccountStats } from '@/components/accounts/account-stats';
-import { CardPeriods } from '@/components/accounts/card-periods';
+import { CardMovementsTab } from '@/components/accounts/card-movements-tab';
+import { CardPeriodSpending } from '@/components/accounts/card-period-spending';
+import { CardPlansTab } from '@/components/accounts/card-plans-tab';
+import { CreditUsageCard } from '@/components/accounts/credit-usage-card';
 import {
   AccountStatusBadge,
   ExcludedFromTotalBadge,
@@ -43,19 +57,26 @@ import { ShowArchivedToggle } from '@/components/accounts/show-archived-toggle';
 import { EmptyState } from '@/components/finance/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { useSessionUser } from '@/components/session-provider';
+import { useUrlTab } from '@/components/use-url-tab';
 import type { AccountsData } from '@/lib/accounts/load';
 import type { DayKey } from '@finnit/core/finance/dates';
+import { CARD_TABS } from '@finnit/core/recurring/tabs';
+
+const TAB = 'flex-1 px-2 sm:flex-none sm:px-4';
 
 export function accountsHref({
   account,
   archived,
   day,
   focused = false,
+  tab,
 }: {
   account?: string | null;
   archived: boolean;
   /** A past day (balance by day); none = today. */
   day?: DayKey | null;
+  /** The screen's tab (?tab=), kept while the same view stays. */
+  tab?: string | null;
   /** The account's own page (/accounts/<id>), without the other cards. */
   focused?: boolean;
 }): string {
@@ -63,6 +84,7 @@ export function accountsHref({
   if (account && !focused) params.set('account', account);
   if (archived && !focused) params.set('archived', '1');
   if (day) params.set('day', day);
+  if (tab) params.set('tab', tab);
   const query = params.toString();
   const path =
     focused && account
@@ -108,17 +130,32 @@ export function AccountsScreen({
     id: string | null;
   } | null>(null);
   const activeId = pending && requested ? requested.id : (selected?.id ?? null);
+  const [cardTab, changeCardTab] = useUrlTab(CARD_TABS);
+  const creditCardIds = React.useMemo(
+    () =>
+      accounts
+        .filter((a) => a.type === 'credit' && !a.archived)
+        .map((a) => a.id),
+    [accounts],
+  );
 
   const navigate = (
     account: string | null | undefined,
     archived = showArchived,
     onDay: DayKey | null = day,
-  ) =>
+  ) => {
+    // Another day of the same view keeps its tab (Analíticos, Resumen…).
+    const sameView = (account ?? null) === (selected?.id ?? null);
+    const tab = sameView
+      ? new URLSearchParams(window.location.search).get('tab')
+      : null;
     startTransition(() =>
-      router.push(accountsHref({ account, archived, day: onDay, focused }), {
-        scroll: false,
-      }),
+      router.push(
+        accountsHref({ account, archived, day: onDay, focused, tab }),
+        { scroll: false },
+      ),
     );
+  };
 
   const showDay = (next: DayKey | null) =>
     navigate(selected?.id, showArchived, next);
@@ -224,6 +261,7 @@ export function AccountsScreen({
             <AccountsOverview
               overview={data.overview}
               onDay={(next) => navigate(null, showArchived, next)}
+              onSelect={selectAccount}
             />
           </div>
         </div>
@@ -311,6 +349,52 @@ export function AccountsScreen({
           }),
         },
   ];
+
+  const stats =
+    timeline && !timeline.isToday ? (
+      <>
+        <HistoricalNotice timeline={timeline} onToday={() => showDay(null)} />
+        <BalanceDayStats timeline={timeline} />
+      </>
+    ) : (
+      <AccountStats detail={detail} />
+    );
+  const usage = data.creditUsage ? (
+    <CreditUsageCard usage={data.creditUsage} />
+  ) : null;
+  const chart = timeline ? (
+    <DailyBalanceChart
+      title={t(
+        timeline.isCredit
+          ? 'accounts.balanceDay.chartTitleDebt'
+          : 'accounts.balanceDay.chartTitle',
+      )}
+      days={timeline.points}
+      series={[
+        {
+          key: 'balance',
+          label: t(
+            timeline.isCredit
+              ? 'accounts.balanceDay.tableDebt'
+              : 'accounts.balanceDay.tableBalance',
+          ),
+          color: 'var(--chart-1)',
+          values: timeline.points.map((p) => p.value),
+          amounts: timeline.points.map((p) => p.amount),
+        },
+      ]}
+      selectedDay={timeline.day}
+      completeFromLabel={timeline.completeFromLabel}
+      currency={selected.currency}
+      onDay={showDay}
+    />
+  ) : null;
+  const cardHref = accountsHref({
+    account: selected.id,
+    archived: false,
+    day,
+    focused: true,
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -419,56 +503,76 @@ export function AccountsScreen({
               )}
             />
           </div>
-          {timeline && !timeline.isToday ? (
-            <>
-              <HistoricalNotice
-                timeline={timeline}
-                onToday={() => showDay(null)}
-              />
-              <BalanceDayStats timeline={timeline} />
-            </>
-          ) : (
-            <AccountStats detail={detail} />
-          )}
           {selected.type === 'credit' ? (
-            // A new balance (a payment, a charge): ask for the cycles again.
-            <CardPeriods
-              key={`${selected.id}:${selected.amount}`}
-              accountId={selected.id}
-            />
-          ) : null}
-          {timeline ? (
-            <DailyBalanceChart
-              title={t(
-                timeline.isCredit
-                  ? 'accounts.balanceDay.chartTitleDebt'
-                  : 'accounts.balanceDay.chartTitle',
-              )}
-              days={timeline.points}
-              series={[
-                {
-                  key: 'balance',
-                  label: t(
-                    timeline.isCredit
-                      ? 'accounts.balanceDay.tableDebt'
-                      : 'accounts.balanceDay.tableBalance',
-                  ),
-                  color: 'var(--chart-1)',
-                  values: timeline.points.map((p) => p.value),
-                  amounts: timeline.points.map((p) => p.amount),
-                },
-              ]}
-              selectedDay={timeline.day}
-              completeFromLabel={timeline.completeFromLabel}
-              currency={selected.currency}
-              onDay={showDay}
-            />
-          ) : null}
-          <AccountMovements
-            rows={detail.recent}
-            historyHref={detail.historyHref}
-            dayLabel={timeline && !timeline.isToday ? timeline.dayLabel : null}
-          />
+            focused ? (
+              <Tabs
+                value={cardTab}
+                onValueChange={changeCardTab}
+                className="gap-4"
+              >
+                <TabsList className="w-full sm:w-fit">
+                  <TabsTrigger value="summary" className={TAB}>
+                    <LayoutList aria-hidden /> {t('accounts.cardTabs.summary')}
+                  </TabsTrigger>
+                  <TabsTrigger value="movements" className={TAB}>
+                    <ListOrdered aria-hidden />{' '}
+                    {t('accounts.cardTabs.movements')}
+                  </TabsTrigger>
+                  <TabsTrigger value="plans" className={TAB}>
+                    <CalendarClock aria-hidden /> {t('accounts.cardTabs.plans')}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="summary" className="flex flex-col gap-4">
+                  {stats}
+                  {usage}
+                  {chart}
+                  <CardPeriodSpending
+                    key={`${selected.id}:${selected.amount}`}
+                    accountId={selected.id}
+                  />
+                </TabsContent>
+                <TabsContent value="movements">
+                  <CardMovementsTab
+                    accountId={selected.id}
+                    balanceKey={`${selected.id}:${selected.amount}`}
+                    creditCardIds={creditCardIds}
+                    onChanged={() => router.refresh()}
+                  />
+                </TabsContent>
+                <TabsContent value="plans">
+                  <CardPlansTab
+                    accountId={selected.id}
+                    onChanged={() => router.refresh()}
+                  />
+                </TabsContent>
+              </Tabs>
+            ) : (
+              // In the list only its figures; periods, movements and
+              // purchases in installments are on the card's own page.
+              <>
+                {stats}
+                {usage}
+                <Button asChild variant="outline" className="self-start">
+                  <Link href={cardHref}>
+                    {t('accounts.cardSummary.openDetail')}{' '}
+                    <ArrowRight aria-hidden />
+                  </Link>
+                </Button>
+              </>
+            )
+          ) : (
+            <>
+              {stats}
+              {chart}
+              <AccountMovements
+                rows={detail.recent}
+                historyHref={detail.historyHref}
+                dayLabel={
+                  timeline && !timeline.isToday ? timeline.dayLabel : null
+                }
+              />
+            </>
+          )}
         </section>
       </div>
 

@@ -6,6 +6,10 @@ import { dayKeyOf, longDate, timeOf, type DayKey } from '../finance/dates';
 import { formatMoney } from '../finance/money';
 import { direction, transactionTitle } from '../finance/transactions';
 import { canCancelMovement } from '../finance/transactions';
+import {
+  directionChangeOf,
+  type DirectionChange,
+} from './direction';
 export { canCancelMovement };
 import {
   canConvertToTransfer,
@@ -194,6 +198,11 @@ export interface TransactionDetailView {
    * not cancelled yet, nor part of a transfer or a loan.
    */
   canCancel: boolean;
+  /**
+   * "Es un ingreso" / "Es un gasto": a plain expense or income, not a
+   * transfer side, a loan's movement or a scheduled payment it paid.
+   */
+  turn: DirectionChange | null;
   /** The user's notes ("" when none; hidden with the bank text when private). */
   notes: string;
   /** The other side of a transfer (opens its detail). */
@@ -294,6 +303,10 @@ export function toTransactionDetailView(
     inProcess: Boolean(tx.inProcess) && !tx.cancelledAt,
     cancelled: Boolean(tx.cancelledAt),
     canCancel: canCancelMovement(tx) && !counterpart && !tx.loanPayment,
+    turn:
+      counterpart || loan || recurring
+        ? null
+        : directionChangeOf(tx, nameSubjectOf(tx)),
     notes: tx.notes?.trim() ?? '',
     counterpart: counterpart
       ? {

@@ -21,7 +21,9 @@ type CardFields = Pick<
 /**
  * An account drawn as a card, with the user's colors when they chose some.
  * The title is the nickname when there is one, else the bank. Cards show
- * the holder; cash and savings show their balance instead.
+ * the holder; cash and savings show their balance instead. With
+ * `showAmount`, what it has (or a card owes) goes in the header, where it
+ * shows even when the card is stacked.
  */
 export function AccountCardVisual({
   account,
@@ -29,9 +31,11 @@ export function AccountCardVisual({
   secondaryColor,
   holderName,
   onClick,
+  showAmount = false,
   className,
 }: {
   account: CardFields;
+  showAmount?: boolean;
   primaryColor?: string | null;
   secondaryColor?: string | null;
   holderName: string;
@@ -53,8 +57,14 @@ export function AccountCardVisual({
       holderName={isCard ? holderName.toUpperCase() : undefined}
       holderLabel={tu('holder')}
       expiryLabel={tu('expires')}
-      balance={isCard ? undefined : account.balance}
+      balance={isCard || showAmount ? undefined : account.balance}
       balanceLabel={t('cardBalance')}
+      headerAmount={showAmount ? account.balance : undefined}
+      headerAmountLabel={
+        showAmount
+          ? t(account.type === 'credit' ? 'cardOwed' : 'cardAvailable')
+          : undefined
+      }
       onClick={onClick}
       className={className}
     />

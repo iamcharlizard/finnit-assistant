@@ -65,6 +65,15 @@ export interface PaidHistoryItem {
   matchedBy: OccurrenceMatchSource;
 }
 
+/**
+ * Card purchases in installments are recurring expenses underneath (each
+ * installment is an occurrence) but live in the card's "Pagos a meses":
+ * the recurring screen leaves them out.
+ */
+const NOT_CARD_INSTALLMENTS = {
+  NOT: { debt: { is: { loanType: LoanType.card_installments } } },
+} satisfies Prisma.RecurringExpenseWhereInput;
+
 @Injectable()
 export class RecurringExpensesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -204,6 +213,7 @@ export class RecurringExpensesService {
       ...(args.kind && { kind: args.kind }),
       ...(args.trackingMode && { trackingMode: args.trackingMode }),
       ...(args.accountId && { accountId: args.accountId }),
+      ...(args.excludeCardInstallments && NOT_CARD_INSTALLMENTS),
     };
     const first = args.first ?? 20;
 
@@ -382,6 +392,7 @@ export class RecurringExpensesService {
         userId,
         active: true,
         ...(args.accountId && { accountId: args.accountId }),
+        ...(args.excludeCardInstallments && NOT_CARD_INSTALLMENTS),
       },
     });
     const byId = new Map(expenses.map((e) => [e.id, this.mapExpense(e)]));
@@ -428,9 +439,18 @@ export class RecurringExpensesService {
     );
   }
 
-  async summary(userId: string): Promise<RecurringExpensesSummary> {
+  async summary(
+    userId: string,
+    {
+      excludeCardInstallments = false,
+    }: { excludeCardInstallments?: boolean } = {},
+  ): Promise<RecurringExpensesSummary> {
     const expenses = await this.prisma.recurringExpense.findMany({
-      where: { userId, active: true },
+      where: {
+        userId,
+        active: true,
+        ...(excludeCardInstallments && NOT_CARD_INSTALLMENTS),
+      },
       include: { account: { select: { name: true } } },
     });
 
@@ -1198,6 +1218,8 @@ export class RecurringExpensesService {
       active: row.active,
       notes: row.notes ?? undefined,
       nextDueDate: row.nextDueDate ?? undefined,
+      essentialLevel: row.essentialLevel ?? undefined,
+      essentialReason: row.essentialReason ?? undefined,
       monthlyCost: monthlyEquivalent(amount, row.frequency, row.interval),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

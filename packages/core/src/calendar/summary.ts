@@ -117,7 +117,8 @@ function dayKeyIn(month: MonthRef, day: number): DayKey {
   return addDays(firstDayOf(month), dayInMonth(month, day) - 1);
 }
 
-function bars(
+/** Bars from totals by key, largest first, against the largest. */
+export function bars(
   entries: Map<string, { label: string; value: number; count: number }>,
   currency: string,
   locale: Locale,

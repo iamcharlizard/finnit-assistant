@@ -3,6 +3,7 @@ import {
   creditsIn,
   cycleFigures,
   cycleOf,
+  cutoffFor,
   cyclesBefore,
   dayOfMonth,
   dueDateAfter,
@@ -14,6 +15,14 @@ import {
 
 describe('credit card cycles', () => {
   const terms = { statementDay: 7, paymentDueDay: 27 };
+
+  it('takes a day to the cut-off that bills it', () => {
+    expect(cutoffFor('2026-11-07', terms)).toBe('2026-11-07');
+    // 27 nov is the payment due date of the 7 nov cut-off.
+    expect(cutoffFor('2026-11-27', terms)).toBe('2026-11-07');
+    expect(cutoffFor('2026-11-20', terms)).toBe('2026-12-07');
+    expect(cutoffFor('2026-11-01', terms)).toBe('2026-11-07');
+  });
 
   it('clamps the day to the month', () => {
     expect(dayOfMonth(2026, 2, 31)).toBe('2026-02-28');

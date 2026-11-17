@@ -3,12 +3,14 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import {
+  ArrowDownLeft,
   ArrowLeftRight,
+  ArrowUpRight,
   Ban,
   CalendarClock,
   CheckCheck,
   CopyCheck,
-  CreditCard,
+  CreditCardCheck,
   Landmark,
   MoreHorizontal,
   PencilLine,
@@ -45,6 +47,7 @@ import {
 import type { TransactionDetailData } from '@/lib/transaction-detail/load';
 import { UNDO_TRANSFER_CONVERSION_MUTATION } from '@finnit/core/transfers/convert';
 import { ConvertTransferDialog } from '@/components/transfers/convert-transfer-dialog';
+import { DirectionDialog } from './direction-dialog';
 import { MergeDuplicateDialog } from '@/components/duplicates/merge-duplicate-dialog';
 import { LinkLoanDialog } from '@/components/loan-links/link-loan-dialog';
 import { UnlinkLoanDialog } from '@/components/loan-links/unlink-loan-dialog';
@@ -81,6 +84,7 @@ export function TransactionDetailScreen({
     | 'linkCardInstallment'
     | 'newCardInstallment'
     | 'merge'
+    | 'direction'
     | null
   >(null);
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
@@ -180,7 +184,7 @@ export function TransactionDetailScreen({
           {
             key: 'cardPayment',
             label: tx('cardPayment.action'),
-            icon: CreditCard,
+            icon: CreditCardCheck,
             run: () => setDialog('cardPayment'),
           },
         ]
@@ -254,6 +258,20 @@ export function TransactionDetailScreen({
             label: tt('markDuplicate'),
             icon: CopyCheck,
             run: () => setDialog('merge'),
+          },
+        ]
+      : []),
+    ...(view.turn
+      ? [
+          {
+            key: 'direction',
+            label: tt(
+              view.turn.to === 'income'
+                ? 'direction.toIncome'
+                : 'direction.toExpense',
+            ),
+            icon: view.turn.to === 'income' ? ArrowDownLeft : ArrowUpRight,
+            run: () => setDialog('direction'),
           },
         ]
       : []),
@@ -483,6 +501,17 @@ export function TransactionDetailScreen({
             // This one may be the copy that went: show the one that stays.
             if (keptId === view.id) host.refresh();
             else host.show(keptId);
+          }}
+        />
+      ) : null}
+      {dialog === 'direction' && view.turn ? (
+        <DirectionDialog
+          change={view.turn}
+          account={view.accountLabel}
+          onClose={() => setDialog(null)}
+          onChanged={() => {
+            setDialog(null);
+            host.refresh();
           }}
         />
       ) : null}

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ChevronRight, Trash2, type LucideIcon } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ChevronRight, CreditCardCheck, Trash2, type LucideIcon } from 'lucide-react-native';
 
 import { deleteTransfer, transactionErrorMessage } from '@finnit/core/transaction-detail/api';
 import { toast } from '@finnit/ui-native/components/ui/toaster';
@@ -48,7 +48,7 @@ export function TransferGroupCard({ group }: { group: TransferGroup }) {
     <TwView accessibilityLabel={`${group.title}: ${group.route}`} className="rounded-2xl bg-surface">
       <TwView className="min-h-11 flex-row items-center gap-3 p-4 pb-2">
         <TwView className="size-12 items-center justify-center rounded-chip bg-track">
-          <Icon icon={ArrowLeftRight} size={22} color="--on-surface-variant" />
+          <Icon icon={group.cardPayment ? CreditCardCheck : ArrowLeftRight} size={22} color="--on-surface-variant" />
         </TwView>
         <TwView className="min-w-0 flex-1">
           <Text weight="medium" numberOfLines={1} className="text-sm">

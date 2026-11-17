@@ -21,6 +21,7 @@ import {
   Min,
 } from 'class-validator';
 import {
+  EssentialLevel,
   OccurrenceMatchSource,
   OccurrenceStatus,
   RecurringExpenseKind,
@@ -41,6 +42,11 @@ registerEnumType(RecurringFrequency, {
     'biweekly = every 14 days; semimonthly = the 15th and the last day of each month.',
 });
 registerEnumType(OccurrenceStatus, { name: 'OccurrenceStatus' });
+registerEnumType(EssentialLevel, {
+  name: 'EssentialLevel',
+  description:
+    'How much a recurring expense is needed, as the AI judged it from the user\'s answers',
+});
 registerEnumType(OccurrenceMatchSource, { name: 'OccurrenceMatchSource' });
 
 @ObjectType()
@@ -86,6 +92,19 @@ export class RecurringExpense {
 
   @Field({ nullable: true })
   debtId?: string;
+
+  @Field(() => EssentialLevel, {
+    nullable: true,
+    description:
+      'Set by the AI from the questionnaire ("Análisis"); null until analyzed and for loans',
+  })
+  essentialLevel?: EssentialLevel;
+
+  @Field({
+    nullable: true,
+    description: 'Why, in one short sentence in the user\'s language',
+  })
+  essentialReason?: string;
 
   @Field({ nullable: true })
   merchantPattern?: string;
@@ -450,6 +469,16 @@ export class RecurringExpensesArgs {
   @Field({ nullable: true, description: 'Defaults to active expenses only' })
   @IsOptional()
   active?: boolean;
+
+  @Field({
+    nullable: true,
+    defaultValue: false,
+    description:
+      "Leave out card purchases in installments (they live in the card's \"Pagos a meses\")",
+  })
+  @IsOptional()
+  @IsBoolean()
+  excludeCardInstallments?: boolean;
 }
 
 @ArgsType()
@@ -465,4 +494,27 @@ export class UpcomingPaymentsArgs {
   @Field({ nullable: true })
   @IsOptional()
   accountId?: string;
+
+  @Field({
+    nullable: true,
+    defaultValue: false,
+    description:
+      "Leave out card purchases in installments (they live in the card's \"Pagos a meses\")",
+  })
+  @IsOptional()
+  @IsBoolean()
+  excludeCardInstallments?: boolean;
+}
+
+@ArgsType()
+export class RecurringSummaryArgs {
+  @Field({
+    nullable: true,
+    defaultValue: false,
+    description:
+      "Leave out card purchases in installments (they live in the card's \"Pagos a meses\")",
+  })
+  @IsOptional()
+  @IsBoolean()
+  excludeCardInstallments?: boolean;
 }

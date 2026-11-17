@@ -10,6 +10,7 @@ import {
   RecurringOccurrence,
   UpcomingPayment,
   UpcomingPaymentsArgs,
+  RecurringSummaryArgs,
   UpdateRecurringExpenseInput,
 } from './dto/recurring-expense.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -58,8 +59,9 @@ export class RecurringExpensesResolver {
   @Query(() => RecurringExpensesSummary)
   async recurringExpensesSummary(
     @CurrentUser() user: User,
+    @Args() args: RecurringSummaryArgs,
   ): Promise<RecurringExpensesSummary> {
-    return this.service.summary(user.id);
+    return this.service.summary(user.id, args);
   }
 
   @Mutation(() => RecurringExpense)

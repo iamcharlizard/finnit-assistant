@@ -3,6 +3,10 @@ import type { Localizer, Translate } from '../i18n/translator';
 import { accountLabel } from '../finance/accounts';
 import { spendingByCategory } from '../finance/breakdown';
 import {
+  directionChangeOf,
+  type DirectionChange,
+} from '../transaction-detail/direction';
+import {
   categoryLabel,
   indexCategories,
   type CategoryIndex,
@@ -58,6 +62,8 @@ export interface HistoryRow extends TransactionRow {
   convert: ConvertSource | null;
   /** "Marcar como cancelado": an expense or income on a credit card. */
   canCancel: boolean;
+  /** "Es un ingreso" / "Es un gasto": a plain expense or income. */
+  turn: DirectionChange | null;
   /** Adjustments can't be deleted (the balance is set again instead). */
   deletable: boolean;
   /** Signed amount for the day's net: transfers and adjustments are 0. */
@@ -84,9 +90,10 @@ export function toHistoryRow(
   const row = toTransactionRow(tx, categories, l);
   const amount = Math.abs(tx.amount);
   const suggested = tx.suggestedCategory;
+  const name = nameSubjectOf(tx);
   return {
     ...row,
-    name: nameSubjectOf(tx),
+    name,
     convert:
       canConvertToTransfer(tx) && !tx.cancelledAt
         ? {
@@ -99,6 +106,7 @@ export function toHistoryRow(
           }
         : null,
     canCancel: canCancelMovement(tx),
+    turn: directionChangeOf(tx, name),
     deletable: tx.type !== 'adjustment',
     // Pending and cancelled movements, and categories left out of the
     // totals, add nothing.

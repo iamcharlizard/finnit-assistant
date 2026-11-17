@@ -3,12 +3,14 @@ import { Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
 import {
+  ArrowDownLeft,
   ArrowLeftRight,
+  ArrowUpRight,
   Ban,
   CalendarClock,
   CheckCheck,
   CopyCheck,
-  CreditCard,
+  CreditCardCheck,
   Landmark,
   MoreHorizontal,
   PencilLine,
@@ -57,6 +59,7 @@ import {
   type DetailAction,
 } from '@/components/transaction-detail/actions-sheet';
 import { Screen } from '@/components/shell/screen';
+import { DirectionSheet } from '@/components/transaction-detail/direction-sheet';
 import { TransactionEditSheet } from '@/components/transaction-detail/transaction-edit-sheet';
 import { TransactionFacts } from '@/components/transaction-detail/transaction-facts';
 import { TransactionSummary } from '@/components/transaction-detail/transaction-summary';
@@ -81,6 +84,7 @@ export function TransactionDetailScreen() {
   const today = todayKey();
   const [editing, setEditing] = React.useState(false);
   const [cardSheet, setCardSheet] = React.useState(false);
+  const [turning, setTurning] = React.useState(false);
   const [convertSheet, setConvertSheet] = React.useState<ConvertMode | null>(
     null,
   );
@@ -229,7 +233,7 @@ export function TransactionDetailScreen() {
               {
                 key: 'cardPayment',
                 label: tx('cardPayment.action'),
-                icon: CreditCard,
+                icon: CreditCardCheck,
                 run: () => setConvertSheet('cardPayment'),
               },
             ]
@@ -303,6 +307,16 @@ export function TransactionDetailScreen() {
                 label: t('markDuplicate'),
                 icon: CopyCheck,
                 run: () => setMerging(true),
+              },
+            ]
+          : []),
+        ...(view.turn
+          ? [
+              {
+                key: 'direction',
+                label: t(view.turn.to === 'income' ? 'direction.toIncome' : 'direction.toExpense'),
+                icon: view.turn.to === 'income' ? ArrowDownLeft : ArrowUpRight,
+                run: () => setTurning(true),
               },
             ]
           : []),
@@ -454,6 +468,17 @@ export function TransactionDetailScreen() {
                       : 'convert.done',
                   ),
                 );
+                changed();
+              }}
+            />
+          ) : null}
+          {turning && view?.turn ? (
+            <DirectionSheet
+              change={view.turn}
+              account={view.accountLabel}
+              onClose={() => setTurning(false)}
+              onChanged={() => {
+                setTurning(false);
                 changed();
               }}
             />

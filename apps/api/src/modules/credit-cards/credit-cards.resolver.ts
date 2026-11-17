@@ -10,6 +10,8 @@ import {
   CreditCardPeriodArgs,
   CreditCardPeriodConnection,
   CreditCardPeriodsArgs,
+  CreditUsage,
+  CreditUsageArgs,
 } from './dto/credit-card.dto';
 
 @Resolver()
@@ -38,5 +40,17 @@ export class CreditCardsResolver {
     @Args() args: CreditCardPeriodArgs,
   ): Promise<CreditCardPeriod | null> {
     return this.cards.period(user.id, args.accountId, args.statementDate);
+  }
+
+  @Query(() => CreditUsage, {
+    nullable: true,
+    description:
+      'What a credit card owes, split into one-off spending and purchases in installments; null for other accounts',
+  })
+  creditUsage(
+    @CurrentUser() user: User,
+    @Args() args: CreditUsageArgs,
+  ): Promise<CreditUsage | null> {
+    return this.cards.creditUsage(user.id, args.accountId);
   }
 }

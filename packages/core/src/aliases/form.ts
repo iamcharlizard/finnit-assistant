@@ -30,6 +30,8 @@ export interface AliasForm {
   active: boolean;
   /** Kept as is (rules made from a transfer suggestion); not edited here. */
   transferAccountId: string | null;
+  /** Kept as is ("Es un ingreso" on a movement sets it); not edited here. */
+  direction: 'income' | 'expense' | null;
   /** Needs the privacy PIN (always private). */
   isProtected: boolean;
 }
@@ -56,6 +58,7 @@ export function newAliasForm(initial: Partial<AliasForm> = {}): AliasForm {
     priority: String(DEFAULT_PRIORITY),
     active: true,
     transferAccountId: null,
+    direction: null,
     isProtected: false,
     ...initial,
   };
@@ -71,6 +74,7 @@ export function formOfAlias(alias: ApiMerchantAlias): AliasForm {
     priority: String(alias.priority),
     active: alias.active,
     transferAccountId: alias.transferAccountId,
+    direction: alias.direction ?? null,
     isProtected: alias.isProtected,
   };
 }
@@ -135,6 +139,7 @@ export function buildAliasInput(form: AliasForm): MerchantAliasInput {
     priority: parsePriority(form.priority) ?? DEFAULT_PRIORITY,
     active: form.active,
     transferAccountId: form.transferAccountId,
+    direction: form.direction,
     isProtected: form.isProtected,
   };
 }
@@ -160,6 +165,7 @@ export function previewInput(
       DEFAULT_PRIORITY,
     active: true,
     transferAccountId: null,
+    direction: null,
     isProtected: false,
   };
 }
@@ -185,6 +191,7 @@ export function withActive(
     priority: alias.priority,
     active,
     transferAccountId: alias.transferAccountId,
+    direction: alias.direction ?? null,
     isProtected: alias.isProtected,
   };
 }

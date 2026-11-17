@@ -3,7 +3,7 @@ import {
   ArrowLeftRight,
   CircleArrowDown,
   CircleArrowUp,
-  CreditCard,
+  CreditCardCheck,
   type LucideIcon,
 } from 'lucide-react-native';
 
@@ -22,7 +22,7 @@ const KINDS: readonly {
   { kind: 'expense', icon: CircleArrowUp, tone: '--expense' },
   { kind: 'income', icon: CircleArrowDown, tone: '--income' },
   { kind: 'transfer', icon: ArrowLeftRight, tone: '--violet-ink' },
-  { kind: 'cardPayment', icon: CreditCard, tone: '--violet-ink' },
+  { kind: 'cardPayment', icon: CreditCardCheck, tone: '--violet-ink' },
 ];
 
 /**

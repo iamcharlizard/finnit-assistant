@@ -396,6 +396,7 @@ enum AiFeatureKey {
   alias_pattern
   receipt_parsing
   recurring_classification
+  recurring_essentials
   screenshot_parsing
 
   """Read card statements (PDF) without a local parser"""
@@ -897,6 +898,25 @@ type CategoryUsage {
   transactionCount: Int!
 }
 
+input ChangeDirectionInput {
+  id: ID!
+
+  """
+  Also record matching movements (the ones already there and the next ones) this way
+  """
+  remember: RememberDirectionInput
+
+  """income or expense"""
+  type: TransactionType!
+}
+
+"""A movement recorded as income or as expense"""
+type ChangeDirectionResult {
+  """Other movements of the automatic name turned the same way"""
+  alsoChanged: Int!
+  transaction: Transaction!
+}
+
 input ConfirmReceiptImportInput {
   accountId: ID!
 
@@ -1312,6 +1332,30 @@ input CreditCardTermsInput {
   statementDay: Int!
 }
 
+"""
+What a credit card owes, split into one-off spending and purchases in installments
+"""
+type CreditUsage {
+  """
+  Of `used`: installments still to come of purchases the card charged whole
+  """
+  installments: Float!
+
+  """Of `used`: one-off spending and installments already billed"""
+  oneOff: Float!
+
+  """
+  Installments still to come of purchases the card bills month by month: owed on top of `used`
+  """
+  outside: Float!
+
+  """Purchases in installments still running"""
+  plans: Int!
+
+  """What the card owes now"""
+  used: Float!
+}
+
 """Confirmed income and expenses of one day (transfers left out)"""
 type DailyCashFlow {
   """The day, YYYY-MM-DD"""
@@ -1599,6 +1643,35 @@ type DuplicateSuggestionConnection {
 type DuplicateSuggestionEdge {
   cursor: String!
   node: DuplicateSuggestion!
+}
+
+type EssentialAnswer {
+  answer: String!
+  question: String!
+}
+
+"""One answer of the "¿qué podrías recortar?" questionnaire"""
+input EssentialAnswerInput {
+  answer: String!
+  question: String!
+}
+
+"""
+How much a recurring expense is needed, as the AI judged it from the user's answers
+"""
+enum EssentialLevel {
+  dispensable
+  essential
+  reducible
+}
+
+"""How a classification run went"""
+type EssentialsClassification {
+  """No AI model answered: nothing was classified"""
+  aiUnavailable: Boolean!
+
+  """Recurring expenses classified now"""
+  classified: Int!
 }
 
 type Goal {
@@ -1903,6 +1976,11 @@ type MerchantAlias {
   active: Boolean!
   category: Category
   createdAt: DateTime!
+
+  """
+  Matching expenses and income are recorded as this (income or expense), whatever sign the bank sent
+  """
+  direction: TransactionType
   displayName: String!
   id: ID!
   isPrivate: Boolean!
@@ -1935,6 +2013,11 @@ type MerchantAlias {
 input MerchantAliasInput {
   active: Boolean = true
   categoryId: ID
+
+  """
+  income or expense: matching movements are recorded that way; null: as the bank sent them
+  """
+  direction: TransactionType
 
   """At most 80 characters"""
   displayName: String!
@@ -2058,6 +2141,16 @@ type Mutation {
   Moves movements (max 500) to a category; with createRule, learns a merchant rule per merchant. Returns how many changed
   """
   categorizeTransactions(categoryId: ID!, createRule: Boolean = true, ids: [ID!]!): Int!
+
+  """
+  "Es un ingreso" / "Es un gasto": a plain expense recorded as income or the other way round; with `remember`, the bank text's automatic name keeps doing it
+  """
+  changeTransactionDirection(input: ChangeDirectionInput!): ChangeDirectionResult!
+
+  """
+  Has the AI classify the active recurring expenses again (onlyMissing: the ones not analyzed yet)
+  """
+  classifyRecurringEssentials(onlyMissing: Boolean! = true): EssentialsClassification!
 
   """
   Links a movement to an open payment of a loan; its merchant becomes the loan pattern for later syncs
@@ -2263,6 +2356,11 @@ type Mutation {
 
   """"Reactivar": a cancelled movement counts again"""
   restoreTransaction(id: ID!): Transaction!
+
+  """
+  Saves the questionnaire and has the AI classify every active recurring expense with it
+  """
+  saveRecurringEssentialProfile(answers: [EssentialAnswerInput!]!): EssentialsClassification!
 
   """
   Sets the account's balance to the real one; the difference is an adjustment
@@ -2578,6 +2676,11 @@ type Query {
     after: String
     first: Int! = 6
   ): CreditCardPeriodConnection!
+
+  """
+  What a credit card owes, split into one-off spending and purchases in installments; null for other accounts
+  """
+  creditUsage(accountId: String!): CreditUsage
   currentBudget: Budget
 
   """
@@ -2688,6 +2791,11 @@ type Query {
 
   """Newest first"""
   receiptImports(after: String, first: Int): ReceiptImportConnection!
+
+  """
+  The answers to the "¿qué podrías recortar?" questionnaire; null until answered
+  """
+  recurringEssentialProfile: RecurringEssentialProfile
   recurringExpense(id: ID!): RecurringExpense!
   recurringExpenseOccurrences(from: DateTime, recurringExpenseId: ID!, to: DateTime): [RecurringOccurrence!]!
   recurringExpenses(
@@ -2696,11 +2804,21 @@ type Query {
     """Defaults to active expenses only"""
     active: Boolean
     after: String
+
+    """
+    Leave out card purchases in installments (they live in the card's "Pagos a meses")
+    """
+    excludeCardInstallments: Boolean = false
     first: Int = 20
     kind: RecurringExpenseKind
     trackingMode: RecurringTrackingMode
   ): RecurringExpenseConnection!
-  recurringExpensesSummary: RecurringExpensesSummary!
+  recurringExpensesSummary(
+    """
+    Leave out card purchases in installments (they live in the card's "Pagos a meses")
+    """
+    excludeCardInstallments: Boolean = false
+  ): RecurringExpensesSummary!
 
   """
   The recurring expenses (not loans) an expense may have paid, with their payment in each month around the expense's; those that fit first
@@ -2768,7 +2886,16 @@ type Query {
   """Bank movements that look like transfers, waiting for review"""
   transferSuggestions(after: String, first: Int = 20): TransferSuggestionConnection!
   transfers: [Transfer!]!
-  upcomingPayments(accountId: String, from: DateTime!, to: DateTime!): [UpcomingPayment!]!
+  upcomingPayments(
+    accountId: String
+
+    """
+    Leave out card purchases in installments (they live in the card's "Pagos a meses")
+    """
+    excludeCardInstallments: Boolean = false
+    from: DateTime!
+    to: DateTime!
+  ): [UpcomingPayment!]!
   validateToken(token: String!): TokenValidationResult!
 
   """Admin only"""
@@ -2880,6 +3007,14 @@ type RecurringCurrencyTotal {
   monthlyCost: Float!
 }
 
+"""
+The user's answers to the questionnaire the AI classifies recurring expenses with
+"""
+type RecurringEssentialProfile {
+  answers: [EssentialAnswer!]!
+  updatedAt: DateTime!
+}
+
 type RecurringExpense {
   accountId: String
   active: Boolean!
@@ -2889,6 +3024,14 @@ type RecurringExpense {
   currency: String!
   debtId: String
   endDate: DateTime
+
+  """
+  Set by the AI from the questionnaire ("Análisis"); null until analyzed and for loans
+  """
+  essentialLevel: EssentialLevel
+
+  """Why, in one short sentence in the user's language"""
+  essentialReason: String
   frequency: RecurringFrequency!
   id: ID!
   installmentsPaid: Int!
@@ -3077,6 +3220,17 @@ enum RecurringTrackingMode {
 
 input RefreshTokenInput {
   refreshToken: String!
+}
+
+"""
+Keep doing it: an automatic name for movements whose bank text contains `pattern`
+"""
+input RememberDirectionInput {
+  """Name of the movements when a new automatic name is created (1–80)"""
+  displayName: String!
+
+  """Text the bank text contains (1–200)"""
+  pattern: String!
 }
 
 input RequestPasswordResetInput {

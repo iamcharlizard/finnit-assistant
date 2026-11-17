@@ -19,6 +19,10 @@ import {
 } from './dto/transaction.dto';
 import { TransactionSpending } from './dto/transaction-spending.dto';
 import { CancellationCheck } from './dto/cancellation-check.dto';
+import {
+  ChangeDirectionInput,
+  ChangeDirectionResult,
+} from './dto/change-direction.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../../common/types/models/user.model';
@@ -244,6 +248,22 @@ export class TransactionsResolver {
     @Args('id', { type: () => ID }) id: string,
   ): Promise<Transaction> {
     return this.transactionsService.cancel(id, user.id);
+  }
+
+  @Mutation(() => ChangeDirectionResult, {
+    description:
+      '"Es un ingreso" / "Es un gasto": a plain expense recorded as income or the other way round; with `remember`, the bank text\'s automatic name keeps doing it',
+  })
+  async changeTransactionDirection(
+    @CurrentUser() user: User,
+    @Args('input') input: ChangeDirectionInput,
+    @Context('req') req: object,
+  ): Promise<ChangeDirectionResult> {
+    return this.transactionsService.changeDirection(
+      user.id,
+      input,
+      await this.privacy.isUnlocked(req, user.id),
+    );
   }
 
   @Mutation(() => Transaction, {

@@ -160,7 +160,10 @@ export function LoanAmortizationTable({
         header: td('columns.status'),
         cell: ({ row }) => (
           <Badge variant={STATUS_BADGE[row.original.status]}>
-            {td(`status.${row.original.status}`)}
+            {/* A card bills its installments: "cargada", not "pagada". */}
+            {td(
+              `${onEditInstallment ? 'cardStatus' : 'status'}.${row.original.status}`,
+            )}
           </Badge>
         ),
       },

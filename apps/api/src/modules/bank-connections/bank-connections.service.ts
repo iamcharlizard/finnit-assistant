@@ -784,6 +784,9 @@ export class BankConnectionsService {
           merchant: line.merchant,
           installmentNumber: line.installmentNumber,
           installmentTotal: line.installmentTotal,
+          // What Syncfy sent, to check later how a line was read (e.g. a
+          // bank that sends money in with the sign of money out).
+          raw: transaction as unknown as Prisma.InputJsonValue,
         },
       });
       imported += 1;

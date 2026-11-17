@@ -169,7 +169,10 @@ export function toTransactionRow(
     status: movementStatus(tx),
     iconKey:
       tx.type === 'transfer'
-        ? 'transfer'
+        ? // The card's side of a transfer into it is the card's payment.
+          tx.account?.type === 'credit'
+          ? 'cardPayment'
+          : 'transfer'
         : tx.type === 'adjustment'
           ? 'card'
           : tx.type === 'income' && !tx.category

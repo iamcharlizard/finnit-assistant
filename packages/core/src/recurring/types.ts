@@ -60,6 +60,8 @@ export interface ApiRecurringExpense {
   currency: string;
   accountId: string | null;
   categoryId: string | null;
+  /** The loan or card purchase in installments it pays. */
+  debtId?: string | null;
   merchantPattern: string | null;
   installmentsTotal: number | null;
   installmentsPaid: number;
@@ -67,10 +69,15 @@ export interface ApiRecurringExpense {
   notes: string | null;
   nextDueDate: string | null;
   monthlyCost: number;
+  /** Set by the AI from the questionnaire; null until analyzed and for loans. */
+  essentialLevel?: EssentialLevel | null;
+  essentialReason?: string | null;
 }
 
+export type EssentialLevel = 'essential' | 'reducible' | 'dispensable';
+
 export const RECURRING_EXPENSE_FIELDS =
-  'id name kind trackingMode frequency interval startDate endDate amount isVariableAmount currency accountId categoryId merchantPattern installmentsTotal installmentsPaid active notes nextDueDate monthlyCost';
+  'id name kind trackingMode frequency interval startDate endDate amount isVariableAmount currency accountId categoryId merchantPattern installmentsTotal installmentsPaid active notes nextDueDate monthlyCost debtId essentialLevel essentialReason';
 
 /** A due payment. Reminder-only expenses have no occurrence and no status. */
 export interface ApiRecurringPayment {

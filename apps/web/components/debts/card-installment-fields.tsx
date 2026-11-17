@@ -13,6 +13,13 @@ import { Label } from '@finnit/ui/components/ui/label';
 import { MoneyInput } from '@finnit/ui/components/ui/money-input';
 import { NumberInput } from '@finnit/ui/components/ui/number-input';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@finnit/ui/components/ui/select';
+import {
   ToggleGroup,
   ToggleGroupItem,
 } from '@finnit/ui/components/ui/toggle-group';
@@ -28,6 +35,8 @@ import {
   schedulePage,
   type ScheduleRow,
   cardTermsOf,
+  cutoffsFrom,
+  dueDateAfter,
   installmentCards,
   type CardInstallmentErrorCode,
   type CardInstallmentErrors,
@@ -90,7 +99,26 @@ export function CardInstallmentFields({
   const [page, setPage] = React.useState(0);
   const shown = rows ? schedulePage(rows, page) : null;
   const span = cardInstallmentSpan(form, accounts);
-  const hasTerms = Boolean(cardTermsOf(card));
+  const terms = cardTermsOf(card);
+  const hasTerms = Boolean(terms);
+  // With the card's terms each installment is picked by its cut-off, shown
+  // with the day that statement is paid.
+  const cutoffs = React.useMemo(
+    () =>
+      terms && rows && form.purchaseDate
+        ? cutoffsFrom(form.purchaseDate, rows.length + 12, terms)
+        : null,
+    [terms, rows, form.purchaseDate],
+  );
+  const cutoffLabel = (cut: DayKey) => {
+    const due = terms ? dueDateAfter(cut, terms) : null;
+    return due
+      ? tf('scheduleCutoff', {
+          cut: shortDate(cut, locale),
+          due: shortDate(due, locale),
+        })
+      : shortDate(cut, locale);
+  };
 
   if (cards.length === 0) {
     return (
@@ -305,7 +333,7 @@ export function CardInstallmentFields({
             ) : null}
           </div>
           <p className="text-xs text-on-surface-variant">
-            {tf('scheduleHint')}
+            {tf(hasTerms ? 'scheduleHint' : 'scheduleHintNoTerms')}
           </p>
           <ol className="flex flex-col gap-2">
             {shown.rows.map((row, i) => {
@@ -319,13 +347,36 @@ export function CardInstallmentFields({
                   <span className="text-xs font-medium text-on-surface-variant">
                     {tf('scheduleNumber', { number, total: rows.length })}
                   </span>
-                  <DatePicker
-                    aria-label={tf('scheduleDate', { number })}
-                    value={row.day}
-                    onChange={(day) => day && updateRow(index, { day })}
-                    min={form.purchaseDate || undefined}
-                    locale={locale}
-                  />
+                  {cutoffs ? (
+                    <Select
+                      value={row.day}
+                      onValueChange={(day) => updateRow(index, { day })}
+                    >
+                      <SelectTrigger
+                        aria-label={tf('scheduleCutoffLabel', { number })}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(cutoffs.includes(row.day)
+                          ? cutoffs
+                          : [row.day, ...cutoffs]
+                        ).map((cut) => (
+                          <SelectItem key={cut} value={cut}>
+                            {cutoffLabel(cut)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <DatePicker
+                      aria-label={tf('scheduleDate', { number })}
+                      value={row.day}
+                      onChange={(day) => day && updateRow(index, { day })}
+                      min={form.purchaseDate || undefined}
+                      locale={locale}
+                    />
+                  )}
                   <MoneyInput
                     aria-label={tf('scheduleAmount', { number })}
                     value={row.amount}

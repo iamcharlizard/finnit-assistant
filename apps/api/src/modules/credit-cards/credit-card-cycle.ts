@@ -140,6 +140,18 @@ export function dueDateAfter(statementDate: DayKey, terms: CardTerms): DayKey {
     : dayOfMonth(year, month + 1, terms.paymentDueDay);
 }
 
+/**
+ * The cut-off an installment set on `day` is billed on: a cut-off stays;
+ * the payment due date of a cut-off goes back to that cut-off (people
+ * think of the day they pay); any other day goes to its cycle's cut-off.
+ */
+export function cutoffFor(day: DayKey, terms: CardTerms): DayKey {
+  const cut = statementOn(day, terms);
+  if (cut === day) return day;
+  const previous = previousStatement(cut, terms);
+  return dueDateAfter(previous, terms) === day ? previous : cut;
+}
+
 export function cycleOf(statementDate: DayKey, terms: CardTerms): CycleDates {
   return {
     periodStart: addDays(previousStatement(statementDate, terms), 1),

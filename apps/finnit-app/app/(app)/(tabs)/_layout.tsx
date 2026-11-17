@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { Tabs, useRouter, type Href } from 'expo-router';
 import { useTranslations } from 'use-intl';
-import { ArrowLeftRight, CircleArrowDown, CircleArrowUp, CreditCard, ScanLine, Smartphone } from 'lucide-react-native';
+import { ArrowLeftRight, CircleArrowDown, CircleArrowUp, CreditCardCheck, ScanLine, Smartphone } from 'lucide-react-native';
 import { useQuery } from 'urql';
 
 import { BOTTOM_NAV_KEYS } from '@finnit/core/nav/sections';
@@ -78,7 +78,7 @@ export default function TabsLayout() {
           { key: 'receipt', label: t('receipts.scan'), icon: ScanLine, tone: '--brand-ink', onPress: newEntry('receipt') },
           { key: 'screenshot', label: t('screenshots.import'), icon: Smartphone, tone: '--brand-ink', onPress: newEntry('screenshot') },
           ...(hasCreditCard
-            ? [{ key: 'cardPayment', label: t('newEntry.cardPayment'), icon: CreditCard, tone: '--violet-ink' as const, onPress: newEntry('cardPayment') }]
+            ? [{ key: 'cardPayment', label: t('newEntry.cardPayment'), icon: CreditCardCheck, tone: '--violet-ink' as const, onPress: newEntry('cardPayment') }]
             : []),
         ]}
       />

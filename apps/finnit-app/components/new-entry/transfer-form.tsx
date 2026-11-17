@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useTranslations } from 'use-intl';
-import { CreditCard } from 'lucide-react-native';
+import { CreditCardCheck } from 'lucide-react-native';
 
 import { accountLabel, creditOwed } from '@finnit/core/finance/accounts';
 import { shortDate, todayKey, type DayKey } from '@finnit/core/finance/dates';
@@ -194,7 +194,7 @@ export function TransferForm({
       </TwView>
       {cardPayment ? (
         <TwView className="flex-row items-start gap-2 rounded-xl bg-track p-3">
-          <Icon icon={CreditCard} size={16} color="--violet-ink" />
+          <Icon icon={CreditCardCheck} size={16} color="--violet-ink" />
           <Text className="flex-1 text-sm">{t('cardPaymentHint')}</Text>
         </TwView>
       ) : (

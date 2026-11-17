@@ -41,8 +41,11 @@ function initialPick(periods: ApiCardPeriod[], requested: string | undefined) {
 export function CardPeriods({
   accountId,
   terms,
+  onShown,
 }: {
   accountId: string;
+  /** The cycle on screen changed (e.g. to list its movements). */
+  onShown?: (period: ApiCardPeriod) => void;
   /** Its cut-off and payment days and rate (edited here: the app has no account editor). */
   terms: {
     statementDay: number | null;
@@ -103,11 +106,18 @@ export function CardPeriods({
     }
   }
 
+  const shownPeriod = periods?.find((p) => p.id === picked) ?? periods?.[0] ?? null;
+  React.useEffect(() => {
+    if (shownPeriod) onShown?.(shownPeriod);
+    // Only when the cycle changes, not on every new callback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shownPeriod?.id]);
+
   if (periods === null) {
     return error ? <Text className="text-sm text-expense">{error}</Text> : null;
   }
   const today = todayKey();
-  const shown = periods.find((p) => p.id === picked) ?? periods[0];
+  const shown = shownPeriod;
 
   return (
     <TwView className="gap-3">

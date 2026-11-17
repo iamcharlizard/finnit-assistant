@@ -33,6 +33,13 @@ interface BankPaymentCardProps {
   holderName?: string;
   expiryDate?: string;
   balance?: string;
+  /**
+   * An amount in the header, beside the name (e.g. what is available or
+   * owed): it shows even when the card is stacked under others.
+   */
+  headerAmount?: string;
+  /** Caption under `headerAmount` ("Disponible", "Debes"). */
+  headerAmountLabel?: string;
   onClick?: () => void;
   className?: string;
 }
@@ -137,6 +144,8 @@ function BankPaymentCard({
   holderName,
   expiryDate,
   balance,
+  headerAmount,
+  headerAmountLabel,
   onClick,
   className,
 }: BankPaymentCardProps) {
@@ -199,7 +208,27 @@ function BankPaymentCard({
             </span>
           ) : null}
         </span>
-        <Icon aria-hidden className={cn('size-7', s.iconColor)} />
+        {headerAmount ? (
+          <span className="flex flex-col items-end gap-0.5 text-right">
+            {headerAmountLabel ? (
+              <span
+                className={cn(
+                  'text-[10px] font-medium uppercase tracking-[0.2em]',
+                  s.tier,
+                )}
+              >
+                {headerAmountLabel}
+              </span>
+            ) : null}
+            <span
+              className={cn('text-[19px] font-bold tabular-nums', s.name)}
+            >
+              {headerAmount}
+            </span>
+          </span>
+        ) : (
+          <Icon aria-hidden className={cn('size-7', s.iconColor)} />
+        )}
       </span>
 
       <span className="relative flex flex-col gap-2.5">

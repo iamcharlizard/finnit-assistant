@@ -7,7 +7,11 @@ import {
   StatementStatus,
   TransactionType,
 } from '@finnit/database';
-import { cycleInstallments, InstallmentPlan } from '../debts/card-installments';
+import {
+  creditUsage,
+  cycleInstallments,
+  InstallmentPlan,
+} from '../debts/card-installments';
 
 import { PrismaService } from '../../services/prisma.service';
 import { NotFoundError } from '../../common/exceptions/graphql-error.exception';
@@ -33,6 +37,7 @@ import {
 } from './credit-card-cycle';
 import {
   CreditCardPeriod,
+  CreditUsage,
   CreditCardPeriodConnection,
   CreditCardPeriodStatus,
 } from './dto/credit-card.dto';
@@ -119,6 +124,54 @@ export class CreditCardsService {
    * The user's credit card, or null when it isn't one or has no terms yet
    * (the history asks for any account it is filtered by).
    */
+  /**
+   * What the card owes, split into one-off spending and its purchases in
+   * installments still to come (null for other accounts).
+   */
+  async creditUsage(
+    userId: string,
+    accountId: string,
+  ): Promise<CreditUsage | null> {
+    const account = await this.prisma.account.findFirst({
+      where: { id: accountId, userId, type: AccountType.credit },
+      select: { balanceCurrent: true },
+    });
+    if (!account) return null;
+    const today = dayOf(localToday());
+    const plans = await this.prisma.debt.findMany({
+      where: {
+        userId,
+        linkedAccountId: accountId,
+        loanType: LoanType.card_installments,
+      },
+      select: {
+        purchaseTransaction: { select: { txnDate: true, cancelledAt: true } },
+        recurringExpense: {
+          select: {
+            occurrences: {
+              where: { status: { not: OccurrenceStatus.skipped } },
+              select: { dueDate: true, expectedAmount: true },
+            },
+          },
+        },
+      },
+    });
+    const usage = plans.map((plan) => ({
+      charged: Boolean(
+        plan.purchaseTransaction &&
+        !plan.purchaseTransaction.cancelledAt &&
+        dayOf(plan.purchaseTransaction.txnDate) <= today,
+      ),
+      remaining: (plan.recurringExpense?.occurrences ?? [])
+        .filter((o) => dayOf(o.dueDate) > today)
+        .reduce((sum, o) => sum + Number(o.expectedAmount), 0),
+    }));
+    return {
+      ...creditUsage(-Number(account.balanceCurrent), usage),
+      plans: usage.filter((p) => p.remaining > 0).length,
+    };
+  }
+
   async card(userId: string, accountId: string): Promise<CardContext | null> {
     const account = await this.prisma.account.findFirst({
       where: { id: accountId, userId },

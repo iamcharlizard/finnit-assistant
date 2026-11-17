@@ -2,6 +2,7 @@
  * The accounts screen's requests, shared by the web loader and the mobile
  * app.
  */
+import { CREDIT_USAGE_FIELDS, type ApiCreditUsage } from './credit-usage';
 import { ALL_BALANCE_FIELDS, type ApiAllBalanceHistory } from './all-balance';
 import { BALANCE_HISTORY_FIELDS, type ApiBalanceHistory } from './balance-history';
 import {
@@ -40,10 +41,16 @@ export const OVERVIEW_QUERY = `query AccountsOverview($recent: Int!, $dayStart: 
   accountsBalanceHistory(from: $historyFrom, to: $historyTo) { ${ALL_BALANCE_FIELDS} }
 }`;
 
+/** Every account together on the web (the balance by day, no movements). */
+export const OVERVIEW_HISTORY_QUERY = `query AccountsOverviewHistory($historyFrom: DateTime!, $historyTo: DateTime!) {
+  accountsBalanceHistory(from: $historyFrom, to: $historyTo) { ${ALL_BALANCE_FIELDS} }
+}`;
+
 export const CARD_SUMMARY_QUERY = `query CardMonth($accountId: String!, $year: Int!, $month: Int!) {
   cardMonthSummary(accountId: $accountId, year: $year, month: $month) {
     statement { statementDate paymentDueDate statementBalance minimumPayment noInterestPayment }
   }
+  creditUsage(accountId: $accountId) { ${CREDIT_USAGE_FIELDS} }
 }`;
 
 /** Movements in the detail's list (it scrolls); the rest are in "Movimientos". */
@@ -71,4 +78,6 @@ export interface OverviewResult {
 
 export interface CardMonthResult {
   cardMonthSummary: CardMonthSummaryData;
+  /** Null for other accounts. */
+  creditUsage: ApiCreditUsage | null;
 }

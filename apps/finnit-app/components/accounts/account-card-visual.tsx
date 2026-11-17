@@ -9,11 +9,14 @@ export function AccountCardVisual({
   holderName,
   onPress,
   shadow,
+  showAmount = false,
 }: {
   account: AccountSummary;
   holderName: string;
   onPress?: () => void;
   shadow?: string;
+  /** What it has (a card: what it owes) in the header, visible when stacked. */
+  showAmount?: boolean;
 }) {
   const tu = useTranslations('ui.bankCard');
   const t = useTranslations('accounts');
@@ -29,8 +32,10 @@ export function AccountCardVisual({
       holderName={isCard ? holderName.toUpperCase() : undefined}
       holderLabel={tu('holder')}
       expiryLabel={tu('expires')}
-      balance={isCard ? undefined : account.balance}
+      balance={isCard || showAmount ? undefined : account.balance}
       balanceLabel={t('cardBalance')}
+      headerAmount={showAmount ? account.balance : undefined}
+      headerAmountLabel={showAmount ? t(account.type === 'credit' ? 'cardOwed' : 'cardAvailable') : undefined}
       onPress={onPress}
       shadow={shadow}
       dimmed={account.archived}

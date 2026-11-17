@@ -37,6 +37,7 @@ export function AccountCardStack({
             account={account}
             holderName={holderName}
             onPress={() => onSelect(account.id)}
+            showAmount
             shadow={index === accounts.length - 1 ? '0 18px 40px rgba(0,0,0,0.22)' : '0 -4px 16px rgba(0,0,0,0.12)'}
           />
         </TwView>

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from 'urql';
 import { useTranslations } from 'use-intl';
 
@@ -14,6 +14,8 @@ import {
 } from '@finnit/core/accounts/request';
 import { historyWindow } from '@finnit/core/accounts/balance-history';
 import { buildAccountDetail, buildAccounts } from '@finnit/core/accounts/view';
+import { buildCreditUsageView } from '@finnit/core/accounts/credit-usage';
+import { CARD_TABS, parseTab, type CardTab } from '@finnit/core/recurring/tabs';
 import { indexCategories } from '@finnit/core/finance/categories';
 import {
   endOfDayIso,
@@ -24,11 +26,15 @@ import {
 } from '@finnit/core/finance/dates';
 import { toTransactionRow } from '@finnit/core/finance/transactions';
 import { TwView } from '@finnit/ui-native/lib/tw';
+import { Segmented } from '@finnit/ui-native/components/ui/segmented';
 import { Text } from '@finnit/ui-native/components/ui/text';
 
 import { AccountCardVisual } from '@/components/accounts/account-card-visual';
 import { AccountMovements } from '@/components/accounts/account-movements';
-import { CardPeriods } from '@/components/accounts/card-periods';
+import { CardMovementsTab } from '@/components/accounts/card-movements-tab';
+import { CardPeriodSpending } from '@/components/accounts/card-period-spending';
+import { CardPlansTab } from '@/components/accounts/card-plans-tab';
+import { CreditUsageCard } from '@/components/accounts/credit-usage-card';
 import { AccountStats } from '@/components/accounts/account-stats';
 import {
   AccountStatusBadge,
@@ -40,9 +46,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
 import { useOnTransactionsChanged } from '@/lib/transactions/events';
 
-/** One account (the web's /accounts?account=…): card, figures and its movements. */
+/**
+ * One account (the web's /accounts/<id>): its card and badges; a credit
+ * card in tabs (Resumen, Movimientos by period or month, Pagos a meses,
+ * `?tab=`), any other account with its figures and movements.
+ */
 export function AccountDetailScreen() {
-  const { accountId } = useLocalSearchParams<{ accountId: string }>();
+  const { accountId, tab: tabParam } = useLocalSearchParams<{ accountId: string; tab?: string }>();
+  const router = useRouter();
+  const tab = parseTab(CARD_TABS, tabParam);
   const t = useTranslations('accounts');
   const l = useLocalizer();
   const { user } = useAuth();
@@ -100,6 +112,11 @@ export function AccountDetailScreen() {
     );
   }, [card, detailResult.data, summaryResult.data, today, l]);
 
+  const usage = React.useMemo(
+    () => (card ? buildCreditUsageView(summaryResult.data?.creditUsage ?? null, card.currency, l) : null),
+    [card, summaryResult.data, l],
+  );
+
   const refreshing =
     (accountsResult.fetching || detailResult.fetching) && Boolean(detail);
   const reload = () => {
@@ -152,30 +169,42 @@ export function AccountDetailScreen() {
               {t('archive.archivedNote')}
             </Text>
           ) : null}
-          <AccountStats detail={detail} />
           {card.type === 'credit' ? (
-            // A new balance (a payment, a charge): ask for the cycles again.
-            <CardPeriods
-              key={`${card.id}:${card.amount}:${card.statementDay}:${card.paymentDueDay}`}
-              accountId={card.id}
-              terms={{
-                statementDay: card.statementDay,
-                paymentDueDay: card.paymentDueDay,
-                interestRateAnnual: card.interestRateAnnual,
-              }}
-            />
-          ) : null}
-          {card.archived ? null : (
-            <InTotalSwitch
-              key={String(card.includedInTotal)}
-              accountId={card.id}
-              included={card.includedInTotal}
-            />
+            <>
+              <Segmented
+                accessibilityLabel={t('cardTabs.summary')}
+                options={CARD_TABS.map((value) => ({ value, label: t(`cardTabs.${value}`) }))}
+                value={tab}
+                onValueChange={(next: CardTab) => router.setParams({ tab: next === 'summary' ? undefined : next })}
+              />
+              {tab === 'summary' ? (
+                <>
+                  <AccountStats detail={detail} />
+                  {usage ? <CreditUsageCard usage={usage} /> : null}
+                  <CardPeriodSpending key={`${card.id}:${card.amount}`} accountId={card.id} />
+                  {card.archived ? null : <InTotalSwitch key={String(card.includedInTotal)} accountId={card.id} included={card.includedInTotal} />}
+                </>
+              ) : tab === 'movements' ? (
+                <CardMovementsTab
+                  accountId={card.id}
+                  balanceKey={`${card.id}:${card.amount}:${card.statementDay}:${card.paymentDueDay}`}
+                  terms={{
+                    statementDay: card.statementDay,
+                    paymentDueDay: card.paymentDueDay,
+                    interestRateAnnual: card.interestRateAnnual,
+                  }}
+                />
+              ) : (
+                <CardPlansTab accountId={card.id} />
+              )}
+            </>
+          ) : (
+            <>
+              <AccountStats detail={detail} />
+              {card.archived ? null : <InTotalSwitch key={String(card.includedInTotal)} accountId={card.id} included={card.includedInTotal} />}
+              <AccountMovements rows={detail.recent} historyHref={detail.historyHref} />
+            </>
           )}
-          <AccountMovements
-            rows={detail.recent}
-            historyHref={detail.historyHref}
-          />
         </TwView>
       ) : null}
     </Screen>

@@ -11,6 +11,8 @@ import {
   schedulePage,
   type ScheduleRow,
   cardTermsOf,
+  cutoffsFrom,
+  dueDateAfter,
   installmentCards,
   type CardInstallmentErrorCode,
   type CardInstallmentErrors,
@@ -85,7 +87,15 @@ export function CardInstallmentFields({
   const shown = rows ? schedulePage(rows, page) : null;
   const current = shown ? shown.start / SCHEDULE_PAGE : 0;
   const span = cardInstallmentSpan(form, accounts);
-  const hasTerms = Boolean(cardTermsOf(card));
+  const terms = cardTermsOf(card);
+  const hasTerms = Boolean(terms);
+  // With the card's terms each installment is picked by its cut-off, shown
+  // with the day that statement is paid.
+  const cutoffs = terms && rows && form.purchaseDate ? cutoffsFrom(form.purchaseDate, rows.length + 12, terms) : null;
+  const cutoffLabel = (cut: DayKey) => {
+    const due = terms ? dueDateAfter(cut, terms) : null;
+    return due ? tf('scheduleCutoff', { cut: shortDate(cut, locale), due: shortDate(due, locale) }) : shortDate(cut, locale);
+  };
 
   if (cards.length === 0) {
     return (
@@ -278,7 +288,7 @@ export function CardInstallmentFields({
             </Text>
             {form.schedule ? <TextLink label={tf('scheduleReset')} onPress={() => update({ schedule: null })} /> : null}
           </TwView>
-          <Text className="text-xs text-on-surface-variant">{tf('scheduleHint')}</Text>
+          <Text className="text-xs text-on-surface-variant">{tf(hasTerms ? 'scheduleHint' : 'scheduleHintNoTerms')}</Text>
           {shown.rows.map((row, i) => {
             const index = shown.start + i;
             const number = index + 1;
@@ -287,14 +297,24 @@ export function CardInstallmentFields({
                 <Text weight="medium" className="text-xs text-on-surface-variant">
                   {tf('scheduleNumber', { number, total: rows.length })}
                 </Text>
-                <DatePicker
-                  label={tf('scheduleDate', { number })}
-                  value={row.day}
-                  onChange={(day) => day && updateRow(index, { day })}
-                  min={form.purchaseDate || undefined}
-                  locale={locale}
-                  closeLabel={t('common.close')}
-                />
+                {cutoffs ? (
+                  <Select
+                    label={tf('scheduleCutoffLabel', { number })}
+                    options={(cutoffs.includes(row.day) ? cutoffs : [row.day, ...cutoffs]).map((cut) => ({ value: cut, label: cutoffLabel(cut) }))}
+                    value={row.day}
+                    onValueChange={(day) => updateRow(index, { day })}
+                    closeLabel={t('common.close')}
+                  />
+                ) : (
+                  <DatePicker
+                    label={tf('scheduleDate', { number })}
+                    value={row.day}
+                    onChange={(day) => day && updateRow(index, { day })}
+                    min={form.purchaseDate || undefined}
+                    locale={locale}
+                    closeLabel={t('common.close')}
+                  />
+                )}
                 <MoneyInput
                   label={tf('scheduleAmount', { number })}
                   value={row.amount}

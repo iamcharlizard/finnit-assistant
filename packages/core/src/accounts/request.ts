@@ -2,7 +2,7 @@
  * The accounts screen's requests, shared by the web loader and the mobile
  * app.
  */
-import { CREDIT_USAGE_FIELDS } from './credit-usage';
+import { CREDIT_USAGE_FIELDS, type ApiCreditUsage } from './credit-usage';
 import { ALL_BALANCE_FIELDS, type ApiAllBalanceHistory } from './all-balance';
 import { BALANCE_HISTORY_FIELDS, type ApiBalanceHistory } from './balance-history';
 import {
@@ -78,4 +78,6 @@ export interface OverviewResult {
 
 export interface CardMonthResult {
   cardMonthSummary: CardMonthSummaryData;
+  /** Null for other accounts. */
+  creditUsage: ApiCreditUsage | null;
 }

@@ -1,15 +1,12 @@
 import * as React from 'react';
 import { useRouter } from 'expo-router';
-import { useQuery } from 'urql';
 import { useTranslations } from 'use-intl';
 import { Landmark, Plus } from 'lucide-react-native';
 
-import { ACCOUNTS_QUERY, OVERVIEW_QUERY, RECENT_COUNT, type AccountsResult, type OverviewResult } from '@finnit/core/accounts/request';
-import { historyWindow } from '@finnit/core/accounts/balance-history';
+import { ACCOUNTS_QUERY, type AccountsResult } from '@finnit/core/accounts/request';
+import { buildAccountBalanceList } from '@finnit/core/accounts/balance-list';
 import { buildAccounts } from '@finnit/core/accounts/view';
-import { indexCategories } from '@finnit/core/finance/categories';
-import { startOfDayIso, todayKey } from '@finnit/core/finance/dates';
-import { toTransactionRow } from '@finnit/core/finance/transactions';
+import { todayKey } from '@finnit/core/finance/dates';
 import { TwPressable, TwView } from '@finnit/ui-native/lib/tw';
 import { Button } from '@finnit/ui-native/components/ui/button';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
@@ -18,14 +15,17 @@ import { Text } from '@finnit/ui-native/components/ui/text';
 
 import { AccountCardStack } from '@/components/accounts/account-card-stack';
 import { AddAccountSheet } from '@/components/accounts/add-account-sheet';
-import { AccountMovements } from '@/components/accounts/account-movements';
+import { AccountBalanceList } from '@/components/accounts/account-balance-list';
 import { Screen } from '@/components/shell/screen';
 import { useAuth } from '@/contexts/AuthContext';
 import { useView } from '@/lib/graphql/use-view';
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
 import { useOnTransactionsChanged } from '@/lib/transactions/events';
 
-/** Cuentas y tarjetas: every account as a card stack and the latest movements of all. */
+/**
+ * Cuentas y tarjetas: every account as a card stack (each with what it has
+ * or owes in its header) and the balance list; a tap opens the account.
+ */
 export function AccountsScreen() {
   const t = useTranslations();
   const router = useRouter();
@@ -34,7 +34,6 @@ export function AccountsScreen() {
   const [showArchived, setShowArchived] = React.useState(false);
   const [adding, setAdding] = React.useState(false);
   const today = todayKey();
-  const window = historyWindow(null, today);
 
   const { view, loading, error, refreshing, refresh } = useView({
     query: ACCOUNTS_QUERY,
@@ -50,27 +49,10 @@ export function AccountsScreen() {
     [view, l, showArchived],
   );
 
-  const [overview, refetchOverview] = useQuery<OverviewResult>({
-    query: OVERVIEW_QUERY,
-    variables: {
-      recent: RECENT_COUNT,
-      dayStart: null,
-      dayEnd: null,
-      historyFrom: startOfDayIso(window.from),
-      historyTo: startOfDayIso(window.to),
-    },
-    pause: !view || view.all.length === 0,
-  });
-  const recent = React.useMemo(() => {
-    if (!overview.data) return [];
-    const categories = indexCategories(overview.data.categories);
-    return overview.data.recent.edges.map((e) => toTransactionRow(e.node, categories, l, { withDate: true }));
-  }, [overview.data, l]);
+  const balances = React.useMemo(() => buildAccountBalanceList(shown, today, l), [shown, today, l]);
+  const open = (accountId: string) => router.push({ pathname: '/accounts/[accountId]', params: { accountId } });
 
-  const reload = () => {
-    refresh();
-    refetchOverview({ requestPolicy: 'network-only' });
-  };
+  const reload = () => refresh();
   useOnTransactionsChanged(reload);
 
   return (
@@ -110,7 +92,7 @@ export function AccountsScreen() {
             <AccountCardStack
               accounts={shown}
               holderName={user?.name ?? ''}
-              onSelect={(accountId) => router.push({ pathname: '/accounts/[accountId]', params: { accountId } })}
+              onSelect={open}
             />
             {view.archivedCount > 0 ? (
               <TwPressable
@@ -125,7 +107,7 @@ export function AccountsScreen() {
                 <Switch checked={showArchived} onCheckedChange={setShowArchived} accessibilityLabel={t('accounts.showArchived', { count: String(view.archivedCount) })} />
               </TwPressable>
             ) : null}
-            <AccountMovements rows={recent} historyHref="/history" />
+            <AccountBalanceList groups={balances} onSelect={open} />
           </TwView>
         )
       ) : null}

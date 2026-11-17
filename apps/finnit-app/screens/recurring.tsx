@@ -20,6 +20,8 @@ import { toSuggestionCard } from '@finnit/core/recurring/suggestions';
 import { parseTabParam, RECURRING_TABS, type RecurringTab } from '@finnit/core/recurring/tabs';
 import type { ApiRecurringSuggestion } from '@finnit/core/recurring/types';
 import { buildRecurringView, type ExpenseItem } from '@finnit/core/recurring/view';
+import { buildRecurringAnalytics } from '@finnit/core/recurring/analytics';
+import { ESSENTIAL_PROFILE_QUERY, answersOf, type ApiEssentialProfile } from '@finnit/core/recurring/essentials';
 import { TwView } from '@finnit/ui-native/lib/tw';
 import { Button } from '@finnit/ui-native/components/ui/button';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
@@ -27,6 +29,7 @@ import { Segmented } from '@finnit/ui-native/components/ui/segmented';
 import { Text } from '@finnit/ui-native/components/ui/text';
 import { toast } from '@finnit/ui-native/components/ui/toaster';
 
+import { RecurringAnalytics } from '@/components/recurring/analytics/recurring-analytics';
 import { ExpenseCard } from '@/components/recurring/expense-card';
 import { ExpenseFiltersBar } from '@/components/recurring/expense-filters';
 import { SuggestionCard } from '@/components/recurring/suggestion-card';
@@ -48,8 +51,7 @@ export function RecurringScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ tab?: string; q?: string; status?: string; kind?: string; account?: string; sort?: string }>();
   const today = todayKey();
-  const parsedTab = parseTabParam(params.tab);
-  const tab = parsedTab === 'analytics' ? 'list' : parsedTab;
+  const tab = parseTabParam(params.tab);
   const [filters, setFilters] = React.useState<ExpenseFilters>(() => parseExpenseFilters(params));
   const [busyKey, setBusyKey] = React.useState<string | null>(null);
   // Suggestions taken off the list (added or dismissed) until the next load.
@@ -58,7 +60,15 @@ export function RecurringScreen() {
   const { view, loading, error, refreshing, refresh } = useView({
     query: RECURRING_QUERY,
     variables: recurringVariables('month', today, { excludeCardInstallments: true }),
-    build: (data: RecurringResult, loc) => buildRecurringView(recurringData(data), { view: 'month', date: today, today }, loc),
+    build: (data: RecurringResult, loc) => {
+      const recurring = recurringData(data);
+      return { ...buildRecurringView(recurring, { view: 'month', date: today, today }, loc), analytics: buildRecurringAnalytics(recurring, loc) };
+    },
+  });
+  // The questionnaire's answers: only when "Análisis" is open.
+  const [profile, reloadProfile] = useQuery<{ recurringEssentialProfile: ApiEssentialProfile | null }>({
+    query: ESSENTIAL_PROFILE_QUERY,
+    pause: tab !== 'analytics',
   });
   // The first detection may call AI: only when the tab is open.
   const [suggestions, reloadSuggestions] = useQuery<{ recurringSuggestions: ApiRecurringSuggestion[] }>({
@@ -122,6 +132,7 @@ export function RecurringScreen() {
       setGone(new Set());
       reloadSuggestions({ requestPolicy: 'network-only' });
     }
+    if (tab === 'analytics') reloadProfile({ requestPolicy: 'network-only' });
   };
 
   return (
@@ -137,13 +148,22 @@ export function RecurringScreen() {
         <TwView className="gap-5">
           <Segmented
             accessibilityLabel={t('recurring.tabs.label')}
-            // "Análisis" is web-only for now.
-            options={RECURRING_TABS.filter((value) => value !== 'analytics').map((value) => ({ value, label: t(`recurring.tabs.${value}`) }))}
+            options={RECURRING_TABS.map((value) => ({ value, label: t(`recurring.tabs.${value}`) }))}
             value={tab}
             onValueChange={(next: RecurringTab) => router.setParams({ tab: next === 'list' ? undefined : next })}
           />
 
-          {tab === 'list' ? (
+          {tab === 'analytics' ? (
+            profile.fetching && !profile.data ? (
+              <Text className="py-6 text-center text-on-surface-variant">{t('common.loading')}</Text>
+            ) : (
+              <RecurringAnalytics
+                analytics={view.analytics}
+                answers={profile.data?.recurringEssentialProfile ? answersOf(profile.data.recurringEssentialProfile) : null}
+                onChanged={reload}
+              />
+            )
+          ) : tab === 'list' ? (
             expenses.length === 0 ? (
               <EmptyState icon={Repeat} title={t('recurring.list.emptyTitle')} description={t('recurring.list.emptyDescription')} />
             ) : (

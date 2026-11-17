@@ -5,6 +5,7 @@ import { useTranslations } from 'use-intl';
 import { Link2, Pencil, Receipt, Unlink } from 'lucide-react-native';
 
 import { buildLoanDetailView, type ScheduleRow, type ScheduleRowStatus } from '@finnit/core/debts/detail-view';
+import { cardTermsOf } from '@finnit/core/debts/card-installments';
 import { DEBT_DETAIL_QUERY, type DebtDetailResult } from '@finnit/core/debts/request';
 import { isCardInstallments } from '@finnit/core/debts/types';
 import { todayKey } from '@finnit/core/finance/dates';
@@ -50,7 +51,11 @@ export function DebtDetailScreen() {
   const { view, loading, error, refreshing, refresh } = useView({
     query: DEBT_DETAIL_QUERY,
     variables: { id, debtId: id },
-    build: (data: DebtDetailResult, l) => buildLoanDetailView(data.debt, data.loanSchedule, { today, categories: data.categories }, l),
+    build: (data: DebtDetailResult, l) => ({
+      ...buildLoanDetailView(data.debt, data.loanSchedule, { today, categories: data.categories }, l),
+      // A card purchase in installments: its installments are picked by cut-off.
+      cardTerms: cardTermsOf(data.accounts.edges.find((e) => e.node.id === data.debt.linkedAccountId)?.node),
+    }),
   });
   useOnTransactionsChanged(refresh);
 
@@ -146,7 +151,7 @@ export function DebtDetailScreen() {
                     <Text weight="bold" className="text-sm" style={{ fontVariant: ['tabular-nums'] }}>
                       {row.amountLabel}
                     </Text>
-                    <Badge variant={STATUS_VARIANT[row.status]} label={t(`status.${row.status}`)} />
+                    <Badge variant={STATUS_VARIANT[row.status]} label={t(`${view.debt.loanType === 'card_installments' ? 'cardStatus' : 'status'}.${row.status}`)} />
                     {row.editOccurrenceId ? (
                       <Button size="icon-sm" variant="ghost" icon={Pencil} label={t('editInstallment.action')} onPress={() => setEditing(row)} />
                     ) : null}
@@ -215,6 +220,7 @@ export function DebtDetailScreen() {
             <InstallmentEditSheet
               row={{ ...editing, editOccurrenceId: editing.editOccurrenceId }}
               total={view.debt.installmentsTotal ?? view.schedule.length}
+              terms={view.cardTerms}
               onClose={() => setEditing(null)}
               onSaved={() => {
                 setEditing(null);

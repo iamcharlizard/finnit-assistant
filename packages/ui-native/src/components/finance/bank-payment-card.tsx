@@ -108,6 +108,10 @@ interface BankPaymentCardProps {
   holderName?: string;
   expiryDate?: string;
   balance?: string;
+  /** An amount in the header (what is available or owed): it shows even when the card is stacked. */
+  headerAmount?: string;
+  /** Caption above `headerAmount` ("Disponible", "Debes"). */
+  headerAmountLabel?: string;
   onPress?: () => void;
   accessibilityLabel?: string;
   /** Extra shadow (e.g. the active card in a stack). */
@@ -131,6 +135,8 @@ function BankPaymentCard({
   holderName,
   expiryDate,
   balance,
+  headerAmount,
+  headerAmountLabel,
   onPress,
   accessibilityLabel,
   shadow,
@@ -177,7 +183,7 @@ function BankPaymentCard({
   return (
     <TwPressable
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={accessibilityLabel ?? [bankName, cardTier, maskedNumber, balance].filter(Boolean).join(', ')}
+      accessibilityLabel={accessibilityLabel ?? [bankName, cardTier, maskedNumber, balance, headerAmountLabel, headerAmount].filter(Boolean).join(', ')}
       onPress={onPress}
       disabled={!onPress}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
@@ -212,7 +218,20 @@ function BankPaymentCard({
             </Text>
           ) : null}
         </TwView>
-        <Glyph size={28} color={custom ?? pick(look.iconColor)} opacity={custom ? 0.7 : 1} />
+        {headerAmount ? (
+          <TwView className="items-end gap-0.5">
+            {headerAmountLabel ? (
+              <Text weight="medium" className="text-[10px] uppercase tracking-[0.2em]" style={{ color: text(look.tier) }}>
+                {headerAmountLabel}
+              </Text>
+            ) : null}
+            <Text weight="bold" className="text-[19px]" style={{ color: text(look.name), fontVariant: ['tabular-nums'] }}>
+              {headerAmount}
+            </Text>
+          </TwView>
+        ) : (
+          <Glyph size={28} color={custom ?? pick(look.iconColor)} opacity={custom ? 0.7 : 1} />
+        )}
       </TwView>
       <TwView className="gap-2.5">
         <Text className="text-[19px] tracking-[0.18em]" style={{ color: text(look.number) }}>

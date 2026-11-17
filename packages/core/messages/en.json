@@ -2627,10 +2627,10 @@
         "suave": "Soft greys with depth",
         "mono": "Greys only; money keeps its color"
       },
-      "previewLabel": "Theme preview",
-      "previewHint": "Only changes in your browser. The site uses {site}.",
-      "siteBadge": "site",
-      "useSite": "Use the site theme"
+      "previewLabel": "Theme",
+      "previewHint": "Saved on this device. The default is {site}.",
+      "siteBadge": "default",
+      "useSite": "Use the default"
     }
   },
   "categorize": {

@@ -59,7 +59,7 @@ function Row({
 
 /**
  * The profile menu (the web's avatar dropdown): light / dark / system,
- * the palette preview for admins, Settings and sign out.
+ * the palette (saved on this device), Settings and sign out.
  */
 export default function ProfileSheet() {
   const t = useTranslations('profileMenu');
@@ -100,8 +100,7 @@ export default function ProfileSheet() {
         />
       ))}
 
-      {user.role === 'admin' ? (
-        <>
+      <>
           <Separator className="my-2" />
           <Text weight="medium" className="px-3 pb-1 text-label-sm uppercase tracking-widest text-on-surface-variant">
             {tt('previewLabel')}
@@ -117,7 +116,6 @@ export default function ProfileSheet() {
             />
           ))}
         </>
-      ) : null}
 
       <Separator className="my-2" />
       <Row

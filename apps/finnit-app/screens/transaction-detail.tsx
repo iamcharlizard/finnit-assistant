@@ -14,6 +14,7 @@ import {
   Landmark,
   MoreHorizontal,
   PencilLine,
+  RefreshCw,
   Repeat,
   RotateCcw,
   Trash2,
@@ -59,6 +60,7 @@ import {
   type DetailAction,
 } from '@/components/transaction-detail/actions-sheet';
 import { Screen } from '@/components/shell/screen';
+import { recalculateBankDifference } from '@finnit/core/transaction-detail/bank-difference';
 import { DirectionSheet } from '@/components/transaction-detail/direction-sheet';
 import { TransactionEditSheet } from '@/components/transaction-detail/transaction-edit-sheet';
 import { TransactionFacts } from '@/components/transaction-detail/transaction-facts';
@@ -125,6 +127,20 @@ export function TransactionDetailScreen() {
       .then(() => {
         toast.success(done);
         changed();
+      })
+      .catch((e: unknown) => toast.error(transactionErrorMessage(e, l.t)))
+      .finally(() => setBusy(false));
+  }
+
+  /** "Recalcular con el saldo del banco": it may go (the balances match now). */
+  function recalculate(accountId: string) {
+    setBusy(true);
+    recalculateBankDifference(accountId, gql)
+      .then((linked) => {
+        if (linked) toast.success(t('bankDifference.done'));
+        else toast.error(t('bankDifference.notLinked'));
+        emitTransactionsChanged(id);
+        router.back();
       })
       .catch((e: unknown) => toast.error(transactionErrorMessage(e, l.t)))
       .finally(() => setBusy(false));
@@ -310,6 +326,17 @@ export function TransactionDetailScreen() {
               },
             ]
           : []),
+        ...(view.bankDifference
+          ? [
+              {
+                key: 'recalculate',
+                label: t('bankDifference.recalculate'),
+                icon: RefreshCw,
+                disabled: busy,
+                run: () => recalculate(view.bankDifference!.accountId),
+              },
+            ]
+          : []),
         ...(view.turn
           ? [
               {
@@ -373,6 +400,14 @@ export function TransactionDetailScreen() {
             view={view}
             onUnlock={() => router.push('/privacy-unlock')}
           />
+          {view.bankDifference ? (
+            <TwView className="gap-1 rounded-card bg-track p-4">
+              <Text weight="bold" className="text-sm">
+                {t('bankDifference.title')}
+              </Text>
+              <Text className="text-sm text-on-surface-variant">{t('bankDifference.explain')}</Text>
+            </TwView>
+          ) : null}
           {/* "Editar" first; every other action in the "⋯" sheet (deleting last, in red). */}
           <TwView className="flex-row flex-wrap items-center gap-2">
             <Button

@@ -30,6 +30,7 @@ export const TRANSACTION_PRESENTATION_INCLUDE = {
     },
   },
   suggestedCategory: true,
+  bankDifferenceOf: { select: { id: true } },
 } satisfies Prisma.TransactionInclude;
 
 /** The alias rule fields a movement's presentation uses (id/pattern when loaded). */
@@ -48,6 +49,8 @@ type TransactionRow = Prisma.TransactionGetPayload<Record<string, never>> & {
   account?: Prisma.AccountGetPayload<Record<string, never>> | null;
   category?: Prisma.CategoryGetPayload<Record<string, never>> | null;
   attachments?: Prisma.AttachmentGetPayload<Record<string, never>>[];
+  /** The account whose "Diferencia con el banco" it is. */
+  bankDifferenceOf?: { id: string } | null;
 };
 
 export interface PresentationInput {
@@ -244,6 +247,7 @@ export function mapTransaction(
     isPending: transaction.isPending,
     inProcess: transaction.inProcess ?? false,
     cancelledAt: transaction.cancelledAt ?? null,
+    bankDifference: Boolean(transaction.bankDifferenceOf),
     isRecurringInstance: transaction.isRecurringInstance,
     source: transaction.source,
     externalId: transaction.externalId || undefined,

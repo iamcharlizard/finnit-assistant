@@ -15,7 +15,7 @@ import { Icon } from '@finnit/ui-native/components/ui/icon';
 import { Text } from '@finnit/ui-native/components/ui/text';
 import { toast } from '@finnit/ui-native/components/ui/toaster';
 
-import { SpendingBars } from '@/components/calendar/summary-charts';
+import { DonutChart } from '@/components/charts/donut-chart';
 import { useGql } from '@/lib/graphql/runner';
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
 import { EssentialsQuestionnaireSheet } from './essentials-questionnaire-sheet';
@@ -64,8 +64,22 @@ export function RecurringAnalytics({ analytics, answers, onChanged }: { analytic
         </Text>
         <Text className="text-xs text-on-surface-variant">{t('count', { count: analytics.count })}</Text>
       </Card>
-      <SpendingBars title={t('byCategory')} bars={analytics.byCategory} />
-      <SpendingBars title={t('byKind')} bars={analytics.byKind} />
+      <DonutChart
+        title={t('byCategory')}
+        slices={analytics.byCategory}
+        centerValue={analytics.monthly}
+        centerLabel={t('monthly')}
+        countLabel={(count) => t('count', { count })}
+        emptyLabel={t('empty')}
+      />
+      <DonutChart
+        title={t('byKind')}
+        slices={analytics.byKind}
+        centerValue={analytics.monthly}
+        centerLabel={t('monthly')}
+        countLabel={(count) => t('count', { count })}
+        emptyLabel={t('empty')}
+      />
 
       <TwView className="gap-4 rounded-[20px] bg-surface p-[18px]">
         <TwView className="flex-row items-center gap-2">

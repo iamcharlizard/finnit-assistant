@@ -94,6 +94,9 @@ type ConnectionWithAccounts = BankConnectionRow & {
  * imports movements of the accounts the user links, reconciles them and
  * creates the transactions.
  */
+/** A balance mismatch is only reported once it has lasted this long. */
+const MISMATCH_NOTICE_AFTER_MS = 24 * 60 * 60 * 1000;
+
 @Injectable()
 export class BankConnectionsService {
   private readonly logger = new Logger(BankConnectionsService.name);
@@ -551,7 +554,29 @@ export class BankConnectionsService {
    * imported once it posts, so a single sync may differ for a while). The
    * first sync after linking only takes the bank's balance as the start.
    */
-  private async reconcileBalance(linkedAccountId: string, userId: string) {
+  /**
+   * "Recalcular con el saldo del banco": reconciles the account with the
+   * bank's last known balance right away (after fixing movements by hand),
+   * without asking Syncfy. False when the account isn't linked to a bank.
+   */
+  async recalculateDifference(
+    userId: string,
+    accountId: string,
+  ): Promise<boolean> {
+    const linked = await this.prisma.linkedAccount.findFirst({
+      where: { accountId, account: { userId } },
+      select: { id: true },
+    });
+    if (!linked) return false;
+    await this.reconcileBalance(linked.id, userId, { notify: false });
+    return true;
+  }
+
+  private async reconcileBalance(
+    linkedAccountId: string,
+    userId: string,
+    { notify = true }: { notify?: boolean } = {},
+  ) {
     const linked = await this.prisma.linkedAccount.findUnique({
       where: { id: linkedAccountId },
     });
@@ -624,6 +649,8 @@ export class BankConnectionsService {
           data: {
             amount: Math.abs(openDifference),
             balanceEffect: openDifference,
+            // Dated on the day it last changed, not on the first mismatch.
+            txnDate: localToday(),
           },
         });
       } else if (!open && openDifference !== 0) {
@@ -657,8 +684,15 @@ export class BankConnectionsService {
       });
     });
 
-    // Still different after a second sync: worth telling.
-    if (openDifference !== 0 && openBefore !== 0) {
+    // Still different a day after it first showed: worth telling. Within
+    // a day it is usually timing (the bank's balance and its movements
+    // refresh at different moments) and fixes itself.
+    if (
+      notify &&
+      openDifference !== 0 &&
+      open &&
+      now.getTime() - open.createdAt.getTime() >= MISMATCH_NOTICE_AFTER_MS
+    ) {
       await this.notifications.notify({
         userId: account.userId,
         type: NotificationType.balance_mismatch,
@@ -753,8 +787,19 @@ export class BankConnectionsService {
           existing.status !== ImportedLineStatus.ignored
         ) {
           // Already recorded: the bank cancelled it after it posted. The
-          // line is then ignored, so reactivating it by hand sticks.
-          await this.cancelRemoved(userId, existing.matchedTransactionId);
+          // line is then ignored, so reactivating it by hand sticks. A
+          // movement another line now backs (an "en proceso" payment its
+          // posted line settled) stays.
+          const backed = await this.prisma.importedTransaction.count({
+            where: {
+              id: { not: existing.id },
+              matchedTransactionId: existing.matchedTransactionId,
+              status: { not: ImportedLineStatus.ignored },
+            },
+          });
+          if (!backed) {
+            await this.cancelRemoved(userId, existing.matchedTransactionId);
+          }
           await this.prisma.importedTransaction.update({
             where: { id: existing.id },
             data: { status: ImportedLineStatus.ignored },
@@ -784,6 +829,7 @@ export class BankConnectionsService {
           merchant: line.merchant,
           installmentNumber: line.installmentNumber,
           installmentTotal: line.installmentTotal,
+          inProcess: line.inProcess ?? false,
           // What Syncfy sent, to check later how a line was read (e.g. a
           // bank that sends money in with the sign of money out).
           raw: transaction as unknown as Prisma.InputJsonValue,

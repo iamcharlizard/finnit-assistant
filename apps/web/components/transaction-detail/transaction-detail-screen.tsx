@@ -14,6 +14,7 @@ import {
   Landmark,
   MoreHorizontal,
   PencilLine,
+  RefreshCw,
   Repeat,
   RotateCcw,
   Trash2,
@@ -48,6 +49,7 @@ import type { TransactionDetailData } from '@/lib/transaction-detail/load';
 import { UNDO_TRANSFER_CONVERSION_MUTATION } from '@finnit/core/transfers/convert';
 import { ConvertTransferDialog } from '@/components/transfers/convert-transfer-dialog';
 import { DirectionDialog } from './direction-dialog';
+import { recalculateBankDifference } from '@finnit/core/transaction-detail/bank-difference';
 import { MergeDuplicateDialog } from '@/components/duplicates/merge-duplicate-dialog';
 import { LinkLoanDialog } from '@/components/loan-links/link-loan-dialog';
 import { UnlinkLoanDialog } from '@/components/loan-links/unlink-loan-dialog';
@@ -160,6 +162,22 @@ export function TransactionDetailScreen({
       canCancel: view.canCancel,
     });
 
+  function recalculate(accountId: string) {
+    setApplying(true);
+    recalculateBankDifference(accountId, gql)
+      .then((linked) => {
+        if (linked) toast.success(tt('bankDifference.done'));
+        else toast.error(tt('bankDifference.notLinked'));
+        // It may be gone (the balances match now): back to the list, which
+        // shows the new figure or none.
+        host.close({ deleted: true });
+      })
+      .catch((error: unknown) => {
+        toast.error(transactionErrorMessage(error, t));
+      })
+      .finally(() => setApplying(false));
+  }
+
   const recurringLink = view.recurring;
   const actions: {
     key: string;
@@ -261,6 +279,17 @@ export function TransactionDetailScreen({
           },
         ]
       : []),
+    ...(view.bankDifference
+      ? [
+          {
+            key: 'recalculate',
+            label: tt('bankDifference.recalculate'),
+            icon: RefreshCw,
+            run: () => recalculate(view.bankDifference!.accountId),
+            disabled: applying,
+          },
+        ]
+      : []),
     ...(view.turn
       ? [
           {
@@ -314,6 +343,16 @@ export function TransactionDetailScreen({
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       <TransactionSummary view={view} />
+      {view.bankDifference ? (
+        <section className="flex flex-col gap-1 rounded-card bg-track/60 p-4 text-sm">
+          <h2 className="font-bold text-on-background">
+            {tt('bankDifference.title')}
+          </h2>
+          <p className="text-on-surface-variant">
+            {tt('bankDifference.explain')}
+          </p>
+        </section>
+      ) : null}
 
       {/*
         "Editar" first; every other action in the "⋯" menu (deleting last,

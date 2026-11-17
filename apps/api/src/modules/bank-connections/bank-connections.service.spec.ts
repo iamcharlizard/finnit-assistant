@@ -535,6 +535,7 @@ describe('BankConnectionsService', () => {
     beforeEach(() => {
       // Nothing else to import after the removed line.
       prisma.importedTransaction.findMany.mockResolvedValue([]);
+      prisma.importedTransaction.count.mockResolvedValue(0);
       reconciliation.reconcileLines.mockResolvedValue(undefined as never);
     });
     const run = () =>
@@ -578,6 +579,25 @@ describe('BankConnectionsService', () => {
           title: 'El banco canceló AMAZON MX',
         }),
       );
+    });
+
+    it('keeps a payment the posted line already settled (MOBILE, then SU ABONO)', async () => {
+      prisma.importedTransaction.findUnique.mockResolvedValue({
+        id: 'line-mobile',
+        status: ImportedLineStatus.created,
+        matchedTransactionId: 't-1',
+      } as never);
+      // The "SU ABONO...GRACIAS" line backs the same movement.
+      prisma.importedTransaction.count.mockResolvedValue(1);
+
+      await run();
+
+      expect(prisma.transaction.findFirst).not.toHaveBeenCalled();
+      expect(prisma.transaction.update).not.toHaveBeenCalled();
+      expect(prisma.importedTransaction.update).toHaveBeenCalledWith({
+        where: { id: 'line-mobile' },
+        data: { status: ImportedLineStatus.ignored },
+      });
     });
 
     it('only reports one that belongs to a transfer', async () => {
@@ -655,7 +675,7 @@ describe('BankConnectionsService', () => {
     }: {
       bank: number;
       recorded: number;
-      open: { id: string; balanceEffect: number } | null;
+      open: { id: string; balanceEffect: number; createdAt?: Date } | null;
     }) => {
       prisma.linkedAccount.findUnique.mockResolvedValue(
         linkedRow({
@@ -718,11 +738,15 @@ describe('BankConnectionsService', () => {
       expect(notifications.notify).not.toHaveBeenCalled();
     });
 
-    it('tells the user when the difference is still there on the next sync', async () => {
+    it('tells the user when the difference is still there a day later', async () => {
       arrange({
         bank: 650,
         recorded: 0,
-        open: { id: 'diff', balanceEffect: -150 },
+        open: {
+          id: 'diff',
+          balanceEffect: -150,
+          createdAt: new Date(Date.now() - 2 * 86_400_000),
+        },
       });
       // Reconciled at 1,000 with 150 open: 150 less again.
       prisma.linkedAccount.findUnique.mockResolvedValue(
@@ -742,7 +766,7 @@ describe('BankConnectionsService', () => {
       );
       expect(prisma.transaction.update).toHaveBeenCalledWith({
         where: { id: 'diff' },
-        data: { amount: 300, balanceEffect: -300 },
+        data: { amount: 300, balanceEffect: -300, txnDate: expect.any(Date) },
       });
       expect(notifications.notify).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -753,6 +777,25 @@ describe('BankConnectionsService', () => {
           relatedEntityId: expect.stringMatching(/^card-1:\d{4}-\d{2}-\d{2}$/),
         }),
       );
+    });
+
+    it('waits a day before telling (timing usually fixes it)', async () => {
+      arrange({
+        bank: 650,
+        recorded: 0,
+        open: { id: 'diff', balanceEffect: -150, createdAt: new Date() },
+      });
+      prisma.linkedAccount.findUnique.mockResolvedValue(
+        linkedRow({
+          balance: 500,
+          reconciledBalance: 650,
+          reconciledAt: since,
+        }),
+      );
+
+      await reconcile();
+
+      expect(notifications.notify).not.toHaveBeenCalled();
     });
 
     it('removes the adjustment once the missing movement is recorded', async () => {

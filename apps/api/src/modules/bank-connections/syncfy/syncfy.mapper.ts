@@ -14,6 +14,15 @@ const MERCHANT_RFC = /\s+[A-Z&Ñ]{3,4}\s?\d{6}[A-Z0-9]{2,3}(MX)?$/;
 /** Card payment received ("SU ABONO...GRACIAS", "PAGO"). */
 const CARD_PAYMENT = /ABONO|PAGO|GRACIAS/i;
 
+/**
+ * Card payments some banks list first with the sign of a charge while they
+ * are being applied (Banamex: "MOBILE", a payment made in its app). The
+ * bank's balance already counts them as money in; days later the line is
+ * deleted and the payment posts ("SU ABONO...GRACIAS"). They are imported
+ * as an "en proceso" payment, which that posted line settles.
+ */
+export const IN_PROCESS_CARD_PAYMENTS: readonly RegExp[] = [/^MOBILE$/i];
+
 export function isCreditAccount(account: Pick<SyncfyAccount, 'account_type'>) {
   return CREDIT_TYPES.has(account.account_type);
 }
@@ -72,6 +81,8 @@ export interface MappedLine {
   installmentNumber?: number;
   installmentTotal?: number;
   currency: string;
+  /** Being applied: its amount or date may still change ("en proceso"). */
+  inProcess?: boolean;
 }
 
 /**
@@ -98,8 +109,16 @@ export function mapTransaction(
   const moneyIn = transaction.amount > 0;
   const credit = isCreditAccount(account);
 
+  // A card payment listed as a charge while it is applied: money in.
+  const paymentInProcess =
+    credit &&
+    !moneyIn &&
+    IN_PROCESS_CARD_PAYMENTS.some((pattern) => pattern.test(description));
+
   let kind: ImportedLineKind;
-  if (moneyIn) {
+  if (paymentInProcess) {
+    kind = ImportedLineKind.payment;
+  } else if (moneyIn) {
     kind = !credit
       ? ImportedLineKind.deposit
       : CARD_PAYMENT.test(description)
@@ -135,5 +154,6 @@ export function mapTransaction(
     installmentTotal:
       kind === ImportedLineKind.installment ? installmentTotal : undefined,
     currency: (transaction.currency ?? account.currency ?? 'MXN').toUpperCase(),
+    ...(paymentInProcess && { inProcess: true }),
   };
 }

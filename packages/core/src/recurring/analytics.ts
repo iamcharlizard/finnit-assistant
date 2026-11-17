@@ -5,7 +5,7 @@
  * the dispensable ones would save. Loans are debts, not choices: they show
  * apart. Shared by the web and the mobile app.
  */
-import { bars, type Bar } from '../calendar/summary';
+import { pieSlices, type PieSlice } from '../finance/pie';
 import { DEFAULT_CURRENCY, formatMoney, roundCents } from '../finance/money';
 import type { Localizer } from '../i18n/translator';
 import type { EssentialLevel } from './types';
@@ -40,8 +40,9 @@ export interface RecurringAnalytics {
   /** Active recurring expenses a month (loans included). */
   monthly: string;
   count: number;
-  byCategory: Bar[];
-  byKind: Bar[];
+  /** Donut slices (six at most, the rest in "Otros"). */
+  byCategory: PieSlice[];
+  byKind: PieSlice[];
   /** Loans and installments: owed, not a choice. */
   debts: { amount: string; count: number };
   essentials: {
@@ -146,8 +147,14 @@ export function buildRecurringAnalytics(
     currency,
     monthly: money(monthly),
     count: active.length,
-    byCategory: bars(byCategory, currency, locale),
-    byKind: bars(byKind, currency, locale),
+    byCategory: pieSlices(
+      [...byCategory].map(([key, e]) => ({ key, ...e })),
+      { money, otherLabel: t('recurring.analytics.other') },
+    ),
+    byKind: pieSlices(
+      [...byKind].map(([key, e]) => ({ key, ...e })),
+      { money, otherLabel: t('recurring.analytics.other') },
+    ),
     debts: { amount: money(debtValue), count: debtCount },
     essentials: {
       levels: ESSENTIAL_LEVELS.map((level) => ({

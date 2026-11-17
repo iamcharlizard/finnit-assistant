@@ -12,6 +12,7 @@ export function AccountStat({
   hint,
   tone = 'default',
   progress,
+  segments,
   muted = false,
 }: {
   icon: LucideIcon;
@@ -21,6 +22,8 @@ export function AccountStat({
   tone?: 'default' | 'expense';
   /** 0–100: draws a bar under the value. */
   progress?: number | null;
+  /** Instead of `progress`: a bar of several parts (0–100 each, of the whole bar). */
+  segments?: ReadonlyArray<{ key: string; value: number; color: string }>;
   /** The value is a placeholder ("Sin configurar"), not a figure. */
   muted?: boolean;
 }) {
@@ -41,7 +44,24 @@ export function AccountStat({
       >
         {value}
       </p>
-      {progress != null ? (
+      {segments ? (
+        <div
+          aria-hidden
+          className="flex h-2 w-full gap-[2px] overflow-hidden rounded-full bg-track"
+        >
+          {segments
+            .filter((segment) => segment.value > 0)
+            .map((segment) => (
+              <span
+                key={segment.key}
+                style={{
+                  width: `${segment.value}%`,
+                  background: segment.color,
+                }}
+              />
+            ))}
+        </div>
+      ) : progress != null ? (
         <Progress
           value={progress}
           aria-label={label}

@@ -10,6 +10,7 @@ import {
   Wallet,
 } from 'lucide-react';
 
+import type { CreditUsageView } from '@finnit/core/accounts/credit-usage';
 import type { AccountDetail, DateFact } from '@finnit/core/accounts/view';
 import { AccountFacts } from './account-facts';
 import { AccountStat } from './account-stat';
@@ -19,8 +20,16 @@ import { AccountStat } from './account-stat';
  * month-end projection, cut-off and payment dates, statement amounts.
  * Other accounts: balance and month-end projection.
  */
-export function AccountStats({ detail }: { detail: AccountDetail }) {
+export function AccountStats({
+  detail,
+  usage = null,
+}: {
+  detail: AccountDetail;
+  /** With purchases in installments: credit used includes what they still bill. */
+  usage?: CreditUsageView | null;
+}) {
   const t = useTranslations('accounts.detail');
+  const tu = useTranslations('accounts.creditUsage');
   const { account, projection } = detail;
   const credit = account.credit;
 
@@ -82,18 +91,52 @@ export function AccountStats({ detail }: { detail: AccountDetail }) {
         }
         muted={!detail.limit}
       />
-      <AccountStat
-        icon={CreditCard}
-        label={t('used')}
-        value={account.balance}
-        tone={credit.owed > 0 ? 'expense' : 'default'}
-        progress={detail.usedPercent}
-        hint={
-          detail.usedPercent != null
-            ? t('usedHint', { percent: detail.usedPercent })
-            : undefined
-        }
-      />
+      {usage ? (
+        // One-off spending plus every installment still to bill.
+        <AccountStat
+          icon={CreditCard}
+          label={t('used')}
+          value={usage.total}
+          tone="expense"
+          segments={
+            usage.ofLimit
+              ? [
+                  {
+                    key: 'oneOff',
+                    value: usage.ofLimit.oneOff,
+                    color: 'var(--chart-1)',
+                  },
+                  {
+                    key: 'installments',
+                    value: usage.ofLimit.installments,
+                    color: 'var(--chart-2)',
+                  },
+                ]
+              : undefined
+          }
+          hint={
+            usage.ofLimit
+              ? tu('usedHint', {
+                  percent: usage.ofLimit.total,
+                  amount: usage.installments,
+                })
+              : undefined
+          }
+        />
+      ) : (
+        <AccountStat
+          icon={CreditCard}
+          label={t('used')}
+          value={account.balance}
+          tone={credit.owed > 0 ? 'expense' : 'default'}
+          progress={detail.usedPercent}
+          hint={
+            detail.usedPercent != null
+              ? t('usedHint', { percent: detail.usedPercent })
+              : undefined
+          }
+        />
+      )}
       {projected}
       {dateStat(t('statementDate'), Scissors, detail.statementDate)}
       {dateStat(t('paymentDate'), CalendarCheck, detail.paymentDate)}

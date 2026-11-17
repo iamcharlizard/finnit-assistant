@@ -357,7 +357,7 @@ export function AccountsScreen({
         <BalanceDayStats timeline={timeline} />
       </>
     ) : (
-      <AccountStats detail={detail} />
+      <AccountStats detail={detail} usage={data.creditUsage} />
     );
   const usage = data.creditUsage ? (
     <CreditUsageCard usage={data.creditUsage} />

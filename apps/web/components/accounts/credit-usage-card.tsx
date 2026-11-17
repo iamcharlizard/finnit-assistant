@@ -13,8 +13,8 @@ const INSTALLMENTS = 'var(--chart-2)';
 
 /**
  * "Crédito utilizado", split: one-off spending (and installments already
- * billed) vs purchases in installments still to bill, as a bar with both
- * amounts; and installments the card doesn't have in its balance yet.
+ * billed) vs every installment of purchases in installments still to
+ * bill, as a bar with both amounts.
  */
 export function CreditUsageCard({ usage }: { usage: CreditUsageView }) {
   const t = useTranslations('accounts.creditUsage');
@@ -74,9 +74,6 @@ export function CreditUsageCard({ usage }: { usage: CreditUsageView }) {
           </dd>
         </div>
       </dl>
-      {usage.outsideNote ? (
-        <p className="text-xs text-on-surface-variant">{usage.outsideNote}</p>
-      ) : null}
     </Card>
   );
 }

@@ -112,6 +112,13 @@ export class Transaction {
   })
   cancelledAt?: Date | null;
 
+  @Field({
+    nullable: true,
+    description:
+      '"Diferencia con el banco": the adjustment that keeps a bank-linked account equal to the bank\'s balance; it changes with every sync and goes when they match',
+  })
+  bankDifference?: boolean;
+
   @Field()
   isRecurringInstance: boolean;
 

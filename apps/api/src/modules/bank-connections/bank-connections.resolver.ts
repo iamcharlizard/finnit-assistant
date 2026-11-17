@@ -85,6 +85,17 @@ export class BankConnectionsResolver {
 
   @Mutation(() => Boolean, {
     description:
+      '"Recalcular con el saldo del banco": compares the account\'s recorded movements with the bank\'s last balance now (as the next sync would), updating or removing its "Diferencia con el banco". False for an account not linked to a bank',
+  })
+  async recalculateBankDifference(
+    @CurrentUser() user: User,
+    @Args('accountId', { type: () => ID }) accountId: string,
+  ): Promise<boolean> {
+    return this.banks.recalculateDifference(user.id, accountId);
+  }
+
+  @Mutation(() => Boolean, {
+    description:
       'Admin only: maps a Finnit user (by email) to an existing Syncfy user (id_user or id_external)',
   })
   @UseGuards(AdminGuard)

@@ -89,15 +89,23 @@ export class ReconciliationService {
           userId,
           accountId,
           txnDate: { gte: from, lte: to },
+          // A movement is claimed once per kind of source; an "en proceso"
+          // one stays open to the line that posts it (a bank payment listed
+          // as a charge while applied, then posted with its own line).
           ...(scope !== 'screenshot' && {
-            importedMatches: {
-              none: {
-                id: { notIn: lineIds },
-                ...(scope === 'statement'
-                  ? { statementImportId: { not: null } }
-                  : { linkedAccountId: { not: null } }),
+            OR: [
+              { inProcess: true },
+              {
+                importedMatches: {
+                  none: {
+                    id: { notIn: lineIds },
+                    ...(scope === 'statement'
+                      ? { statementImportId: { not: null } }
+                      : { linkedAccountId: { not: null } }),
+                  },
+                },
               },
-            },
+            ],
           }),
         },
       }),

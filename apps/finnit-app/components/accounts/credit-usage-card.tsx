@@ -53,7 +53,6 @@ export function CreditUsageCard({ usage }: { usage: CreditUsageView }) {
         {part(t('oneOff'), usage.oneOff, ONE_OFF)}
         {part(t('installments'), usage.installments, INSTALLMENTS, t('plans', { count: usage.plans }))}
       </TwView>
-      {usage.outsideNote ? <Text className="text-xs text-on-surface-variant">{usage.outsideNote}</Text> : null}
       <Text className="text-xs text-on-surface-variant">{t('hint')}</Text>
     </Card>
   );

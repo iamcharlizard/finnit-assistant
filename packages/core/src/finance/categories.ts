@@ -21,6 +21,7 @@ export type IconKey =
   | 'housing'
   | 'loan'
   | 'card'
+  | 'cardPayment'
   | 'income'
   | 'transfer'
   | 'travel'
@@ -105,6 +106,7 @@ export const ICON_COLORS: Record<IconKey, string> = {
   housing: '#00696e',
   loan: '#64748b',
   card: '#6c72cb',
+  cardPayment: '#6c72cb',
   income: '#00a86b',
   transfer: '#64748b',
   travel: '#0284c7',
@@ -119,7 +121,7 @@ export const ICON_COLORS: Record<IconKey, string> = {
 
 /** Icon keys a user can pick for a category, in the picker's order. */
 export const PICKABLE_ICON_KEYS = Object.keys(ICON_COLORS).filter(
-  (key) => key !== 'transfer' && key !== 'card',
+  (key) => key !== 'transfer' && key !== 'card' && key !== 'cardPayment',
 ) as IconKey[];
 
 export function isIconKey(value: unknown): value is IconKey {

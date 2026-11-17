@@ -289,8 +289,9 @@ export class CardInstallmentsService implements OnApplicationBootstrap {
   }
 
   /**
-   * Changes one installment: its day (with `shiftFollowing`, the next ones
-   * go to that day of the following months) and its amount. Days stay in
+   * Changes one installment: its day (on the card's cut-off that bills
+   * it; with `shiftFollowing`, the next ones go to the following cut-offs)
+   * and its amount. Days stay in
    * order after the purchase; the plan then owes the installments' sum. A
    * paid one without a movement moves its payment too; one paid by a
    * movement keeps the movement's amount.
@@ -313,8 +314,19 @@ export class CardInstallmentsService implements OnApplicationBootstrap {
     const debtId = occurrence.recurringExpense.debtId!;
     const debt = await this.prisma.debt.findUniqueOrThrow({
       where: { id: debtId },
-      select: { startDate: true, principal: true },
+      select: {
+        startDate: true,
+        principal: true,
+        linkedAccount: {
+          select: {
+            creditCardTerms: {
+              select: { statementDay: true, paymentDueDay: true },
+            },
+          },
+        },
+      },
     });
+    const terms = debt.linkedAccount?.creditCardTerms ?? null;
 
     await this.prisma.$transaction(async (tx) => {
       await ensureCardSchedule(tx, debtId);
@@ -333,6 +345,7 @@ export class CardInstallmentsService implements OnApplicationBootstrap {
             index,
             dayKey(toDateOnly(new Date(input.dueDate))),
             input.shiftFollowing ?? false,
+            terms,
           )
         : before;
       const amounts = all.map((o, i) =>

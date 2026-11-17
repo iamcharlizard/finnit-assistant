@@ -101,6 +101,7 @@ describe('imports use merchant rules and aliases', () => {
 
     beforeEach(() => {
       tx = mockDeep<Prisma.TransactionClient>();
+      tx.transaction.findMany.mockResolvedValue([]);
       aliases = mockDeep<MerchantAliasesService>();
       let n = 0;
       tx.transaction.create.mockImplementation(
@@ -146,6 +147,36 @@ describe('imports use merchant rules and aliases', () => {
         ['t1', 't2', 't3'],
         tx,
       );
+    });
+
+    it('turns new movements around when their automatic name says so', async () => {
+      tx.transaction.findMany.mockResolvedValue([
+        {
+          id: 't1',
+          type: 'expense',
+          amount: 100,
+          balanceEffect: -100,
+          isPending: false,
+          alias: { direction: 'income' },
+          category: { kind: 'expense' },
+        },
+      ] as never);
+      const result = await service.materialize(
+        tx,
+        [line('l1', { merchant: 'SPEI MOBILE', suggestedCategoryId: 'fuel' })],
+        { ...options(TransactionSource.imported), adjustBalance: true },
+      );
+      expect(tx.transaction.update).toHaveBeenCalledWith({
+        where: { id: 't1' },
+        data: {
+          type: 'income',
+          balanceEffect: 100,
+          categoryId: null,
+          categorySource: null,
+        },
+      });
+      // −amount from creating it, +2×amount from turning it around.
+      expect(result.balanceChange).toBe(100);
     });
 
     it('bank sync categories that are not rules come from the bank', async () => {

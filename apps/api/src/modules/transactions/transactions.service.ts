@@ -21,6 +21,17 @@ const USER_EDITABLE_ON_IMPORTED = new Set<string>([
 ]);
 import { PrismaService } from '../../services/prisma.service';
 import {
+  DIRECTION_SELECT,
+  directionBlockOf,
+  oppositeOf,
+  turnMovement,
+  type DirectionBlock,
+} from '../../common/utils/direction.util';
+import {
+  ChangeDirectionInput,
+  ChangeDirectionResult,
+} from './dto/change-direction.dto';
+import {
   CreateTransactionInput,
   UpdateTransactionInput,
   TransactionsArgs,
@@ -679,6 +690,82 @@ export class TransactionsService {
     return this.findById(id, userId);
   }
 
+  /**
+   * "Es un ingreso" / "Es un gasto": records a plain expense as income or
+   * the other way round (some banks send money in with the sign of money
+   * out). With `remember`, an automatic name for that bank text says so:
+   * the user's matching movements already recorded turn the same way and
+   * the next synced ones arrive that way.
+   */
+  async changeDirection(
+    userId: string,
+    input: ChangeDirectionInput,
+    unlocked = false,
+  ): Promise<ChangeDirectionResult> {
+    if (
+      input.type !== TransactionType.income &&
+      input.type !== TransactionType.expense
+    ) {
+      throw new ValidationError('A movement can only be income or expense');
+    }
+    await this.prisma.$transaction(async (tx) => {
+      const movement = await tx.transaction.findFirst({
+        where: { id: input.id, userId },
+        select: { ...DIRECTION_SELECT, category: { select: { kind: true } } },
+      });
+      if (!movement) throw new NotFoundError('Transaction not found');
+      const block = directionBlockOf(movement);
+      if (block) throw new ValidationError(directionBlockMessage(block));
+      await turnMovement(tx, movement, input.type, {
+        categoryKind: movement.category?.kind,
+      });
+    });
+
+    let alsoChanged = 0;
+    if (input.remember) {
+      const aliasId = await this.aliases.rememberDirection(
+        userId,
+        { ...input.remember, direction: input.type },
+        unlocked,
+      );
+      alsoChanged = await this.turnAliasMovements(userId, aliasId, input.type);
+    }
+    return {
+      transaction: await this.findById(input.id, userId, unlocked),
+      alsoChanged,
+    };
+  }
+
+  /**
+   * The automatic name's plain expenses and income recorded the other way
+   * turn to `direction`. Returns how many changed.
+   */
+  async turnAliasMovements(
+    userId: string,
+    aliasId: string,
+    direction: TransactionType,
+  ): Promise<number> {
+    return this.prisma.$transaction(async (tx) => {
+      const movements = await tx.transaction.findMany({
+        where: {
+          userId,
+          aliasId,
+          type: oppositeOf(direction),
+        },
+        select: { ...DIRECTION_SELECT, category: { select: { kind: true } } },
+      });
+      let changed = 0;
+      for (const movement of movements) {
+        if (directionBlockOf(movement)) continue;
+        await turnMovement(tx, movement, direction, {
+          categoryKind: movement.category?.kind,
+        });
+        changed += 1;
+      }
+      return changed;
+    });
+  }
+
   /** "Reactivar": a cancelled movement counts again. */
   async restore(id: string, userId: string): Promise<Transaction> {
     await this.prisma.$transaction(async (tx) => {
@@ -1317,4 +1404,19 @@ export function statusWhere(
   return statuses.length > 0
     ? [...new Set(statuses)].map((status) => by[status])
     : [{ id: { in: [] } }];
+}
+
+function directionBlockMessage(block: NonNullable<DirectionBlock>): string {
+  switch (block) {
+    case 'transfer':
+      return 'A transfer side cannot change; turn the transfer back into a movement first';
+    case 'loan':
+      return 'This movement belongs to a loan or a purchase in installments; unlink it first';
+    case 'recurring':
+      return 'This movement paid a scheduled payment; unlink it first';
+    case 'cancelled':
+      return 'Reactivate the movement first';
+    default:
+      return 'Only an expense or an income can change';
+  }
 }

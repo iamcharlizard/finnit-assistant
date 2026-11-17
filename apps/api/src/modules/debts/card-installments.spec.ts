@@ -2,6 +2,8 @@ import {
   billedInstallments,
   defaultSchedule,
   moveInstallment,
+  creditUsage,
+  onCutoffs,
   scheduleError,
   cycleInstallments,
   fitsInstallment,
@@ -141,6 +143,31 @@ describe('card purchases in installments', () => {
     ]);
   });
 
+  it('with the card terms, moves to the cut-off that bills the day', () => {
+    const terms = { statementDay: 16, paymentDueDay: 9 };
+    const days = ['2026-11-16', '2026-12-16', '2027-01-16'];
+    // The payment due date of the 16 nov cut-off is that cut-off.
+    expect(moveInstallment(days, 0, '2026-12-09', true, terms)).toEqual(days);
+    // Any other day goes to its cycle's cut-off; the next follow it.
+    expect(moveInstallment(days, 0, '2026-12-01', true, terms)).toEqual([
+      '2026-12-16',
+      '2027-01-16',
+      '2027-02-16',
+    ]);
+    expect(
+      onCutoffs(
+        [
+          { day: '2026-12-09', amount: 1 },
+          { day: '2027-01-09', amount: 1 },
+        ],
+        terms,
+      ),
+    ).toEqual([
+      { day: '2026-11-16', amount: 1 },
+      { day: '2026-12-16', amount: 1 },
+    ]);
+  });
+
   it('keeps the days in order after the purchase and the amounts above 0', () => {
     const ok = [
       { day: '2026-10-07', amount: 500 },
@@ -152,5 +179,29 @@ describe('card purchases in installments', () => {
     expect(scheduleError([{ ...ok[0], amount: 0 }], '2026-10-01')).toBe(
       'amounts',
     );
+  });
+
+  it('splits what the card owes into one-off and installments', () => {
+    // 5,098 at 3 months, charged whole, 2 installments to come; 1,000 of
+    // other spending; a plan billed month by month with 600 to come.
+    expect(
+      creditUsage(6098, [
+        { charged: true, remaining: 3398.67 },
+        { charged: false, remaining: 600 },
+      ]),
+    ).toEqual({
+      used: 6098,
+      installments: 3398.67,
+      oneOff: 2699.33,
+      outside: 600,
+    });
+    // Paid down below the installments to come: never negative.
+    expect(creditUsage(1000, [{ charged: true, remaining: 3000 }])).toEqual({
+      used: 1000,
+      installments: 1000,
+      oneOff: 0,
+      outside: 0,
+    });
+    expect(creditUsage(-50, []).used).toBe(0);
   });
 });

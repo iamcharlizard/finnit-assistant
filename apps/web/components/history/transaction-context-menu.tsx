@@ -3,9 +3,11 @@
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
 import {
+  ArrowDownLeft,
   ArrowLeftRight,
+  ArrowUpRight,
   Ban,
-  CreditCard,
+  CreditCardCheck,
   Eye,
   Pencil,
   RotateCcw,
@@ -21,6 +23,7 @@ import {
 } from '@finnit/ui/components/ui/context-menu';
 import { toast } from '@finnit/ui/components/ui/toaster';
 
+import { DirectionDialog } from '@/components/transaction-detail/direction-dialog';
 import { useTransactionDrawer } from '@/components/transaction-detail/transaction-drawer';
 import { useMovementActions } from '@/components/transaction-detail/use-movement-actions';
 import { ConvertTransferDialog } from '@/components/transfers/convert-transfer-dialog';
@@ -32,8 +35,9 @@ import {
 
 /**
  * Right-click (long press on touch) actions of a history movement: view its
- * detail, rename it, turn it into a transfer or a card payment, mark it
- * cancelled (or reactivate it) and delete it. The same rules as the
+ * detail, rename it, turn it into a transfer or a card payment, record
+ * it as income or expense, mark it cancelled (or reactivate it) and
+ * delete it. The same rules as the
  * detail's "⋯" menu; dialogs open from here. Wraps the movement's card.
  */
 export function TransactionContextMenu({
@@ -55,6 +59,7 @@ export function TransactionContextMenu({
   const t = useTranslations();
   const drawer = useTransactionDrawer();
   const [convert, setConvert] = React.useState<ConvertMode | null>(null);
+  const [turning, setTurning] = React.useState(false);
   const movement = useMovementActions({
     onDeleted: onChanged,
     onChanged,
@@ -88,7 +93,21 @@ export function TransactionContextMenu({
           ) : null}
           {cardPayment ? (
             <ContextMenuItem onSelect={() => setConvert('cardPayment')}>
-              <CreditCard aria-hidden /> {t('transfers.cardPayment.action')}
+              <CreditCardCheck aria-hidden /> {t('transfers.cardPayment.action')}
+            </ContextMenuItem>
+          ) : null}
+          {row.turn ? (
+            <ContextMenuItem onSelect={() => setTurning(true)}>
+              {row.turn.to === 'income' ? (
+                <ArrowDownLeft aria-hidden />
+              ) : (
+                <ArrowUpRight aria-hidden />
+              )}{' '}
+              {t(
+                row.turn.to === 'income'
+                  ? 'transaction.direction.toIncome'
+                  : 'transaction.direction.toExpense',
+              )}
             </ContextMenuItem>
           ) : null}
           {row.canCancel ? (
@@ -143,6 +162,17 @@ export function TransactionContextMenu({
                   : 'transfers.convert.done',
               ),
             );
+            onChanged();
+          }}
+        />
+      ) : null}
+      {turning && row.turn ? (
+        <DirectionDialog
+          change={row.turn}
+          account={row.accountLabel}
+          onClose={() => setTurning(false)}
+          onChanged={() => {
+            setTurning(false);
             onChanged();
           }}
         />

@@ -105,6 +105,7 @@ describe('StatementsService', () => {
 
   beforeEach(async () => {
     prisma = mockDeep<PrismaService>();
+    prisma.transaction.findMany.mockResolvedValue([]);
     storage = mockDeep<S3StorageService>();
     parsers = mockDeep<StatementParserRegistry>();
     reconciliation = mockDeep<ReconciliationService>();

@@ -7,7 +7,7 @@ import {
   ArrowLeftRight,
   CircleArrowDown,
   CircleArrowUp,
-  CreditCard,
+  CreditCardCheck,
   Ellipsis,
   Plus,
   ScanLine,
@@ -163,7 +163,7 @@ const ACTIONS: ReadonlyArray<{
   // Only with a credit card registered: above "Transferencia", at the top.
   {
     action: 'cardPayment',
-    icon: CreditCard,
+    icon: CreditCardCheck,
     tone: 'text-violet-ink',
     k: 0,
     y: -228,

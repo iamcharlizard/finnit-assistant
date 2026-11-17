@@ -8,6 +8,7 @@ import {
   ArrowLeftRight,
   ArrowUpRight,
   ChevronRight,
+  CreditCardCheck,
   Trash2,
   type LucideIcon,
 } from 'lucide-react';
@@ -104,10 +105,17 @@ export function TransferGroupCard({
         >
           <div className="flex min-h-11 items-center gap-3 p-4 pb-2">
             <span className="flex size-12 shrink-0 items-center justify-center rounded-chip bg-track">
-              <ArrowLeftRight
-                aria-hidden
-                className="size-[22px] text-on-surface-variant"
-              />
+              {group.cardPayment ? (
+                <CreditCardCheck
+                  aria-hidden
+                  className="size-[22px] text-on-surface-variant"
+                />
+              ) : (
+                <ArrowLeftRight
+                  aria-hidden
+                  className="size-[22px] text-on-surface-variant"
+                />
+              )}
             </span>
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-sm font-medium text-on-background">

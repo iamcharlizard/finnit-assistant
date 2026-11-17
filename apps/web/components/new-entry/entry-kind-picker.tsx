@@ -5,7 +5,7 @@ import {
   ArrowLeftRight,
   CircleArrowDown,
   CircleArrowUp,
-  CreditCard,
+  CreditCardCheck,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -21,7 +21,7 @@ const KINDS: ReadonlyArray<{
   { kind: 'expense', icon: CircleArrowUp, tone: 'text-expense' },
   { kind: 'income', icon: CircleArrowDown, tone: 'text-income' },
   { kind: 'transfer', icon: ArrowLeftRight, tone: 'text-violet-ink' },
-  { kind: 'cardPayment', icon: CreditCard, tone: 'text-violet-ink' },
+  { kind: 'cardPayment', icon: CreditCardCheck, tone: 'text-violet-ink' },
 ];
 
 /**

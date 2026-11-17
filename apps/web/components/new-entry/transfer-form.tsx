@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { CreditCard } from 'lucide-react';
+import { CreditCardCheck } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import { Combobox } from '@finnit/ui/components/ui/combobox';
@@ -194,7 +194,7 @@ export function TransferForm({
       </div>
       {cardPayment ? (
         <p className="flex items-start gap-2 rounded-xl bg-track p-3 text-sm text-on-background">
-          <CreditCard
+          <CreditCardCheck
             aria-hidden
             className="mt-0.5 size-4 shrink-0 text-violet-ink"
           />

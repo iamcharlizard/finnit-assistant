@@ -6,6 +6,7 @@ import {
   type DayKey,
 } from '../finance/dates';
 import { formatMoney } from '../finance/money';
+import { stackedBars, type StackedBar } from '../finance/stacked-bars';
 
 /**
  * A credit card's billing cycle (de corte a corte) as the API computes it:
@@ -269,4 +270,31 @@ export function toCardPeriodView(
 /** Paying on `day` counts for this cycle only up to its due date. */
 export function paysLate(draft: CardPaymentDraft, day: DayKey): boolean {
   return day > draft.dueDate;
+}
+
+/** Series of the card's spending by period, in their fixed color order. */
+export const PERIOD_SPENDING_SERIES = ['oneOff', 'installments'] as const;
+export type PeriodSpendingSeries = (typeof PERIOD_SPENDING_SERIES)[number];
+
+/**
+ * What each cycle billed, oldest first: one-off spending (the no-interest
+ * payment without installments) and the installments of purchases in
+ * installments. The running cycle shows what it has so far.
+ */
+export function periodSpendingBars(
+  periods: ReadonlyArray<ApiCardPeriod>,
+  { locale }: Pick<Localizer, 'locale'>,
+): StackedBar[] {
+  const currency = periods[0]?.currency ?? 'MXN';
+  return stackedBars(
+    [...periods].reverse().map((period) => ({
+      key: period.id,
+      label: shortDate(dayKeyOf(period.statementDate), locale),
+      segments: [
+        { key: 'oneOff', value: period.cashBalance },
+        { key: 'installments', value: period.installmentsInCycle },
+      ],
+    })),
+    (n) => formatMoney(n, currency, locale),
+  );
 }

@@ -546,7 +546,11 @@
       "movements": "{count, plural, =0 {No movements} one {# movement} other {# movements}}",
       "chartTitle": "Available and debt at the end of each day",
       "available": "Available",
-      "debt": "Card debt"
+      "debt": "Card debt",
+      "tabs": {
+        "summary": "Summary",
+        "analytics": "Analytics"
+      }
     },
     "actionsLabel": "Actions for {name}",
     "focus": {
@@ -621,6 +625,8 @@
       "defaultCash": "Your cash"
     },
     "cardBalance": "Balance",
+    "cardAvailable": "Available",
+    "cardOwed": "You owe",
     "manualLink": {
       "question": "Can't find your bank?",
       "action": "Add it manually"
@@ -796,6 +802,63 @@
       "excluded": "Not in total",
       "saved": "Done",
       "error": "Couldn’t save. Try again."
+    },
+    "balanceList": {
+      "title": "Balances",
+      "creditLine": "{available} available of {limit}",
+      "nextPayment": "Payment {date}",
+      "archived": "Archived",
+      "open": "Open {name}",
+      "groups": {
+        "credit": "Credit cards",
+        "debit": "Debit",
+        "savings": "Savings and cash"
+      }
+    },
+    "creditUsage": {
+      "title": "How your credit is used",
+      "oneOff": "One-off",
+      "installments": "Installments still to bill",
+      "plans": "{count, plural, one {# purchase in installments} other {# purchases in installments}}",
+      "outside": "Plus {amount} of installments the card doesn't have in its balance yet.",
+      "hint": "The card takes a purchase in installments whole from what's available when you buy; each cut-off bills one installment on your statement."
+    },
+    "cardMovements": {
+      "title": "Movements",
+      "modeLabel": "Show movements",
+      "byPeriod": "By period",
+      "byMonth": "By month",
+      "loading": "Loading movements…",
+      "count": "Movements",
+      "spent": "Charges",
+      "paidIn": "Credits and payments",
+      "empty": "No movements in this range.",
+      "openHistory": "Open in the history",
+      "seeAll": "See all in the history"
+    },
+    "cardPlans": {
+      "loading": "Loading purchases in installments…",
+      "count": "{count, plural, =0 {No purchases in installments} one {# purchase in installments} other {# purchases in installments}}",
+      "new": "New purchase in installments",
+      "emptyTitle": "No purchases in installments",
+      "emptyDescription": "When you buy in installments with this card, record it here or from the purchase's movement."
+    },
+    "cardTabs": {
+      "summary": "Summary",
+      "movements": "Movements",
+      "plans": "Installments"
+    },
+    "cardSummary": {
+      "spendingTitle": "Charges by period",
+      "spendingHint": "Each period's one-off spending (its no-interest payment without installments) and the installments it billed.",
+      "oneOff": "One-off",
+      "installments": "Installments",
+      "period": "Cut-off",
+      "total": "Total",
+      "seeTable": "See as table",
+      "empty": "No periods with charges yet.",
+      "bar": "Cut-off {label}: {total}",
+      "openDetail": "See details"
     }
   },
   "recurring": {
@@ -1047,7 +1110,8 @@
       "label": "Recurring payment sections",
       "calendar": "Calendar",
       "list": "My payments",
-      "suggestions": "Suggested"
+      "suggestions": "Suggested",
+      "analytics": "Analysis"
     },
     "filters": {
       "search": "Search payments",
@@ -1066,6 +1130,117 @@
       "results": "{count, plural, =1 {1 payment} other {# payments}}",
       "statusValue": "Status: {value}",
       "sortValue": "Sort: {value}"
+    },
+    "analytics": {
+      "monthly": "Fixed spending a month",
+      "count": "{count, plural, one {# recurring payment} other {# recurring payments}}",
+      "byCategory": "By category",
+      "byKind": "By kind",
+      "noCategory": "No category",
+      "debts": "Debts and installments: {amount} a month ({count}). Not analyzed: they must be paid.",
+      "levels": {
+        "essential": "Essential",
+        "reducible": "Could be cheaper",
+        "dispensable": "Dispensable"
+      },
+      "essentialsTitle": "What could you cut?",
+      "essentialsIntro": "Answer a few questions about your day to day and the AI will review your recurring payments: which you need, which could be cheaper and which you could drop.",
+      "start": "Start",
+      "redo": "Answer again",
+      "analyzeAgain": "Analyze again",
+      "pending": "{count, plural, one {# payment not analyzed yet} other {# payments not analyzed yet}}",
+      "analyzePending": "Analyze them",
+      "savings": "Dropping the dispensable ones would save {amount} a month.",
+      "noSavings": "The AI found no dispensable payments.",
+      "listTitle": "Payment by payment",
+      "aiUnavailable": "The AI isn't available now; try again later.",
+      "analyzed": "{count, plural, =0 {Nothing to analyze} one {Analyzed # payment} other {Analyzed # payments}}",
+      "analyzing": "Analyzing…",
+      "empty": "You have no recurring payments yet.",
+      "seeTable": "See as table",
+      "total": "Total",
+      "category": "Category",
+      "kind": "Kind",
+      "questionnaire": {
+        "title": "What could you cut?",
+        "step": "Question {current} of {total}",
+        "back": "Back",
+        "next": "Next",
+        "finish": "Analyze my payments",
+        "saving": "Analyzing…",
+        "questions": {
+          "household": {
+            "label": "Who do you live with?",
+            "options": {
+              "alone": "Alone",
+              "partner": "With my partner",
+              "family": "With my family",
+              "shared": "With roommates"
+            }
+          },
+          "dependents": {
+            "label": "Does anyone depend on you financially?",
+            "options": {
+              "none": "No one",
+              "children": "My children",
+              "parents": "My parents or other relatives",
+              "both": "Children and relatives"
+            }
+          },
+          "work": {
+            "label": "How do you work?",
+            "options": {
+              "office": "At an office",
+              "hybrid": "Hybrid",
+              "remote": "From home",
+              "self_employed": "On my own",
+              "not_working": "Not working now"
+            }
+          },
+          "transport": {
+            "label": "How do you get around?",
+            "options": {
+              "car": "By car",
+              "public": "Public transport",
+              "mixed": "A bit of everything",
+              "none": "I barely go out"
+            }
+          },
+          "health": {
+            "label": "Do you have ongoing medical expenses?",
+            "options": {
+              "none": "No",
+              "occasional": "Now and then",
+              "ongoing": "Yes, an ongoing treatment"
+            }
+          },
+          "entertainment": {
+            "label": "How much do you use your entertainment subscriptions?",
+            "options": {
+              "daily": "Every day",
+              "weekly": "A few times a week",
+              "rarely": "Hardly ever"
+            }
+          },
+          "goal": {
+            "label": "What's your priority now?",
+            "options": {
+              "save": "Save more",
+              "debt": "Pay off debts",
+              "emergency": "Build an emergency fund",
+              "balanced": "Keep things balanced"
+            }
+          },
+          "cut": {
+            "label": "How much do you want to cut?",
+            "options": {
+              "light": "Only what's extra",
+              "moderate": "What I can",
+              "aggressive": "Everything possible"
+            }
+          }
+        }
+      }
     }
   },
   "budgets": {
@@ -1618,6 +1793,14 @@
         "skipped": "Skipped",
         "projected": "Scheduled"
       },
+      "cardStatus": {
+        "paid": "Billed",
+        "historical": "On your statement",
+        "upcoming": "To be billed",
+        "overdue": "Not billed yet",
+        "skipped": "Skipped",
+        "projected": "Scheduled"
+      },
       "payThis": "Pay",
       "chargesTitle": "Money added",
       "chargeUntitled": "No description",
@@ -1775,9 +1958,12 @@
         "action": "Edit installment",
         "title": "Installment {number} of {total}",
         "description": "Change the day it is billed and its amount.",
+        "descriptionCutoff": "Pick the cut-off that bills it and its amount. You pay it with that cut-off's statement.",
         "date": "Billing date",
+        "cutoff": "Billed on the cut-off",
         "amount": "Amount",
         "shift": "Move the next ones to that same day of the following months",
+        "shiftCutoffs": "Move the next ones to the following cut-offs",
         "save": "Save",
         "saving": "Saving…",
         "saved": "Installment saved",
@@ -1967,19 +2153,22 @@
       "noInterest": "Interest-free",
       "withInterest": "With interest",
       "purchaseDate": "Purchase date",
-      "installmentsPaid": "Installments already billed",
-      "installmentsPaidHint": "Worked out from the card's cut-offs since the purchase date. Correct them if they don't match your statement.",
+      "installmentsPaid": "Installments already on your statement",
+      "installmentsPaidHint": "Worked out from the card's cut-offs: each cut-off that came put its installment on the statement (it doesn't mean you paid it). Fix them if they don't match.",
       "preview": "{count} installments of {amount} · total {total}",
       "previewInterest": "Interest: {interest}",
-      "span": "First installment on the {first} cut-off; last on {last}.",
+      "span": "First installment on the {first} cut-off; last on the {last} one.",
       "spanNoTerms": "The card has no cut-off day: one installment a month from the purchase (first on {first}, last on {last}).",
       "purchaseLinked": "It will be linked to the purchase expense: the card bills each installment and the purchase never counts twice as spending.",
       "create": "Save card installments",
       "saving": "Saving…",
       "scheduleTitle": "Installments",
-      "scheduleHint": "Change a date or amount if it doesn't match your statement. Changing a date moves the next ones to that same day of the following months.",
+      "scheduleHint": "Each installment is billed on a cut-off and you pay it with that statement. If you change one's cut-off, the next ones go to the following cut-offs.",
+      "scheduleHintNoTerms": "Change the date or amount if they don't match your statement. Changing a date moves the next ones to that same day of the following months.",
       "scheduleNumber": "{number} of {total}",
       "scheduleDate": "Billing date {number}",
+      "scheduleCutoff": "{cut} cut-off · pay by {due}",
+      "scheduleCutoffLabel": "Cut-off of installment {number}",
       "scheduleAmount": "Amount {number}",
       "scheduleReset": "Back to the cut-off dates",
       "schedulePage": "{from}–{to} of {total}",
@@ -2910,6 +3099,31 @@
       "restored": "It counts again",
       "badge": "Cancelled",
       "banner": "The bank cancelled it: it doesn't count in the balance or your totals."
+    },
+    "direction": {
+      "toIncome": "It's income",
+      "toExpense": "It's an expense",
+      "titleIncome": "Record it as income?",
+      "titleExpense": "Record it as an expense?",
+      "descriptionIncome": "Today it takes {amount} from {account}; as income it adds it.",
+      "descriptionExpense": "Today it adds {amount} to {account}; as an expense it takes it.",
+      "bankNote": "Use it when the bank sent it the other way round. If your balance already matched the bank's, it will stop matching.",
+      "remember": "Do the same with movements whose text contains…",
+      "rememberHintIncome": "The ones you have change now and the next ones arrive as income. It is saved as an automatic name.",
+      "rememberHintExpense": "The ones you have change now and the next ones arrive as expenses. It is saved as an automatic name.",
+      "pattern": "Text it contains",
+      "name": "Name of those movements",
+      "confirm": "Change",
+      "saving": "Changing…",
+      "doneIncome": "Recorded as income",
+      "doneExpense": "Recorded as an expense",
+      "doneMore": "{count, plural, one {# more movement changed too} other {# more movements changed too}}",
+      "errors": {
+        "patternRequired": "Type the text to look for.",
+        "patternTooLong": "The text is too long.",
+        "nameRequired": "Type a name.",
+        "nameTooLong": "The name is too long."
+      }
     }
   },
   "notifications": {
@@ -3709,7 +3923,8 @@
         "savings": "Savings",
         "other": "Other",
         "card": "Card",
-        "transfer": "Transfer"
+        "transfer": "Transfer",
+        "cardPayment": "Card payment"
       }
     },
     "delete": {

@@ -11,6 +11,7 @@ import {
   CardTerms,
   DayKey,
   addDays,
+  cutoffFor,
   dayOfMonth,
   statementOn,
 } from '../credit-cards/credit-card-cycle';
@@ -230,22 +231,41 @@ export function defaultSchedule(
 
 /**
  * Moves installment `index` to `day`; with `following`, the ones after it
- * go to that same day of the next months (clamped to short months).
+ * go to the next cut-offs (with the card's terms) or to that same day of
+ * the next months (clamped to short months). With the terms, `day` is
+ * first taken to the cut-off that bills it (see `cutoffFor`).
  */
 export function moveInstallment(
   days: readonly DayKey[],
   index: number,
   day: DayKey,
   following: boolean,
+  terms: CardTerms | null = null,
 ): DayKey[] {
   const next = [...days];
-  next[index] = day;
+  const target = terms ? cutoffFor(day, terms) : day;
+  next[index] = target;
   if (!following) return next;
-  const { year, month, date } = parts(day);
+  const { year, month, date } = parts(target);
   for (let j = index + 1; j < next.length; j++) {
-    next[j] = dayOfMonth(year, month + (j - index), date);
+    next[j] = terms
+      ? statementOn(addDays(next[j - 1], 1), terms)
+      : dayOfMonth(year, month + (j - index), date);
   }
   return next;
+}
+
+/**
+ * A schedule typed by the user, on the card's cut-offs: each day goes to
+ * the cut-off that bills it. Without the terms it stays as typed.
+ */
+export function onCutoffs<T extends { day: DayKey }>(
+  schedule: readonly T[],
+  terms: CardTerms | null,
+): T[] {
+  return terms
+    ? schedule.map((s) => ({ ...s, day: cutoffFor(s.day, terms) }))
+    : [...schedule];
 }
 
 /** Why a schedule can't be saved, or null: days ascending, amounts > 0. */
@@ -259,4 +279,49 @@ export function scheduleError(
     if (i > 0 && schedule[i].day <= schedule[i - 1].day) return 'dates';
   }
   return null;
+}
+
+/** One purchase in installments, as the card's credit use needs it. */
+export interface UsagePlan {
+  /** Its whole price is in the card's balance (the bank charged it). */
+  charged: boolean;
+  /** Installments after `today`, still to be billed. */
+  remaining: number;
+}
+
+export interface CreditUsageSplit {
+  /** What the card owes now. */
+  used: number;
+  /** Of `used`: installments still to come of purchases charged whole. */
+  installments: number;
+  /** Of `used`: everything else (one-off purchases and billed installments). */
+  oneOff: number;
+  /** Installments still to come of purchases not in the balance (more to owe). */
+  outside: number;
+}
+
+/**
+ * Splits what a card owes into one-off spending and purchases in
+ * installments: a purchase charged whole sits in the balance with its
+ * installments still to come; one billed month by month only adds them as
+ * they come (`outside`, owed on top).
+ */
+export function creditUsage(
+  owed: number,
+  plans: readonly UsagePlan[],
+): CreditUsageSplit {
+  const used = cents(Math.max(0, owed));
+  const inBalance = plans
+    .filter((p) => p.charged)
+    .reduce((sum, p) => sum + p.remaining, 0);
+  const outside = plans
+    .filter((p) => !p.charged)
+    .reduce((sum, p) => sum + p.remaining, 0);
+  const installments = cents(Math.min(used, inBalance));
+  return {
+    used,
+    installments,
+    oneOff: cents(used - installments),
+    outside: cents(outside),
+  };
 }

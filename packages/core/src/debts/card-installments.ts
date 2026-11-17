@@ -1,4 +1,5 @@
 import {
+  addDays,
   isDayKey,
   parseDayKey,
   daysInMonth,
@@ -23,6 +24,8 @@ import type { LoanInterestMode } from './types';
 
 export interface CardCutTerms {
   statementDay: number;
+  /** Day of the month the cut-off's statement is due (when known). */
+  paymentDueDay?: number;
 }
 
 /** Common terms of card purchases, in months. */
@@ -44,6 +47,51 @@ export function statementOn(day: DayKey, terms: CardCutTerms): DayKey {
   const { year, month } = parseDayKey(day);
   const cut = dayOfMonth(year, month, terms.statementDay);
   return day <= cut ? cut : dayOfMonth(year, month + 1, terms.statementDay);
+}
+
+/** The cut-off before `cut`. */
+function previousStatement(cut: DayKey, terms: CardCutTerms): DayKey {
+  const { year, month } = parseDayKey(cut);
+  return dayOfMonth(year, month - 1, terms.statementDay);
+}
+
+/** The day the cut-off's statement is due, when the card says it. */
+export function dueDateAfter(
+  cut: DayKey,
+  terms: CardCutTerms,
+): DayKey | null {
+  if (!terms.paymentDueDay) return null;
+  const { year, month } = parseDayKey(cut);
+  const same = dayOfMonth(year, month, terms.paymentDueDay);
+  return same > cut ? same : dayOfMonth(year, month + 1, terms.paymentDueDay);
+}
+
+/**
+ * The cut-off an installment set on `day` is billed on: a cut-off stays;
+ * the payment due date of a cut-off goes back to that cut-off (people
+ * think of the day they pay); any other day goes to its cycle's cut-off.
+ * Mirrors the API's `cutoffFor`.
+ */
+export function cutoffFor(day: DayKey, terms: CardCutTerms): DayKey {
+  const cut = statementOn(day, terms);
+  if (cut === day) return day;
+  const previous = previousStatement(cut, terms);
+  return dueDateAfter(previous, terms) === day ? previous : cut;
+}
+
+/** `count` cut-offs in a row from the one of `day`'s cycle. */
+export function cutoffsFrom(
+  day: DayKey,
+  count: number,
+  terms: CardCutTerms,
+): DayKey[] {
+  const days: DayKey[] = [];
+  let cut = statementOn(day, terms);
+  for (let i = 0; i < count; i++) {
+    days.push(cut);
+    cut = statementOn(addDays(cut, 1), terms);
+  }
+  return days;
 }
 
 /** The days `count` installments are billed, oldest first. */
@@ -82,7 +130,10 @@ export function cardTermsOf(
   card: Pick<ApiAccount, 'creditCardTerms'> | undefined,
 ): CardCutTerms | null {
   return card?.creditCardTerms
-    ? { statementDay: card.creditCardTerms.statementDay }
+    ? {
+        statementDay: card.creditCardTerms.statementDay,
+        paymentDueDay: card.creditCardTerms.paymentDueDay,
+      }
     : null;
 }
 
@@ -205,20 +256,26 @@ const SCHEDULE_INPUTS: ReadonlyArray<keyof CardInstallmentForm> = [
 
 /**
  * Moves installment `index` to `day`; with `following`, the ones after it
- * go to that same day of the next months (as the API does).
+ * go to the next cut-offs (with the card's terms) or to that same day of
+ * the next months (as the API does). With the terms, `day` is first taken
+ * to the cut-off that bills it.
  */
 export function moveInstallment(
   days: readonly DayKey[],
   index: number,
   day: DayKey,
   following: boolean,
+  terms: CardCutTerms | null = null,
 ): DayKey[] {
   const next = [...days];
-  next[index] = day;
+  const target = terms ? cutoffFor(day, terms) : day;
+  next[index] = target;
   if (!following) return next;
-  const { year, month, day: date } = parseDayKey(day);
+  const { year, month, day: date } = parseDayKey(target);
   for (let j = index + 1; j < next.length; j++) {
-    next[j] = dayOfMonth(year, month + (j - index), date);
+    next[j] = terms
+      ? statementOn(addDays(next[j - 1]!, 1), terms)
+      : dayOfMonth(year, month + (j - index), date);
   }
   return next;
 }
@@ -253,8 +310,10 @@ export function cardScheduleRows(
 }
 
 /**
- * One installment changed in the list: a new day moves the next ones to
- * that day of the following months; a new amount changes only that one.
+ * One installment changed in the list: a new day (on the card's cut-off
+ * that bills it) moves the next ones to the following cut-offs, or to that
+ * day of the following months without the card's terms; a new amount
+ * changes only that one.
  */
 export function withScheduleRowChange(
   form: CardInstallmentForm,
@@ -264,12 +323,14 @@ export function withScheduleRowChange(
 ): CardInstallmentForm {
   const rows = cardScheduleRows(form, accounts);
   if (!rows) return form;
+  const terms = cardTermsOf(accounts.find((a) => a.id === form.accountId));
   const days = patch.day
     ? moveInstallment(
         rows.map((r) => r.day),
         index,
         patch.day,
         true,
+        terms,
       )
     : rows.map((r) => r.day);
   const schedule = rows.map((row, i) => ({

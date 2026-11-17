@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Repeat, Sparkles } from 'lucide-react';
+import { ChartPie, Plus, Repeat, Sparkles } from 'lucide-react';
 
 import { Button } from '@finnit/ui/components/ui/button';
 import {
@@ -24,6 +24,7 @@ import {
 } from '@/components/recurring/expense-dialog';
 import { NewDebtDialog } from '@/components/debts/new-debt-dialog';
 import { ExpenseList } from '@/components/recurring/expense-list';
+import { RecurringAnalytics } from '@/components/recurring/analytics/recurring-analytics';
 import { SuggestionsSection } from '@/components/recurring/suggestions-section';
 import { TabCount } from '@/components/recurring/tab-count';
 import { useSessionUser } from '@/components/session-provider';
@@ -47,17 +48,16 @@ import {
 } from '@finnit/core/recurring/tabs';
 import type { ApiRecurringSuggestion } from '@finnit/core/recurring/types';
 import { DEBTS_PATH } from '@finnit/core/debts/view';
-import type {
-  ExpenseItem,
-  RecurringScreenView,
-} from '@finnit/core/recurring/view';
+import type { ExpenseItem } from '@finnit/core/recurring/view';
+import type { RecurringPageData } from '@/lib/recurring/load';
 
 const TAB = 'flex-1 px-2 sm:flex-none sm:px-4';
 const TAB_ICON = 'hidden sm:block';
 
 /**
- * "Pagos recurrentes": the user's recurring expenses (with a filter bar)
- * and the ones detected from their movements, one tab at a time. Their
+ * "Pagos recurrentes": the user's recurring expenses (with a filter bar),
+ * the ones detected from their movements and the analysis (by category,
+ * and what the AI judged dispensable), one tab at a time. Their
  * dates and totals live in the payments calendar (/calendar).
  */
 export function RecurringScreen({
@@ -65,7 +65,7 @@ export function RecurringScreen({
   initialTab,
   initialFilters,
 }: {
-  data: RecurringScreenView;
+  data: RecurringPageData;
   initialTab: RecurringTab;
   initialFilters: ExpenseFilters;
 }) {
@@ -233,6 +233,10 @@ export function RecurringScreen({
               <TabCount count={suggestions.state.items.length} highlight />
             ) : null}
           </TabsTrigger>
+          <TabsTrigger value="analytics" className={TAB}>
+            <ChartPie aria-hidden className={TAB_ICON} />{' '}
+            {t('recurring.tabs.analytics')}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="list">
@@ -258,6 +262,14 @@ export function RecurringScreen({
             }
             onLoan={setLoanFor}
             onDismiss={dismiss}
+          />
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <RecurringAnalytics
+            analytics={data.analytics}
+            answers={data.essentialAnswers}
+            onChanged={refresh}
           />
         </TabsContent>
       </Tabs>

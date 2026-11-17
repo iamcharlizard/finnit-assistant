@@ -1,13 +1,22 @@
 /**
  * Screens with tabs kept in `?tab=` (no navigation): "Pagos recurrentes"
- * (its expenses and the suggestions) and the payments "Calendario" (the
- * calendar and the summary with charts).
+ * (its expenses, the suggestions and the analytics), the payments
+ * "Calendario" (the calendar and the summary with charts), "Cuentas y
+ * tarjetas" (balances and analytics) and a credit card's page.
  */
-export const RECURRING_TABS = ['list', 'suggestions'] as const;
+export const RECURRING_TABS = ['list', 'suggestions', 'analytics'] as const;
 export type RecurringTab = (typeof RECURRING_TABS)[number];
 
 export const CALENDAR_TABS = ['calendar', 'summary'] as const;
 export type CalendarTab = (typeof CALENDAR_TABS)[number];
+
+/** "Cuentas y tarjetas" with every account together. */
+export const ACCOUNTS_TABS = ['summary', 'analytics'] as const;
+export type AccountsTab = (typeof ACCOUNTS_TABS)[number];
+
+/** A credit card's own page. */
+export const CARD_TABS = ['summary', 'movements', 'plans'] as const;
+export type CardTab = (typeof CARD_TABS)[number];
 
 /** `?tab=` → one of `tabs`; anything else is the first (the default). */
 export function parseTab<T extends string>(

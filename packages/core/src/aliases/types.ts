@@ -31,6 +31,8 @@ export interface ApiMerchantAlias {
   active: boolean;
   /** Matching bank movements are suggested as a transfer to this account. */
   transferAccountId: string | null;
+  /** Its movements are recorded as income or expense, whatever the bank sent. */
+  direction?: 'income' | 'expense' | null;
   matchCount: number;
   createdAt: string;
   /** This month and this year (only in the list query). */
@@ -39,7 +41,7 @@ export interface ApiMerchantAlias {
 }
 
 export const MERCHANT_ALIAS_FIELDS =
-  'id matchType pattern displayName category { id name parentId } isPrivate isProtected locked priority active transferAccountId matchCount createdAt';
+  'id matchType pattern displayName category { id name parentId } isPrivate isProtected locked priority active transferAccountId direction matchCount createdAt';
 
 /** The list's extra fields: spending this month and year ($monthFrom… variables). */
 export const ALIAS_SPENDING_FIELDS =
@@ -97,5 +99,6 @@ export interface MerchantAliasInput {
   priority: number;
   active: boolean;
   transferAccountId: string | null;
+  direction?: 'income' | 'expense' | null;
   isProtected: boolean;
 }

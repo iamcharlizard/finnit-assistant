@@ -67,6 +67,7 @@ export function AccountCardStack({
               secondaryColor={account.secondaryColor}
               holderName={holderName}
               onClick={() => onSelect(account.id)}
+              showAmount
               className={cn(
                 'max-w-none',
                 active

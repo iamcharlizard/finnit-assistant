@@ -8,7 +8,7 @@ import {
   CalendarClock,
   CheckCheck,
   CopyCheck,
-  CreditCard,
+  CreditCardCheck,
   Landmark,
   MoreHorizontal,
   PencilLine,
@@ -229,7 +229,7 @@ export function TransactionDetailScreen() {
               {
                 key: 'cardPayment',
                 label: tx('cardPayment.action'),
-                icon: CreditCard,
+                icon: CreditCardCheck,
                 run: () => setConvertSheet('cardPayment'),
               },
             ]

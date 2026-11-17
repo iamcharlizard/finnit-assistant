@@ -158,6 +158,7 @@ export class LineMaterializerService {
     }
 
     await this.aliases.applyTo(options.userId, createdIds, tx);
+    balanceChange += await this.followAliasDirection(tx, createdIds);
 
     if (options.adjustBalance && balanceChange !== 0) {
       await tx.account.update({
@@ -166,6 +167,55 @@ export class LineMaterializerService {
       });
     }
     return { created, balanceChange, settledChange, createdIds };
+  }
+
+  /**
+   * New expenses and income whose automatic name says they go the other
+   * way ("these are income") turn around. Returns how much that changed
+   * their effect on the balance (the caller adds it to the account's).
+   */
+  private async followAliasDirection(
+    tx: Prisma.TransactionClient,
+    createdIds: string[],
+  ): Promise<number> {
+    if (createdIds.length === 0) return 0;
+    const turned = await tx.transaction.findMany({
+      where: {
+        id: { in: createdIds },
+        type: { in: [TransactionType.expense, TransactionType.income] },
+        alias: { direction: { not: null } },
+      },
+      select: {
+        id: true,
+        type: true,
+        amount: true,
+        balanceEffect: true,
+        isPending: true,
+        alias: { select: { direction: true } },
+        category: { select: { kind: true } },
+      },
+    });
+    let change = 0;
+    for (const movement of turned) {
+      const to = movement.alias?.direction;
+      if (!to || to === movement.type) continue;
+      const before = effectOf(movement);
+      await tx.transaction.update({
+        where: { id: movement.id },
+        data: {
+          type: to,
+          balanceEffect: -before,
+          // An expense category on an income (or the other way) goes.
+          ...(movement.category &&
+            movement.category.kind !== to && {
+              categoryId: null,
+              categorySource: null,
+            }),
+        },
+      });
+      change += appliedEffect(-2 * before, movement.isPending);
+    }
+    return change;
   }
 
   /** Returns how much the movement's effect on the balance changed. */

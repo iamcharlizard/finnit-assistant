@@ -216,6 +216,15 @@ enum AiFeatureKey {
   translation
   screenshot_parsing
   alias_pattern
+  recurring_essentials
+}
+
+/// How much a recurring expense is needed, as the AI judged it from the
+/// user's answers ("Análisis" of Pagos recurrentes).
+enum EssentialLevel {
+  essential
+  reducible
+  dispensable
 }
 
 /// Whether a category is for spending or income (subcategories share their parent's).
@@ -338,6 +347,7 @@ model User {
   merchantTaxIds            MerchantTaxId[]
   hiddenCategories          CategoryHidden[]
   privacyPinResets          PrivacyPinReset[]
+  essentialProfile          RecurringEssentialProfile?
   duplicateSuggestions      DuplicateSuggestion[]
 }
 
@@ -620,6 +630,10 @@ model MerchantAlias {
   // "These go to my account X": a matching synced movement is suggested as
   // a transfer to it (never converted on its own).
   transferAccountId String?
+  // "These are income" / "these are expenses": a matching expense or income
+  // is recorded that way, whatever sign the bank sent (some banks send
+  // money in as money out).
+  direction         TransactionType?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
 
@@ -733,6 +747,10 @@ model RecurringExpense {
   active            Boolean               @default(true)
   notes             String?
   nextDueDate       DateTime?             @db.Date
+  // Set by the AI from the user's answers (never chosen by the user).
+  essentialLevel    EssentialLevel?
+  essentialReason   String?               @db.VarChar(300)
+  essentialAt       DateTime?
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
 
@@ -745,6 +763,17 @@ model RecurringExpense {
   @@unique([userId, name])
   @@index([userId, active])
   @@index([accountId])
+}
+
+/// The user's answers to the "¿qué podrías recortar?" questionnaire: the AI
+/// classifies their recurring expenses with them. One per user.
+model RecurringEssentialProfile {
+  userId    String   @id
+  answers   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model RecurringOccurrence {

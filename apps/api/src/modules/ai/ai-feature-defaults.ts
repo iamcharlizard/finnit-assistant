@@ -30,4 +30,11 @@ export const AI_FEATURE_DEFAULTS: Record<AiFeatureKey, AiFeatureDefaults> = {
   screenshot_parsing: { enabled: false, useFallbacks: true, needsPdf: false },
   // Example bank texts in, a pattern out; only when the user asks.
   alias_pattern: { enabled: true, useFallbacks: true, needsPdf: false },
+  // The user's answers and their recurring expenses in, a level each out;
+  // only when the user answers the questionnaire or asks again.
+  recurring_essentials: {
+    enabled: true,
+    useFallbacks: true,
+    needsPdf: false,
+  },
 };

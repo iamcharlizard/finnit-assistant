@@ -145,6 +145,7 @@ describe('alias form', () => {
         priority: 10,
         active: true,
         transferAccountId: null,
+        direction: null,
         isProtected: false,
       },
     );
@@ -157,6 +158,7 @@ describe('alias form', () => {
       priority: 5,
       active: true,
       transferAccountId: null,
+      direction: null,
       isProtected: false,
     });
     assert.deepEqual(withActive(alias, false), {
@@ -185,6 +187,7 @@ describe('alias preview', () => {
         priority: 0,
         active: true,
         transferAccountId: null,
+        direction: null,
         isProtected: false,
       },
     );

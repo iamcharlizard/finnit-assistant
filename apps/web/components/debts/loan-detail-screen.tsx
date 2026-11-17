@@ -34,6 +34,7 @@ import {
   type ScheduleRow,
 } from '@finnit/core/debts/detail-view';
 import type { LoanDetailData } from '@/lib/debts/load';
+import { cardTermsOf } from '@finnit/core/debts/card-installments';
 import { isCardInstallments } from '@finnit/core/debts/types';
 import { DEBTS_PATH, LOANS_PATH } from '@finnit/core/debts/view';
 import { gql } from '@/lib/graphql/client';
@@ -562,6 +563,9 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
         <InstallmentEditDialog
           row={{ ...editingRow, editOccurrenceId: editingRow.editOccurrenceId }}
           total={debt.installmentsTotal ?? view.schedule.length}
+          terms={cardTermsOf(
+            accounts.find((a) => a.id === debt.linkedAccountId),
+          )}
           onClose={() => setEditingRow(null)}
           onSaved={() => {
             setEditingRow(null);

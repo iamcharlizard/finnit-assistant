@@ -11,10 +11,7 @@ import {
   todayKey,
   type DayKey,
 } from '@finnit/core/finance/dates';
-import {
-  toTransactionRow,
-  type TransactionRow,
-} from '@finnit/core/finance/transactions';
+import { toTransactionRow } from '@finnit/core/finance/transactions';
 import type { Localizer } from '@finnit/core/i18n/translator';
 import {
   buildOverviewTimeline,
@@ -39,9 +36,18 @@ import {
   ACCOUNT_DETAIL_QUERY,
   CARD_SUMMARY_QUERY,
   DAY_MOVEMENTS,
-  OVERVIEW_QUERY,
+  OVERVIEW_HISTORY_QUERY,
   RECENT_COUNT,
 } from '@finnit/core/accounts/request';
+import {
+  buildCreditUsageView,
+  type ApiCreditUsage,
+  type CreditUsageView,
+} from '@finnit/core/accounts/credit-usage';
+import {
+  buildAccountBalanceList,
+  type AccountBalanceGroup,
+} from '@finnit/core/accounts/balance-list';
 import {
   buildAccountDetail,
   buildAccounts,
@@ -55,9 +61,8 @@ import {
 /** All the accounts together (no account chosen). */
 export interface OverviewData {
   timeline: OverviewTimeline | null;
-  /** Latest movements of every account, or the chosen day's. */
-  recent: TransactionRow[];
-  historyHref: string;
+  /** Every account's balance (what a card owes), grouped. */
+  balances: AccountBalanceGroup[];
 }
 
 export interface AccountsData {
@@ -67,6 +72,8 @@ export interface AccountsData {
   overview: OverviewData | null;
   /** The selected account's balance on the chosen day and around it. */
   timeline: BalanceTimeline | null;
+  /** A credit card's credit used, one-off vs in installments. */
+  creditUsage: CreditUsageView | null;
   showArchived: boolean;
   archivedCount: number;
   /** Every account name the user has (archived too): names are unique. */
@@ -116,7 +123,13 @@ export async function loadAccounts({
       accounts.length > 0
         ? await loadOverview({ day, today, window, accounts }, l)
         : null;
-    return { ...base, detail: null, timeline: null, overview };
+    return {
+      ...base,
+      detail: null,
+      timeline: null,
+      creditUsage: null,
+      overview,
+    };
   }
   const month = monthOf(today);
 
@@ -137,10 +150,10 @@ export async function loadAccounts({
       historyTo: startOfDayIso(window.to),
     }),
     card.type === 'credit'
-      ? serverGraphql<{ cardMonthSummary: CardMonthSummaryData }>(
-          CARD_SUMMARY_QUERY,
-          { accountId: card.id, ...month },
-        ).then((d) => d.cardMonthSummary)
+      ? serverGraphql<{
+          cardMonthSummary: CardMonthSummaryData;
+          creditUsage: ApiCreditUsage | null;
+        }>(CARD_SUMMARY_QUERY, { accountId: card.id, ...month })
       : Promise.resolve(null),
   ]);
 
@@ -148,6 +161,11 @@ export async function loadAccounts({
   return {
     ...base,
     overview: null,
+    creditUsage: buildCreditUsageView(
+      summary?.creditUsage ?? null,
+      card.currency,
+      l,
+    ),
     timeline: buildBalanceTimeline(
       detail.accountBalanceHistory,
       { day, today, isCredit: card.type === 'credit' },
@@ -160,7 +178,7 @@ export async function loadAccounts({
         recent: detail.recent.edges.map((e) =>
           toTransactionRow(e.node, categories, l, { withDate: true }),
         ),
-        summary,
+        summary: summary?.cardMonthSummary ?? null,
         pending: detail.upcomingPayments,
       },
       l,
@@ -183,17 +201,11 @@ async function loadOverview(
   l: Localizer,
 ): Promise<OverviewData> {
   const data = await serverGraphql<{
-    recent: Connection<ApiTransaction>;
-    categories: ApiCategory[];
     accountsBalanceHistory: ApiAllBalanceHistory;
-  }>(OVERVIEW_QUERY, {
-    recent: day ? DAY_MOVEMENTS : RECENT_COUNT,
-    dayStart: day ? startOfDayIso(day) : null,
-    dayEnd: day ? endOfDayIso(day) : null,
+  }>(OVERVIEW_HISTORY_QUERY, {
     historyFrom: startOfDayIso(window.from),
     historyTo: startOfDayIso(window.to),
   });
-  const categories = indexCategories(data.categories);
   const currency = data.accountsBalanceHistory.currency;
   return {
     timeline: buildOverviewTimeline(
@@ -207,9 +219,6 @@ async function loadOverview(
       },
       l,
     ),
-    recent: data.recent.edges.map((e) =>
-      toTransactionRow(e.node, categories, l, { withDate: true }),
-    ),
-    historyHref: day ? `/history?from=${day}&to=${day}` : '/history',
+    balances: buildAccountBalanceList(accounts, today, l),
   };
 }

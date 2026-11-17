@@ -34,7 +34,14 @@ function initialPick(periods: ApiCardPeriod[], requested: string | null) {
  * first, one at a time with what was owed, paid and is left. Mount it again
  * (React key) when the card's balance changes, so it asks again.
  */
-export function CardPeriods({ accountId }: { accountId: string }) {
+export function CardPeriods({
+  accountId,
+  onShown,
+}: {
+  accountId: string;
+  /** The cycle on screen changed (e.g. to list its movements). */
+  onShown?: (period: ApiCardPeriod) => void;
+}) {
   const t = useTranslations('cards.period');
   const l = useLocalizer();
   const requested = useSearchParams().get('period');
@@ -87,6 +94,14 @@ export function CardPeriods({ accountId }: { accountId: string }) {
     }
   };
 
+  const shownPeriod =
+    periods?.find((p) => p.id === picked) ?? periods?.[0] ?? null;
+  React.useEffect(() => {
+    if (shownPeriod) onShown?.(shownPeriod);
+    // Only when the cycle changes, not on every new callback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shownPeriod?.id]);
+
   if (periods === null) {
     return error ? (
       <p role="alert" className="text-sm text-expense">
@@ -96,7 +111,7 @@ export function CardPeriods({ accountId }: { accountId: string }) {
   }
 
   const today = todayKey();
-  const shown = periods.find((p) => p.id === picked) ?? periods[0];
+  const shown = shownPeriod;
 
   return (
     <section aria-labelledby="card-periods" className="flex flex-col gap-3">

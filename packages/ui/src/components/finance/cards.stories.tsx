@@ -31,6 +31,15 @@ export const Platinum: Story = {};
 export const Virtual: Story = {
   args: { variant: 'virtual', cardTier: 'Virtual', balance: '$1,240.00' },
 };
+export const WithHeaderAmount: Story = {
+  args: {
+    variant: 'premium',
+    cardTier: 'Crédito',
+    bankName: 'Explora',
+    headerAmount: '$32,887.02',
+    headerAmountLabel: 'Debes',
+  },
+};
 export const Premium: Story = {
   args: { variant: 'premium', cardTier: 'PREMIUM', bankName: undefined },
 };

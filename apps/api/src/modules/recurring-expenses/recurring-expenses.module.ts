@@ -8,6 +8,8 @@ import { RecurringSuggestionsService } from './suggestions/recurring-suggestions
 import { RecurringSuggestionsResolver } from './suggestions/recurring-suggestions.resolver';
 import { PrismaService } from '../../services/prisma.service';
 import { AiModule } from '../ai/ai.module';
+import { RecurringEssentialsResolver } from './essentials/recurring-essentials.resolver';
+import { RecurringEssentialsService } from './essentials/recurring-essentials.service';
 
 @Module({
   imports: [AiModule],
@@ -19,6 +21,8 @@ import { AiModule } from '../ai/ai.module';
     RecurringLinksResolver,
     RecurringSuggestionsService,
     RecurringSuggestionsResolver,
+    RecurringEssentialsService,
+    RecurringEssentialsResolver,
     PrismaService,
   ],
   exports: [RecurringExpensesService, RecurringSuggestionsService],

@@ -219,3 +219,39 @@ export class CreditCardPeriodArgs {
   @Matches(DAY)
   statementDate?: string;
 }
+
+@ArgsType()
+export class CreditUsageArgs {
+  @Field()
+  @IsString()
+  accountId: string;
+}
+
+@ObjectType({
+  description:
+    'What a credit card owes, split into one-off spending and purchases in installments',
+})
+export class CreditUsage {
+  @Field(() => Float, { description: 'What the card owes now' })
+  used: number;
+
+  @Field(() => Float, {
+    description:
+      'Of `used`: installments still to come of purchases the card charged whole',
+  })
+  installments: number;
+
+  @Field(() => Float, {
+    description: 'Of `used`: one-off spending and installments already billed',
+  })
+  oneOff: number;
+
+  @Field(() => Float, {
+    description:
+      'Installments still to come of purchases the card bills month by month: owed on top of `used`',
+  })
+  outside: number;
+
+  @Field(() => Int, { description: 'Purchases in installments still running' })
+  plans: number;
+}

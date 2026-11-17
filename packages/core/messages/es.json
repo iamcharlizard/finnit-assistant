@@ -546,7 +546,11 @@
       "movements": "{count, plural, =0 {Sin movimientos} one {# movimiento} other {# movimientos}}",
       "chartTitle": "Disponible y deuda al cierre de cada día",
       "available": "Disponible",
-      "debt": "Deuda en tarjetas"
+      "debt": "Deuda en tarjetas",
+      "tabs": {
+        "summary": "Resumen",
+        "analytics": "Analíticos"
+      }
     },
     "actionsLabel": "Acciones de {name}",
     "focus": {
@@ -621,6 +625,8 @@
       "defaultCash": "Tu efectivo"
     },
     "cardBalance": "Saldo",
+    "cardAvailable": "Disponible",
+    "cardOwed": "Debes",
     "manualLink": {
       "question": "¿Tu banco no aparece?",
       "action": "Agrégala manualmente"
@@ -796,6 +802,63 @@
       "excluded": "No suma al total",
       "saved": "Listo",
       "error": "No se pudo guardar. Intenta de nuevo."
+    },
+    "balanceList": {
+      "title": "Saldos",
+      "creditLine": "Disponible {available} de {limit}",
+      "nextPayment": "Pago {date}",
+      "archived": "Archivada",
+      "open": "Ver {name}",
+      "groups": {
+        "credit": "Tarjetas de crédito",
+        "debit": "Débito",
+        "savings": "Ahorro y efectivo"
+      }
+    },
+    "creditUsage": {
+      "title": "Cómo se usa tu crédito",
+      "oneOff": "En una sola exhibición",
+      "installments": "Compras a meses por cargar",
+      "plans": "{count, plural, one {# compra a meses} other {# compras a meses}}",
+      "outside": "Más {amount} de mensualidades que la tarjeta aún no tiene en su saldo.",
+      "hint": "La tarjeta descuenta del disponible el total de una compra a meses al hacerla; cada corte carga una mensualidad en tu estado de cuenta."
+    },
+    "cardMovements": {
+      "title": "Movimientos",
+      "modeLabel": "Ver movimientos",
+      "byPeriod": "Por periodo",
+      "byMonth": "Por mes",
+      "loading": "Cargando movimientos…",
+      "count": "Movimientos",
+      "spent": "Cargos",
+      "paidIn": "Abonos y pagos",
+      "empty": "Sin movimientos en este rango.",
+      "openHistory": "Abrir en el historial",
+      "seeAll": "Ver todos en el historial"
+    },
+    "cardPlans": {
+      "loading": "Cargando compras a meses…",
+      "count": "{count, plural, =0 {Sin compras a meses} one {# compra a meses} other {# compras a meses}}",
+      "new": "Nueva compra a meses",
+      "emptyTitle": "Sin compras a meses",
+      "emptyDescription": "Cuando compres a meses con esta tarjeta, regístralo aquí o desde el movimiento de la compra."
+    },
+    "cardTabs": {
+      "summary": "Resumen",
+      "movements": "Movimientos",
+      "plans": "Pagos a meses"
+    },
+    "cardSummary": {
+      "spendingTitle": "Cargos por periodo",
+      "spendingHint": "Lo de una sola exhibición de cada periodo (su pago para no generar intereses sin mensualidades) y las mensualidades que cargó.",
+      "oneOff": "Una sola exhibición",
+      "installments": "Mensualidades",
+      "period": "Corte",
+      "total": "Total",
+      "seeTable": "Ver como tabla",
+      "empty": "Aún no hay periodos con cargos.",
+      "bar": "Corte {label}: {total}",
+      "openDetail": "Ver detalle"
     }
   },
   "recurring": {
@@ -1047,7 +1110,8 @@
       "label": "Secciones de pagos recurrentes",
       "calendar": "Calendario",
       "list": "Mis pagos",
-      "suggestions": "Sugeridos"
+      "suggestions": "Sugeridos",
+      "analytics": "Análisis"
     },
     "filters": {
       "search": "Buscar pago",
@@ -1066,6 +1130,117 @@
       "results": "{count, plural, =1 {1 pago} other {# pagos}}",
       "statusValue": "Estado: {value}",
       "sortValue": "Orden: {value}"
+    },
+    "analytics": {
+      "monthly": "Gasto fijo al mes",
+      "count": "{count, plural, one {# pago recurrente} other {# pagos recurrentes}}",
+      "byCategory": "Por categoría",
+      "byKind": "Por tipo",
+      "noCategory": "Sin categoría",
+      "debts": "Deudas y mensualidades: {amount} al mes ({count}). No se analizan: hay que pagarlas.",
+      "levels": {
+        "essential": "Esencial",
+        "reducible": "Se puede reducir",
+        "dispensable": "Prescindible"
+      },
+      "essentialsTitle": "¿Qué podrías recortar?",
+      "essentialsIntro": "Contesta unas preguntas sobre tu día a día y la IA revisará tus pagos recurrentes: cuáles necesitas, cuáles podrías pagar más barato y cuáles podrías dejar.",
+      "start": "Empezar",
+      "redo": "Volver a contestar",
+      "analyzeAgain": "Analizar de nuevo",
+      "pending": "{count, plural, one {# pago aún sin analizar} other {# pagos aún sin analizar}}",
+      "analyzePending": "Analizarlos",
+      "savings": "Si dejas los prescindibles ahorrarías {amount} al mes.",
+      "noSavings": "La IA no encontró pagos prescindibles.",
+      "listTitle": "Pago por pago",
+      "aiUnavailable": "La IA no está disponible ahora; intenta más tarde.",
+      "analyzed": "{count, plural, =0 {No hubo pagos que analizar} one {Analizamos # pago} other {Analizamos # pagos}}",
+      "analyzing": "Analizando…",
+      "empty": "Aún no tienes pagos recurrentes.",
+      "seeTable": "Ver como tabla",
+      "total": "Total",
+      "category": "Categoría",
+      "kind": "Tipo",
+      "questionnaire": {
+        "title": "¿Qué podrías recortar?",
+        "step": "Pregunta {current} de {total}",
+        "back": "Anterior",
+        "next": "Siguiente",
+        "finish": "Analizar mis pagos",
+        "saving": "Analizando…",
+        "questions": {
+          "household": {
+            "label": "¿Con quién vives?",
+            "options": {
+              "alone": "Solo",
+              "partner": "Con mi pareja",
+              "family": "Con mi familia",
+              "shared": "Con roomies"
+            }
+          },
+          "dependents": {
+            "label": "¿Alguien depende de ti económicamente?",
+            "options": {
+              "none": "Nadie",
+              "children": "Mis hijos",
+              "parents": "Mis papás u otros familiares",
+              "both": "Hijos y familiares"
+            }
+          },
+          "work": {
+            "label": "¿Cómo trabajas?",
+            "options": {
+              "office": "En oficina",
+              "hybrid": "Híbrido",
+              "remote": "Desde casa",
+              "self_employed": "Por mi cuenta",
+              "not_working": "No trabajo ahora"
+            }
+          },
+          "transport": {
+            "label": "¿Cómo te mueves?",
+            "options": {
+              "car": "En auto",
+              "public": "Transporte público",
+              "mixed": "De todo un poco",
+              "none": "Casi no salgo"
+            }
+          },
+          "health": {
+            "label": "¿Tienes gastos médicos constantes?",
+            "options": {
+              "none": "No",
+              "occasional": "De vez en cuando",
+              "ongoing": "Sí, un tratamiento continuo"
+            }
+          },
+          "entertainment": {
+            "label": "¿Qué tanto usas tus suscripciones de entretenimiento?",
+            "options": {
+              "daily": "Todos los días",
+              "weekly": "Algunas veces por semana",
+              "rarely": "Casi nunca"
+            }
+          },
+          "goal": {
+            "label": "¿Cuál es tu prioridad ahora?",
+            "options": {
+              "save": "Ahorrar más",
+              "debt": "Pagar deudas",
+              "emergency": "Juntar un fondo de emergencia",
+              "balanced": "Mantener el equilibrio"
+            }
+          },
+          "cut": {
+            "label": "¿Qué tanto quieres recortar?",
+            "options": {
+              "light": "Solo lo que sobra",
+              "moderate": "Lo que se pueda",
+              "aggressive": "Todo lo posible"
+            }
+          }
+        }
+      }
     }
   },
   "budgets": {
@@ -1618,6 +1793,14 @@
         "skipped": "Omitido",
         "projected": "Programado"
       },
+      "cardStatus": {
+        "paid": "Cargada",
+        "historical": "Cargada en tu estado de cuenta",
+        "upcoming": "Por cargar",
+        "overdue": "Pendiente de cargar",
+        "skipped": "Omitida",
+        "projected": "Programada"
+      },
       "payThis": "Pagar",
       "chargesTitle": "Dinero agregado",
       "chargeUntitled": "Sin descripción",
@@ -1775,9 +1958,12 @@
         "action": "Editar mensualidad",
         "title": "Mensualidad {number} de {total}",
         "description": "Cambia el día en que se cobra y su monto.",
+        "descriptionCutoff": "Elige el corte en que se carga y su monto. La pagas con el estado de cuenta de ese corte.",
         "date": "Fecha de cobro",
+        "cutoff": "Corte en que se carga",
         "amount": "Monto",
         "shift": "Mover las siguientes al mismo día de los meses siguientes",
+        "shiftCutoffs": "Mover las siguientes a los cortes que siguen",
         "save": "Guardar",
         "saving": "Guardando…",
         "saved": "Mensualidad guardada",
@@ -1967,19 +2153,22 @@
       "noInterest": "Sin intereses",
       "withInterest": "Con intereses",
       "purchaseDate": "Fecha de compra",
-      "installmentsPaid": "Mensualidades ya cobradas",
-      "installmentsPaidHint": "Calculadas con los cortes de la tarjeta desde la fecha de compra. Corrígelas si no coinciden con tu estado de cuenta.",
+      "installmentsPaid": "Mensualidades ya cargadas en tu estado de cuenta",
+      "installmentsPaidHint": "Calculadas con los cortes de la tarjeta: cada corte que ya llegó cargó su mensualidad en el estado de cuenta (no quiere decir que ya la pagaste). Corrígelas si no coinciden.",
       "preview": "{count} mensualidades de {amount} · total {total}",
       "previewInterest": "Intereses: {interest}",
-      "span": "Primera mensualidad en el corte del {first}; última el {last}.",
+      "span": "Primera mensualidad en el corte del {first}; última en el del {last}.",
       "spanNoTerms": "La tarjeta no tiene días de corte: una mensualidad cada mes desde la compra (primera el {first}, última el {last}).",
       "purchaseLinked": "Se ligará con el gasto de la compra: la tarjeta cobra cada mensualidad y la compra no cuenta dos veces como gasto.",
       "create": "Registrar compra a meses",
       "saving": "Guardando…",
       "scheduleTitle": "Mensualidades",
-      "scheduleHint": "Cambia la fecha o el monto si no coinciden con tu estado de cuenta. Al cambiar una fecha, las siguientes pasan a ese mismo día de los meses siguientes.",
+      "scheduleHint": "Cada mensualidad se carga en un corte y la pagas con ese estado de cuenta. Si cambias el corte de una, las siguientes pasan a los cortes que siguen.",
+      "scheduleHintNoTerms": "Cambia la fecha o el monto si no coinciden con tu estado de cuenta. Al cambiar una fecha, las siguientes pasan a ese mismo día de los meses siguientes.",
       "scheduleNumber": "{number} de {total}",
       "scheduleDate": "Fecha de cobro {number}",
+      "scheduleCutoff": "Corte {cut} · pagas antes del {due}",
+      "scheduleCutoffLabel": "Corte de la mensualidad {number}",
       "scheduleAmount": "Monto {number}",
       "scheduleReset": "Volver a las fechas de corte",
       "schedulePage": "{from}–{to} de {total}",
@@ -2910,6 +3099,31 @@
       "restored": "Volvió a contar",
       "badge": "Cancelado",
       "banner": "El banco lo canceló: no cuenta en el saldo ni en tus sumas."
+    },
+    "direction": {
+      "toIncome": "Es un ingreso",
+      "toExpense": "Es un gasto",
+      "titleIncome": "¿Registrarlo como ingreso?",
+      "titleExpense": "¿Registrarlo como gasto?",
+      "descriptionIncome": "Hoy resta {amount} de {account}; como ingreso los sumará.",
+      "descriptionExpense": "Hoy suma {amount} a {account}; como gasto los restará.",
+      "bankNote": "Úsalo cuando el banco lo mandó al revés. Si tu saldo ya cuadraba con el del banco, dejará de cuadrar.",
+      "remember": "Hacer lo mismo con los movimientos cuyo texto contiene…",
+      "rememberHintIncome": "Los que ya tienes cambian ahora y los siguientes llegarán como ingresos. Se guarda como nombre automático.",
+      "rememberHintExpense": "Los que ya tienes cambian ahora y los siguientes llegarán como gastos. Se guarda como nombre automático.",
+      "pattern": "Texto que contiene",
+      "name": "Nombre de esos movimientos",
+      "confirm": "Cambiar",
+      "saving": "Cambiando…",
+      "doneIncome": "Lo registramos como ingreso",
+      "doneExpense": "Lo registramos como gasto",
+      "doneMore": "{count, plural, one {También cambiamos # movimiento más} other {También cambiamos # movimientos más}}",
+      "errors": {
+        "patternRequired": "Escribe el texto que buscar.",
+        "patternTooLong": "El texto es demasiado largo.",
+        "nameRequired": "Escribe un nombre.",
+        "nameTooLong": "El nombre es demasiado largo."
+      }
     }
   },
   "notifications": {
@@ -3709,7 +3923,8 @@
         "savings": "Ahorro",
         "other": "Otro",
         "card": "Tarjeta",
-        "transfer": "Transferencia"
+        "transfer": "Transferencia",
+        "cardPayment": "Pago de tarjeta"
       }
     },
     "delete": {

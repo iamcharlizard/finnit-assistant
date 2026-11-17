@@ -1628,7 +1628,8 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
         })
       ).map((o) => [iso(o.dueDate), Number(o.expectedAmount), o.status]);
 
-    // Typed: the first on the purchase day, the rest on the 17th.
+    // Typed days go to the cut-off that bills them (the 16th): the
+    // purchase day to its cycle's, the 17th to the next one's.
     const typed = await loans.create(userId, {
       name: 'Audífonos',
       kind: DebtKind.loan,
@@ -1645,11 +1646,11 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       ],
     });
     expect(typed.totalToRepay).toBe(998);
-    expect(typed.dueDate && iso(typed.dueDate)).toBe('2027-05-17');
+    expect(typed.dueDate && iso(typed.dueDate)).toBe('2027-06-16');
     expect(await occurrencesOf(typed.id)).toEqual([
-      ['2027-03-07', 332.66, 'upcoming'],
-      ['2027-04-17', 332.66, 'upcoming'],
-      ['2027-05-17', 332.68, 'upcoming'],
+      ['2027-03-16', 332.66, 'upcoming'],
+      ['2027-05-16', 332.66, 'upcoming'],
+      ['2027-06-16', 332.68, 'upcoming'],
     ]);
     await expect(
       loans.create(userId, {
@@ -1683,7 +1684,8 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
     expect(stored[0]).toEqual(['2027-03-16', 100, 'upcoming']);
     expect(stored[11]).toEqual(['2028-02-16', 100, 'upcoming']);
 
-    // The first one moves alone; the second moves the next ones too.
+    // The first one moves alone (to its cut-off); the second moves the
+    // next ones to the following cut-offs.
     const [first, second] = await prisma.recurringOccurrence.findMany({
       where: { recurringExpense: { debtId: plan.id } },
       orderBy: { dueDate: 'asc' },
@@ -1700,11 +1702,17 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       shiftFollowing: true,
     });
     const after = await occurrencesOf(plan.id);
-    expect(after[0]).toEqual(['2027-03-01', 150, 'upcoming']);
-    expect(after[1][0]).toBe('2027-04-17');
-    expect(after[11][0]).toBe('2028-02-17');
+    expect(after[0]).toEqual(['2027-03-16', 150, 'upcoming']);
+    expect(after[1][0]).toBe('2027-05-16');
+    expect(after[11][0]).toBe('2028-03-16');
     expect(moved.totalToRepay).toBe(1250);
-    expect(moved.dueDate && iso(moved.dueDate)).toBe('2028-02-17');
+    expect(moved.dueDate && iso(moved.dueDate)).toBe('2028-03-16');
+    // A payment due date (the 9th) means the cut-off it pays.
+    await cardInstallments.updateInstallment(userId, {
+      occurrenceId: second.id,
+      dueDate: d('2027-05-09'),
+    });
+    expect((await occurrencesOf(plan.id))[1][0]).toBe('2027-04-16');
     // Before the purchase, or onto the next one: refused.
     await expect(
       cardInstallments.updateInstallment(userId, {

@@ -20,7 +20,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { AliasMatchType } from '@finnit/database';
+import { AliasMatchType, TransactionType } from '@finnit/database';
 import { Category } from '../../../common/types/models/category.model';
 
 export const MAX_ALIAS_PATTERN_LENGTH = 200;
@@ -79,6 +79,13 @@ export class MerchantAlias {
   })
   transferAccountId?: string | null;
 
+  @Field(() => TransactionType, {
+    nullable: true,
+    description:
+      'Matching expenses and income are recorded as this (income or expense), whatever sign the bank sent',
+  })
+  direction?: TransactionType | null;
+
   @Field(() => Int, { description: 'Movements currently using this alias' })
   matchCount: number;
 
@@ -132,6 +139,15 @@ export class MerchantAliasInput {
   @IsOptional()
   @IsString()
   transferAccountId?: string | null;
+
+  @Field(() => TransactionType, {
+    nullable: true,
+    description:
+      'income or expense: matching movements are recorded that way; null: as the bank sent them',
+  })
+  @IsOptional()
+  @IsEnum(TransactionType)
+  direction?: TransactionType | null;
 
   @Field({
     nullable: true,

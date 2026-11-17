@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AliasMatchType, Prisma } from '@finnit/database';
+import { AliasMatchType, Prisma, TransactionType } from '@finnit/database';
 import { PrismaService } from '../../services/prisma.service';
 import {
   NotFoundError,
@@ -43,6 +43,7 @@ interface ValidAlias {
   priority: number;
   active: boolean;
   transferAccountId: string | null;
+  direction: TransactionType | null;
   isProtected: boolean;
 }
 
@@ -89,6 +90,49 @@ export class MerchantAliasesService {
       return row.id;
     });
     return this.findOne(userId, id, true);
+  }
+
+  /**
+   * "Hacer lo mismo con movimientos como este": the automatic name with
+   * this pattern (text contained, case- and accent-insensitive) says its
+   * movements are `direction`. An existing one with the same pattern only
+   * gains the direction (a protected one needs the PIN); otherwise a new
+   * one is created with `displayName`. Returns its id after the recompute,
+   * so the matching movements already point at it.
+   */
+  async rememberDirection(
+    userId: string,
+    input: {
+      pattern: string;
+      displayName: string;
+      direction: TransactionType;
+    },
+    unlocked = false,
+  ): Promise<string> {
+    const pattern = input.pattern.trim();
+    const existing = await this.prisma.merchantAlias.findFirst({
+      where: {
+        userId,
+        matchType: AliasMatchType.contains,
+        pattern: { equals: pattern, mode: 'insensitive' },
+      },
+      select: { id: true, isProtected: true },
+    });
+    if (existing) {
+      if (existing.isProtected && !unlocked) throw new PrivacyLockedError();
+      await this.prisma.merchantAlias.update({
+        where: { id: existing.id },
+        data: { direction: input.direction, active: true },
+      });
+      return existing.id;
+    }
+    const alias = await this.create(userId, {
+      matchType: AliasMatchType.contains,
+      pattern,
+      displayName: input.displayName,
+      direction: input.direction,
+    });
+    return alias.id;
   }
 
   /** A protected rule only changes with the privacy PIN entered. */
@@ -289,6 +333,12 @@ export class MerchantAliasesService {
       priority: input.priority ?? 0,
       active: input.active ?? true,
       transferAccountId: input.transferAccountId || null,
+      // Only income or expense: transfers and adjustments have their own rules.
+      direction:
+        input.direction === TransactionType.income ||
+        input.direction === TransactionType.expense
+          ? input.direction
+          : null,
     };
   }
 
@@ -378,6 +428,7 @@ export class MerchantAliasesService {
       priority: row.priority,
       active: row.active,
       transferAccountId: row.transferAccountId,
+      direction: row.direction,
       matchCount: row._count.transactions,
       createdAt: row.createdAt,
     };

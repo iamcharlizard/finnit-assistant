@@ -183,17 +183,26 @@ describe('the installments of a card purchase', () => {
     ]);
   });
 
-  it('moves the next ones with a date, changes one amount, and starts over with the terms', () => {
-    let form = withScheduleRowChange(
+  it('takes a payment due date to its cut-off', () => {
+    // 27 oct is when the 7 oct statement is paid: still the 7 oct cut-off.
+    const form = withScheduleRowChange(
       base,
       0,
-      { day: '2026-10-07' },
+      { day: '2026-10-27' },
       { accounts, today },
     );
-    form = withScheduleRowChange(
-      form,
+    assert.deepEqual(
+      form.schedule?.map((r) => r.day),
+      ['2026-10-07', '2026-11-07', '2026-12-07'],
+    );
+    assert.equal(form.installmentsPaid, '2');
+  });
+
+  it('moves the next ones to the following cut-offs, changes one amount, and starts over with the terms', () => {
+    let form = withScheduleRowChange(
+      base,
       1,
-      { day: '2026-10-17' },
+      { day: '2026-12-01' },
       { accounts, today },
     );
     form = withScheduleRowChange(
@@ -204,11 +213,11 @@ describe('the installments of a card purchase', () => {
     );
     assert.deepEqual(form.schedule, [
       { day: '2026-10-07', amount: '332.66' },
-      { day: '2026-10-17', amount: '332.66' },
-      { day: '2026-11-17', amount: '340' },
+      { day: '2026-12-07', amount: '332.66' },
+      { day: '2027-01-07', amount: '340' },
     ]);
-    // Billed by today (Nov 9): the first two.
-    assert.equal(form.installmentsPaid, '2');
+    // Billed by today (Nov 9): the first.
+    assert.equal(form.installmentsPaid, '1');
     assert.deepEqual(
       validateCardInstallmentForm({ ...form, name: 'X' }, { today }),
       {},
@@ -218,7 +227,7 @@ describe('the installments of a card purchase', () => {
         buildCardInstallmentInput({ ...form, name: 'X' })
           .installmentSchedule as unknown[]
       )[2],
-      { dueDate: '2026-11-17', amount: 340 },
+      { dueDate: '2027-01-07', amount: 340 },
     );
     const restarted = withCardInstallmentChange(
       form,

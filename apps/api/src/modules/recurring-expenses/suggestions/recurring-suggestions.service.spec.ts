@@ -358,6 +358,9 @@ describe('RecurringSuggestionsService', () => {
       active: true,
       notes: null,
       nextDueDate: d('2026-11-10'),
+      essentialLevel: null,
+      essentialReason: null,
+      essentialAt: null,
       createdAt: d('2026-10-13'),
       updatedAt: d('2026-10-13'),
     };

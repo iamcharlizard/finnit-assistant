@@ -48,7 +48,8 @@ export function RecurringScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ tab?: string; q?: string; status?: string; kind?: string; account?: string; sort?: string }>();
   const today = todayKey();
-  const tab = parseTabParam(params.tab);
+  const parsedTab = parseTabParam(params.tab);
+  const tab = parsedTab === 'analytics' ? 'list' : parsedTab;
   const [filters, setFilters] = React.useState<ExpenseFilters>(() => parseExpenseFilters(params));
   const [busyKey, setBusyKey] = React.useState<string | null>(null);
   // Suggestions taken off the list (added or dismissed) until the next load.
@@ -56,7 +57,7 @@ export function RecurringScreen() {
 
   const { view, loading, error, refreshing, refresh } = useView({
     query: RECURRING_QUERY,
-    variables: recurringVariables('month', today),
+    variables: recurringVariables('month', today, { excludeCardInstallments: true }),
     build: (data: RecurringResult, loc) => buildRecurringView(recurringData(data), { view: 'month', date: today, today }, loc),
   });
   // The first detection may call AI: only when the tab is open.
@@ -136,7 +137,8 @@ export function RecurringScreen() {
         <TwView className="gap-5">
           <Segmented
             accessibilityLabel={t('recurring.tabs.label')}
-            options={RECURRING_TABS.map((value) => ({ value, label: t(`recurring.tabs.${value}`) }))}
+            // "Análisis" is web-only for now.
+            options={RECURRING_TABS.filter((value) => value !== 'analytics').map((value) => ({ value, label: t(`recurring.tabs.${value}`) }))}
             value={tab}
             onValueChange={(next: RecurringTab) => router.setParams({ tab: next === 'list' ? undefined : next })}
           />

@@ -74,6 +74,7 @@ import { LoanTermsError, resolveLoanTerms } from './loan-math';
 import {
   defaultSchedule,
   installmentDays,
+  onCutoffs,
   scheduleError,
   type ScheduleEntry,
 } from './card-installments';
@@ -1536,11 +1537,16 @@ export class LoansService {
 
     const terms = card.creditCardTerms ?? null;
     const purchaseDay = dayKey(toDateOnly(new Date(input.startDate)));
+    // Typed days go to the cut-offs that bill them (a payment due date
+    // means the cut-off before it).
     const custom = input.installmentSchedule?.length
-      ? input.installmentSchedule.map((s) => ({
-          day: dayKey(toDateOnly(new Date(s.dueDate))),
-          amount: cents(s.amount),
-        }))
+      ? onCutoffs(
+          input.installmentSchedule.map((s) => ({
+            day: dayKey(toDateOnly(new Date(s.dueDate))),
+            amount: cents(s.amount),
+          })),
+          terms,
+        )
       : null;
     if (custom) {
       if (custom.length !== count) {

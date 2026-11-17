@@ -1,8 +1,7 @@
 /**
- * App themes (the palette), independent from light/dark. The palette is one
- * for the whole site, chosen with the FINNIT_THEME environment variable;
- * users only pick light or dark. Admins can preview the other palettes in
- * their own browser (a cookie). The server renders `<html data-theme>`, so
+ * App themes (the palette), each with light and dark. FINNIT_THEME sets the
+ * default; every user can pick another one for their own browser (a
+ * cookie; on the app, the device's storage). The server renders `<html data-theme>`, so
  * the first paint already has the right colors; the tokens live in
  * @finnit/ui's globals.css.
  */
@@ -12,7 +11,7 @@ export type AppTheme = (typeof APP_THEMES)[number];
 
 export const DEFAULT_APP_THEME: AppTheme = 'finnit';
 
-/** An admin's preview of another palette. Only changes their own view. */
+/** The palette a user picked in this browser (overrides the default). */
 export const PREVIEW_THEME_COOKIE = 'finnit-theme-preview';
 
 /** One year, in seconds. */

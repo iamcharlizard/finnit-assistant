@@ -43,7 +43,7 @@ const MODES = [
   { value: 'system', icon: Monitor },
 ] as const;
 
-/** The menu's items: light/dark, the palette preview (admins), settings and sign out. */
+/** The menu's items: light/dark, the palette (saved in this browser), settings and sign out. */
 function ProfileMenuItems() {
   const t = useTranslations('profileMenu');
   const tm = useTranslations('ui.mode');
@@ -82,8 +82,7 @@ function ProfileMenuItems() {
           </DropdownMenuRadioItem>
         ))}
       </DropdownMenuRadioGroup>
-      {user.role === 'admin' ? (
-        <DropdownMenuSub>
+      <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <Palette aria-hidden />
             <span className="flex-1">{tt('previewLabel')}</span>
@@ -124,7 +123,6 @@ function ProfileMenuItems() {
             ) : null}
           </DropdownMenuSubContent>
         </DropdownMenuSub>
-      ) : null}
       <DropdownMenuSeparator />
       <DropdownMenuItem asChild>
         <Link href={SETTINGS_HREF}>

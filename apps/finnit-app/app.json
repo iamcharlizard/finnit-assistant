@@ -30,6 +30,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/with-no-script-sandboxing",
       [
         "expo-splash-screen",
         {

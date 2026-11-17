@@ -2627,10 +2627,10 @@
         "suave": "Grises suaves con relieve",
         "mono": "Solo grises; el dinero conserva su color"
       },
-      "previewLabel": "Vista previa de tema",
-      "previewHint": "Solo cambia en tu navegador. El sitio usa {site}.",
-      "siteBadge": "del sitio",
-      "useSite": "Usar el del sitio"
+      "previewLabel": "Tema",
+      "previewHint": "Se guarda en este dispositivo. El predeterminado es {site}.",
+      "siteBadge": "predeterminado",
+      "useSite": "Usar el predeterminado"
     }
   },
   "categorize": {

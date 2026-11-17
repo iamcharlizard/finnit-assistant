@@ -243,6 +243,11 @@ export interface TransactionDetailView {
   attachments: AttachmentView[];
   rules: EditRules;
   deleteBlock: DeleteBlock;
+  /**
+   * "Diferencia con el banco": what its account's movements miss against the
+   * bank's balance; "Recalcular con el saldo del banco" compares them now.
+   */
+  bankDifference: { accountId: string } | null;
   /** What else deleting does (shown in the confirmation). */
   deleteNotes: string[];
   /** It may be a copy of another movement: "Marcar como duplicado". */
@@ -371,6 +376,7 @@ export function toTransactionDetailView(
       !counterpart && canRecordCardPayment(tx, tx.account?.type, creditCardIds),
     rules: editRules(tx),
     deleteBlock: deleteBlock(tx),
+    bankDifference: tx.bankDifference ? { accountId: tx.accountId } : null,
     deleteNotes: deleteNotes(tx, t),
     mergeable: tx.type !== 'adjustment',
   };

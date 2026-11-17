@@ -86,6 +86,29 @@ describe('syncfy.mapper', () => {
     ).toBe(ImportedLineKind.refund);
   });
 
+  it('takes a card payment listed as a charge while applied (MOBILE) as an "en proceso" payment', () => {
+    const line = mapTransaction(
+      tx({ description: 'MOBILE', amount: -4063 }),
+      card,
+    );
+    expect(line).toMatchObject({
+      kind: ImportedLineKind.payment,
+      amount: 4063,
+      inProcess: true,
+    });
+    // On a debit account it stays a charge; other texts too.
+    expect(
+      mapTransaction(tx({ description: 'MOBILE', amount: -4063 }), checking)
+        .kind,
+    ).toBe(ImportedLineKind.charge);
+    expect(
+      mapTransaction(
+        tx({ description: 'PAYPAL*IXOSHOPSMOBIL', amount: -499 }),
+        card,
+      ).inProcess,
+    ).toBeUndefined();
+  });
+
   it('classifies money in on a debit account as a deposit', () => {
     expect(
       mapTransaction(

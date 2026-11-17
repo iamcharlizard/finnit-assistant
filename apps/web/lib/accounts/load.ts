@@ -164,6 +164,7 @@ export async function loadAccounts({
     creditUsage: buildCreditUsageView(
       summary?.creditUsage ?? null,
       card.currency,
+      card.credit?.limit ?? null,
       l,
     ),
     timeline: buildBalanceTimeline(

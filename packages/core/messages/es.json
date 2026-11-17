@@ -820,8 +820,8 @@
       "oneOff": "En una sola exhibición",
       "installments": "Compras a meses por cargar",
       "plans": "{count, plural, one {# compra a meses} other {# compras a meses}}",
-      "outside": "Más {amount} de mensualidades que la tarjeta aún no tiene en su saldo.",
-      "hint": "La tarjeta descuenta del disponible el total de una compra a meses al hacerla; cada corte carga una mensualidad en tu estado de cuenta."
+      "hint": "Tu banco aparta del crédito el total de cada compra a meses al hacerla; cada corte carga una mensualidad en tu estado de cuenta.",
+      "usedHint": "{percent} % de tu límite · incluye {amount} a meses"
     },
     "cardMovements": {
       "title": "Movimientos",
@@ -1240,7 +1240,9 @@
             }
           }
         }
-      }
+      },
+      "other": "Otros",
+      "ofTotal": "del total"
     }
   },
   "budgets": {
@@ -3124,6 +3126,14 @@
         "nameRequired": "Escribe un nombre.",
         "nameTooLong": "El nombre es demasiado largo."
       }
+    },
+    "bankDifference": {
+      "title": "¿Qué es «Diferencia con el banco»?",
+      "explain": "Es lo que separa tus movimientos registrados del saldo que reporta el banco. Se recalcula en cada sincronización y desaparece cuando cuadran. Suele deberse a movimientos que el banco aún no publica, pagos en proceso o algo registrado dos veces.",
+      "recalculate": "Recalcular con el saldo del banco",
+      "recalculating": "Recalculando…",
+      "done": "Recalculamos la diferencia con el último saldo del banco",
+      "notLinked": "Esta cuenta no está conectada a un banco"
     }
   },
   "notifications": {

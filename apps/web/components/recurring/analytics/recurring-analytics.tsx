@@ -9,7 +9,7 @@ import { Button } from '@finnit/ui/components/ui/button';
 import { Card } from '@finnit/ui/components/ui/card';
 import { toast } from '@finnit/ui/components/ui/toaster';
 
-import { SpendingBars } from '@/components/calendar/spending-bars';
+import { DonutChart } from '@/components/charts/donut-chart';
 import { EmptyState } from '@/components/finance/empty-state';
 import {
   LEVEL_COLOR,
@@ -64,6 +64,14 @@ export function RecurringAnalytics({
     }
   }
 
+  const chartLabels = (column: string) => ({
+    count: (count: number) => t('count', { count }),
+    column,
+    total: t('total'),
+    seeTable: t('seeTable'),
+    empty: t('empty'),
+  });
+
   if (analytics.count === 0) {
     return <EmptyState icon={ListChecks} title={t('empty')} />;
   }
@@ -83,8 +91,20 @@ export function RecurringAnalytics({
       </Card>
 
       <div className="grid gap-4 @3xl:grid-cols-2">
-        <SpendingBars title={t('byCategory')} bars={analytics.byCategory} />
-        <SpendingBars title={t('byKind')} bars={analytics.byKind} />
+        <DonutChart
+          title={t('byCategory')}
+          slices={analytics.byCategory}
+          centerValue={analytics.monthly}
+          centerLabel={t('monthly')}
+          labels={chartLabels(t('category'))}
+        />
+        <DonutChart
+          title={t('byKind')}
+          slices={analytics.byKind}
+          centerValue={analytics.monthly}
+          centerLabel={t('monthly')}
+          labels={chartLabels(t('kind'))}
+        />
       </div>
 
       <section

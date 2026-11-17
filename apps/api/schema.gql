@@ -2306,6 +2306,11 @@ type Mutation {
   """
   mergeTransactions(input: MergeTransactionsInput!): Transaction!
 
+  """
+  "Recalcular con el saldo del banco": compares the account's recorded movements with the bank's last balance now (as the next sync would), updating or removing its "Diferencia con el banco". False for an account not linked to a bank
+  """
+  recalculateBankDifference(accountId: ID!): Boolean!
+
   """Pays a debt from an account: creates the expense movement and links it"""
   recordDebtPayment(input: RecordDebtPaymentInput!): Debt!
   refreshToken(input: RefreshTokenInput!): AuthPayload!
@@ -3544,6 +3549,11 @@ type Transaction {
   What it adds (+) or takes (−) from its account balance; null for old adjustments of unknown direction
   """
   balanceEffect: Float
+
+  """
+  "Diferencia con el banco": the adjustment that keeps a bank-linked account equal to the bank's balance; it changes with every sync and goes when they match
+  """
+  bankDifference: Boolean
 
   """
   "Cancelado": when the bank cancelled it (by hand on a credit card, or reported by a bank sync). It stays in the history but counts nowhere

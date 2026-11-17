@@ -113,7 +113,7 @@ export function AccountDetailScreen() {
   }, [card, detailResult.data, summaryResult.data, today, l]);
 
   const usage = React.useMemo(
-    () => (card ? buildCreditUsageView(summaryResult.data?.creditUsage ?? null, card.currency, l) : null),
+    () => (card ? buildCreditUsageView(summaryResult.data?.creditUsage ?? null, card.currency, card.credit?.limit ?? null, l) : null),
     [card, summaryResult.data, l],
   );
 
@@ -179,7 +179,7 @@ export function AccountDetailScreen() {
               />
               {tab === 'summary' ? (
                 <>
-                  <AccountStats detail={detail} />
+                  <AccountStats detail={detail} usage={usage} />
                   {usage ? <CreditUsageCard usage={usage} /> : null}
                   <CardPeriodSpending key={`${card.id}:${card.amount}`} accountId={card.id} />
                   {card.archived ? null : <InTotalSwitch key={String(card.includedInTotal)} accountId={card.id} included={card.includedInTotal} />}

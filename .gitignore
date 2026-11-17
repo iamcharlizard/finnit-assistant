@@ -49,3 +49,6 @@ smoke-api.log
 
 # Real bank statements used to build parsers: never commit them
 apps/api/test/fixtures/private/
+
+# Local data exports (CSV from the local DB); never committed.
+/exports/

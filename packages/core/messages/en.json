@@ -820,8 +820,8 @@
       "oneOff": "One-off",
       "installments": "Installments still to bill",
       "plans": "{count, plural, one {# purchase in installments} other {# purchases in installments}}",
-      "outside": "Plus {amount} of installments the card doesn't have in its balance yet.",
-      "hint": "The card takes a purchase in installments whole from what's available when you buy; each cut-off bills one installment on your statement."
+      "hint": "Your bank holds the whole of each purchase in installments against your credit when you buy; each cut-off bills one installment on your statement.",
+      "usedHint": "{percent}% of your limit · includes {amount} in installments"
     },
     "cardMovements": {
       "title": "Movements",
@@ -1240,7 +1240,9 @@
             }
           }
         }
-      }
+      },
+      "other": "Other",
+      "ofTotal": "of the total"
     }
   },
   "budgets": {
@@ -3124,6 +3126,14 @@
         "nameRequired": "Type a name.",
         "nameTooLong": "The name is too long."
       }
+    },
+    "bankDifference": {
+      "title": "What is “Difference with the bank”?",
+      "explain": "It's what separates your recorded movements from the balance the bank reports. It's recalculated on every sync and goes away when they match. It usually comes from movements the bank hasn't posted yet, payments being applied, or something recorded twice.",
+      "recalculate": "Recalculate with the bank's balance",
+      "recalculating": "Recalculating…",
+      "done": "We recalculated the difference with the bank's latest balance",
+      "notLinked": "This account isn't linked to a bank"
     }
   },
   "notifications": {

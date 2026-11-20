@@ -1,14 +1,10 @@
 import * as React from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from 'urql';
 import { useTranslations } from 'use-intl';
-import { ArrowLeft, Landmark } from 'lucide-react-native';
+import { ArrowLeft, Landmark, X } from 'lucide-react-native';
 
 import { accountLabel } from '@finnit/core/finance/accounts';
 import { todayKey } from '@finnit/core/finance/dates';
@@ -341,6 +337,28 @@ export function NewEntryScreen() {
   const busyLabel =
     busy === 'checking' ? t('newEntry.checking') : t('newEntry.saving');
 
+  /*
+   * Back within the flow: from the look-alikes to the form, and from a
+   * receipt's expense to the camera. On the step a shortcut opened (the
+   * "+" already lists the kinds) it closes the sheet instead of showing
+   * the kind picker.
+   */
+  const backTarget: Step | 'close' | null =
+    step.name === 'duplicates'
+      ? { name: 'entry' }
+      : step.name === 'entry' && action === 'receipt'
+        ? { name: 'receipt' }
+        : action
+          ? 'close'
+          : step.name === 'kind'
+            ? null
+            : { name: 'kind' };
+  function goBack() {
+    setSubmitError(null);
+    if (backTarget === 'close') router.back();
+    else if (backTarget) setStep(backTarget);
+  }
+
   let body: React.ReactNode;
   if (!data && fetching)
     body = <ActivityIndicator style={{ marginVertical: 32 }} />;
@@ -372,7 +390,8 @@ export function NewEntryScreen() {
         onPick={(file) => void reader.read(file)}
         onCancel={() => {
           reader.reset();
-          setStep({ name: 'kind' });
+          if (action) router.back();
+          else setStep({ name: 'kind' });
         }}
         onManual={() => {
           reader.reset();
@@ -439,49 +458,43 @@ export function NewEntryScreen() {
     );
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1 }}
+    // The scroll view makes room for the keyboard itself (no
+    // KeyboardAvoidingView: inside a sheet it moved the whole sheet).
+    <TwScrollView
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+      keyboardDismissMode="interactive"
+      className="flex-1 bg-popover"
+      contentContainerClassName="gap-4 px-5 pt-6"
+      contentContainerStyle={{ paddingBottom: Math.max(24, insets.bottom) }}
     >
-      <TwScrollView
-        keyboardShouldPersistTaps="handled"
-        className="flex-1 bg-popover"
-        contentContainerClassName="gap-4 px-5 pt-6"
-        contentContainerStyle={{ paddingBottom: Math.max(24, insets.bottom) }}
-      >
-        <TwView className="flex-row items-center gap-2">
-          {step.name !== 'kind' ? (
-            <TwPressable
-              accessibilityRole="button"
-              accessibilityLabel={t('newEntry.back')}
-              onPress={() => {
-                setSubmitError(null);
-                setStep(
-                  step.name === 'duplicates'
-                    ? { name: 'entry' }
-                    : { name: 'kind' },
-                );
-              }}
-              className="-ml-2 size-11 items-center justify-center rounded-full active:bg-accent"
-            >
-              <Icon icon={ArrowLeft} size={22} />
-            </TwPressable>
-          ) : null}
-          <Text
-            accessibilityRole="header"
-            weight="bold"
-            className="flex-1 text-lg"
+      <TwView className="flex-row items-center gap-2">
+        {backTarget ? (
+          <TwPressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              backTarget === 'close' ? t('common.close') : t('newEntry.back')
+            }
+            onPress={goBack}
+            className="-ml-2 size-11 items-center justify-center rounded-full active:bg-accent"
           >
-            {title}
-          </Text>
-        </TwView>
-        {step.name === 'kind' ? (
-          <Text className="-mt-2 text-sm text-on-surface-variant">
-            {t('newEntry.description')}
-          </Text>
+            <Icon icon={backTarget === 'close' ? X : ArrowLeft} size={22} />
+          </TwPressable>
         ) : null}
-        {body}
-      </TwScrollView>
-    </KeyboardAvoidingView>
+        <Text
+          accessibilityRole="header"
+          weight="bold"
+          className="flex-1 text-lg"
+        >
+          {title}
+        </Text>
+      </TwView>
+      {step.name === 'kind' ? (
+        <Text className="-mt-2 text-sm text-on-surface-variant">
+          {t('newEntry.description')}
+        </Text>
+      ) : null}
+      {body}
+    </TwScrollView>
   );
 }

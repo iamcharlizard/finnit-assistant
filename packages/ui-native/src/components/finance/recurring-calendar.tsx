@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
-import { addDays, daysInMonth, firstDayOf, parseDayKey, weekdayIndex, type DayKey } from '@finnit/core/finance/dates';
+import { monthGridDays, parseDayKey, type DayKey } from '@finnit/core/finance/dates';
 import type { RecurringCalendarEvent, RecurringCalendarLabels } from '@finnit/core/ui/recurring-calendar';
 
 import { cn } from '../../lib/utils';
@@ -49,10 +49,7 @@ function RecurringCalendar({
   const color = useColor();
   const tokens = { muted: useToken('--on-surface-variant') };
   const { year, month: m } = parseDayKey(month);
-  const first = firstDayOf({ year, month: m });
-  const lead = (weekdayIndex(first) + 6) % 7;
-  const days = Array.from({ length: daysInMonth({ year, month: m }) }, (_, i) => addDays(first, i));
-  const cells: (DayKey | null)[] = [...Array<null>(lead).fill(null), ...days];
+  const cells = monthGridDays({ year, month: m });
   const byDay = React.useMemo(() => {
     const map = new Map<DayKey, RecurringCalendarEvent[]>();
     for (const event of events) map.set(event.date, [...(map.get(event.date) ?? []), event]);

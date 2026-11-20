@@ -235,6 +235,16 @@ export function firstDayOf(m: MonthRef): DayKey {
   return `${m.year}-${pad(m.month)}-01`;
 }
 
+/** A month's calendar cells, Monday first: null pads the days before the 1st. */
+export function monthGridDays(m: MonthRef): (DayKey | null)[] {
+  const first = firstDayOf(m);
+  const days = Array.from({ length: daysInMonth(m) }, (_, i) =>
+    addDays(first, i),
+  );
+  // weekdayIndex is already Monday = 0.
+  return [...Array<null>(weekdayIndex(first)).fill(null), ...days];
+}
+
 export function lastDayOf(m: MonthRef): DayKey {
   return `${m.year}-${pad(m.month)}-${pad(daysInMonth(m))}`;
 }

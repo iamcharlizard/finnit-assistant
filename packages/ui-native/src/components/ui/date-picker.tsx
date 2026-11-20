@@ -2,15 +2,12 @@ import * as React from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react-native';
 
 import {
-  addDays,
-  daysInMonth,
-  firstDayOf,
   monthLabel,
+  monthGridDays,
   monthOf,
   shiftMonth,
   shortDate,
   todayKey,
-  weekdayIndex,
   weekdayNames,
   type DayKey,
   type MonthRef,
@@ -41,14 +38,6 @@ interface DatePickerProps {
   closeLabel?: string;
   disabled?: boolean;
   className?: string;
-}
-
-/** Day cells for a month grid, Monday first; null pads the first week. */
-function monthGrid(month: MonthRef): (DayKey | null)[] {
-  const first = firstDayOf(month);
-  const lead = (weekdayIndex(first) + 6) % 7;
-  const days = Array.from({ length: daysInMonth(month) }, (_, i) => addDays(first, i));
-  return [...Array<null>(lead).fill(null), ...days];
 }
 
 /** A date field that opens a month calendar (the web's DatePicker). */
@@ -138,7 +127,7 @@ function DatePicker({
           ))}
         </TwView>
         <TwView className="flex-row flex-wrap pb-2">
-          {monthGrid(month).map((day, index) => {
+          {monthGridDays(month).map((day, index) => {
             if (!day) return <TwView key={`pad-${index}`} style={{ width: `${100 / 7}%` }} />;
             const outside = Boolean((min && day < min) || (max && day > max));
             const selected = day === value;

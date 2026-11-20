@@ -3,6 +3,7 @@
     "appName": "Finnit",
     "loading": "Cargando…",
     "retry": "Reintentar",
+    "unreachable": "No pudimos conectar con Finnit. Seguimos intentando…",
     "cancel": "Cancelar",
     "close": "Cerrar",
     "done": "Listo",
@@ -141,6 +142,19 @@
       "transferDescriptionPlaceholder": "Ej. Ahorro del mes",
       "available": "Disponible: {amount}",
       "owed": "Debes: {amount}"
+    },
+    "calculator": {
+      "open": "Abrir la calculadora",
+      "done": "Listo",
+      "clear": "Borrar todo",
+      "backspace": "Borrar",
+      "plus": "Más",
+      "minus": "Menos",
+      "times": "Por",
+      "divide": "Entre",
+      "equals": "Igual",
+      "decimal": "Punto decimal",
+      "invalid": "Revisa la operación"
     },
     "cardPaymentHint": "Es un pago de tarjeta: el dinero sale de la cuenta de origen y reduce lo que debes en la tarjeta.",
     "transferHint": "Para pagar una tarjeta de crédito, elígela como destino.",

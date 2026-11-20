@@ -226,6 +226,8 @@ export function TransferForm({
         value={draft.description}
         onChangeText={(description) => set({ description })}
         maxLength={120}
+        returnKeyType="done"
+        submitBehavior="blurAndSubmit"
       />
       {legs && from && legs.from.length > 0 ? (
         <LegField
@@ -283,7 +285,7 @@ function LegField({
     <TwView
       accessibilityRole="radiogroup"
       accessibilityLabel={t('existing', { account })}
-      className="gap-2 rounded-xl border border-outline-variant p-3"
+      className="gap-2 rounded-xl border border-glass-border p-3"
     >
       <Text weight="medium" className="text-sm">
         {t('existing', { account })}

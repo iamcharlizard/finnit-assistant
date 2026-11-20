@@ -1,10 +1,22 @@
 import { authExchange } from '@urql/exchange-auth';
-import { Client, CombinedError, cacheExchange, fetchExchange, mapExchange, type Operation } from 'urql';
+import {
+  Client,
+  CombinedError,
+  cacheExchange,
+  fetchExchange,
+  mapExchange,
+  type Operation,
+} from 'urql';
 
 import { DEFAULT_LOCALE, type Locale } from '@finnit/core/i18n/locales';
 
 import { GRAPHQL_URL } from '@/lib/api/config';
-import { clearSession, privacyUnlockToken, readItem, saveTokens } from '@/lib/session/storage';
+import {
+  clearSession,
+  privacyUnlockToken,
+  readItem,
+  saveTokens,
+} from '@/lib/session/storage';
 
 const REFRESH_MUTATION = `mutation RefreshToken($input: RefreshTokenInput!) {
   refreshToken(input: $input) { accessToken refreshToken }
@@ -44,9 +56,27 @@ function isUnauthenticated(error: CombinedError): boolean {
  * UNAUTHENTICATED answer renews the tokens once with the refresh token and
  * retries; if that fails the session ends (back to login).
  */
+/** A request the API doesn't answer in this time fails as a network error. */
+const REQUEST_TIMEOUT_MS = 20000;
+
+/** fetch with a time limit (urql's own cancellation still works). */
+const fetchWithTimeout: typeof fetch = (input, init) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const outer = init?.signal;
+  if (outer) {
+    if (outer.aborted) controller.abort();
+    else outer.addEventListener('abort', () => controller.abort());
+  }
+  return fetch(input, { ...init, signal: controller.signal }).finally(() =>
+    clearTimeout(timer),
+  );
+};
+
 function createClient(): Client {
   return new Client({
     url: GRAPHQL_URL,
+    fetch: fetchWithTimeout,
     requestPolicy: 'cache-and-network',
     // Always POST: urql sends short queries as GET by default, and the API's
     // CSRF prevention (Apollo) rejects those with a 400.
@@ -68,17 +98,18 @@ function createClient(): Client {
           addAuthToOperation(operation) {
             accessToken = readItem('accessToken');
             return accessToken
-              ? utils.appendHeaders(operation, { Authorization: `Bearer ${accessToken}` })
+              ? utils.appendHeaders(operation, {
+                  Authorization: `Bearer ${accessToken}`,
+                })
               : operation;
           },
           didAuthError: isUnauthenticated,
           async refreshAuth() {
             const refreshToken = readItem('refreshToken');
             const result = refreshToken
-              ? await utils.mutate<{ refreshToken: { accessToken: string; refreshToken: string } }>(
-                  REFRESH_MUTATION,
-                  { input: { refreshToken } },
-                )
+              ? await utils.mutate<{
+                  refreshToken: { accessToken: string; refreshToken: string };
+                }>(REFRESH_MUTATION, { input: { refreshToken } })
               : null;
             if (result?.data?.refreshToken) {
               await saveTokens(result.data.refreshToken);
@@ -96,17 +127,22 @@ function createClient(): Client {
         onOperation(operation) {
           if (!__DEV__ || operation.kind === 'teardown') return;
           startedAt.set(operation.key, Date.now());
-          console.log(`[graphql] → ${operationName(operation.query)} (${operation.context.requestPolicy})`);
+          console.log(
+            `[graphql] → ${operationName(operation.query)} (${operation.context.requestPolicy})`,
+          );
         },
         onResult(result) {
           if (!__DEV__) return;
           const started = startedAt.get(result.operation.key);
           startedAt.delete(result.operation.key);
           const ms = started ? ` in ${Date.now() - started} ms` : '';
-          console.log(`[graphql] ← ${operationName(result.operation.query)}${ms}${result.error ? ' (error)' : ''}`);
+          console.log(
+            `[graphql] ← ${operationName(result.operation.query)}${ms}${result.error ? ' (error)' : ''}`,
+          );
         },
         onError(error) {
-          if (__DEV__ && !isUnauthenticated(error)) console.warn('[graphql]', error.message);
+          if (__DEV__ && !isUnauthenticated(error))
+            console.warn('[graphql]', error.message);
         },
       }),
       fetchExchange,

@@ -48,7 +48,7 @@ Expo SDK 58 (React Native 0.88, React 19.3) con NativeWind v5 (`5.0.0-rc.1`). La
 | Inicio (saldo, analíticas, cuentas, presupuesto, próximos pagos, deudas) | ✅ | Saldo disponible centrado (toca: Cuentas) con el ojo de ocultar montos; las 4 analíticas en una fila con scroll horizontal (media pantalla cada una); tarjeta Cuentas (toca una: su detalle). Sin probar con sesión. |
 | Movimientos (búsqueda, tipo, mes, filtros, por día, "Cargar más") | ✅ | — |
 | Detalle y edición de un movimiento, PIN de privacidad | ✅ | Adjuntos, crear nombre automático desde el editor. Eliminar (con lo que pasará) y "Marcar como duplicado" sí están. |
-| Nuevo movimiento: gasto, ingreso, transferencia / pago de tarjeta, duplicados | ✅ | Adjuntar comprobante al crear. La transferencia propone los movimientos ya registrados ("Usar este movimiento"). |
+| Nuevo movimiento: gasto, ingreso, transferencia / pago de tarjeta, duplicados; el monto se escribe en un teclado de calculadora (+ − × ÷ =, `CalculatorInput` + `@finnit/core/finance/calculator`); el "+" abre los atajos en dos filas de tres sobre un fondo borroso | ✅ | Adjuntar comprobante al crear. La transferencia propone los movimientos ya registrados ("Usar este movimiento"). |
 | Escanear ticket (cámara/galería → gasto prellenado) | ✅ | Tickets pendientes, "¿es este?" con coincidencias del ticket. |
 | Importar captura del banco | ⏳ | Todo. |
 | Cuentas y tarjetas (pila de tarjetas, detalle con cifras y movimientos; "Nueva cuenta": conectar el banco con Syncfy o alta manual) | 🟡 | Diseño de la tarjeta al darla de alta, edición, archivado, "Actualizar saldo", gráfica de saldo diario. |

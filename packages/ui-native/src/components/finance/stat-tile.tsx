@@ -79,7 +79,7 @@ function StatTile({
         .filter(Boolean)
         .join(', ')}
       className={cn(
-        'gap-3 rounded-card border border-outline-variant bg-surface p-4',
+        'gap-3 rounded-card border border-glass-border bg-surface p-4',
         className,
       )}
       style={style}

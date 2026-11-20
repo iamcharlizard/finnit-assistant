@@ -1,9 +1,18 @@
 import * as React from 'react';
-import { Provider as UrqlProvider, type Client, type CombinedError } from 'urql';
+import { AppState } from 'react-native';
+import {
+  Provider as UrqlProvider,
+  type Client,
+  type CombinedError,
+} from 'urql';
 
 import { isLocale } from '@finnit/core/i18n/locales';
 
-import { graphqlClient, onSessionEnded, resetGraphqlClient } from '@/lib/graphql/client';
+import {
+  graphqlClient,
+  onSessionEnded,
+  resetGraphqlClient,
+} from '@/lib/graphql/client';
 import { useLocale } from '@/lib/i18n/i18n-provider';
 import { requestGoogleIdToken, signOutFromGoogle } from '@/lib/google-signin';
 import {
@@ -26,7 +35,11 @@ export interface AuthUser {
   role: UserRole;
   isMaster: boolean;
   locale: string | null;
-  avatar: { source: 'uploaded' | 'google'; url: string; version: string | null } | null;
+  avatar: {
+    source: 'uploaded' | 'google';
+    url: string;
+    version: string | null;
+  } | null;
   privacy: { hasPin: boolean; unlocked: boolean };
 }
 
@@ -61,13 +74,24 @@ export type LoginOutcome = { error?: LoginError; cancelled?: boolean };
 
 type Status = 'loading' | 'signedOut' | 'signedIn';
 
+/** Waits between tries to reach the API at start (the last one repeats). */
+const RETRY_DELAYS_MS = [2000, 4000, 8000, 15000, 30000];
+
 interface AuthContextValue {
   status: Status;
   user: AuthUser | null;
   /** Kept for the screens not migrated yet. */
   isLoading: boolean;
+  /** While loading: the API could not be reached yet (it keeps trying). */
+  unreachable: boolean;
+  /** Try to reach the API again now. */
+  retryConnection: () => void;
   /** `remember` off: the session ends when the app starts again. */
-  login: (email: string, password: string, remember?: boolean) => Promise<LoginOutcome>;
+  login: (
+    email: string,
+    password: string,
+    remember?: boolean,
+  ) => Promise<LoginOutcome>;
   signInWithGoogle: (remember?: boolean) => Promise<LoginOutcome>;
   logout: () => Promise<void>;
   /** Reload the user (after changing the name, photo, language or privacy PIN). */
@@ -89,7 +113,9 @@ function googleError(error: CombinedError): LoginError {
   if (error.networkError) return 'unavailable';
   const gqlError = error.graphQLErrors[0];
   if (gqlError?.extensions?.code === 'FORBIDDEN') {
-    return gqlError.message === API_GOOGLE_DISABLED ? 'google_unavailable' : 'google_no_access';
+    return gqlError.message === API_GOOGLE_DISABLED
+      ? 'google_unavailable'
+      : 'google_no_access';
   }
   return 'google_failed';
 }
@@ -104,7 +130,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { setLocale } = useLocale();
   const [client, setClient] = React.useState<Client>(graphqlClient);
   const [status, setStatus] = React.useState<Status>(() =>
-    readItem('accessToken') && readItem('remember') !== 'false' ? 'loading' : 'signedOut',
+    readItem('accessToken') && readItem('remember') !== 'false'
+      ? 'loading'
+      : 'signedOut',
   );
   const [user, setUser] = React.useState<AuthUser | null>(null);
   const clientRef = React.useRef(client);
@@ -121,11 +149,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUser = React.useCallback(async (): Promise<boolean> => {
     const result = await clientRef.current
-      .query<{ me: Omit<AuthUser, 'privacy'>; privacyStatus: AuthUser['privacy'] }>(
-        ME_QUERY,
-        {},
-        { requestPolicy: 'network-only' },
-      )
+      .query<{
+        me: Omit<AuthUser, 'privacy'>;
+        privacyStatus: AuthUser['privacy'];
+      }>(ME_QUERY, {}, { requestPolicy: 'network-only' })
       .toPromise();
     const me = result.data?.me;
     if (!me) {
@@ -140,11 +167,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return true;
   }, [endSession, setLocale]);
 
+  // At start, with a saved session: load the user. Offline or with the API
+  // down, keep the session and try again (with growing waits, and whenever
+  // the app comes back to the foreground) instead of staying on a blank screen.
+  const [unreachable, setUnreachable] = React.useState(false);
+  const [retryKey, setRetryKey] = React.useState(0);
+  const loading = status === 'loading';
   React.useEffect(() => {
-    if (status === 'loading') void loadUser();
-    // Only on start: later loads are explicit.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!loading) return;
+    let cancelled = false;
+    let inFlight = false;
+    let attempt = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const run = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      clearTimeout(timer);
+      const ok = await loadUser();
+      inFlight = false;
+      if (cancelled || ok) return;
+      setUnreachable(true);
+      const delay =
+        RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)];
+      attempt += 1;
+      timer = setTimeout(() => void run(), delay);
+    };
+    void run();
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void run();
+    });
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      subscription.remove();
+    };
+  }, [loading, loadUser, retryKey]);
 
   React.useEffect(() => onSessionEnded(() => void endSession()), [endSession]);
 
@@ -169,37 +226,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       status,
       user,
       isLoading: status === 'loading',
+      unreachable: status === 'loading' && unreachable,
+      retryConnection: () => setRetryKey((key) => key + 1),
       async login(email, password, remember = true) {
         if (!email.trim() || !password) return { error: 'missingFields' };
         const result = await clientRef.current
-          .mutation<{ signIn: { accessToken: string; refreshToken: string } }>(SIGN_IN_MUTATION, {
-            input: { email: email.trim(), password },
-          })
+          .mutation<{ signIn: { accessToken: string; refreshToken: string } }>(
+            SIGN_IN_MUTATION,
+            {
+              input: { email: email.trim(), password },
+            },
+          )
           .toPromise();
         if (result.data?.signIn) {
           await startSession(result.data.signIn, 'password', remember);
           return {};
         }
-        if (errorCode(result.error) === 'TOO_MANY_REQUESTS') return { error: 'tooManyAttempts' };
+        if (errorCode(result.error) === 'TOO_MANY_REQUESTS')
+          return { error: 'tooManyAttempts' };
         if (result.error?.networkError) return { error: 'unavailable' };
         // Same message for unknown email and wrong password (no account probing).
-        return { error: result.error?.graphQLErrors.length ? 'invalidCredentials' : 'failed' };
+        return {
+          error: result.error?.graphQLErrors.length
+            ? 'invalidCredentials'
+            : 'failed',
+        };
       },
       async signInWithGoogle(remember = true) {
         const google = await requestGoogleIdToken();
         if (google.type === 'cancelled') return { cancelled: true };
-        if (google.type === 'unavailable') return { error: 'google_unavailable' };
+        if (google.type === 'unavailable')
+          return { error: 'google_unavailable' };
         if (google.type === 'error') return { error: 'google_failed' };
         const result = await clientRef.current
-          .mutation<{ signInWithGoogle: { accessToken: string; refreshToken: string } }>(
-            SIGN_IN_WITH_GOOGLE_MUTATION,
-            { input: { idToken: google.idToken } },
-          )
+          .mutation<{
+            signInWithGoogle: { accessToken: string; refreshToken: string };
+          }>(SIGN_IN_WITH_GOOGLE_MUTATION, { input: { idToken: google.idToken } })
           .toPromise();
         if (!result.data?.signInWithGoogle) {
           // Forget the Google account so the picker shows again next time.
           await signOutFromGoogle();
-          return { error: result.error ? googleError(result.error) : 'google_failed' };
+          return {
+            error: result.error ? googleError(result.error) : 'google_failed',
+          };
         }
         await startSession(result.data.signInWithGoogle, 'google', remember);
         return {};
@@ -217,7 +286,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser((current) => (current ? { ...current, locale } : current));
       },
     }),
-    [status, user, startSession, endSession, loadUser, setLocale],
+    [status, user, unreachable, startSession, endSession, loadUser, setLocale],
   );
 
   return (

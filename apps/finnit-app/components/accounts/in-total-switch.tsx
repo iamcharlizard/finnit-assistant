@@ -46,7 +46,7 @@ export function InTotalSwitch({
   }
 
   return (
-    <TwView className="flex-row items-center gap-3 rounded-card border border-outline-variant bg-surface p-4">
+    <TwView className="flex-row items-center gap-3 rounded-card border border-glass-border bg-surface p-4">
       <TwView className="flex-1 gap-0.5">
         <Text weight="medium" className="text-sm text-on-background">
           {t('label')}

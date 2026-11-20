@@ -22,6 +22,7 @@ import {
   shortDate,
   timeOf,
   todayKey,
+  monthGridDays,
   weekdayIndex,
 } from './dates';
 import { testLocalizer } from '../i18n/testing';
@@ -109,6 +110,15 @@ describe('dates', () => {
     assert.equal(addDays('2026-12-30', 3), '2027-01-02');
     assert.equal(weekdayIndex('2026-10-12'), 0); // Monday
     assert.equal(weekdayIndex('2026-10-18'), 6); // Sunday
+  });
+
+  it('pads a month grid so each day falls on its weekday, Monday first', () => {
+    // November 2026 starts on a Sunday: six blanks, the 20th is a Friday.
+    const nov = monthGridDays({ year: 2026, month: 11 });
+    assert.equal(nov.indexOf('2026-11-01'), 6);
+    assert.equal(nov.indexOf('2026-11-20') % 7, 4);
+    // June 2026 starts on a Monday: no blanks.
+    assert.equal(monthGridDays({ year: 2026, month: 6 })[0], '2026-06-01');
     assert.deepEqual(shiftMonth({ year: 2026, month: 1 }, -1), {
       year: 2025,
       month: 12,

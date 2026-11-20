@@ -7,18 +7,29 @@ import {
   Ubuntu_500Medium,
   Ubuntu_700Bold,
 } from '@expo-google-fonts/ubuntu';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavigationTheme } from 'expo-router';
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider as NavigationTheme,
+} from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { View } from 'react-native';
 import 'react-native-reanimated';
 
 import { useAppTheme, ThemeRoot } from '@finnit/ui-native/theme/theme-root';
 import { MoneyFormatProvider } from '@finnit/ui-native/components/ui/money-input';
 import { Toaster } from '@finnit/ui-native/components/ui/toaster';
 
+import { AnimatedSplash } from '@/components/shell/animated-splash';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { I18nProvider } from '@/lib/i18n/i18n-provider';
 import { AppearanceProvider, useAppearance } from '@/lib/theme/appearance';
+
+// The native splash stays until AnimatedSplash draws the same frame.
+void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -27,16 +38,20 @@ export default function RootLayout() {
     'Ubuntu Bold': Ubuntu_700Bold,
   });
 
-  if (!loaded) return null;
-
   return (
-    <I18nProvider>
-      <AuthProvider>
-        <AppearanceProvider>
-          <ThemedApp />
-        </AppearanceProvider>
-      </AuthProvider>
-    </I18nProvider>
+    <View style={{ flex: 1 }}>
+      <I18nProvider>
+        <AuthProvider>
+          {loaded ? (
+            <AppearanceProvider>
+              <ThemedApp />
+            </AppearanceProvider>
+          ) : null}
+          {/* Over the app while it loads (the session starts meanwhile). */}
+          <AnimatedSplash fontsLoaded={loaded} />
+        </AuthProvider>
+      </I18nProvider>
+    </View>
   );
 }
 
@@ -75,7 +90,12 @@ function Navigation() {
   };
   return (
     <NavigationTheme value={navigationTheme}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: 'transparent' },
+        }}
+      >
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
         <Stack.Screen name="(app)" options={{ animation: 'none' }} />

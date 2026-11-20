@@ -23,6 +23,7 @@ const PUSHED_ROUTES = [
  */
 export default function AppLayout() {
   const { status } = useAuth();
+  // AnimatedSplash covers the screen meanwhile.
   if (status === 'loading') return null;
   if (status === 'signedOut') return <Redirect href="/login" />;
 
@@ -42,7 +43,9 @@ export default function AppLayout() {
           name="new-entry"
           options={{
             presentation: 'formSheet',
-            sheetAllowedDetents: [0.92],
+            // Full height: below it iOS 26 floats the sheet off the screen's
+            // edges and lifts it to full height when the keyboard opens.
+            sheetAllowedDetents: [1],
             sheetGrabberVisible: true,
             sheetCornerRadius: 28,
             contentStyle: { backgroundColor: 'transparent' },
@@ -52,7 +55,9 @@ export default function AppLayout() {
           name="new-debt"
           options={{
             presentation: 'formSheet',
-            sheetAllowedDetents: [0.92],
+            // Full height: below it iOS 26 floats the sheet off the screen's
+            // edges and lifts it to full height when the keyboard opens.
+            sheetAllowedDetents: [1],
             sheetGrabberVisible: true,
             sheetCornerRadius: 28,
             contentStyle: { backgroundColor: 'transparent' },

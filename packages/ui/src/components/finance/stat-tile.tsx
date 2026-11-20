@@ -60,7 +60,7 @@ function StatTile({
   return (
     <div
       className={cn(
-        'flex min-w-0 flex-col gap-3 rounded-card border border-outline-variant bg-surface p-4 shadow-sm',
+        'flex min-w-0 flex-col gap-3 rounded-card border border-glass-border bg-surface p-4 shadow-sm',
         className,
       )}
     >

@@ -3,6 +3,7 @@
     "appName": "Finnit",
     "loading": "Loading…",
     "retry": "Try again",
+    "unreachable": "We couldn't reach Finnit. Still trying…",
     "cancel": "Cancel",
     "close": "Close",
     "done": "Done",
@@ -141,6 +142,19 @@
       "transferDescriptionPlaceholder": "E.g. Monthly savings",
       "available": "Available: {amount}",
       "owed": "You owe: {amount}"
+    },
+    "calculator": {
+      "open": "Open the calculator",
+      "done": "Done",
+      "clear": "Clear",
+      "backspace": "Delete",
+      "plus": "Plus",
+      "minus": "Minus",
+      "times": "Times",
+      "divide": "Divided by",
+      "equals": "Equals",
+      "decimal": "Decimal point",
+      "invalid": "Check the operation"
     },
     "cardPaymentHint": "This is a card payment: the money leaves the source account and lowers what you owe on the card.",
     "transferHint": "To pay a credit card, choose it as the destination.",

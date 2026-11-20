@@ -3,9 +3,22 @@ import { useTranslations } from 'use-intl';
 import { Sparkles } from 'lucide-react-native';
 
 import { todayKey } from '@finnit/core/finance/dates';
-import { applySuggestedCategory, currencyOf, merchantQuery, type EntryDraft, type EntryErrors } from '@finnit/core/new-entry/form';
-import { SUGGEST_CATEGORY_QUERY, type EntryAccount, type EntryCategory } from '@finnit/core/new-entry/graphql';
-import { accountOptions, categoryOptions } from '@finnit/core/new-entry/options';
+import {
+  applySuggestedCategory,
+  currencyOf,
+  merchantQuery,
+  type EntryDraft,
+  type EntryErrors,
+} from '@finnit/core/new-entry/form';
+import {
+  SUGGEST_CATEGORY_QUERY,
+  type EntryAccount,
+  type EntryCategory,
+} from '@finnit/core/new-entry/graphql';
+import {
+  accountOptions,
+  categoryOptions,
+} from '@finnit/core/new-entry/options';
 import type { CheckField } from '@finnit/core/receipts/prefill';
 import { TwView } from '@finnit/ui-native/lib/tw';
 import { Button } from '@finnit/ui-native/components/ui/button';
@@ -28,12 +41,25 @@ function useCategorySuggestion(merchant: string): string | null {
     return () => clearTimeout(timer);
   }, [merchant]);
   const query = merchantQuery(debounced);
-  const [result, setResult] = React.useState<{ query: string; categoryId: string | null } | null>(null);
+  const [result, setResult] = React.useState<{
+    query: string;
+    categoryId: string | null;
+  } | null>(null);
   React.useEffect(() => {
     if (!query) return;
     let cancelled = false;
-    gql<{ suggestCategoryForMerchant: { id: string } | null }>(SUGGEST_CATEGORY_QUERY, { input: { merchantName: query } })
-      .then((data) => !cancelled && setResult({ query, categoryId: data.suggestCategoryForMerchant?.id ?? null }))
+    gql<{ suggestCategoryForMerchant: { id: string } | null }>(
+      SUGGEST_CATEGORY_QUERY,
+      { input: { merchantName: query } },
+    )
+      .then(
+        (data) =>
+          !cancelled &&
+          setResult({
+            query,
+            categoryId: data.suggestCategoryForMerchant?.id ?? null,
+          }),
+      )
       .catch(() => !cancelled && setResult({ query, categoryId: null }));
     return () => {
       cancelled = true;
@@ -70,10 +96,15 @@ export function EntryForm({
   const t = useTranslations('newEntry');
   const tc = useTranslations('common');
   const tr = useTranslations('receipts');
-  const marked = (field: CheckField) => (check.includes(field) ? 'border-amber-500' : undefined);
+  const marked = (field: CheckField) =>
+    check.includes(field) ? 'border-amber-500' : undefined;
   const { locale } = useLocale();
   const today = todayKey();
-  const accountItems = React.useMemo(() => accountOptions(accounts).map(({ value, label }) => ({ value, label })), [accounts]);
+  const accountItems = React.useMemo(
+    () =>
+      accountOptions(accounts).map(({ value, label }) => ({ value, label })),
+    [accounts],
+  );
   const categoryItems = React.useMemo(
     () =>
       categoryOptions(categories, draft.type, locale).map((o) => ({
@@ -88,14 +119,23 @@ export function EntryForm({
     const next = applySuggestedCategory(draft, suggestedId);
     if (next !== draft) onChange(next);
   }, [draft, suggestedId, onChange]);
-  const showSuggested = !draft.categoryPicked && suggestedId !== null && draft.categoryId === suggestedId;
+  const showSuggested =
+    !draft.categoryPicked &&
+    suggestedId !== null &&
+    draft.categoryId === suggestedId;
   const set = (patch: Partial<EntryDraft>) => onChange({ ...draft, ...patch });
   const isExpense = draft.type === 'expense';
+  const merchantRef = React.useRef<React.ComponentRef<typeof Input> | null>(
+    null,
+  );
+  const noteRef = React.useRef<React.ComponentRef<typeof Input> | null>(null);
 
   return (
     <TwView className="gap-4">
       {check.length > 0 ? (
-        <Text className="rounded-xl bg-[rgba(245,158,11,0.1)] p-3 text-xs">{tr('checkFields')}</Text>
+        <Text className="rounded-xl bg-[rgba(245,158,11,0.1)] p-3 text-xs">
+          {tr('checkFields')}
+        </Text>
       ) : null}
       <AmountField
         value={draft.amount}
@@ -103,6 +143,10 @@ export function EntryForm({
         currency={currencyOf(accounts, draft.accountId)}
         error={errors.amount && t(`validation.${errors.amount}`)}
         autoFocus={check.length === 0}
+        // With the account already picked, "Listo" goes on to the merchant.
+        onDone={() => {
+          if (draft.accountId) merchantRef.current?.focus();
+        }}
         className={marked('amount')}
       />
       <Select
@@ -130,20 +174,32 @@ export function EntryForm({
         className={marked('date')}
       />
       <Input
-        label={isExpense ? t('fields.merchantExpense') : t('fields.merchantIncome')}
-        placeholder={isExpense ? t('fields.merchantExpensePlaceholder') : t('fields.merchantIncomePlaceholder')}
+        label={
+          isExpense ? t('fields.merchantExpense') : t('fields.merchantIncome')
+        }
+        placeholder={
+          isExpense
+            ? t('fields.merchantExpensePlaceholder')
+            : t('fields.merchantIncomePlaceholder')
+        }
         value={draft.merchant}
         onChangeText={(merchant) => set({ merchant })}
         maxLength={120}
         autoCorrect={false}
         className={marked('merchant')}
+        ref={merchantRef}
+        returnKeyType="next"
+        submitBehavior="submit"
+        onSubmitEditing={() => noteRef.current?.focus()}
       />
       <TwView className="gap-1">
         <Select
           label={t('fields.category')}
           options={categoryItems}
           value={draft.categoryId ?? null}
-          onValueChange={(categoryId) => set({ categoryId, categoryPicked: true })}
+          onValueChange={(categoryId) =>
+            set({ categoryId, categoryPicked: true })
+          }
           placeholder={t('fields.categoryPlaceholder')}
           searchable
           searchPlaceholder={t('fields.categorySearch')}
@@ -153,7 +209,9 @@ export function EntryForm({
         {showSuggested ? (
           <TwView className="flex-row items-center gap-1 px-1">
             <Icon icon={Sparkles} size={14} color="--violet-ink" />
-            <Text className="text-xs text-on-surface-variant">{t('fields.categorySuggested')}</Text>
+            <Text className="text-xs text-on-surface-variant">
+              {t('fields.categorySuggested')}
+            </Text>
           </TwView>
         ) : null}
       </TwView>
@@ -163,6 +221,9 @@ export function EntryForm({
         value={draft.note}
         onChangeText={(note) => set({ note })}
         multiline
+        ref={noteRef}
+        returnKeyType="done"
+        submitBehavior="blurAndSubmit"
         maxLength={255}
         className="min-h-20 items-start"
         textAlignVertical="top"
@@ -172,7 +233,12 @@ export function EntryForm({
           {submitError}
         </Text>
       ) : null}
-      <Button label={busy ? busyLabel : t(`submit.${draft.type}`)} disabled={busy} onPress={onSubmit} className="w-full" />
+      <Button
+        label={busy ? busyLabel : t(`submit.${draft.type}`)}
+        disabled={busy}
+        onPress={onSubmit}
+        className="w-full"
+      />
     </TwView>
   );
 }

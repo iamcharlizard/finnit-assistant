@@ -27,6 +27,7 @@ import {
 import { GlassSurface } from '@finnit/ui-native/components/ui/glass-surface';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
 import { LogoSpinner } from '@finnit/ui-native/components/ui/logo-spinner';
+import { CalculatorInput } from '@finnit/ui-native/components/ui/calculator-input';
 import { MoneyInput } from '@finnit/ui-native/components/ui/money-input';
 import { Progress } from '@finnit/ui-native/components/ui/progress';
 import { Segmented } from '@finnit/ui-native/components/ui/segmented';
@@ -104,6 +105,11 @@ export default function ThemePreview() {
                 </TwView>
                 <MoneyInput
                   label="Monto"
+                  value={amount}
+                  onValueChange={setAmount}
+                />
+                <CalculatorInput
+                  label="Monto (calculadora)"
                   value={amount}
                   onValueChange={setAmount}
                 />

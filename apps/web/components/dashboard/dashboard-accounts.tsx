@@ -52,7 +52,7 @@ export function DashboardAccounts({
   return (
     <section
       aria-labelledby="dashboard-accounts"
-      className="min-w-0 rounded-card border border-outline-variant bg-surface p-2 shadow-sm"
+      className="min-w-0 rounded-card border border-glass-border bg-surface p-2 shadow-sm"
     >
       <div className="flex items-center justify-between gap-2 px-3">
         <h2

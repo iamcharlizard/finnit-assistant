@@ -281,7 +281,7 @@ function LegField({
     <div
       role="radiogroup"
       aria-label={t('existing', { account })}
-      className="flex flex-col gap-2 rounded-xl border border-outline-variant p-3"
+      className="flex flex-col gap-2 rounded-xl border border-glass-border p-3"
     >
       <p className="text-sm font-medium text-on-background">
         {t('existing', { account })}

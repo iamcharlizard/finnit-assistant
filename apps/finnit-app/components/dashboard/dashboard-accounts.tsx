@@ -52,7 +52,7 @@ export function DashboardAccounts({
   const resolve = useColor();
   const openList = () => router.push('/accounts');
   return (
-    <TwView className="rounded-card border border-outline-variant bg-surface p-2">
+    <TwView className="rounded-card border border-glass-border bg-surface p-2">
       <TwPressable
         accessibilityRole="link"
         accessibilityLabel={`${t('title')}, ${count > accounts.length ? t('seeAllCount', { count }) : t('seeAll')}`}

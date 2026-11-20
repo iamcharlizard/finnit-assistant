@@ -1,5 +1,12 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  useColorScheme,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import { BlurView } from 'expo-blur';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -32,7 +39,9 @@ const HOLE_CY = 2;
 const FILLET = 8;
 
 const WIDTHS = [TAB, TAB, SLOT, TAB, TAB];
-const SLOT_LEFT = WIDTHS.map((_, i) => WIDTHS.slice(0, i).reduce((s, w) => s + w, 0) + i * GAP);
+const SLOT_LEFT = WIDTHS.map(
+  (_, i) => WIDTHS.slice(0, i).reduce((s, w) => s + w, 0) + i * GAP,
+);
 const BAR_WIDTH = WIDTHS.reduce((s, w) => s + w, 0) + 4 * GAP + 2 * PAD + 2;
 const BAR_HEIGHT = TAB + 2 * PAD + 2;
 
@@ -78,19 +87,22 @@ const BAR_PATH = barPath(BAR_WIDTH, BAR_HEIGHT);
 const SIDE_ROOM = 8;
 
 /*
- * The "+" menu: five shortcuts in a wide, flat arc above the button. `k`
- * is the horizontal step (a share of the screen, at most 104px) and `y`
- * the height above the button's center; the outer ones sit lower.
+ * The "+" menu: up to six shortcuts in rows of three above the button,
+ * the first row (the everyday ones) nearest to it. Each row is centered,
+ * so a last row with fewer shortcuts stays in the middle. `ROW_Y` is the
+ * height of each row's center above the button's center.
  */
-const ARC = [
-  { k: -2, y: -76 },
-  { k: -1, y: -124 },
-  { k: 0, y: -144 },
-  { k: 1, y: -124 },
-  { k: 2, y: -76 },
-  // A sixth shortcut (e.g. "Pago a tarjeta") sits above the middle one.
-  { k: 0, y: -228 },
-];
+const PER_ROW = 3;
+const ROW_Y = [-104, -212];
+const MAX_ACTIONS = PER_ROW * ROW_Y.length;
+const DIAL = 60;
+
+/** Where shortcut `index` of `count` sits, in column steps and px above the "+". */
+function dialSpot(index: number, count: number): { k: number; y: number } {
+  const row = Math.floor(index / PER_ROW);
+  const inRow = Math.min(PER_ROW, count - row * PER_ROW);
+  return { k: (index % PER_ROW) - (inRow - 1) / 2, y: ROW_Y[row]! };
+}
 
 export interface BottomNavTab {
   key: string;
@@ -113,7 +125,7 @@ interface BottomNavBarProps {
   /** Three tabs: two before the "+", one after. */
   tabs: [BottomNavTab, BottomNavTab, BottomNavTab];
   more: { label: string; active: boolean; onPress: () => void };
-  /** The "+" shortcuts (up to five, in the arc's order). */
+  /** The "+" shortcuts (up to six, in rows of three from the "+" up). */
   actions: BottomNavAction[];
   addLabel: string;
   closeLabel: string;
@@ -128,7 +140,14 @@ interface BottomNavBarProps {
  * Render it over the screens (it fills the screen with `box-none`, so the
  * backdrop can dim everything while the menu is open).
  */
-export function BottomNavBar({ tabs, more, actions, addLabel, closeLabel, label }: BottomNavBarProps) {
+export function BottomNavBar({
+  tabs,
+  more,
+  actions,
+  addLabel,
+  closeLabel,
+  label,
+}: BottomNavBarProps) {
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const [open, setOpen] = React.useState(false);
@@ -136,7 +155,8 @@ export function BottomNavBar({ tabs, more, actions, addLabel, closeLabel, label 
   const fill = useToken('--popover');
   const glassBorder = useToken('--glass-border');
   const elevation = useElevation();
-  const step = Math.min(screenWidth * 0.18, 104);
+  const dark = useColorScheme() === 'dark';
+  const step = Math.min(screenWidth * 0.28, 112);
   // Narrow screens (or a large display size): shrink the whole bar to fit.
   const scale = Math.min(1, (screenWidth - 2 * SIDE_ROOM) / BAR_WIDTH);
 
@@ -145,13 +165,18 @@ export function BottomNavBar({ tabs, more, actions, addLabel, closeLabel, label 
   const activeSlot = tabSlot >= 0 ? tabSlot : more.active ? 4 : -1;
 
   const highlightX = useDerivedValue(() =>
-    withTiming(SLOT_LEFT[Math.max(0, activeSlot)]!, { duration: 300, easing: EASE }),
+    withTiming(SLOT_LEFT[Math.max(0, activeSlot)]!, {
+      duration: 300,
+      easing: EASE,
+    }),
   );
   const highlightStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: highlightX.value }],
     opacity: withTiming(activeSlot < 0 ? 0 : 1, { duration: 200 }),
   }));
-  const progress = useDerivedValue(() => withTiming(open ? 1 : 0, { duration: 300, easing: EASE }));
+  const progress = useDerivedValue(() =>
+    withTiming(open ? 1 : 0, { duration: 300, easing: EASE }),
+  );
   const plusStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${progress.value * 135}deg` }],
   }));
@@ -169,17 +194,36 @@ export function BottomNavBar({ tabs, more, actions, addLabel, closeLabel, label 
       }}
       className="size-14 items-center justify-center rounded-full active:scale-90"
     >
-      <Icon icon={item.icon} size={28} color={item.active ? '--brand-ink' : '--on-surface-variant'} />
+      <Icon
+        icon={item.icon}
+        size={28}
+        color={item.active ? '--brand-ink' : '--on-surface-variant'}
+      />
     </TwPressable>
   );
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      {/* Dims the screen behind the shortcuts; a tap closes them. */}
+      {/* Blurs and darkens the screen behind the shortcuts; a tap closes them. */}
       <Animated.View
         pointerEvents={open ? 'auto' : 'none'}
-        style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]}
+        style={[StyleSheet.absoluteFill, backdropStyle]}
       >
+        <BlurView
+          intensity={24}
+          tint={dark ? 'dark' : 'default'}
+          style={StyleSheet.absoluteFill}
+        />
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: dark
+                ? 'rgba(0, 0, 0, 0.7)'
+                : 'rgba(10, 12, 20, 0.58)',
+            },
+          ]}
+        />
         <Pressable
           style={StyleSheet.absoluteFill}
           accessibilityLabel={closeLabel}
@@ -193,7 +237,8 @@ export function BottomNavBar({ tabs, more, actions, addLabel, closeLabel, label 
         style={[
           styles.bar,
           {
-            bottom: Math.max(12, insets.bottom) - (BAR_HEIGHT * (1 - scale)) / 2,
+            bottom:
+              Math.max(12, insets.bottom) - (BAR_HEIGHT * (1 - scale)) / 2,
             left: (screenWidth - BAR_WIDTH) / 2,
             width: BAR_WIDTH,
             height: BAR_HEIGHT,
@@ -201,7 +246,10 @@ export function BottomNavBar({ tabs, more, actions, addLabel, closeLabel, label 
           },
         ]}
       >
-        <View style={[StyleSheet.absoluteFill, styles.shadow, elevation]} pointerEvents="none" />
+        <View
+          style={[StyleSheet.absoluteFill, styles.shadow, elevation]}
+          pointerEvents="none"
+        />
         <Svg
           width={BAR_WIDTH}
           height={BAR_HEIGHT}
@@ -211,8 +259,14 @@ export function BottomNavBar({ tabs, more, actions, addLabel, closeLabel, label 
         >
           <Path d={BAR_PATH} fill={fill} stroke={glassBorder} strokeWidth={1} />
         </Svg>
-        <TwView className="flex-1 flex-row items-center p-2" style={{ gap: GAP, margin: 1 }}>
-          <Animated.View pointerEvents="none" style={[styles.highlight, highlightStyle]}>
+        <TwView
+          className="flex-1 flex-row items-center p-2"
+          style={{ gap: GAP, margin: 1 }}
+        >
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.highlight, highlightStyle]}
+          >
             <TwView className="size-14 rounded-full bg-primary-15 dark:bg-primary-20" />
           </Animated.View>
           {tab(tabs[0])}
@@ -228,21 +282,25 @@ export function BottomNavBar({ tabs, more, actions, addLabel, closeLabel, label 
             }}
             className="size-14 items-center justify-center rounded-full active:scale-90"
           >
-            <Icon icon={Ellipsis} size={28} color={more.active ? '--brand-ink' : '--on-surface-variant'} />
+            <Icon
+              icon={Ellipsis}
+              size={28}
+              color={more.active ? '--brand-ink' : '--on-surface-variant'}
+            />
           </TwPressable>
         </TwView>
 
         {/* The "+" and its shortcuts, centered on the bar's top edge. */}
         <View pointerEvents="box-none" style={styles.anchor}>
-          {actions.slice(0, ARC.length).map((action, index) => (
+          {actions.slice(0, MAX_ACTIONS).map((action, index, shown) => (
             <DialAction
               key={action.key}
               action={action}
               index={index}
-              count={actions.length}
+              count={shown.length}
               open={open}
-              x={ARC[index]!.k * step}
-              y={ARC[index]!.y}
+              x={dialSpot(index, shown.length).k * step}
+              y={dialSpot(index, shown.length).y}
               onPress={() => {
                 setOpen(false);
                 action.onPress();
@@ -299,35 +357,53 @@ function DialAction({
     ],
   }));
   return (
-    <Animated.View pointerEvents={open ? 'box-none' : 'none'} style={[styles.action, style]}>
+    <Animated.View
+      pointerEvents={open ? 'box-none' : 'none'}
+      style={[styles.action, style]}
+    >
       <TwPressable
         accessibilityRole="button"
         accessibilityLabel={action.label}
         onPress={onPress}
-        className="items-center gap-1.5 active:scale-90"
+        className="items-center gap-2 active:scale-90"
       >
+        {/* --popover is opaque in every palette (--surface is not in Glass). */}
         <TwView
-          className="size-14 items-center justify-center rounded-full border border-glass-border bg-surface"
-          style={elevation}
+          className="items-center justify-center rounded-full border border-glass-border bg-popover"
+          style={[{ width: DIAL, height: DIAL }, elevation]}
         >
           <Icon icon={action.icon} size={28} color={action.tone} />
         </TwView>
-        <TwView className="rounded-full bg-surface px-2 py-0.5 shadow-sm">
-          <Text weight="medium" numberOfLines={1} className="text-[11px] text-on-background">
-            {action.label}
-          </Text>
-        </TwView>
+        {/* Light text: the backdrop is dark in light and dark mode alike. */}
+        <Text
+          weight="medium"
+          numberOfLines={1}
+          className="text-xs text-white"
+          style={styles.dialLabel}
+        >
+          {action.label}
+        </Text>
       </TwPressable>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { backgroundColor: 'rgba(0, 0, 0, 0.35)' },
   bar: { position: 'absolute' },
   shadow: { borderRadius: BAR_HEIGHT / 2 },
   highlight: { position: 'absolute', left: PAD, top: PAD },
   anchor: { position: 'absolute', top: 0, left: '50%', width: 0, height: 0 },
-  fab: { top: HOLE_CY - TAB / 2, left: -TAB / 2, boxShadow: '0 2px 8px rgba(0,0,0,0.16)' },
-  action: { position: 'absolute', top: -28, left: -56, width: 112, alignItems: 'center' },
+  fab: {
+    top: HOLE_CY - TAB / 2,
+    left: -TAB / 2,
+    boxShadow: '0 2px 8px rgba(0,0,0,0.16)',
+  },
+  action: {
+    position: 'absolute',
+    top: -DIAL / 2,
+    left: -56,
+    width: 112,
+    alignItems: 'center',
+  },
+  dialLabel: { textShadowColor: 'rgba(0, 0, 0, 0.4)', textShadowRadius: 4 },
 });

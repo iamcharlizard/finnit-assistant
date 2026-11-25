@@ -210,8 +210,8 @@ export function HistoryList({
             key={group.day}
             className="mb-8"
             heading={
-              // A pill like the web's, so stuck it reads over the rows.
-              <TwView className="mb-3 flex-row items-baseline justify-between gap-3 rounded-full border border-glass-border bg-surface-95 px-4 py-2">
+              // An opaque pill (like the web's), so stuck it reads over the rows.
+              <TwView className="mb-3 flex-row items-baseline justify-between gap-3 rounded-full border border-glass-border bg-popover px-4 py-2">
                 <LabelSm accessibilityRole="header">{group.heading}</LabelSm>
                 {net && net.amount !== 0 ? (
                   <Text

@@ -87,8 +87,23 @@ export function BudgetSheet({
       title={isEdit ? tf('editTitle', { month: monthLabel }) : tf('createTitle', { month: monthLabel })}
       description={tf('description')}
       closeLabel={t('common.close')}
+      // Always in view, right above the keyboard while typing.
+      footer={
+        <Button
+          variant="secondary"
+          label={saving ? tf('saving') : isEdit ? tf('save') : tf('create')}
+          onPress={submit}
+          disabled={saving}
+          className="w-full"
+        />
+      }
     >
-      <TwScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 560 }} contentContainerClassName="gap-4 pb-2">
+      <TwScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        style={{ maxHeight: 560, flexShrink: 1 }}
+        contentContainerClassName="gap-4 pb-2"
+      >
         <TwView className="gap-1">
           <MoneyInput
             label={tf('total')}
@@ -176,13 +191,6 @@ export function BudgetSheet({
             {submitError}
           </Text>
         ) : null}
-        <Button
-          variant="secondary"
-          label={saving ? tf('saving') : isEdit ? tf('save') : tf('create')}
-          onPress={submit}
-          disabled={saving}
-          className="w-full"
-        />
       </TwScrollView>
     </Sheet>
   );

@@ -85,6 +85,8 @@ export function InstallmentEditSheet({
       title={te('title', { number: row.number, total })}
       description={te(terms ? 'descriptionCutoff' : 'description')}
       closeLabel={t('common.close')}
+      // Always in view, right above the keyboard while typing.
+      footer={<Button label={saving ? te('saving') : te('save')} onPress={() => void save()} disabled={saving} className="w-full" />}
     >
       <TwView className="gap-4">
         {cutoffs ? (
@@ -106,7 +108,6 @@ export function InstallmentEditSheet({
           </TwView>
         )}
         {error ? <Text className="text-[13px] text-expense">{error}</Text> : null}
-        <Button label={saving ? te('saving') : te('save')} onPress={() => void save()} disabled={saving} className="w-full" />
       </TwView>
     </Sheet>
   );

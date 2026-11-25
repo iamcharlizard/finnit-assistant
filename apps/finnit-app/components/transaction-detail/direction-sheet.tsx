@@ -75,6 +75,8 @@ export function DirectionSheet({
       title={td(income ? 'titleIncome' : 'titleExpense')}
       description={`${td(income ? 'descriptionIncome' : 'descriptionExpense', { amount, account })} ${td('bankNote')}`}
       closeLabel={t('common.close')}
+      // Always in view, right above the keyboard while typing.
+      footer={<Button label={saving ? td('saving') : td('confirm')} onPress={() => void save()} disabled={saving} className="w-full" />}
     >
       <TwView className="gap-4">
         <TwView className="flex-row items-center gap-3">
@@ -103,7 +105,6 @@ export function DirectionSheet({
             />
           </>
         ) : null}
-        <Button label={saving ? td('saving') : td('confirm')} onPress={() => void save()} disabled={saving} className="w-full" />
       </TwView>
     </Sheet>
   );

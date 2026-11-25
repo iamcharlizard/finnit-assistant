@@ -139,6 +139,15 @@ export function LinkRecurringSheet({
       title={t('title')}
       description={t('description', linkIntro(transaction, l))}
       closeLabel={l.t('common.close')}
+      // Always in view, right above the keyboard while searching.
+      footer={
+        <Button
+          label={t('submit')}
+          onPress={() => void save()}
+          disabled={saving || !choice}
+          className="w-full"
+        />
+      }
     >
       {state.status === 'loading' ? (
         <Text className="text-sm text-on-surface-variant">{t('loading')}</Text>
@@ -150,7 +159,7 @@ export function LinkRecurringSheet({
         <Text className="text-sm text-on-surface-variant">{t('empty')}</Text>
       ) : null}
       {options && view && options.expenses.length > 0 ? (
-        <TwView className="gap-3">
+        <TwView className="gap-3" style={{ flexShrink: 1 }}>
           <Select
             label={t('month')}
             options={view.months}
@@ -167,7 +176,8 @@ export function LinkRecurringSheet({
           />
           <TwScrollView
             keyboardShouldPersistTaps="handled"
-            style={{ maxHeight: 380 }}
+            keyboardDismissMode="interactive"
+            style={{ maxHeight: 380, flexShrink: 1 }}
             contentContainerClassName="gap-4 pb-2"
           >
             {rows.length === 0 ? (
@@ -183,12 +193,6 @@ export function LinkRecurringSheet({
       {error ? (
         <Text className="mt-2 text-sm text-expense">{error}</Text>
       ) : null}
-      <Button
-        label={t('submit')}
-        onPress={() => void save()}
-        disabled={saving || !choice}
-        className="mt-3 w-full"
-      />
     </Sheet>
   );
 }

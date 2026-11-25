@@ -23,6 +23,8 @@ import { StickyContext, type StickyScroll } from './sticky';
 const PULL_FULL = 80;
 /** The room the pull opens above the content (iOS holds about this much while refreshing). */
 const PULL_AREA = 64;
+/** Room above the content. */
+const CONTENT_TOP = 8;
 /** How close to the end the lists start loading their next page. */
 const END_DISTANCE = 600;
 
@@ -49,9 +51,10 @@ interface ScreenProps {
   title: string;
   subtitle?: React.ReactNode;
   /**
-   * A toolbar that scrolls up with the content and then stays pinned at
-   * the top (e.g. the history's month and filters). `StickyGroup`
-   * headings stick under it.
+   * A toolbar fixed under the header (e.g. the history's month and
+   * filters): the content scrolls below it, never behind it, so only the
+   * screen's background shows around it. `StickyGroup` headings stick
+   * right under it.
    */
   sticky?: React.ReactNode;
   actions?: React.ReactNode;
@@ -132,18 +135,12 @@ export function Screen({
     },
   });
 
-  const toolbarY = useSharedValue(-1);
-  const toolbarHeight = useSharedValue(0);
-  const bodyY = useSharedValue(0);
-  const body = React.useRef<HostInstance>(null);
+  const viewport = React.useRef<HostInstance>(null);
   const measurers = React.useRef(new Set<() => void>());
   const stickyScroll = React.useMemo<StickyScroll>(
     () => ({
       scrollY,
-      toolbarY,
-      toolbarHeight,
-      body,
-      bodyY,
+      viewport,
       onBodyLayout: (measure) => {
         measurers.current.add(measure);
         return () => {
@@ -151,7 +148,7 @@ export function Screen({
         };
       },
     }),
-    [scrollY, toolbarY, toolbarHeight, bodyY],
+    [scrollY],
   );
 
   return (
@@ -160,16 +157,16 @@ export function Screen({
       <TwView className="px-4 pb-2" style={{ paddingTop: insets.top + 8 }}>
         <PageHeader title={title} back={back} />
       </TwView>
-      <View style={{ flex: 1 }}>
+      {sticky ? <TwView className="px-4 pb-2">{sticky}</TwView> : null}
+      <View ref={viewport} style={{ flex: 1 }}>
         <TwAnimatedScrollView
           className="flex-1"
           keyboardShouldPersistTaps="handled"
           onScroll={onScroll}
           scrollEventThrottle={16}
-          stickyHeaderIndices={sticky ? [0] : undefined}
           contentContainerClassName={cn('gap-5 px-4', className)}
           contentContainerStyle={{
-            paddingTop: 8,
+            paddingTop: CONTENT_TOP,
             paddingBottom:
               insets.bottom + (withBottomNav ? BOTTOM_NAV_SPACE : 24),
           }}
@@ -189,16 +186,6 @@ export function Screen({
             ) : undefined
           }
         >
-          {sticky ? (
-            <View
-              onLayout={(event) => {
-                toolbarY.set(event.nativeEvent.layout.y);
-                toolbarHeight.set(event.nativeEvent.layout.height);
-              }}
-            >
-              {sticky}
-            </View>
-          ) : null}
           {subtitle || actions ? (
             <TwView className="gap-3">
               {typeof subtitle === 'string' ? (
@@ -233,12 +220,10 @@ export function Screen({
           ) : (
             <ScrollEndContext.Provider value={subscribe}>
               <StickyContext.Provider value={stickyScroll}>
-                {/* What stuck headings measure against (it moves when
-                    anything above it changes size). */}
+                {/* When anything in here changes size, stuck headings
+                    measure again. */}
                 <View
-                  ref={body}
-                  onLayout={(event) => {
-                    bodyY.set(event.nativeEvent.layout.y);
+                  onLayout={() => {
                     measurers.current.forEach((measure) => measure());
                   }}
                   style={{ gap: 20 }}

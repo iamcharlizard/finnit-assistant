@@ -14,8 +14,8 @@ import { MonthSwitcher } from '@/components/finance/month-switcher';
 import { useLocale } from '@/lib/i18n/i18n-provider';
 
 /**
- * ‹ Noviembre 2026 ›, a compact pill centered above the filters (pinned
- * with them), while the history shows one month (not "Todo" or a range of
+ * ‹ Noviembre 2026 ›, a compact pill centered above the filters (fixed
+ * with them under the header), while the history shows one month (not "Todo" or a range of
  * dates).
  */
 export function HistoryMonth({

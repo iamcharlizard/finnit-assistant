@@ -8,19 +8,15 @@ import Animated, {
 
 import { TwView } from '@finnit/ui-native/lib/tw';
 
-/** Space between the screen's pinned toolbar and a stuck heading. */
+/** Space between the top of the scrolling area and a stuck heading. */
 const STUCK_GAP = 8;
 
 /** What a Screen shares with the headings that stick while it scrolls. */
 export interface StickyScroll {
   /** The scroll offset, on the UI thread. */
   scrollY: SharedValue<number>;
-  /** The pinned toolbar (`Screen`'s `sticky`): its top in the content and its height; -1 without one. */
-  toolbarY: SharedValue<number>;
-  toolbarHeight: SharedValue<number>;
-  /** The view every position is measured against, and where it starts in the content. */
-  body: React.RefObject<HostInstance | null>;
-  bodyY: SharedValue<number>;
+  /** The scroll view's frame on screen: positions are measured against it. */
+  viewport: React.RefObject<HostInstance | null>;
   /** Runs `measure` whenever the body's layout changes (something above may have moved). */
   onBodyLayout: (measure: () => void) => () => void;
 }
@@ -28,7 +24,8 @@ export interface StickyScroll {
 export const StickyContext = React.createContext<StickyScroll | null>(null);
 
 /**
- * A group whose heading sticks under the screen's toolbar while the
+ * A group whose heading sticks at the top of the scrolling area (under
+ * the screen's fixed toolbar, if any) while the
  * group's rows are on screen, then leaves with its last row (the web's
  * `sticky` day headings in the history). Outside a Screen the heading
  * just sits on top.
@@ -49,31 +46,27 @@ export function StickyGroup({
   const height = useSharedValue(0);
   const headingHeight = useSharedValue(0);
 
+  // Its top in the content: where it is on screen, plus how far the
+  // content is scrolled (measureLayout against the content gave the
+  // wrong offset, so headings stuck too low).
   const measure = React.useCallback(() => {
-    const body = sticky?.body.current;
-    if (!body || !group.current) return;
-    group.current.measureLayout(body, (_x, y, _w, h) => {
-      top.value = sticky.bodyY.value + y;
-      height.value = h;
+    const viewport = sticky?.viewport.current;
+    const node = group.current;
+    if (!viewport || !node) return;
+    viewport.measureInWindow((_vx, viewportY) => {
+      node.measureInWindow((_x, y, _w, h) => {
+        top.set(y - viewportY + sticky.scrollY.get());
+        height.set(h);
+      });
     });
   }, [sticky, top, height]);
 
   React.useEffect(() => sticky?.onBodyLayout(measure), [sticky, measure]);
 
   const scrollY = sticky?.scrollY;
-  const toolbarY = sticky?.toolbarY;
-  const toolbarHeight = sticky?.toolbarHeight;
   const style = useAnimatedStyle(() => {
-    if (!scrollY || !toolbarY || !toolbarHeight || top.value < 0) return {};
-    // Where stuck headings sit in the viewport: under the toolbar (pinned
-    // at the top once scrolled past, else still on its way up).
-    const stuckAt =
-      toolbarY.value < 0
-        ? STUCK_GAP
-        : Math.max(toolbarY.value - scrollY.value, 0) +
-          toolbarHeight.value +
-          STUCK_GAP;
-    const shift = scrollY.value + stuckAt - top.value;
+    if (!scrollY || top.value < 0) return {};
+    const shift = scrollY.value + STUCK_GAP - top.value;
     const max = Math.max(0, height.value - headingHeight.value);
     return {
       transform: [{ translateY: Math.min(Math.max(shift, 0), max) }],
@@ -85,7 +78,7 @@ export function StickyGroup({
       <Animated.View
         style={[{ zIndex: 1 }, style]}
         onLayout={(event) => {
-          headingHeight.value = event.nativeEvent.layout.height;
+          headingHeight.set(event.nativeEvent.layout.height);
         }}
       >
         {heading}

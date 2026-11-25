@@ -62,8 +62,17 @@ export function GoalSheet({
       title={isEdit ? tf('editTitle') : tf('createTitle')}
       description={isEdit ? tf('editDescription', { name: initial.name }) : tf('createDescription')}
       closeLabel={t('common.close')}
+      // Always in view, right above the keyboard while typing.
+      footer={
+        <Button variant="secondary" label={saving ? tf('saving') : isEdit ? tf('save') : tf('create')} onPress={submit} disabled={saving} className="w-full" />
+      }
     >
-      <TwScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 560 }} contentContainerClassName="gap-4 pb-2">
+      <TwScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        style={{ maxHeight: 560, flexShrink: 1 }}
+        contentContainerClassName="gap-4 pb-2"
+      >
         <Input label={tf('name')} placeholder={tf('namePlaceholder')} value={form.name} onChangeText={(name) => update({ name })} maxLength={NAME_MAX} error={err(errors.name)} />
         <MoneyInput label={tf('target')} value={form.targetAmount} onValueChange={(targetAmount) => update({ targetAmount })} currency={form.currency} error={err(errors.targetAmount)} />
         <TwView className="gap-1">
@@ -92,7 +101,6 @@ export function GoalSheet({
             {submitError}
           </Text>
         ) : null}
-        <Button variant="secondary" label={saving ? tf('saving') : isEdit ? tf('save') : tf('create')} onPress={submit} disabled={saving} className="w-full" />
       </TwScrollView>
     </Sheet>
   );

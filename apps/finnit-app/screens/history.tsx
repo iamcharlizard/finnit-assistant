@@ -35,7 +35,7 @@ import { useOnTransactionsChanged } from '@/lib/transactions/events';
 /**
  * Movimientos: the filtered history by day, like the web's /history, and
  * "Por clasificar" (the movements without a category, to categorize them).
- * The month and the filters stay pinned at the top; possible duplicates
+ * The month and the filters stay fixed at the top; possible duplicates
  * and transfers to review come first under them.
  */
 export function HistoryScreen() {
@@ -67,9 +67,9 @@ export function HistoryScreen() {
     <Screen
       title={t('title')}
       sticky={
-        // Pinned while scrolling (the web's sticky toolbar); each day's
+        // Fixed under the header (the web's sticky toolbar); each day's
         // heading sticks under it.
-        <TwView className="gap-2 pb-1">
+        <TwView className="gap-2">
           <HistoryMonth filters={filters} today={today} onChange={apply} />
           {view ? (
             <HistoryFilters

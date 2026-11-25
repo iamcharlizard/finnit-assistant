@@ -3,13 +3,7 @@ import { ScrollView } from 'react-native';
 import { useTranslations } from 'use-intl';
 import { Search, SlidersHorizontal, Tags, X } from 'lucide-react-native';
 
-import {
-  monthLabel,
-  monthOf,
-  shortDate,
-  type DayKey,
-  type MonthRef,
-} from '@finnit/core/finance/dates';
+import { monthOf, shortDate, type DayKey } from '@finnit/core/finance/dates';
 import {
   HISTORY_STATUSES,
   HISTORY_TYPES,
@@ -18,7 +12,6 @@ import {
   hasFilters,
   hasRange,
   isSelected,
-  monthLinks,
   selectCategory,
   selectValues,
   withPeriod,
@@ -37,7 +30,6 @@ import { Segmented } from '@finnit/ui-native/components/ui/segmented';
 import { Sheet } from '@finnit/ui-native/components/ui/sheet';
 import { Text } from '@finnit/ui-native/components/ui/text';
 
-import { MonthSwitcher } from '@/components/finance/month-switcher';
 import { useLocale, useLocalizer } from '@/lib/i18n/i18n-provider';
 
 type Tab = 'accounts' | 'categories' | 'type' | 'status' | 'dates';
@@ -83,7 +75,6 @@ export function HistoryFilters({
   const [categoryQuery, setCategoryQuery] = React.useState('');
   const [allCategories, setAllCategories] = React.useState(false);
   const count = activeFilterCount(filters);
-  const links = monthLinks(filters, today);
 
   // Search 400 ms after the last keystroke, like the web.
   React.useEffect(() => {
@@ -128,7 +119,12 @@ export function HistoryFilters({
       ? [
           {
             key: 'status',
-            label: selectionLabel(tf('status'), filters.statuses, statusOptions, tr),
+            label: selectionLabel(
+              tf('status'),
+              filters.statuses,
+              statusOptions,
+              tr,
+            ),
             remove: () => onChange({ ...filters, statuses: undefined }),
           },
         ]
@@ -193,7 +189,6 @@ export function HistoryFilters({
     : filters.period === 'all'
       ? 'all'
       : 'month';
-  const showMonth = Boolean(links) && filters.period !== 'all';
   const clearAll = () => {
     setSearch('');
     onChange({ period: filters.period });
@@ -297,7 +292,7 @@ export function HistoryFilters({
       </TwView>
 
       {/* The filters in use, and the month at the end of the same row. */}
-      {chips.length > 0 || showMonth ? (
+      {chips.length > 0 ? (
         <TwView className="flex-row flex-wrap items-center gap-2">
           {chips.map((chip) => (
             <TwPressable
@@ -317,20 +312,6 @@ export function HistoryFilters({
               <Icon icon={X} size={14} color="--brand-ink" />
             </TwPressable>
           ))}
-          {showMonth && links ? (
-            <TwView className="ml-auto">
-              <MonthSwitcher
-                compact
-                label={monthLabel(filters.period as MonthRef, locale)}
-                onPrevious={() => onChange(withPeriod(filters, links.prev))}
-                onNext={
-                  links.next
-                    ? () => onChange(withPeriod(filters, links.next!))
-                    : null
-                }
-              />
-            </TwView>
-          ) : null}
         </TwView>
       ) : null}
 
@@ -487,7 +468,12 @@ export function HistoryFilters({
                       onCheckedChange={(on) =>
                         onChange({
                           ...filters,
-                          statuses: selectValues(filters.statuses, [option.value], on, HISTORY_STATUSES),
+                          statuses: selectValues(
+                            filters.statuses,
+                            [option.value],
+                            on,
+                            HISTORY_STATUSES,
+                          ),
                         })
                       }
                     />

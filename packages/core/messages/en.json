@@ -356,14 +356,11 @@
     "greeting": "Hi, {name}",
     "stats": {
       "title": "Summary",
-      "balance": "Total balance",
       "expenses": "Spent this month",
       "income": "Income this month",
       "pending": "Pending bills",
       "vsLastMonth": "vs last month",
-      "vsDaysAgo": "vs {days} days ago",
       "upcomingCount": "{count, plural, =0 {Nothing due} one {# upcoming} other {# upcoming}}",
-      "balanceHint": "Available balance of the accounts in the total, day by day over the last {days} days; the percentage compares today with {days} days ago.",
       "expensesHint": "Confirmed spending this month, transfers left out. The percentage compares with the same days of last month.",
       "incomeHint": "Confirmed income this month, transfers left out. The percentage compares with the same days of last month.",
       "pendingHint": "Recurring and loan payments due in the next {days} days that you haven’t paid yet.",
@@ -375,7 +372,19 @@
       "seeAll": "See all",
       "seeAllCount": "See all ({count})",
       "excluded": "Not in total",
-      "open": "Open {name}"
+      "open": "Open {name}",
+      "sync": {
+        "manual": "Manual",
+        "auto": "Automatic · {ago}",
+        "autoPending": "Automatic",
+        "failed": "Not updated",
+        "ago": {
+          "now": "just now",
+          "minutes": "{count} min ago",
+          "hours": "{count} h ago",
+          "days": "{count} d ago"
+        }
+      }
     },
     "amounts": {
       "hide": "Hide amounts",
@@ -3177,7 +3186,9 @@
       "uncategorized": "To review",
       "card_statement": "Card statement",
       "card_due": "Card payment",
-      "card_unpaid": "Card payment overdue"
+      "card_unpaid": "Card payment overdue",
+      "movement_cancelled": "Cancelled movement",
+      "bank_sync": "Bank update"
     }
   },
   "statements": {

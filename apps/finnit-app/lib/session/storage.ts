@@ -19,6 +19,8 @@ const KEYS = {
   hideAmounts: 'hideAmounts',
   /** 'off': don't suggest creating a privacy PIN again. */
   pinSuggestion: 'pinSuggestion',
+  /** Home sections folded on this device, comma separated ("accounts,debts"). */
+  collapsedSections: 'collapsedSections',
 } as const;
 
 type Key = keyof typeof KEYS;

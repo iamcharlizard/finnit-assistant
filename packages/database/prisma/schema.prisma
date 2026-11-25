@@ -48,6 +48,7 @@ enum NotificationType {
   card_due // a credit card's payment is due in 3 days or today
   card_unpaid // a credit card's payment wasn't covered by the due date
   movement_cancelled // a bank sync reported a recorded movement deleted: it was marked cancelled
+  bank_sync // the result of a scheduled bank sync: updated (new movements) or why it couldn't be
 }
 
 // Why a movement looks like a transfer between the user's own accounts.

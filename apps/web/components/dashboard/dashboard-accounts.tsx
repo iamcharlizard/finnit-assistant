@@ -12,10 +12,19 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import { cn } from '@finnit/ui/lib/utils';
+
 import type {
   DashboardAccount,
   DashboardView,
 } from '@finnit/core/dashboard/view';
+
+/** How the account updates: by hand, from the bank (and when), or failed. */
+const SYNC_TONE: Record<DashboardAccount['sync']['kind'], string> = {
+  manual: 'bg-track text-on-surface-variant',
+  auto: 'bg-income/10 text-income',
+  failed: 'bg-expense/10 text-expense',
+};
 
 export const ACCOUNT_ICONS: Record<DashboardAccount['type'], LucideIcon> = {
   debit: Landmark,
@@ -91,6 +100,14 @@ export function DashboardAccounts({
                     {account.last4 ? `•••• ${account.last4}` : null}
                     {account.last4 && account.excluded ? ' · ' : null}
                     {account.excluded ? t('excluded') : null}
+                  </span>
+                  <span
+                    className={cn(
+                      'mt-1 w-fit rounded-full px-2 py-0.5 text-[11px] font-medium',
+                      SYNC_TONE[account.sync.kind],
+                    )}
+                  >
+                    {account.sync.label}
                   </span>
                 </span>
                 <span className="shrink-0 text-sm font-semibold text-on-background tabular-nums">

@@ -33,7 +33,7 @@ All 11 original GraphQL modules implemented, plus recurring expenses in `apps/ap
 | Goals | `src/modules/goals/` |
 | Debts | `src/modules/debts/` |
 | Notifications | `src/modules/notifications/` |
-| Reports (`monthlyReport`, `dailyCashFlow`, cash-flow projections) | `src/modules/reports/` |
+| Reports (`monthlyReport`, `dailyCashFlow`, `monthToDateComparison`: this month vs the same days of last month without monthly sources still to come, cash-flow projections) | `src/modules/reports/` |
 | Recurring expenses (also linking an expense to the scheduled payment it paid: `recurringLinkOptions`, `linkRecurringPayment`) | `src/modules/recurring-expenses/` |
 | Statements (PDF import + reconciliation) | `src/modules/statements/` (+ `src/modules/storage/` for S3) |
 | AI model catalog + providers (Anthropic, OpenAI, Gemini) | `src/modules/ai/` |
@@ -137,6 +137,7 @@ Feature-by-feature status (API / mobile / web), verified against the code: `docs
 - `20261123090000_transaction_cancelled` (`Transaction.cancelledAt` + `NotificationType.movement_cancelled`: a movement the bank cancelled stays in the history but counts nowhere; exclude it with `cancelledAt: null` next to every `isPending: false`, and `notCounted()` from `common/utils/balance-effect.util.ts` for balance effects; cancel/restore with `common/utils/cancel-movement.util.ts`; rollback in `packages/database/scripts/rollbacks/`, it puts their effect back in the balances)
 - `20261124090000_alias_direction` (`MerchantAlias.direction`: "these are income/expenses", for banks that send money in with the sign of money out; set from "Es un ingreso" on a movement with `changeTransactionDirection`, applied by `LineMaterializerService` to new synced lines; rollback in `packages/database/scripts/rollbacks/`)
 - `20261125090000_recurring_essentials` + `20261125090100_recurring_essentials_default` (`RecurringEssentialProfile` (questionnaire answers), `RecurringExpense.essentialLevel/essentialReason/essentialAt` set only by the AI, `EssentialLevel` enum, `AiFeatureKey.recurring_essentials` and its settings row; one rollback covers both)
+- `20261126090000_bank_sync_notification` (`NotificationType.bank_sync`: after each scheduled bank sync, one live notification per connection says whether it updated (new movements) or why not, `sync-notice.ts`; rollback in `packages/database/scripts/rollbacks/`)
 - `20261013120000_private_attachments`
 - `20261014090000_admin_access_and_ai_features`
 - `20261015090000_category_i18n_and_ai_features` + `20261015090100_ai_feature_defaults` (enum values added in one file can't be used in the same transaction, so the seed rows live in a second file)

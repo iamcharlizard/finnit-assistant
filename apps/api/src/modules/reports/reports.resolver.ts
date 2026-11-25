@@ -6,6 +6,7 @@ import {
   CashFlowBaseline,
   CashFlowProjection,
   DailyCashFlow,
+  MonthToDateComparison,
   WhatIfInput,
   WhatIfResult,
 } from './dto/report.dto';
@@ -39,6 +40,17 @@ export class ReportsResolver {
     @Args('to') to: string,
   ): Promise<DailyCashFlow[]> {
     return this.reportsService.getDailyCashFlow(user.id, from, to);
+  }
+
+  @Query(() => MonthToDateComparison, {
+    description:
+      'This month up to today (YYYY-MM-DD) vs the same days of last month, without monthly sources that have not come yet',
+  })
+  async monthToDateComparison(
+    @CurrentUser() user: User,
+    @Args('today') today: string,
+  ): Promise<MonthToDateComparison> {
+    return this.reportsService.getMonthToDateComparison(user.id, today);
   }
 
   @Query(() => [CashFlowProjection])

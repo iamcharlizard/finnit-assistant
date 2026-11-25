@@ -19,7 +19,9 @@ export type NotificationType =
   | 'uncategorized'
   | 'card_statement'
   | 'card_due'
-  | 'card_unpaid';
+  | 'card_unpaid'
+  | 'movement_cancelled'
+  | 'bank_sync';
 export type NotificationStatus = 'scheduled' | 'sent' | 'read' | 'dismissed';
 
 export interface ApiNotification {
@@ -69,7 +71,8 @@ export function isUnread(status: NotificationStatus): boolean {
  * debts their planning screens, a balance that doesn't match the bank its
  * account, movements left to review (uncategorized, possible transfers)
  * "Por clasificar" across every month, a credit card's reminders its
- * account at that cycle. Summaries have nowhere to go.
+ * account at that cycle, a bank's update the accounts. Summaries have
+ * nowhere to go.
  */
 export function notificationHref(
   n: Pick<ApiNotification, 'type' | 'relatedEntityId' | 'relatedEntityType'>,
@@ -93,6 +96,9 @@ export function notificationHref(
     }
     case 'uncategorized':
       return '/history?review=1&month=all';
+    case 'bank_sync':
+      // How a bank's last update went: its accounts show when they synced.
+      return '/accounts';
     case 'card_statement':
     case 'card_due':
     case 'card_unpaid': {

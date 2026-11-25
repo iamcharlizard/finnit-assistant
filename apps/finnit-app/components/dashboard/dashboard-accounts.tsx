@@ -1,5 +1,4 @@
 import { useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useTranslations } from 'use-intl';
 import {
   ChevronRight,
@@ -15,11 +14,12 @@ import type {
   DashboardAccount,
   DashboardView,
 } from '@finnit/core/dashboard/view';
-import { cn } from '@finnit/ui-native/lib/utils';
 import { TwPressable, TwView } from '@finnit/ui-native/lib/tw';
 import { CollapsibleHeading } from '@finnit/ui-native/components/ui/collapsible-heading';
+import { Collapsible } from '@finnit/ui-native/components/ui/collapsible';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
 import { Text } from '@finnit/ui-native/components/ui/text';
+import { SyncPill } from '@finnit/ui-native/components/finance/sync-pill';
 import { useColor } from '@finnit/ui-native/theme/theme-root';
 
 import { useCollapsedSection } from '@/lib/dashboard/collapsed-sections';
@@ -40,31 +40,6 @@ const TYPE_COLORS: Record<DashboardAccount['type'], string> = {
   cash: 'var(--chart-4)',
   ewallet: 'var(--chart-5)',
 };
-
-/** How the account updates: by hand, from the bank (and when), or failed. */
-const SYNC_TONE: Record<
-  DashboardAccount['sync']['kind'],
-  { box: string; text: string }
-> = {
-  manual: { box: 'bg-track', text: 'text-on-surface-variant' },
-  auto: { box: 'bg-income-10', text: 'text-income' },
-  failed: { box: 'bg-expense-10', text: 'text-expense' },
-};
-
-function SyncPill({ sync }: { sync: DashboardAccount['sync'] }) {
-  const tone = SYNC_TONE[sync.kind];
-  return (
-    <TwView className={cn('self-start rounded-full px-2 py-0.5', tone.box)}>
-      <Text
-        weight="medium"
-        numberOfLines={1}
-        className={cn('text-[11px]', tone.text)}
-      >
-        {sync.label}
-      </Text>
-    </TwView>
-  );
-}
 
 /**
  * The accounts and their balances (those in the total first), each with
@@ -105,86 +80,81 @@ export function DashboardAccounts({
           </TwPressable>
         }
       />
-      {collapsed ? null : (
-        <Animated.View
-          entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(150)}
-        >
-          {accounts.map((account) => {
-            const Glyph = ICONS[account.type];
-            const detail = [
-              account.last4 ? `•••• ${account.last4}` : null,
-              account.excluded ? t('excluded') : null,
-            ]
-              .filter(Boolean)
-              .join(' · ');
-            return (
-              <TwPressable
-                key={account.id}
-                accessibilityRole="button"
-                accessibilityLabel={[
-                  account.name,
-                  detail,
-                  account.sync.label,
-                  account.balance,
-                ]
-                  .filter(Boolean)
-                  .join(', ')}
-                onPress={() =>
-                  router.push({
-                    pathname: '/accounts/[accountId]',
-                    params: { accountId: account.id },
-                  })
-                }
-                className="min-h-14 flex-row items-center gap-3 rounded-2xl px-3 py-2 active:bg-accent"
+      <Collapsible open={!collapsed}>
+        {accounts.map((account) => {
+          const Glyph = ICONS[account.type];
+          const detail = [
+            account.last4 ? `•••• ${account.last4}` : null,
+            account.excluded ? t('excluded') : null,
+          ]
+            .filter(Boolean)
+            .join(' · ');
+          return (
+            <TwPressable
+              key={account.id}
+              accessibilityRole="button"
+              accessibilityLabel={[
+                account.name,
+                detail,
+                account.sync.label,
+                account.balance,
+              ]
+                .filter(Boolean)
+                .join(', ')}
+              onPress={() =>
+                router.push({
+                  pathname: '/accounts/[accountId]',
+                  params: { accountId: account.id },
+                })
+              }
+              className="min-h-14 flex-row items-center gap-3 rounded-2xl px-3 py-2 active:bg-accent"
+            >
+              <TwView
+                className="size-10 items-center justify-center rounded-xl"
+                style={{
+                  backgroundColor: resolve(
+                    account.color ?? TYPE_COLORS[account.type],
+                  ),
+                }}
               >
-                <TwView
-                  className="size-10 items-center justify-center rounded-xl"
-                  style={{
-                    backgroundColor: resolve(
-                      account.color ?? TYPE_COLORS[account.type],
-                    ),
-                  }}
-                >
-                  <Glyph size={20} color="#ffffff" />
-                </TwView>
-                <TwView className="min-w-0 flex-1">
-                  <Text
-                    weight="medium"
-                    numberOfLines={1}
-                    className="text-sm text-on-background"
-                  >
-                    {account.name}
-                  </Text>
-                  {detail ? (
-                    <Text
-                      numberOfLines={1}
-                      className="text-xs text-on-surface-variant"
-                    >
-                      {detail}
-                    </Text>
-                  ) : null}
-                  <TwView className="mt-1">
-                    <SyncPill sync={account.sync} />
-                  </TwView>
-                </TwView>
+                <Glyph size={20} color="#ffffff" />
+              </TwView>
+              <TwView className="min-w-0 flex-1">
                 <Text
-                  weight="bold"
+                  weight="medium"
+                  numberOfLines={1}
                   className="text-sm text-on-background"
-                  style={{ fontVariant: ['tabular-nums'] }}
                 >
-                  {account.balance}
+                  {account.name}
                 </Text>
-                <Icon
-                  icon={ChevronRight}
-                  size={16}
-                  color="--on-surface-variant"
-                />
-              </TwPressable>
-            );
-          })}
-        </Animated.View>
-      )}
+                {detail ? (
+                  <Text
+                    numberOfLines={1}
+                    className="text-xs text-on-surface-variant"
+                  >
+                    {detail}
+                  </Text>
+                ) : null}
+                <TwView className="mt-1">
+                  <SyncPill sync={account.sync} />
+                </TwView>
+              </TwView>
+              <Text
+                weight="bold"
+                className="text-sm text-on-background"
+                style={{ fontVariant: ['tabular-nums'] }}
+              >
+                {account.balance}
+              </Text>
+              <Icon
+                icon={ChevronRight}
+                size={16}
+                color="--on-surface-variant"
+              />
+            </TwPressable>
+          );
+        })}
+      </Collapsible>
     </TwView>
   );
 }

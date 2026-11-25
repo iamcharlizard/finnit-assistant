@@ -1,4 +1,3 @@
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import * as React from 'react';
 import { useTranslations } from 'use-intl';
 
@@ -9,6 +8,7 @@ import type { DayKey } from '@finnit/core/finance/dates';
 import { TwView } from '@finnit/ui-native/lib/tw';
 import { Progress } from '@finnit/ui-native/components/ui/progress';
 import { CollapsibleHeading } from '@finnit/ui-native/components/ui/collapsible-heading';
+import { Collapsible } from '@finnit/ui-native/components/ui/collapsible';
 import { Text } from '@finnit/ui-native/components/ui/text';
 
 import { BalanceProjectionChart } from '@/components/debts/insights/balance-projection-chart';
@@ -83,51 +83,45 @@ export function DashboardDebts({
         onToggle={toggle}
         action={<TextLink href={DEBTS_PATH} label={t('seeAll')} />}
       />
-      {collapsed ? null : (
-        <Animated.View
-          entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(150)}
-          style={{ gap: 12 }}
-        >
-          <TwView className="gap-3 rounded-card border border-outline bg-surface p-4">
-            <TwView className="gap-4">
-              <Figure label={ti('current')} value={view.current} />
-              <Figure label={ti('paidSoFar')} value={view.paid} />
-              <Figure
-                label={t('monthly')}
-                value={view.monthly}
-                note={
-                  view.load
-                    ? t('load', {
-                        percent: view.load.percent,
-                        level: ti(`loadLevels.${view.load.level}`),
-                      })
-                    : t('noIncome')
-                }
-              />
-            </TwView>
-            <Progress
-              value={view.paidPercent}
-              indicatorColor="var(--chart-1)"
-              accessibilityLabel={ti('currentVsTotal', {
-                percent: view.paidPercent,
-              })}
+      <Collapsible open={!collapsed} contentStyle={{ gap: 12 }}>
+        <TwView className="gap-3 rounded-card border border-outline bg-surface p-4">
+          <TwView className="gap-4">
+            <Figure label={ti('current')} value={view.current} />
+            <Figure label={ti('paidSoFar')} value={view.paid} />
+            <Figure
+              label={t('monthly')}
+              value={view.monthly}
+              note={
+                view.load
+                  ? t('load', {
+                      percent: view.load.percent,
+                      level: ti(`loadLevels.${view.load.level}`),
+                    })
+                  : t('noIncome')
+              }
             />
-            <Text className="text-xs text-on-surface-variant">
-              {ti('currentVsTotal', { percent: view.paidPercent })}
-            </Text>
           </TwView>
-          {hidden ? null : (
-            <>
-              <DebtTypeBars bars={view.types} />
-              <BalanceProjectionChart
-                points={view.projection}
-                paidOffLabel={view.paidOffLabel}
-              />
-            </>
-          )}
-        </Animated.View>
-      )}
+          <Progress
+            value={view.paidPercent}
+            indicatorColor="var(--chart-1)"
+            accessibilityLabel={ti('currentVsTotal', {
+              percent: view.paidPercent,
+            })}
+          />
+          <Text className="text-xs text-on-surface-variant">
+            {ti('currentVsTotal', { percent: view.paidPercent })}
+          </Text>
+        </TwView>
+        {hidden ? null : (
+          <>
+            <DebtTypeBars bars={view.types} />
+            <BalanceProjectionChart
+              points={view.projection}
+              paidOffLabel={view.paidOffLabel}
+            />
+          </>
+        )}
+      </Collapsible>
     </TwView>
   );
 }

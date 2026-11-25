@@ -372,19 +372,7 @@
       "seeAll": "See all",
       "seeAllCount": "See all ({count})",
       "excluded": "Not in total",
-      "open": "Open {name}",
-      "sync": {
-        "manual": "Manual",
-        "auto": "Automatic · {ago}",
-        "autoPending": "Automatic",
-        "failed": "Not updated",
-        "ago": {
-          "now": "just now",
-          "minutes": "{count} min ago",
-          "hours": "{count} h ago",
-          "days": "{count} d ago"
-        }
-      }
+      "open": "Open {name}"
     },
     "amounts": {
       "hide": "Hide amounts",
@@ -882,6 +870,18 @@
       "empty": "No periods with charges yet.",
       "bar": "Cut-off {label}: {total}",
       "openDetail": "See details"
+    },
+    "sync": {
+      "manual": "Manual",
+      "auto": "Automatic · {ago}",
+      "autoPending": "Automatic",
+      "failed": "Not updated",
+      "ago": {
+        "now": "just now",
+        "minutes": "{count} min ago",
+        "hours": "{count} h ago",
+        "days": "{count} d ago"
+      }
     }
   },
   "recurring": {

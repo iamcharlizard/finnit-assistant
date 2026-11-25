@@ -25,6 +25,7 @@ import { LineMaterializerService } from '../statements/reconciliation/line-mater
 import { addDays, toDateOnly } from '../recurring-expenses/schedule.util';
 import { localToday } from '../../common/utils/local-date.util';
 import { NotificationsService } from '../notifications/notifications.service';
+import { syncNoticeTexts } from './sync-notice';
 import { SyncReviewService } from './sync-review.service';
 import { CardInstallmentsService } from '../debts/card-installments.service';
 import {
@@ -429,14 +430,59 @@ export class BankConnectionsService {
     let synced = 0;
     let failed = 0;
     for (const { id } of connections) {
+      let created = 0;
       try {
-        await this.sync(id, null, { requestRefresh: true, scheduled: true });
+        ({ created } = await this.sync(id, null, {
+          requestRefresh: true,
+          scheduled: true,
+        }));
         synced += 1;
       } catch {
         failed += 1;
       }
+      await this.notifySyncResult(id, created).catch((error: unknown) =>
+        this.logger.warn(
+          `Bank sync notice for ${id} failed: ${(error as Error).message}`,
+        ),
+      );
     }
     return { synced, failed };
+  }
+
+  /**
+   * Tells the user how a scheduled sync of one connection went: updated
+   * (and how many new movements) or not, and why. One notification per
+   * connection, kept current while unread, so it always shows the last try.
+   */
+  private async notifySyncResult(id: string, created: number): Promise<void> {
+    const connection = await this.prisma.bankConnection.findUnique({
+      where: { id },
+      select: {
+        userId: true,
+        institution: true,
+        status: true,
+        lastStatusCode: true,
+        user: { select: { locale: true } },
+      },
+    });
+    if (!connection || connection.status === BankConnectionStatus.revoked) {
+      return;
+    }
+    const ok = connection.status === BankConnectionStatus.active;
+    const texts = syncNoticeTexts(connection.user.locale ?? 'es', {
+      bank: connection.institution,
+      ok,
+      created,
+      code: ok ? null : connection.lastStatusCode,
+    });
+    await this.notifications.upsertLive({
+      userId: connection.userId,
+      type: NotificationType.bank_sync,
+      title: texts.title,
+      message: texts.message,
+      relatedEntityType: 'bank_sync',
+      relatedEntityId: id,
+    });
   }
 
   /** Admin: maps a Finnit user to an existing Syncfy user (e.g. one created in tests). */

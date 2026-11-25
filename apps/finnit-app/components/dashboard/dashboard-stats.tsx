@@ -4,7 +4,6 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   CalendarClock,
-  Wallet,
   type LucideIcon,
 } from 'lucide-react-native';
 
@@ -14,7 +13,6 @@ import { StatTile } from '@finnit/ui-native/components/finance/stat-tile';
 /** Each tile's icon and color, in the charts' fixed order (as on the web). */
 const LOOK: Record<DashboardStat['key'], { icon: LucideIcon; color: string }> =
   {
-    balance: { icon: Wallet, color: 'var(--chart-1)' },
     expenses: { icon: ArrowUpRight, color: 'var(--chart-2)' },
     income: { icon: ArrowDownLeft, color: 'var(--chart-3)' },
     pending: { icon: CalendarClock, color: 'var(--chart-4)' },

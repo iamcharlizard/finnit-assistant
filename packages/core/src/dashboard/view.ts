@@ -1,5 +1,4 @@
 import type { Localizer } from '../i18n/translator';
-import type { ApiAllBalanceHistory } from '../accounts/all-balance';
 import {
   accountLabel,
   countsInTotal,
@@ -33,21 +32,49 @@ export interface ApiDailyCashFlow {
   expenses: number;
 }
 
+/**
+ * This month so far vs the same days of last month (`monthToDateComparison`),
+ * without monthly sources that haven't come yet this month.
+ */
+export interface ApiFlowComparison {
+  now: number;
+  before: number;
+  pendingSources: number;
+}
+export interface ApiMonthComparison {
+  income: ApiFlowComparison;
+  expenses: ApiFlowComparison;
+}
+const FLOW_FIELDS = 'now before pendingSources';
+export const MONTH_COMPARISON_FIELDS = `income { ${FLOW_FIELDS} } expenses { ${FLOW_FIELDS} }`;
+
+/** A bank connection, for when its accounts were last updated. */
+export interface ApiDashboardConnection {
+  status: 'active' | 'error' | 'revoked';
+  /** ISO date-time of the last successful update. */
+  lastSyncedAt: string | null;
+  accounts: { accountId: string | null }[];
+}
+export const DASHBOARD_CONNECTION_FIELDS =
+  'status lastSyncedAt accounts { accountId }';
+
 export interface DashboardData {
   accounts: ApiAccount[];
   monthlyReport: ApiMonthlyReport;
   upcomingPayments: ApiUpcomingPayment[];
   transactionCount: number;
   debtInsights: ApiDebtInsights;
-  /** The last BALANCE_DAYS days of the accounts in the total. */
-  balanceHistory?: ApiAllBalanceHistory | null;
   /** Every day from the 1st of last month to today. */
   cashFlow?: ApiDailyCashFlow[];
+  /** The trend of spending and income (falls back to cashFlow). */
+  comparison?: ApiMonthComparison | null;
+  /** Which accounts update on their own, and when they last did. */
+  bankConnections?: ApiDashboardConnection[];
 }
 
 /** One of the home's analytics tiles. */
 export interface DashboardStat {
-  key: 'balance' | 'expenses' | 'income' | 'pending';
+  key: 'expenses' | 'income' | 'pending';
   label: string;
   value: string;
   /** Change vs the comparison period; null when there is nothing to compare. */
@@ -79,6 +106,11 @@ export interface DashboardAccount {
   color: string | null;
   /** Left out of the total balance. */
   excluded: boolean;
+  /**
+   * How it updates: by hand, or from the bank (with when it last did, or
+   * that the last try failed). `label`: "Manual", "Automática · hace 2 h".
+   */
+  sync: { kind: 'manual' | 'auto' | 'failed'; label: string };
 }
 
 export interface DashboardView {
@@ -103,7 +135,7 @@ export interface DashboardView {
   upcoming: PaymentRow[];
   /** Debt charts (built on the client); null without any debt. */
   debts: { insights: ApiDebtInsights; today: DayKey } | null;
-  /** Saldo total, gastos, ingresos y pagos pendientes. */
+  /** Gastos, ingresos y pagos pendientes (the total balance is above them). */
   stats: DashboardStat[];
   /** The first MAX_ACCOUNTS accounts (those in the total first). */
   accounts: DashboardAccount[];
@@ -113,8 +145,6 @@ export interface DashboardView {
 
 export const UPCOMING_DAYS = 14;
 const MAX_UPCOMING = 5;
-/** Days of the balance tile's chart and comparison. */
-export const BALANCE_DAYS = 30;
 export const MAX_ACCOUNTS = 5;
 
 /**
@@ -177,9 +207,9 @@ function cumulative(
 }
 
 /**
- * The analytics tiles: the total balance over the last 30 days, this
- * month's spending and income against the same days of last month, and
- * what is due in the next UPCOMING_DAYS days.
+ * The analytics tiles: this month's spending and income against the same
+ * days of last month, and what is due in the next UPCOMING_DAYS days. (The
+ * total balance is already the big figure above them.)
  */
 function buildStats(
   data: DashboardData,
@@ -189,11 +219,6 @@ function buildStats(
 ): DashboardStat[] {
   const currency = available?.currency ?? data.monthlyReport.currency;
   const money = (n: number) => formatMoney(n, currency, locale);
-
-  // Balance: each day's closing, oldest first.
-  const days = [...(data.balanceHistory?.days ?? [])].reverse();
-  const balanceSpark = days.map((d) => d.availableClosing);
-  const balanceNow = available?.amount ?? 0;
 
   // Spending and income: running totals, this month vs last month.
   const current = monthOf(today);
@@ -215,6 +240,19 @@ function buildStats(
   const hasFlow = flow.length > 0;
   const expensesNow = hasFlow ? expenses.now : data.monthlyReport.totalExpenses;
   const incomeNow = hasFlow ? income.now : data.monthlyReport.totalIncome;
+  // The trend compares like with like: from last month it leaves out what
+  // comes every month and hasn't come yet this month (the API decides).
+  const compared = data.comparison;
+  const expensesTrend = compared
+    ? trendOf(compared.expenses.now, compared.expenses.before, false)
+    : hasFlow
+      ? trendOf(expenses.now, expenses.before, false)
+      : null;
+  const incomeTrend = compared
+    ? trendOf(compared.income.now, compared.income.before, true)
+    : hasFlow
+      ? trendOf(income.now, income.before, true)
+      : null;
 
   // Still to pay (not paid or skipped) in the next UPCOMING_DAYS days.
   const due = data.upcomingPayments.filter(
@@ -225,23 +263,10 @@ function buildStats(
   const vsMonth = t('dashboard.stats.vsLastMonth');
   return [
     {
-      key: 'balance',
-      label: t('dashboard.stats.balance'),
-      value: money(balanceNow),
-      trend:
-        balanceSpark.length > 1
-          ? trendOf(balanceNow, balanceSpark[0]!, true)
-          : null,
-      compareLabel: t('dashboard.stats.vsDaysAgo', { days: BALANCE_DAYS }),
-      caption: null,
-      spark: balanceSpark,
-      hint: t('dashboard.stats.balanceHint', { days: BALANCE_DAYS }),
-    },
-    {
       key: 'expenses',
       label: t('dashboard.stats.expenses'),
       value: money(expensesNow),
-      trend: hasFlow ? trendOf(expenses.now, expenses.before, false) : null,
+      trend: expensesTrend,
       compareLabel: vsMonth,
       caption: null,
       spark: expenses.spark,
@@ -251,7 +276,7 @@ function buildStats(
       key: 'income',
       label: t('dashboard.stats.income'),
       value: money(incomeNow),
-      trend: hasFlow ? trendOf(income.now, income.before, true) : null,
+      trend: incomeTrend,
       compareLabel: vsMonth,
       caption: null,
       spark: income.spark,
@@ -270,11 +295,64 @@ function buildStats(
   ];
 }
 
+/** "hace un momento", "hace 5 min", "hace 2 h", "hace 3 d". */
+function agoLabel(iso: string, now: Date, { t }: Localizer): string {
+  const minutes = Math.max(
+    0,
+    Math.floor((now.getTime() - new Date(iso).getTime()) / 60_000),
+  );
+  if (minutes < 1) return t('dashboard.accounts.sync.ago.now');
+  if (minutes < 60)
+    return t('dashboard.accounts.sync.ago.minutes', { count: minutes });
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24)
+    return t('dashboard.accounts.sync.ago.hours', { count: hours });
+  return t('dashboard.accounts.sync.ago.days', {
+    count: Math.floor(hours / 24),
+  });
+}
+
+/**
+ * How an account updates: from a live bank connection (automatic, with
+ * when it last did, or that the last try failed) or by hand. An account of
+ * a disconnected bank no longer updates on its own: manual.
+ */
+export function accountSync(
+  accountId: string,
+  connections: ReadonlyArray<ApiDashboardConnection>,
+  now: Date,
+  l: Localizer,
+): DashboardAccount['sync'] {
+  const { t } = l;
+  const connection = connections.find(
+    (c) =>
+      c.status !== 'revoked' &&
+      c.accounts.some((a) => a.accountId === accountId),
+  );
+  if (!connection) {
+    return { kind: 'manual', label: t('dashboard.accounts.sync.manual') };
+  }
+  if (connection.status === 'error') {
+    return { kind: 'failed', label: t('dashboard.accounts.sync.failed') };
+  }
+  return {
+    kind: 'auto',
+    label: connection.lastSyncedAt
+      ? t('dashboard.accounts.sync.auto', {
+          ago: agoLabel(connection.lastSyncedAt, now, l),
+        })
+      : t('dashboard.accounts.sync.autoPending'),
+  };
+}
+
 /** The "Cuentas" card: those in the total first, the biggest balance first. */
 function buildAccounts(
   accounts: ReadonlyArray<ApiAccount>,
-  { locale }: Localizer,
+  connections: ReadonlyArray<ApiDashboardConnection>,
+  now: Date,
+  l: Localizer,
 ): DashboardAccount[] {
+  const { locale } = l;
   return [...accounts]
     .sort(
       (a, b) =>
@@ -290,12 +368,22 @@ function buildAccounts(
       balance: formatMoney(a.balanceCurrent, a.currency, locale),
       color: a.metadata?.design?.primaryColor ?? null,
       excluded: !countsInTotal(a),
+      sync: accountSync(a.id, connections, now, l),
     }));
 }
 
 export function buildDashboardView(
   data: DashboardData,
-  { today, month }: { today: DayKey; month: MonthRef },
+  {
+    today,
+    month,
+    now = new Date(),
+  }: {
+    today: DayKey;
+    month: MonthRef;
+    /** For "hace 2 h" (the last bank update). */
+    now?: Date;
+  },
   l: Localizer,
 ): DashboardView {
   const { locale, t } = l;
@@ -346,7 +434,7 @@ export function buildDashboardView(
       main ? { amount: main.available, currency: main.currency } : null,
       l,
     ),
-    accounts: buildAccounts(accounts, l),
+    accounts: buildAccounts(accounts, data.bankConnections ?? [], now, l),
     accountCount: accounts.length,
   };
 }

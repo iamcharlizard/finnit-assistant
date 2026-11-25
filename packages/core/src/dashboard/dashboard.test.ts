@@ -188,31 +188,6 @@ describe('buildDashboardView', () => {
       {
         ...empty,
         accounts: [account({ id: 'd', balanceCurrent: 1200 })],
-        balanceHistory: {
-          currency: 'MXN',
-          accounts: 1,
-          // Newest first.
-          days: [
-            {
-              date: '2026-10-14',
-              availableOpening: 1000,
-              availableClosing: 1200,
-              debtOpening: 0,
-              debtClosing: 0,
-              movements: 1,
-              complete: true,
-            },
-            {
-              date: '2026-10-13',
-              availableOpening: 1000,
-              availableClosing: 1000,
-              debtOpening: 0,
-              debtClosing: 0,
-              movements: 0,
-              complete: true,
-            },
-          ],
-        },
         cashFlow: [
           { date: '2026-09-02', income: 1000, expenses: 200 },
           // After the 14th: not compared.
@@ -224,14 +199,12 @@ describe('buildDashboardView', () => {
       options,
       es,
     );
-    const [balance, expenses, income, pending] = view.stats;
-    assert.equal(balance?.value, '$1,200.00');
-    assert.deepEqual(balance?.spark, [1000, 1200]);
-    assert.deepEqual(balance?.trend, {
-      label: '+20.0%',
-      direction: 'up',
-      tone: 'positive',
-    });
+    // No total balance tile: it is the big figure above.
+    assert.deepEqual(
+      view.stats.map((stat) => stat.key),
+      ['expenses', 'income', 'pending'],
+    );
+    const [expenses, income, pending] = view.stats;
     assert.equal(expenses?.value, '$250.00');
     assert.equal(expenses?.spark.length, 14);
     // Spending up 25 %: bad news.
@@ -254,36 +227,40 @@ describe('buildDashboardView', () => {
     const view = buildDashboardView(
       {
         ...empty,
-        accounts: [account({ id: 'd', balanceCurrent: 900 })],
-        balanceHistory: {
-          currency: 'MXN',
-          accounts: 1,
-          days: [
-            {
-              date: '2026-10-14',
-              availableOpening: 4,
-              availableClosing: 900,
-              debtOpening: 0,
-              debtClosing: 0,
-              movements: 1,
-              complete: true,
-            },
-            {
-              date: '2026-10-13',
-              availableOpening: 4,
-              availableClosing: 4,
-              debtOpening: 0,
-              debtClosing: 0,
-              movements: 0,
-              complete: true,
-            },
-          ],
-        },
+        cashFlow: [
+          { date: '2026-09-02', income: 0, expenses: 4 },
+          { date: '2026-10-10', income: 0, expenses: 900 },
+        ],
       },
       options,
       es,
     );
     assert.equal(view.stats[0]?.trend?.label, '>+999%');
+  });
+
+  it('takes the trend from the API comparison when there is one', () => {
+    const view = buildDashboardView(
+      {
+        ...empty,
+        cashFlow: [
+          { date: '2026-09-02', income: 1000, expenses: 0 },
+          { date: '2026-10-02', income: 500, expenses: 0 },
+        ],
+        // The monthly income still to come was left out of last month.
+        comparison: {
+          income: { now: 500, before: 500, pendingSources: 1 },
+          expenses: { now: 0, before: 0, pendingSources: 0 },
+        },
+      },
+      options,
+      es,
+    );
+    assert.deepEqual(view.stats[1]?.trend, {
+      label: '0.0%',
+      direction: 'flat',
+      tone: 'neutral',
+    });
+    assert.equal(view.stats[0]?.trend, null);
   });
 
   it('has no trend without last month to compare with', () => {
@@ -292,8 +269,44 @@ describe('buildDashboardView', () => {
       options,
       es,
     );
-    assert.equal(view.stats[1]?.trend, null);
     assert.equal(view.stats[0]?.trend, null);
+    assert.equal(view.stats[1]?.trend, null);
+  });
+
+  it('says how each account updates', () => {
+    const now = new Date('2026-10-14T18:00:00Z');
+    const view = buildDashboardView(
+      {
+        ...empty,
+        accounts: [
+          account({ id: 'nu', balanceCurrent: 3 }),
+          account({ id: 'bbva', balanceCurrent: 2 }),
+          account({ id: 'cash', balanceCurrent: 1 }),
+        ],
+        bankConnections: [
+          {
+            status: 'active',
+            lastSyncedAt: '2026-10-14T16:00:00Z',
+            accounts: [{ accountId: 'nu' }],
+          },
+          {
+            status: 'error',
+            lastSyncedAt: '2026-10-13T16:00:00Z',
+            accounts: [{ accountId: 'bbva' }],
+          },
+        ],
+      },
+      { ...options, now },
+      es,
+    );
+    assert.deepEqual(
+      view.accounts.map((a) => a.sync),
+      [
+        { kind: 'auto', label: 'Automática · hace 2 h' },
+        { kind: 'failed', label: 'No se actualizó' },
+        { kind: 'manual', label: 'Manual' },
+      ],
+    );
   });
 });
 

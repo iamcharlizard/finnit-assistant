@@ -22,6 +22,7 @@ import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
 import { ReviewList } from '@/components/categorize/review-list';
 import { DuplicateSuggestionsPanel } from '@/components/duplicates/duplicate-suggestions-panel';
 import { AccountBalanceCard } from '@/components/history/account-balance-card';
+import { HistoryMonth } from '@/components/history/history-month';
 import { HistoryFilters } from '@/components/history/history-filters';
 import { HistoryList } from '@/components/history/history-list';
 import { TopCategoriesCard } from '@/components/history/top-categories-card';
@@ -64,7 +65,9 @@ export function HistoryScreen() {
   return (
     <Screen
       title={t('title')}
-      subtitle={t('subtitle')}
+      subtitle={
+        <HistoryMonth filters={filters} today={today} onChange={apply} />
+      }
       loading={loading}
       error={error}
       refreshing={refreshing}

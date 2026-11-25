@@ -2,12 +2,14 @@
 
 import { useTranslations } from 'next-intl';
 import {
+  Ban,
   Bell,
   CalendarClock,
   ChevronRight,
   CreditCard,
   Landmark,
   PiggyBank,
+  RefreshCw,
   Scale,
   Scissors,
   Tags,
@@ -32,6 +34,8 @@ const ICONS: Record<NotificationType, LucideIcon> = {
   card_statement: Scissors,
   card_due: CreditCard,
   card_unpaid: TriangleAlert,
+  movement_cancelled: Ban,
+  bank_sync: RefreshCw,
 };
 
 /** A notification; unread ones are highlighted. Clicking marks it read and opens what it's about. */

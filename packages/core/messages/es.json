@@ -356,14 +356,11 @@
     "greeting": "Hola, {name}",
     "stats": {
       "title": "Resumen",
-      "balance": "Saldo total",
       "expenses": "Gastos del mes",
       "income": "Ingresos del mes",
       "pending": "Pagos pendientes",
       "vsLastMonth": "vs mes anterior",
-      "vsDaysAgo": "vs hace {days} días",
       "upcomingCount": "{count, plural, =0 {Nada por pagar} one {# próximo} other {# próximos}}",
-      "balanceHint": "Saldo disponible de las cuentas que suman al total, día por día en los últimos {days} días; el porcentaje compara hoy con hace {days} días.",
       "expensesHint": "Gastos confirmados de este mes, sin transferencias. El porcentaje compara con los mismos días del mes pasado.",
       "incomeHint": "Ingresos confirmados de este mes, sin transferencias. El porcentaje compara con los mismos días del mes pasado.",
       "pendingHint": "Pagos recurrentes y de préstamos que vencen en los próximos {days} días y aún no pagas.",
@@ -375,7 +372,19 @@
       "seeAll": "Ver todas",
       "seeAllCount": "Ver todas ({count})",
       "excluded": "No suma al total",
-      "open": "Abrir {name}"
+      "open": "Abrir {name}",
+      "sync": {
+        "manual": "Manual",
+        "auto": "Automática · {ago}",
+        "autoPending": "Automática",
+        "failed": "No se actualizó",
+        "ago": {
+          "now": "hace un momento",
+          "minutes": "hace {count} min",
+          "hours": "hace {count} h",
+          "days": "hace {count} d"
+        }
+      }
     },
     "amounts": {
       "hide": "Ocultar montos",
@@ -3177,7 +3186,9 @@
       "uncategorized": "Por revisar",
       "card_statement": "Corte de tarjeta",
       "card_due": "Pago de tarjeta",
-      "card_unpaid": "Pago de tarjeta vencido"
+      "card_unpaid": "Pago de tarjeta vencido",
+      "movement_cancelled": "Movimiento cancelado",
+      "bank_sync": "Actualización del banco"
     }
   },
   "statements": {

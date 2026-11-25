@@ -5,7 +5,6 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   CalendarClock,
-  Wallet,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -17,21 +16,21 @@ import type { DashboardStat } from '@finnit/core/dashboard/view';
 /** Each tile's icon and color, in the charts' fixed order. */
 const LOOK: Record<DashboardStat['key'], { icon: LucideIcon; color: string }> =
   {
-    balance: { icon: Wallet, color: 'var(--chart-1)' },
     expenses: { icon: ArrowUpRight, color: 'var(--chart-2)' },
     income: { icon: ArrowDownLeft, color: 'var(--chart-3)' },
     pending: { icon: CalendarClock, color: 'var(--chart-4)' },
   };
 
 /**
- * The home's analytics: total balance, this month's spending and income
- * (against the same days of last month) and what is due soon.
+ * The home's analytics: this month's spending and income (against the
+ * same days of last month) and what is due soon. The total balance is the
+ * big figure above, so it has no tile.
  */
 export function DashboardStats({ stats }: { stats: DashboardStat[] }) {
   const t = useTranslations('dashboard.stats');
   return (
     <section aria-label={t('title')} className="min-w-0">
-      <div className="grid gap-3 @sm:grid-cols-2 @7xl:grid-cols-4">
+      <div className="grid gap-3 @sm:grid-cols-2 @7xl:grid-cols-3">
         {stats.map((stat) => (
           <StatTile
             key={stat.key}

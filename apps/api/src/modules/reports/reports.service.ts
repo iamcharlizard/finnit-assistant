@@ -6,10 +6,12 @@ import {
   CashFlowBaseline,
   CashFlowProjection,
   DailyCashFlow,
+  MonthToDateComparison,
   WhatIfInput,
   WhatIfResult,
 } from './dto/report.dto';
 import { ValidationError } from '../../common/exceptions/graphql-error.exception';
+import { compareMonthToDate } from './month-comparison';
 import { loadCategoryI18n } from '../categories/category-names';
 import { countedInTotalsWhere } from '../categories/category-scope';
 import { AppLocale, DEFAULT_LOCALE } from '../translation/locale';
@@ -148,6 +150,53 @@ export class ReportsService {
       else day.expenses += amount;
     }
     return [...byDay.values()];
+  }
+
+  /**
+   * This month up to `today` (YYYY-MM-DD) against the same days of last
+   * month, for income and expenses, counted like dailyCashFlow. Sources
+   * that come every month and haven't come yet this month are left out of
+   * last month (see month-comparison.ts).
+   */
+  async getMonthToDateComparison(
+    userId: string,
+    today: string,
+  ): Promise<MonthToDateComparison> {
+    const end = parseDay(today);
+    if (!end) throw new ValidationError('Invalid date');
+    // From the 1st of the month before last (to know what comes monthly).
+    const start = new Date(
+      Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - 2, 1),
+    );
+    const rows = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        isPending: false,
+        cancelledAt: null,
+        type: { in: ['income', 'expense'] },
+        txnDate: { gte: start, lt: new Date(end.getTime() + DAY_MS) },
+        AND: [countedInTotalsWhere()],
+      },
+      select: {
+        type: true,
+        amount: true,
+        txnDate: true,
+        aliasId: true,
+        merchantName: true,
+        description: true,
+      },
+    });
+    return compareMonthToDate(
+      rows.map((row) => ({
+        type: row.type === 'income' ? 'income' : 'expense',
+        amount: Number(row.amount),
+        date: row.txnDate.toISOString().slice(0, 10),
+        aliasId: row.aliasId,
+        merchantName: row.merchantName,
+        description: row.description,
+      })),
+      today,
+    );
   }
 
   /**

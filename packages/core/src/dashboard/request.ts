@@ -24,24 +24,24 @@ import {
   type Connection,
 } from '../finance/types';
 import {
-  ALL_BALANCE_FIELDS,
-  type ApiAllBalanceHistory,
-} from '../accounts/all-balance';
-import {
-  BALANCE_DAYS,
+  DASHBOARD_CONNECTION_FIELDS,
+  MONTH_COMPARISON_FIELDS,
   UPCOMING_DAYS,
   type ApiDailyCashFlow,
+  type ApiDashboardConnection,
+  type ApiMonthComparison,
   type DashboardData,
 } from './view';
 
-export const DASHBOARD_QUERY = `query Dashboard($year: Int!, $month: Int!, $from: DateTime!, $to: DateTime!, $balanceFrom: DateTime!, $balanceTo: DateTime!, $flowFrom: String!, $flowTo: String!) {
+export const DASHBOARD_QUERY = `query Dashboard($year: Int!, $month: Int!, $from: DateTime!, $to: DateTime!, $flowFrom: String!, $flowTo: String!) {
   accounts(first: 100, archived: false) { edges { node { ${ACCOUNT_FIELDS} } } }
   monthlyReport(year: $year, month: $month) { ${MONTHLY_REPORT_FIELDS} }
   upcomingPayments(from: $from, to: $to) { ${UPCOMING_PAYMENT_FIELDS} }
   transactions(first: 1) { totalCount }
   debtInsights { ${DEBT_INSIGHTS_FIELDS} }
-  accountsBalanceHistory(from: $balanceFrom, to: $balanceTo) { ${ALL_BALANCE_FIELDS} }
   dailyCashFlow(from: $flowFrom, to: $flowTo) { date income expenses }
+  monthToDateComparison(today: $flowTo) { ${MONTH_COMPARISON_FIELDS} }
+  bankConnections { ${DASHBOARD_CONNECTION_FIELDS} }
 }`;
 
 export interface DashboardResult {
@@ -50,8 +50,9 @@ export interface DashboardResult {
   upcomingPayments: ApiUpcomingPayment[];
   transactions: { totalCount: number };
   debtInsights: ApiDebtInsights;
-  accountsBalanceHistory: ApiAllBalanceHistory | null;
   dailyCashFlow: ApiDailyCashFlow[];
+  monthToDateComparison: ApiMonthComparison | null;
+  bankConnections: ApiDashboardConnection[];
 }
 
 export function dashboardVariables(today: DayKey) {
@@ -59,9 +60,6 @@ export function dashboardVariables(today: DayKey) {
     ...monthOf(today),
     from: startOfDayIso(today),
     to: endOfDayIso(addDays(today, UPCOMING_DAYS)),
-    // Local days, like the accounts overview.
-    balanceFrom: addDays(today, -(BALANCE_DAYS - 1)),
-    balanceTo: today,
     flowFrom: firstDayOf(shiftMonth(monthOf(today), -1)),
     flowTo: today,
   };
@@ -74,8 +72,9 @@ export function dashboardData(result: DashboardResult): DashboardData {
     upcomingPayments: result.upcomingPayments,
     transactionCount: result.transactions.totalCount,
     debtInsights: result.debtInsights,
-    balanceHistory: result.accountsBalanceHistory,
     cashFlow: result.dailyCashFlow,
+    comparison: result.monthToDateComparison,
+    bankConnections: result.bankConnections,
   };
 }
 

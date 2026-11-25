@@ -130,3 +130,33 @@ export class DailyCashFlow {
   @Field(() => Float)
   expenses: number;
 }
+
+@ObjectType({
+  description:
+    'This month so far vs the same days of last month, without what comes every month and has not come yet this month',
+})
+export class FlowComparison {
+  @Field(() => Float, { description: 'This month, from the 1st to today' })
+  now: number;
+
+  @Field(() => Float, {
+    description:
+      "Last month's same days, without monthly sources still to come this month",
+  })
+  before: number;
+
+  @Field(() => Int, {
+    description:
+      'Monthly sources still to come this month (left out of before)',
+  })
+  pendingSources: number;
+}
+
+@ObjectType()
+export class MonthToDateComparison {
+  @Field(() => FlowComparison)
+  income: FlowComparison;
+
+  @Field(() => FlowComparison)
+  expenses: FlowComparison;
+}

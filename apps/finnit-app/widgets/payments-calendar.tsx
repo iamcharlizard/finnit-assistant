@@ -13,6 +13,7 @@ import {
   frame,
   lineLimit,
   monospacedDigit,
+  opacity,
   padding,
   widgetURL,
 } from '@expo/ui/swift-ui/modifiers';
@@ -34,24 +35,51 @@ const PaymentsCalendar = (
   'widget';
   const c =
     environment.colorScheme === 'dark' ? props.colors.dark : props.colors.light;
-  const CELL = 17;
+  // Wide cells (there's room across) and rows as tall as the height allows:
+  // months that span six weeks get slightly shorter rows to still fit.
+  const CELL = 21;
+  const sixWeeks = props.weeks.length > 5;
+  const ROW = sixWeeks ? 16 : 18;
+  // Today's disc may spill a point past a short row (nothing is drawn there).
+  const DISC = sixWeeks ? 17 : 18;
+  const DAY_SIZE = sixWeeks ? 9 : 10;
+  // iOS 26's clear (glass) and tinted home screens draw the widget in one
+  // tint over glass and drop its background: colors would be lost, so
+  // marks there are told apart by weight and opacity instead.
+  const tinted =
+    environment.widgetRenderingMode === 'accented' ||
+    environment.widgetRenderingMode === 'vibrant';
   const markColor = (mark: string) =>
-    mark === 'overdue'
-      ? c.overdue
-      : mark === 'pending'
-        ? c.pending
-        : mark === 'paid'
-          ? c.paid
-          : mark === 'card'
-            ? c.card
-            : c.text;
+    tinted
+      ? c.text
+      : mark === 'overdue'
+        ? c.overdue
+        : mark === 'pending'
+          ? c.pending
+          : mark === 'paid'
+            ? c.paid
+            : mark === 'card'
+              ? c.card
+              : c.text;
+  // Paid days and the padding fade back when tinted; open ones stay full.
+  const markOpacity = (mark: string) =>
+    tinted && (mark === 'none' || mark === 'paid') ? 0.55 : 1;
+  const background =
+    c.gradient.length > 1
+      ? {
+          type: 'linearGradient' as const,
+          colors: c.gradient,
+          startPoint: { x: 0, y: 0 },
+          endPoint: { x: 1, y: 1 },
+        }
+      : c.background;
 
   if (props.status === 'signedOut') {
     return (
       <VStack
         spacing={6}
         modifiers={[
-          containerBackground(c.background, 'widget'),
+          containerBackground(background, 'widget'),
           widgetURL(props.url),
         ]}
       >
@@ -75,12 +103,12 @@ const PaymentsCalendar = (
       spacing={14}
       alignment="top"
       modifiers={[
-        containerBackground(c.background, 'widget'),
+        containerBackground(background, 'widget'),
         widgetURL(props.url),
       ]}
     >
       {/* The month: today in a filled circle, days with payments in their color. */}
-      <VStack alignment="leading" spacing={1}>
+      <VStack alignment="leading" spacing={sixWeeks ? 0 : 1}>
         <Text
           modifiers={[
             font({ size: 11, weight: 'semibold' }),
@@ -110,26 +138,29 @@ const PaymentsCalendar = (
             {week.map((day) => (
               <ZStack
                 key={day.key}
-                modifiers={[frame({ width: CELL, height: 15 })]}
+                modifiers={[frame({ width: CELL, height: ROW })]}
               >
                 {day.today ? (
                   <Circle
                     modifiers={[
-                      foregroundStyle(c.accent),
-                      frame({ width: 15, height: 15 }),
+                      foregroundStyle(tinted ? c.text : c.accent),
+                      // Tinted: a faint disc, so the number on it still reads.
+                      opacity(tinted ? 0.3 : 1),
+                      frame({ width: DISC, height: DISC }),
                     ]}
                   />
                 ) : null}
                 <Text
                   modifiers={[
                     font({
-                      size: 9,
+                      size: DAY_SIZE,
                       weight:
                         day.today || day.mark !== 'none' ? 'bold' : 'regular',
                     }),
                     foregroundStyle(
-                      day.today ? c.accentText : markColor(day.mark),
+                      day.today && !tinted ? c.accentText : markColor(day.mark),
                     ),
+                    opacity(day.today ? 1 : markOpacity(day.mark)),
                     monospacedDigit(),
                   ]}
                 >
@@ -165,7 +196,7 @@ const PaymentsCalendar = (
           <HStack key={payment.key} spacing={6} alignment="center">
             <Circle
               modifiers={[
-                foregroundStyle(payment.color),
+                foregroundStyle(tinted ? c.text : payment.color),
                 frame({ width: 6, height: 6 }),
               ]}
             />
@@ -181,8 +212,14 @@ const PaymentsCalendar = (
               </Text>
               <Text
                 modifiers={[
-                  font({ size: 9 }),
-                  foregroundStyle(payment.overdue ? c.overdue : c.muted),
+                  // Overdue: red, or bold when tinted (no red there).
+                  font({
+                    size: 9,
+                    weight: payment.overdue ? 'semibold' : 'regular',
+                  }),
+                  foregroundStyle(
+                    payment.overdue && !tinted ? c.overdue : c.muted,
+                  ),
                   lineLimit(1),
                 ]}
               >
@@ -225,13 +262,14 @@ const PLACEHOLDER: PaymentsWidgetProps = {
   weeks: [],
   title: '',
   payments: [],
-  moreLabel: null,
+  moreLabel: '',
   emptyLabel: '',
   message: 'Abre Finnit para ver tus pagos del mes.',
   url: 'finnitapp:///calendar',
   colors: {
     light: {
       background: '#ffffff',
+      gradient: [],
       text: '#1a1b22',
       muted: '#5c6370',
       accent: '#00696e',
@@ -243,6 +281,7 @@ const PLACEHOLDER: PaymentsWidgetProps = {
     },
     dark: {
       background: '#1a1b22',
+      gradient: [],
       text: '#e3e2e6',
       muted: '#a9adb8',
       accent: '#4fd8de',

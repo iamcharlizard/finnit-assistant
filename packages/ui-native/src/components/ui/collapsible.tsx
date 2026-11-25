@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const EASE = Easing.bezier(0.32, 0.72, 0, 1);
+const MEASURED: ViewStyle = { position: 'absolute', top: 0, left: 0, right: 0 };
 const DURATION_MS = 280;
 
 interface CollapsibleProps {
@@ -25,9 +26,10 @@ interface CollapsibleProps {
 /**
  * Content that folds: its height goes to 0 (clipped, never overlapping
  * what's below, which moves up with its bottom edge) and back to its own
- * height. It stays mounted, so it opens without loading again; while
- * closed it is hidden from touch and screen readers. With "Reduce motion"
- * it just shows or hides.
+ * height, measured on the content laid out at full size. It stays
+ * mounted, so it opens without loading again; while closed it is hidden
+ * from touch and screen readers. With "Reduce motion" it just shows or
+ * hides.
  */
 function Collapsible({ open, children, contentStyle }: CollapsibleProps) {
   const reduceMotion = useReducedMotion();
@@ -45,9 +47,8 @@ function Collapsible({ open, children, contentStyle }: CollapsibleProps) {
   }, [open, reduceMotion, progress]);
 
   const style = useAnimatedStyle(() => {
-    // Not measured yet: open takes its own height; closed takes none.
-    if (height.value < 0)
-      return progress.value > 0 ? {} : { height: 0, opacity: 0 };
+    // Not measured yet: nothing shows (the next frame has the height).
+    if (height.value < 0) return { height: 0, opacity: 0 };
     return {
       height: height.value * progress.value,
       // Fades a little only in the last part of closing.
@@ -69,9 +70,10 @@ function Collapsible({ open, children, contentStyle }: CollapsibleProps) {
       accessibilityElementsHidden={!open}
       importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}
     >
-      {/* In the flow (not absolute): its height is the content's, measured
-          even while the box around it is shorter. */}
-      <Animated.View onLayout={onLayout} style={contentStyle}>
+      {/* Absolute: its height is always the content's. In the flow, Yoga
+          shrank it with the closing box, so it measured 0 and never
+          opened again. */}
+      <Animated.View onLayout={onLayout} style={[MEASURED, contentStyle]}>
         {children}
       </Animated.View>
     </Animated.View>

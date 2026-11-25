@@ -21,6 +21,7 @@ import {
   weekdayNames,
   type DayKey,
 } from '../finance/dates';
+import { hexToRgb, isHexColor } from '../format/color';
 import type { Localizer } from '../i18n/translator';
 import type { WidgetData } from './request';
 
@@ -48,7 +49,13 @@ export interface WidgetPayment {
 }
 
 export interface WidgetColors {
+  /** A solid background (every palette but Glass). */
   background: string;
+  /**
+   * Glass: its soft background blobs as a left-to-right gradient (a
+   * widget gets one background style); empty for the other palettes.
+   */
+  gradient: string[];
   text: string;
   muted: string;
   /** Today's circle. */
@@ -69,14 +76,57 @@ export interface PaymentsWidgetProps {
   weeks: WidgetDay[][];
   title: string;
   payments: WidgetPayment[];
-  /** "+3 más" when they don't all fit. */
-  moreLabel: string | null;
+  /**
+   * "+3 más" when they don't all fit, else empty. Never null: the props go
+   * to the App Group's UserDefaults, which can't store null (the app crashes).
+   */
+  moreLabel: string;
   emptyLabel: string;
   /** Shown instead of everything when signed out. */
   message: string;
   /** Opened on tap. */
   url: string;
   colors: { light: WidgetColors; dark: WidgetColors };
+}
+
+/** One of the app's background blobs (Glass), as the theme tokens describe it. */
+export interface WidgetBlob {
+  /** Center, 0–1 from the left. */
+  cx: number;
+  /** `rgb(r, g, b)` at the center, and its opacity there. */
+  color: string;
+  opacity: number;
+}
+
+const RGB = /rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/;
+
+/**
+ * Glass's background for the widget: each blob over the plain background
+ * (at its opacity), ordered left to right. Hex stops, since the widget
+ * only takes plain colors.
+ */
+export function glassGradient(
+  background: string,
+  blobs: readonly WidgetBlob[],
+): string[] {
+  if (blobs.length === 0 || !isHexColor(background)) return [];
+  const base = hexToRgb(background);
+  const hex = (channels: number[]) =>
+    `#${channels
+      .map((c) => Math.round(c).toString(16).padStart(2, '0'))
+      .join('')}`;
+  return [...blobs]
+    .sort((a, b) => a.cx - b.cx)
+    .flatMap((blob) => {
+      const m = RGB.exec(blob.color);
+      if (!m) return [];
+      const color = [Number(m[1]), Number(m[2]), Number(m[3])];
+      return [
+        hex(
+          base.map((c, i) => c * (1 - blob.opacity) + color[i]! * blob.opacity),
+        ),
+      ];
+    });
 }
 
 /** Rows that fit on the right in the medium size. */
@@ -204,7 +254,7 @@ export function buildWidgetProps(
     moreLabel:
       open.length > shown.length
         ? t('widget.more', { count: open.length - shown.length })
-        : null,
+        : '',
     emptyLabel: t('widget.empty'),
     message: '',
     url: WIDGET_URL,
@@ -224,7 +274,7 @@ export function signedOutWidgetProps(
     weeks: [],
     title: t('widget.pendingTitle'),
     payments: [],
-    moreLabel: null,
+    moreLabel: '',
     emptyLabel: '',
     message: t('widget.signedOut'),
     url: WIDGET_URL,

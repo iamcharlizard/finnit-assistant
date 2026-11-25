@@ -84,6 +84,7 @@ export {
   DARK_TEXT,
   LIGHT_TEXT,
   contrastRatio,
+  hexToRgb,
   isHexColor,
   normalizeHex,
   readableTextColor,

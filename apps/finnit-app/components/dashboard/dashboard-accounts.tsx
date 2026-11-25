@@ -22,6 +22,7 @@ import { Text } from '@finnit/ui-native/components/ui/text';
 import { SyncPill } from '@finnit/ui-native/components/finance/sync-pill';
 import { useColor } from '@finnit/ui-native/theme/theme-root';
 
+import { TextLink } from '@/components/finance/text-link';
 import { useCollapsedSection } from '@/lib/dashboard/collapsed-sections';
 
 const ICONS: Record<DashboardAccount['type'], LucideIcon> = {
@@ -44,7 +45,8 @@ const TYPE_COLORS: Record<DashboardAccount['type'], string> = {
 /**
  * The accounts and their balances (those in the total first), each with
  * how it updates: a row opens the account, "Ver todas" opens Cuentas and
- * the title folds the card (remembered on the device).
+ * the title folds the section (remembered on the device), like the
+ * home's other sections.
  */
 export function DashboardAccounts({
   accounts,
@@ -60,25 +62,12 @@ export function DashboardAccounts({
   const seeAll =
     count > accounts.length ? t('seeAllCount', { count }) : t('seeAll');
   return (
-    <TwView className="rounded-card border border-glass-border bg-surface p-2">
+    <TwView>
       <CollapsibleHeading
-        size="base"
         title={t('title')}
         collapsed={collapsed}
         onToggle={toggle}
-        action={
-          <TwPressable
-            accessibilityRole="link"
-            accessibilityLabel={seeAll}
-            onPress={() => router.push('/accounts')}
-            hitSlop={8}
-            className="min-h-11 justify-center active:opacity-70"
-          >
-            <Text weight="medium" className="text-sm text-income">
-              {seeAll}
-            </Text>
-          </TwPressable>
-        }
+        action={<TextLink href="/accounts" label={seeAll} />}
       />
       <Collapsible open={!collapsed}>
         {accounts.map((account) => {
@@ -107,7 +96,7 @@ export function DashboardAccounts({
                   params: { accountId: account.id },
                 })
               }
-              className="min-h-14 flex-row items-center gap-3 rounded-2xl px-3 py-2 active:bg-accent"
+              className="min-h-14 flex-row items-center gap-3 rounded-2xl px-1 py-2 active:bg-accent"
             >
               <TwView
                 className="size-10 items-center justify-center rounded-xl"

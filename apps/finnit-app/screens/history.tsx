@@ -35,7 +35,8 @@ import { useOnTransactionsChanged } from '@/lib/transactions/events';
 /**
  * Movimientos: the filtered history by day, like the web's /history, and
  * "Por clasificar" (the movements without a category, to categorize them).
- * Possible duplicates and transfers to review sit on top.
+ * The month and the filters stay pinned at the top; possible duplicates
+ * and transfers to review come first under them.
  */
 export function HistoryScreen() {
   const t = useTranslations('history');
@@ -65,8 +66,23 @@ export function HistoryScreen() {
   return (
     <Screen
       title={t('title')}
-      subtitle={
-        <HistoryMonth filters={filters} today={today} onChange={apply} />
+      sticky={
+        // Pinned while scrolling (the web's sticky toolbar); each day's
+        // heading sticks under it.
+        <TwView className="gap-2 pb-1">
+          <HistoryMonth filters={filters} today={today} onChange={apply} />
+          {view ? (
+            <HistoryFilters
+              filters={filters}
+              accounts={view.accounts}
+              categories={view.categoryOptions}
+              today={today}
+              aliasName={view.aliasName}
+              reviewCount={view.reviewCount}
+              onChange={apply}
+            />
+          ) : null}
+        </TwView>
       }
       loading={loading}
       error={error}
@@ -79,15 +95,6 @@ export function HistoryScreen() {
           <TransferSuggestionsPanel
             suggestions={view.transferSuggestions.rows}
             total={view.transferSuggestions.total}
-          />
-          <HistoryFilters
-            filters={filters}
-            accounts={view.accounts}
-            categories={view.categoryOptions}
-            today={today}
-            aliasName={view.aliasName}
-            reviewCount={view.reviewCount}
-            onChange={apply}
           />
           {view.account ? <AccountBalanceCard card={view.account} /> : null}
           {view.reviewPage ? (

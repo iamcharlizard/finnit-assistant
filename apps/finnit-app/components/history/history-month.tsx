@@ -14,8 +14,9 @@ import { MonthSwitcher } from '@/components/finance/month-switcher';
 import { useLocale } from '@/lib/i18n/i18n-provider';
 
 /**
- * ‹ Noviembre 2026 ›, centered under the history's title, while the
- * history shows one month (not "Todo" or a range of dates).
+ * ‹ Noviembre 2026 ›, a compact pill centered above the filters (pinned
+ * with them), while the history shows one month (not "Todo" or a range of
+ * dates).
  */
 export function HistoryMonth({
   filters,
@@ -32,6 +33,8 @@ export function HistoryMonth({
   return (
     <TwView className="items-center">
       <MonthSwitcher
+        compact
+        className="rounded-full border border-glass-border bg-surface-95"
         label={monthLabel(filters.period as MonthRef, locale)}
         onPrevious={() => onChange(withPeriod(filters, links.prev))}
         onNext={

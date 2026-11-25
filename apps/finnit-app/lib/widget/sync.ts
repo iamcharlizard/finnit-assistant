@@ -17,6 +17,7 @@ import {
 } from '@finnit/core/widget/request';
 import {
   buildWidgetTimeline,
+  glassGradient,
   signedOutWidgetProps,
   type PaymentsWidgetProps,
   type WidgetColors,
@@ -61,17 +62,26 @@ function localizer(): Localizer {
   return { locale, t };
 }
 
-/** The palette in use on this device, light and dark (the widget follows the system's). */
+/**
+ * The palette in use on this device, light and dark. The widget picks one
+ * by the system's mode; when the app is set to Claro or Oscuro, both carry
+ * that mode's colors, so the widget matches the app.
+ */
 function widgetColors(): PaymentsWidgetProps['colors'] {
   const saved = readItem('themePreview');
   const theme = isAppTheme(saved) ? saved : APP_THEME;
   const pick = (scheme: 'light' | 'dark'): WidgetColors => {
-    const tokens = THEMES[theme][scheme].tokens;
+    const { tokens, blobs } = THEMES[theme][scheme];
     const token = (name: `--${string}`, fallback: string) =>
       tokens[name] ?? fallback;
+    // Glass: its blobs over its background, like the app behind the cards.
+    const gradient = glassGradient(token('--background', '#ffffff'), blobs);
     return {
       // --popover is opaque in every palette (--card isn't in Glass).
-      background: token('--popover', scheme === 'dark' ? '#1a1b22' : '#ffffff'),
+      background: gradient.length
+        ? token('--background', '#ffffff')
+        : token('--popover', scheme === 'dark' ? '#1a1b22' : '#ffffff'),
+      gradient,
       text: token('--on-background', scheme === 'dark' ? '#e3e2e6' : '#1a1b22'),
       muted: token('--on-surface-variant', '#5c6370'),
       accent: token('--brand-ink', '#00696e'),
@@ -85,6 +95,11 @@ function widgetColors(): PaymentsWidgetProps['colors'] {
       card: token('--violet-ink', '#5b61c2'),
     };
   };
+  const appearance = readItem('appearance');
+  if (appearance === 'light' || appearance === 'dark') {
+    const fixed = pick(appearance);
+    return { light: fixed, dark: fixed };
+  }
   return { light: pick('light'), dark: pick('dark') };
 }
 
@@ -128,7 +143,12 @@ export async function syncWidget(client: Client): Promise<boolean> {
     },
     localizer(),
   );
-  target.updateTimeline(entries);
+  try {
+    target.updateTimeline(entries);
+  } catch {
+    // The widget is optional: a failure here must never close the app.
+    return false;
+  }
   return true;
 }
 

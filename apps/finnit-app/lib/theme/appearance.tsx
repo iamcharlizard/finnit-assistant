@@ -4,6 +4,7 @@ import { Appearance } from 'react-native';
 import { isAppTheme, type AppTheme } from '@finnit/core/theme/app-theme';
 
 import { readItem, writeItem } from '@/lib/session/storage';
+import { requestWidgetSync } from '@/lib/widget/sync';
 import { APP_THEME } from './app-theme';
 
 /** Light, dark or the system's: the only appearance choice users have (like the web). */
@@ -55,7 +56,8 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
       setPreviewTheme: (theme) => {
         const next = theme === APP_THEME ? null : theme;
         setPreviewState(next);
-        void writeItem('themePreview', next);
+        // The widget uses the same palette.
+        void writeItem('themePreview', next).then(requestWidgetSync);
       },
     }),
     [appearance, previewTheme],

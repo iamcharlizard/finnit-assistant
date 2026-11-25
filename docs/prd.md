@@ -306,6 +306,8 @@ Detailed, verified status per feature and platform: [features.md](./features.md)
 - Shared code: `@finnit/core` (view builders, formatting, forms, GraphQL documents and `api.ts` runners, nav, messages) is used by the web and the app; `@finnit/ui-native` has the web's component names and props and its design tokens (4 palettes × light/dark, generated from `@finnit/ui`'s CSS, checked by a test).
 - Session with token refresh and a route guard, Spanish and English (account language, device fallback, localized permission prompts), light/dark/system, the admin palette preview.
 - Screens with real data: dashboard, movements (filters, pagination), movement detail and edit, new movement (expense, income, transfer, receipt scan), accounts (new account: Syncfy or manual), analytics, payments calendar (calendar and summary charts), recurring payments (filters, suggestions), notifications, budgets, debts, goals, simulator, categorize, statements, settings, categories, automatic names.
+- First-run onboarding: welcome slides and a guided tour over the real screens (spotlight and card, `@finnit/ui-native/components/tour`), once per device for new accounts; replay from Settings.
+- iOS home screen widget "Calendario y pagos" (medium): the month's calendar and the payments still to make in due order, built with `expo-widgets`; the app schedules one entry per day and refreshes it on open, after payment changes and in the background; it honors "Ocultar montos".
 - Pending (see `docs/features.md` → App móvil): screenshot import, creating/editing recurring payments, debts and accounts, statement reconciliation, categories and automatic names editors, profile editing; not yet tested signed in on a device.
 
 ### 🟡 **WEB APP (Next.js) — UI with mock data**

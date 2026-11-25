@@ -21,6 +21,8 @@ import { TwView } from '@finnit/ui-native/lib/tw';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
 
 import { BudgetDashboardCard } from '@/components/budgets/budget-dashboard-card';
+import { TourTarget } from '@finnit/ui-native/components/tour/tour-target';
+
 import { BalanceSummary } from '@/components/dashboard/balance-summary';
 import { DashboardAccounts } from '@/components/dashboard/dashboard-accounts';
 import { DashboardDebts } from '@/components/dashboard/dashboard-debts';
@@ -90,7 +92,9 @@ export function DashboardScreen() {
         refreshing={refreshing}
         onRefresh={onRefresh}
       >
-        <DashboardWelcome />
+        <TourTarget id="balance">
+          <DashboardWelcome />
+        </TourTarget>
       </Screen>
     );
   }
@@ -107,7 +111,9 @@ export function DashboardScreen() {
       {view ? (
         <TwView className="gap-4">
           {view.balance ? (
-            <BalanceSummary balance={view.balance} />
+            <TourTarget id="balance">
+              <BalanceSummary balance={view.balance} />
+            </TourTarget>
           ) : (
             <EmptyState
               icon={Landmark}

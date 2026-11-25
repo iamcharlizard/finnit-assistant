@@ -1,4 +1,6 @@
 import '@/lib/i18n/intl-polyfills';
+// Defines the widget's background refresh (it must load with the bundle).
+import { registerWidgetRefresh } from '@/lib/widget/background';
 import '../global.css';
 
 import {
@@ -30,6 +32,7 @@ import { AppearanceProvider, useAppearance } from '@/lib/theme/appearance';
 
 // The native splash stays until AnimatedSplash draws the same frame.
 void SplashScreen.preventAutoHideAsync();
+void registerWidgetRefresh();
 
 export default function RootLayout() {
   const [loaded] = useFonts({

@@ -1,7 +1,10 @@
-import { Redirect, Stack } from 'expo-router';
+import * as React from 'react';
+import { Redirect, Stack, useRouter } from 'expo-router';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { decideOnboarding } from '@/lib/onboarding/onboarding';
 import { AmountsVisibilityProvider } from '@/lib/privacy/amounts-visibility';
+import { useWidgetSync } from '@/lib/widget/use-widget-sync';
 
 /** Detail screens pushed over the tabs (declared, as Expo Router 58 expects). */
 const PUSHED_ROUTES = [
@@ -22,7 +25,28 @@ const PUSHED_ROUTES = [
  * them; sheets (Más, new movement, a movement's detail) slide up.
  */
 export default function AppLayout() {
-  const { status } = useAuth();
+  const { status, user } = useAuth();
+  const router = useRouter();
+  useWidgetSync();
+
+  // First sign-in on this device: the welcome slides (then the tour),
+  // checked once per user and app start.
+  const checked = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (status !== 'signedIn' || !user || checked.current === user.id) return;
+    if (decideOnboarding() !== 'show') {
+      checked.current = user.id;
+      return;
+    }
+    // After the tabs mount (the slides are a modal over them). Marked as
+    // checked only once pushed: a re-render meanwhile tries again.
+    const timer = setTimeout(() => {
+      checked.current = user.id;
+      router.push('/onboarding');
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [status, user, router]);
+
   // AnimatedSplash covers the screen meanwhile.
   if (status === 'loading') return null;
   if (status === 'signedOut') return <Redirect href="/login" />;
@@ -81,6 +105,14 @@ export default function AppLayout() {
             sheetGrabberVisible: true,
             sheetCornerRadius: 28,
             contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
+        <Stack.Screen
+          name="onboarding"
+          options={{
+            presentation: 'fullScreenModal',
+            gestureEnabled: false,
+            animation: 'fade',
           }}
         />
         <Stack.Screen

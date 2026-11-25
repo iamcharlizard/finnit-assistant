@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
 import { ArrowLeft } from 'lucide-react-native';
 
@@ -6,6 +6,7 @@ import { TwPressable } from '@finnit/ui-native/lib/tw';
 import { Avatar } from '@finnit/ui-native/components/ui/avatar';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
 import { TopAppBar } from '@finnit/ui-native/components/navigation/top-app-bar';
+import { TourTarget } from '@finnit/ui-native/components/tour/tour-target';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnreadCount } from '@/lib/notifications/use-unread-count';
@@ -27,6 +28,8 @@ export function PageHeader({
   const t = useTranslations();
   const { user } = useAuth();
   const unread = useUnreadCount();
+  // Every screen has an avatar: only the one shown is the tour's "profile" stop.
+  const focused = useIsFocused();
   return (
     <TopAppBar
       title={title}
@@ -49,14 +52,16 @@ export function PageHeader({
       }
       profile={
         user ? (
-          <TwPressable
-            accessibilityRole="button"
-            accessibilityLabel={t('profileMenu.open')}
-            onPress={() => router.push('/profile')}
-            className="size-11 items-center justify-center rounded-full"
-          >
-            <Avatar name={user.name} source={avatarSource(user.avatar)} size={36} className="border-2 border-primary" />
-          </TwPressable>
+          <TourTarget id="profile" enabled={focused}>
+            <TwPressable
+              accessibilityRole="button"
+              accessibilityLabel={t('profileMenu.open')}
+              onPress={() => router.push('/profile')}
+              className="size-11 items-center justify-center rounded-full"
+            >
+              <Avatar name={user.name} source={avatarSource(user.avatar)} size={36} className="border-2 border-primary" />
+            </TwPressable>
+          </TourTarget>
         ) : null
       }
     />

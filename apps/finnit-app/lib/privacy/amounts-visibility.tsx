@@ -19,6 +19,7 @@ import { PrivacyPinSheet } from '@/components/settings/privacy-pin-sheet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnPrivacyUnlocked } from '@/lib/privacy/events';
 import { readItem, writeItem } from '@/lib/session/storage';
+import { requestWidgetSync } from '@/lib/widget/sync';
 
 interface AmountsVisibility {
   hidden: boolean;
@@ -60,7 +61,8 @@ export function AmountsVisibilityProvider({
 
   const save = React.useCallback((next: boolean) => {
     setHidden(next);
-    void writeItem('hideAmounts', next ? '1' : '0');
+    // The widget masks its amounts too.
+    void writeItem('hideAmounts', next ? '1' : '0').then(requestWidgetSync);
   }, []);
 
   // The unlock sheet announces a right PIN.

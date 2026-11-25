@@ -14,6 +14,7 @@ import type { PaymentAction } from '@finnit/core/recurring/types';
 import { buildRecurringView, type PaymentItem } from '@finnit/core/recurring/view';
 import { TwView } from '@finnit/ui-native/lib/tw';
 import { RecurringCalendar } from '@finnit/ui-native/components/finance/recurring-calendar';
+import { TourTarget } from '@finnit/ui-native/components/tour/tour-target';
 import { Button } from '@finnit/ui-native/components/ui/button';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
@@ -30,6 +31,7 @@ import { useView } from '@/lib/graphql/use-view';
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
 import { hrefParam } from '@/lib/nav/href';
 import { useOnTransactionsChanged } from '@/lib/transactions/events';
+import { requestWidgetSync } from '@/lib/widget/sync';
 
 const TEAL = '#00696e';
 const GREEN = '#00a86b';
@@ -80,6 +82,7 @@ export function CalendarScreen() {
     setBusyKey(item.key);
     try {
       await runPaymentAction(action, item.occurrenceId, gql);
+      requestWidgetSync();
       toast.success(t(`recurring.toasts.${action}`, { name: item.name }));
       refresh();
     } catch (e) {
@@ -116,24 +119,26 @@ export function CalendarScreen() {
 
         {tab === 'calendar' && view ? (
           <TwView className="gap-4">
-            <RecurringCalendar
-              month={date}
-              events={view.events}
-              today={today}
-              selectedDay={selectedDay}
-              onSelectDay={setSelectedDay}
-              onPrevious={() => goTo(view.prevHref)}
-              onNext={() => goTo(view.nextHref)}
-              onToday={() => goTo(view.todayHref)}
-              title={view.periodLabel}
-              labels={{
-                weekdaysNarrow: names.map((n) => n.slice(0, 1).toUpperCase()),
-                previous: t('recurring.calendar.previous.month'),
-                next: t('recurring.calendar.next.month'),
-                today: t('recurring.calendar.today'),
-                eventCount: (count) => t('recurring.calendar.eventCount', { count }),
-              }}
-            />
+            <TourTarget id="calendar">
+              <RecurringCalendar
+                month={date}
+                events={view.events}
+                today={today}
+                selectedDay={selectedDay}
+                onSelectDay={setSelectedDay}
+                onPrevious={() => goTo(view.prevHref)}
+                onNext={() => goTo(view.nextHref)}
+                onToday={() => goTo(view.todayHref)}
+                title={view.periodLabel}
+                labels={{
+                  weekdaysNarrow: names.map((n) => n.slice(0, 1).toUpperCase()),
+                  previous: t('recurring.calendar.previous.month'),
+                  next: t('recurring.calendar.next.month'),
+                  today: t('recurring.calendar.today'),
+                  eventCount: (count) => t('recurring.calendar.eventCount', { count }),
+                }}
+              />
+            </TourTarget>
             <TwView className="flex-row items-center justify-between gap-2 px-1">
               <Text accessibilityRole="header" weight="bold" className="flex-1 text-base">
                 {selectedDay

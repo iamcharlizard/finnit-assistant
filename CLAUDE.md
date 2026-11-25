@@ -158,6 +158,7 @@ Migrations with hand-edited SQL wrap their body in `BEGIN; … COMMIT;`: Prisma 
 | `docs/data-dictionary.md` | Field-level data definitions |
 | `docs/database-monorepo-integration.md` | DB ↔ API integration guide |
 | `docs/deployment.md` | API deployment (Dokploy + GitHub Actions) and rollback |
+| `docs/production-migration.md` | Moving testing's data to production: database copy, S3 files, keeping the Syncfy connections, cutting testing off the real banks |
 | `docs/document-ocr.md` | Receipt photos and statement OCR: engine comparison, design and task list |
 | `packages/database/prisma/schema.prisma` | Authoritative DB schema |
 | `dev-plans/progress.md` | Sprint progress tracker |

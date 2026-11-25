@@ -11,6 +11,8 @@ La API (`apps/api`) corre en un servidor Hetzner CAX11 (ARM, Nuremberg) administ
 
 Flujo de trabajo: `feature/*` → PR a `testing` (se despliega a testing y lo pruebas) → PR de `testing` a `main` (se despliega a producción).
 
+Para llevar los **datos** de testing a producción (base, archivos y conexiones de Syncfy sin reconectar bancos), ver [production-migration.md](./production-migration.md).
+
 Cada ambiente tiene su propia base de datos y su propio `JWT_SECRET`: los datos y las sesiones de testing nunca tocan producción.
 
 ## Cómo funciona

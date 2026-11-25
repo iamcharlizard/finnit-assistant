@@ -2,6 +2,8 @@ import * as React from 'react';
 import { useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
 import {
+  CircleHelp,
+  GraduationCap,
   Landmark,
   Languages,
   LockKeyhole,
@@ -45,6 +47,7 @@ export function SettingsScreen() {
   const tp = useTranslations('privacy.settings');
   const tm = useTranslations('ui.mode');
   const tpm = useTranslations('profileMenu');
+  const to = useTranslations('onboarding.replay');
   const router = useRouter();
   const { user, logout, saveLocale, refreshUser } = useAuth();
   const { locale } = useLocale();
@@ -181,6 +184,19 @@ export function SettingsScreen() {
               Ubuntu
             </Text>
           </SettingRow>
+        </SettingsSection>
+
+        <SettingsSection
+          title={to('section')}
+          icon={CircleHelp}
+          iconColor="var(--brand)"
+        >
+          <SettingRow
+            label={to('title')}
+            description={to('description')}
+            icon={GraduationCap}
+            onPress={() => router.push('/onboarding')}
+          />
         </SettingsSection>
 
         <Button

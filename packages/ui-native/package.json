@@ -15,7 +15,8 @@
     "./components/ui/*": "./src/components/ui/*.tsx",
     "./components/finance/*": "./src/components/finance/*.tsx",
     "./components/navigation/*": "./src/components/navigation/*.tsx",
-    "./components/settings/*": "./src/components/settings/*.tsx"
+    "./components/settings/*": "./src/components/settings/*.tsx",
+    "./components/tour/*": "./src/components/tour/*.tsx"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",

@@ -57,7 +57,28 @@
           "cameraPermission": "Finnit usa la cámara para fotografiar tus tickets y registrarlos como gastos.",
           "microphonePermission": false
         }
-      ]
+      ],
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "com.karlhub.finnitapp.ExpoWidgetsTarget",
+          "groupIdentifier": "group.com.karlhub.finnitapp",
+          "widgets": [
+            {
+              "name": "PaymentsCalendar",
+              "displayName": "Calendario y pagos",
+              "description": "El mes y tus pagos pendientes, en orden de pago.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemMedium"
+                ],
+                "initialLayout": "widgets/payments-calendar.tsx"
+              }
+            }
+          ]
+        }
+      ],
+      "expo-background-task"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -20,6 +20,7 @@ import { Ellipsis, Plus, type LucideIcon } from 'lucide-react-native';
 
 import { TwPressable, TwView } from '../../lib/tw';
 import { useElevation, useToken } from '../../theme/theme-root';
+import { TourTarget } from '../tour/tour-target';
 import { Icon } from '../ui/icon';
 import { Text } from '../ui/text';
 
@@ -182,24 +183,26 @@ export function BottomNavBar({
   }));
   const backdropStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
 
+  // Each button is a tour stop: `nav-<key>`, `nav-add` and `nav-more`.
   const tab = (item: BottomNavTab) => (
-    <TwPressable
-      key={item.key}
-      accessibilityRole="tab"
-      accessibilityLabel={item.label}
-      accessibilityState={{ selected: item.active }}
-      onPress={() => {
-        setOpen(false);
-        item.onPress();
-      }}
-      className="size-14 items-center justify-center rounded-full active:scale-90"
-    >
-      <Icon
-        icon={item.icon}
-        size={28}
-        color={item.active ? '--brand-ink' : '--on-surface-variant'}
-      />
-    </TwPressable>
+    <TourTarget key={item.key} id={`nav-${item.key}`}>
+      <TwPressable
+        accessibilityRole="tab"
+        accessibilityLabel={item.label}
+        accessibilityState={{ selected: item.active }}
+        onPress={() => {
+          setOpen(false);
+          item.onPress();
+        }}
+        className="size-14 items-center justify-center rounded-full active:scale-90"
+      >
+        <Icon
+          icon={item.icon}
+          size={28}
+          color={item.active ? '--brand-ink' : '--on-surface-variant'}
+        />
+      </TwPressable>
+    </TourTarget>
   );
 
   return (
@@ -273,21 +276,23 @@ export function BottomNavBar({
           {tab(tabs[1])}
           <View style={{ width: SLOT }} />
           {tab(tabs[2])}
-          <TwPressable
-            accessibilityRole="button"
-            accessibilityLabel={more.label}
-            onPress={() => {
-              setOpen(false);
-              more.onPress();
-            }}
-            className="size-14 items-center justify-center rounded-full active:scale-90"
-          >
-            <Icon
-              icon={Ellipsis}
-              size={28}
-              color={more.active ? '--brand-ink' : '--on-surface-variant'}
-            />
-          </TwPressable>
+          <TourTarget id="nav-more">
+            <TwPressable
+              accessibilityRole="button"
+              accessibilityLabel={more.label}
+              onPress={() => {
+                setOpen(false);
+                more.onPress();
+              }}
+              className="size-14 items-center justify-center rounded-full active:scale-90"
+            >
+              <Icon
+                icon={Ellipsis}
+                size={28}
+                color={more.active ? '--brand-ink' : '--on-surface-variant'}
+              />
+            </TwPressable>
+          </TourTarget>
         </TwView>
 
         {/* The "+" and its shortcuts, centered on the bar's top edge. */}
@@ -307,18 +312,20 @@ export function BottomNavBar({
               }}
             />
           ))}
-          <TwPressable
-            accessibilityRole="button"
-            accessibilityLabel={open ? closeLabel : addLabel}
-            accessibilityState={{ expanded: open }}
-            onPress={() => setOpen((value) => !value)}
-            className="absolute size-14 items-center justify-center rounded-full bg-primary active:scale-90"
-            style={styles.fab}
-          >
-            <Animated.View style={plusStyle}>
-              <Icon icon={Plus} size={28} color="--primary-foreground" />
-            </Animated.View>
-          </TwPressable>
+          <TourTarget id="nav-add" style={styles.fab}>
+            <TwPressable
+              accessibilityRole="button"
+              accessibilityLabel={open ? closeLabel : addLabel}
+              accessibilityState={{ expanded: open }}
+              onPress={() => setOpen((value) => !value)}
+              className="size-14 items-center justify-center rounded-full bg-primary active:scale-90"
+              style={styles.fabShadow}
+            >
+              <Animated.View style={plusStyle}>
+                <Icon icon={Plus} size={28} color="--primary-foreground" />
+              </Animated.View>
+            </TwPressable>
+          </TourTarget>
         </View>
       </View>
     </View>
@@ -394,10 +401,11 @@ const styles = StyleSheet.create({
   highlight: { position: 'absolute', left: PAD, top: PAD },
   anchor: { position: 'absolute', top: 0, left: '50%', width: 0, height: 0 },
   fab: {
+    position: 'absolute',
     top: HOLE_CY - TAB / 2,
     left: -TAB / 2,
-    boxShadow: '0 2px 8px rgba(0,0,0,0.16)',
   },
+  fabShadow: { boxShadow: '0 2px 8px rgba(0,0,0,0.16)' },
   action: {
     position: 'absolute',
     top: -DIAL / 2,

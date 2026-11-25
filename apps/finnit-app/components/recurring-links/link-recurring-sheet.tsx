@@ -23,6 +23,7 @@ import { Text } from '@finnit/ui-native/components/ui/text';
 import { ChoiceRow } from '@/components/loan-links/choice-row';
 import { useGql } from '@/lib/graphql/runner';
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
+import { requestWidgetSync } from '@/lib/widget/sync';
 
 type State =
   | { status: 'loading' }
@@ -96,6 +97,7 @@ export function LinkRecurringSheet({
     setError(null);
     try {
       await linkRecurringPayment(transaction.id, choice.id, month, gql);
+      requestWidgetSync();
       onLinked(choice.name);
     } catch (e) {
       setError(transactionErrorMessage(e, l.t));

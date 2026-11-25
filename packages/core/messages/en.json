@@ -4295,5 +4295,76 @@
       "bothRecurring": "Both movements already pay a recurring bill.",
       "notMergeable": "Balance adjustments and loan money can’t be merged."
     }
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "Next",
+    "back": "Back",
+    "done": "Done",
+    "notNow": "Not now",
+    "startTour": "Take the tour",
+    "stepOf": "{current} of {total}",
+    "close": "Close the tour",
+    "slides": {
+      "welcome": {
+        "title": "Welcome to Finnit",
+        "body": "Your money in one place: accounts, spending, payments and goals. Here are the essentials in a minute."
+      },
+      "money": {
+        "title": "Add movements or connect your bank",
+        "body": "Connect your bank to bring in balances and movements, or record them yourself: expense, income, transfer, a receipt photo or a screenshot of your bank."
+      },
+      "calendar": {
+        "title": "Your payments, on time",
+        "body": "The calendar gathers your recurring payments, loans, installments and card dates so nothing slips by."
+      },
+      "privacy": {
+        "title": "Private and at hand",
+        "body": "Hide amounts whenever you like, protect them with a PIN and add the widget to your home screen to see this month's payments."
+      }
+    },
+    "tour": {
+      "balance": {
+        "title": "Your balance at a glance",
+        "body": "See how much you have across all your accounts and how the month is going."
+      },
+      "add": {
+        "title": "Add in one tap",
+        "body": "The + button records an expense, income or transfer, or scans a receipt."
+      },
+      "history": {
+        "title": "Your movements",
+        "body": "Your whole history, with filters. In “To categorize” you confirm the category of new ones."
+      },
+      "cards": {
+        "title": "Accounts and cards",
+        "body": "Balances, statement and due dates of your cards, and your connected accounts."
+      },
+      "more": {
+        "title": "Everything else",
+        "body": "Budgets, debts, goals, recurring payments, analytics and settings live in “More”."
+      },
+      "calendar": {
+        "title": "Payments calendar",
+        "body": "Each dot is a payment. Tap a day to see them and mark them as paid."
+      },
+      "profile": {
+        "title": "Your profile",
+        "body": "Change the theme, hide amounts or replay this tour from Settings."
+      }
+    },
+    "replay": {
+      "title": "Replay the tutorial",
+      "description": "Show the welcome and the app tour again.",
+      "section": "Help"
+    }
+  },
+  "widget": {
+    "pendingTitle": "To pay",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "more": "+{count} more",
+    "empty": "No payments left this month",
+    "signedOut": "Sign in to Finnit to see this month's payments"
   }
 }

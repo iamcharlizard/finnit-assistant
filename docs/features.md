@@ -67,6 +67,8 @@ Expo SDK 58 (React Native 0.88, React 19.3) con NativeWind v5 (`5.0.0-rc.1`). La
 | Nombres automáticos (activar, eliminar, desbloquear) | 🟡 | Crear y editar con vista previa y sugerencia de IA. |
 | Conectar banco | 🟡 | Pantalla anterior (sin migrar a `@finnit/ui-native`). |
 | Administración | — | Solo web. |
+| Bienvenida y recorrido guiado (primer inicio de sesión: 4 pantallas y un recorrido de 7 pasos con el elemento resaltado sobre las pantallas reales; "Ver el tutorial de nuevo" en Configuración) | ✅ | Lo ve todo usuario una vez por dispositivo (llave `onboarding` en SecureStore). Sin probar en dispositivo. Web: no tiene. |
+| Widget de iOS "Calendario y pagos" (tamaño mediano: el mes a la izquierda, los pagos pendientes en orden de pago a la derecha; respeta "Ocultar montos"; abre el Calendario) | 🟡 | `expo-widgets`; la app arma una entrada por día hasta una semana del mes siguiente y la actualiza al abrir, al volver a primer plano, tras pagar o ligar un pago y con una tarea en segundo plano (`expo-background-task`). Fechas de pago de tarjeta solo como día marcado (sin monto). Sin probar en dispositivo. Android: no tiene. |
 
 
 ### 1. Autenticación y seguridad

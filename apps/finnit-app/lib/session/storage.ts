@@ -21,6 +21,8 @@ const KEYS = {
   pinSuggestion: 'pinSuggestion',
   /** Home sections folded on this device, comma separated ("accounts,debts"). */
   collapsedSections: 'collapsedSections',
+  /** The onboarding version seen on this device ("v1"): it isn't shown again. */
+  onboarding: 'onboarding',
 } as const;
 
 type Key = keyof typeof KEYS;

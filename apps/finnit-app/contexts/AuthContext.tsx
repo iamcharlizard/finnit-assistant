@@ -14,6 +14,7 @@ import {
   resetGraphqlClient,
 } from '@/lib/graphql/client';
 import { useLocale } from '@/lib/i18n/i18n-provider';
+import { clearWidget } from '@/lib/widget/sync';
 import { requestGoogleIdToken, signOutFromGoogle } from '@/lib/google-signin';
 import {
   clearSession,
@@ -141,6 +142,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const endSession = React.useCallback(async () => {
     const provider = readItem('provider');
     await clearSession();
+    // The home screen widget must not keep showing this user's payments.
+    clearWidget();
     setUser(null);
     setStatus('signedOut');
     setClient(resetGraphqlClient());

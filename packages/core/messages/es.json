@@ -4295,5 +4295,76 @@
       "bothRecurring": "Los dos movimientos ya pagan un pago recurrente.",
       "notMergeable": "Los ajustes de saldo y el dinero de un préstamo no se fusionan."
     }
+  },
+  "onboarding": {
+    "skip": "Saltar",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "done": "Listo",
+    "notNow": "Ahora no",
+    "startTour": "Ver el recorrido",
+    "stepOf": "{current} de {total}",
+    "close": "Cerrar el recorrido",
+    "slides": {
+      "welcome": {
+        "title": "Te damos la bienvenida a Finnit",
+        "body": "Tu dinero en un solo lugar: cuentas, gastos, pagos y metas. Te mostramos lo esencial en un minuto."
+      },
+      "money": {
+        "title": "Registra o conecta tu banco",
+        "body": "Conecta tu banco para traer saldos y movimientos, o regístralos tú: gasto, ingreso, transferencia, foto de un ticket o captura de tu banco."
+      },
+      "calendar": {
+        "title": "Tus pagos, a tiempo",
+        "body": "El calendario junta tus pagos recurrentes, préstamos, meses sin intereses y fechas de tarjeta para que nada se te pase."
+      },
+      "privacy": {
+        "title": "Privado y a la mano",
+        "body": "Oculta los montos cuando quieras, protégelos con un PIN y agrega el widget a tu pantalla de inicio para ver los pagos del mes."
+      }
+    },
+    "tour": {
+      "balance": {
+        "title": "Tu saldo de un vistazo",
+        "body": "Aquí ves cuánto tienes entre todas tus cuentas y cómo va el mes."
+      },
+      "add": {
+        "title": "Agrega en un toque",
+        "body": "Con el botón + registras un gasto, un ingreso, una transferencia o escaneas un ticket."
+      },
+      "history": {
+        "title": "Tus movimientos",
+        "body": "Todo tu historial, con filtros. En «Por clasificar» confirmas la categoría de lo nuevo."
+      },
+      "cards": {
+        "title": "Cuentas y tarjetas",
+        "body": "Saldos, cortes y fechas de pago de tus tarjetas, y tus cuentas conectadas."
+      },
+      "more": {
+        "title": "Todo lo demás",
+        "body": "Presupuestos, deudas, metas, recurrentes, análisis y ajustes están en «Más»."
+      },
+      "calendar": {
+        "title": "Calendario de pagos",
+        "body": "Cada punto es un pago. Toca un día para verlos y márcalos como pagados."
+      },
+      "profile": {
+        "title": "Tu perfil",
+        "body": "Cambia el tema, oculta los montos o vuelve a ver este recorrido desde Ajustes."
+      }
+    },
+    "replay": {
+      "title": "Ver el tutorial de nuevo",
+      "description": "Repite la bienvenida y el recorrido por la app.",
+      "section": "Ayuda"
+    }
+  },
+  "widget": {
+    "pendingTitle": "Pendientes",
+    "today": "Hoy",
+    "tomorrow": "Mañana",
+    "more": "+{count} más",
+    "empty": "Sin pagos pendientes este mes",
+    "signedOut": "Inicia sesión en Finnit para ver tus pagos del mes"
   }
 }

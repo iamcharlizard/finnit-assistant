@@ -49,7 +49,8 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
       setAppearance: (preference) => {
         applyAppearance(preference);
         setAppearanceState(preference);
-        void writeItem('appearance', preference);
+        // The widget follows the same light/dark choice.
+        void writeItem('appearance', preference).then(requestWidgetSync);
       },
       theme: previewTheme ?? APP_THEME,
       previewTheme,

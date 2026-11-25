@@ -76,6 +76,15 @@ export function CardTermsSheet({
       onOpenChange={(next) => !next && !saving && onClose()}
       title={l.t('cards.period.terms')}
       closeLabel={l.t('common.close')}
+      // Always in view, right above the keyboard while typing.
+      footer={
+        <Button
+          label={l.t('cards.period.saveTerms')}
+          disabled={saving}
+          onPress={() => void save()}
+          className="w-full"
+        />
+      }
     >
       <TwView className="gap-4 pb-2">
         <TwView className="flex-row gap-3">
@@ -114,12 +123,6 @@ export function CardTermsSheet({
           error={message(errors.interestRate)}
         />
         {error ? <Text className="text-sm text-expense">{error}</Text> : null}
-        <Button
-          label={l.t('cards.period.saveTerms')}
-          disabled={saving}
-          onPress={() => void save()}
-          className="w-full"
-        />
       </TwView>
     </Sheet>
   );

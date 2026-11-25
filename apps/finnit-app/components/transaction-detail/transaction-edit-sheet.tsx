@@ -138,8 +138,21 @@ export function TransactionEditSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={(next) => !next && onClose()} title={t('editTitle')} description={t('editDescription')} closeLabel={tc('close')}>
-      <TwScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 560 }} contentContainerClassName="gap-4 pb-2">
+    <Sheet
+      open={open}
+      onOpenChange={(next) => !next && onClose()}
+      title={t('editTitle')}
+      description={t('editDescription')}
+      closeLabel={tc('close')}
+      // Always in view, right above the keyboard while typing.
+      footer={<Button label={saving ? t('form.saving') : t('form.save')} onPress={save} disabled={saving} className="w-full" />}
+    >
+      <TwScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        style={{ maxHeight: 560, flexShrink: 1 }}
+        contentContainerClassName="gap-4 pb-2"
+      >
         {imported ? <Text className="text-xs text-on-surface-variant">{t('editImported')}</Text> : null}
         {isTransfer ? <Text className="text-xs text-on-surface-variant">{t('editTransfer')}</Text> : null}
 
@@ -263,7 +276,6 @@ export function TransactionEditSheet({
             {failure}
           </Text>
         ) : null}
-        <Button label={saving ? t('form.saving') : t('form.save')} onPress={save} disabled={saving} className="w-full" />
       </TwScrollView>
     </Sheet>
   );

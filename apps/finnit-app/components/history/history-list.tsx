@@ -39,6 +39,7 @@ import { LabelSm } from '@finnit/ui-native/components/ui/typography';
 import { useGql } from '@/lib/graphql/runner';
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
 import { useOnScrollEnd } from '@/components/shell/screen';
+import { StickyGroup } from '@/components/shell/sticky';
 import { HistoryRow } from './history-row';
 import { TransferGroupCard } from './transfer-group-card';
 
@@ -205,24 +206,32 @@ export function HistoryList({
       {groups.map((group) => {
         const net = dayNet(group.rows);
         return (
-          <TwView key={group.day} className="mb-8">
-            <TwView className="mb-3 flex-row items-baseline justify-between gap-3 px-1">
-              <LabelSm accessibilityRole="header">{group.heading}</LabelSm>
-              {net && net.amount !== 0 ? (
-                <Text
-                  weight="bold"
-                  className={cn(
-                    'text-xs',
-                    net.amount > 0 ? 'text-income' : 'text-on-surface-variant',
-                  )}
-                  style={{ fontVariant: ['tabular-nums'] }}
-                >
-                  {formatMoney(net.amount, net.currency, l.locale, {
-                    sign: 'always',
-                  })}
-                </Text>
-              ) : null}
-            </TwView>
+          <StickyGroup
+            key={group.day}
+            className="mb-8"
+            heading={
+              // An opaque pill (like the web's), so stuck it reads over the rows.
+              <TwView className="mb-3 flex-row items-baseline justify-between gap-3 rounded-full border border-glass-border bg-popover px-4 py-2">
+                <LabelSm accessibilityRole="header">{group.heading}</LabelSm>
+                {net && net.amount !== 0 ? (
+                  <Text
+                    weight="bold"
+                    className={cn(
+                      'text-xs',
+                      net.amount > 0
+                        ? 'text-income'
+                        : 'text-on-surface-variant',
+                    )}
+                    style={{ fontVariant: ['tabular-nums'] }}
+                  >
+                    {formatMoney(net.amount, net.currency, l.locale, {
+                      sign: 'always',
+                    })}
+                  </Text>
+                ) : null}
+              </TwView>
+            }
+          >
             <TwView className="gap-2">
               {group.items.map((item) =>
                 item.kind === 'transfer' ? (
@@ -232,7 +241,7 @@ export function HistoryList({
                 ),
               )}
             </TwView>
-          </TwView>
+          </StickyGroup>
         );
       })}
       {error ? (

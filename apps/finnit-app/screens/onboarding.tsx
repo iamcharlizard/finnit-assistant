@@ -179,22 +179,28 @@ export function OnboardingScreen() {
             />
           </TwView>
         ) : (
+          // Equal halves: react-native-css's flex-1 keeps a content basis,
+          // so each button sits in a flex: 1 cell.
           <TwView className="flex-row gap-3">
             {index > 0 ? (
-              <Button
-                variant="outline"
-                size="lg"
-                label={t('back')}
-                className="flex-1"
-                onPress={() => goTo(index - 1)}
-              />
+              <TwView style={{ flex: 1 }}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  label={t('back')}
+                  className="w-full"
+                  onPress={() => goTo(index - 1)}
+                />
+              </TwView>
             ) : null}
-            <Button
-              size="lg"
-              label={t('next')}
-              className="flex-1"
-              onPress={() => goTo(index + 1)}
-            />
+            <TwView style={{ flex: 1 }}>
+              <Button
+                size="lg"
+                label={t('next')}
+                className="w-full"
+                onPress={() => goTo(index + 1)}
+              />
+            </TwView>
           </TwView>
         )}
       </TwView>

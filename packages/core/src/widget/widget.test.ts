@@ -17,6 +17,7 @@ import {
   buildWidgetProps,
   buildWidgetTimeline,
   midnightOf,
+  glassGradient,
   signedOutWidgetProps,
   type WidgetColors,
 } from '@finnit/core/widget/view';
@@ -26,6 +27,7 @@ const TODAY = '2026-11-12'; // a Thursday
 
 const COLOR: WidgetColors = {
   background: '#fff',
+  gradient: [],
   text: '#000',
   muted: '#666',
   accent: '#0ff',
@@ -179,7 +181,7 @@ describe('buildWidgetProps', () => {
       es,
     );
     assert.equal(few.payments.length, 3);
-    assert.equal(few.moreLabel, null);
+    assert.equal(few.moreLabel, '');
   });
 
   it('masks amounts with "Ocultar montos"', () => {
@@ -234,5 +236,56 @@ describe('signedOutWidgetProps', () => {
     assert.equal(props.status, 'signedOut');
     assert.deepEqual(props.payments, []);
     assert.ok(props.message.length > 0);
+  });
+});
+
+/** Paths to null/undefined values (UserDefaults can't store them). */
+function nullPaths(value: unknown, path = 'props'): string[] {
+  if (value === null || value === undefined) return [path];
+  if (Array.isArray(value))
+    return value.flatMap((item, i) => nullPaths(item, `${path}[${i}]`));
+  if (typeof value === 'object')
+    return Object.entries(value).flatMap(([key, item]) =>
+      nullPaths(item, `${path}.${key}`),
+    );
+  return [];
+}
+
+describe('widget props', () => {
+  it('never carry null (the App Group can only store property lists)', () => {
+    const few = buildWidgetProps(
+      { ...data, payments: [] },
+      { today: TODAY, hideAmounts: false, colors },
+      es,
+    );
+    const timeline = buildWidgetTimeline(
+      data,
+      { now: new Date(), today: TODAY, hideAmounts: true, colors },
+      es,
+    );
+    assert.deepEqual(
+      [
+        few,
+        signedOutWidgetProps(colors, es),
+        ...timeline.map((e) => e.props),
+      ].flatMap((p) => nullPaths(p)),
+      [],
+    );
+  });
+});
+
+describe('glassGradient', () => {
+  it('mixes each blob into the background, left to right', () => {
+    assert.deepEqual(
+      glassGradient('#ffffff', [
+        { cx: 0.9, color: 'rgb(0, 0, 0)', opacity: 0.5 },
+        { cx: 0.1, color: 'rgb(255, 0, 0)', opacity: 1 },
+      ]),
+      ['#ff0000', '#808080'],
+    );
+  });
+
+  it('is empty without blobs (a solid background)', () => {
+    assert.deepEqual(glassGradient('#ffffff', []), []);
   });
 });

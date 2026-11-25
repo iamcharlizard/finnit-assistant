@@ -113,6 +113,20 @@ export function AddAccountSheet({
       title={tw('title')}
       description={mode === 'choose' ? tc('description') : tw('description')}
       closeLabel={t('common.close')}
+      // Manual: always in view, right above the keyboard while typing.
+      footer={
+        mode === 'manual' ? (
+          <TwView className="flex-row justify-end gap-2">
+            <Button variant="outline" label={tw('back')} disabled={saving} onPress={() => setMode('choose')} />
+            <Button
+              variant="secondary"
+              label={saving ? tw('creating') : tw('create')}
+              disabled={saving}
+              onPress={() => void submit()}
+            />
+          </TwView>
+        ) : undefined
+      }
     >
       {mode === 'choose' ? (
         <TwView className="gap-3 pb-2">
@@ -144,7 +158,12 @@ export function AddAccountSheet({
           ))}
         </TwView>
       ) : (
-        <TwScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 600 }} contentContainerClassName="gap-4 pb-2">
+        <TwScrollView
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          style={{ maxHeight: 600, flexShrink: 1 }}
+          contentContainerClassName="gap-4 pb-2"
+        >
           <Select<ManualAccountType>
             label={tw('typeQuestion')}
             title={tw('typeQuestion')}
@@ -283,16 +302,6 @@ export function AddAccountSheet({
               {submitError}
             </Text>
           ) : null}
-
-          <TwView className="flex-row justify-end gap-2">
-            <Button variant="outline" label={tw('back')} disabled={saving} onPress={() => setMode('choose')} />
-            <Button
-              variant="secondary"
-              label={saving ? tw('creating') : tw('create')}
-              disabled={saving}
-              onPress={() => void submit()}
-            />
-          </TwView>
         </TwScrollView>
       )}
     </Sheet>

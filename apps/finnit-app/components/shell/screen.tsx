@@ -1,28 +1,30 @@
 import * as React from 'react';
+import { RefreshControl, View, type HostInstance } from 'react-native';
 import {
-  RefreshControl,
-  View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from 'react-native';
-import { useSharedValue } from 'react-native-reanimated';
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslations } from 'use-intl';
 import { CloudOff } from 'lucide-react-native';
 
 import { cn } from '@finnit/ui-native/lib/utils';
-import { TwScrollView, TwView } from '@finnit/ui-native/lib/tw';
+import { TwAnimatedScrollView, TwView } from '@finnit/ui-native/lib/tw';
 import { BOTTOM_NAV_SPACE } from '@finnit/ui-native/components/navigation/bottom-nav-bar';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
 import { LogoSpinner } from '@finnit/ui-native/components/ui/logo-spinner';
 import { Text } from '@finnit/ui-native/components/ui/text';
 
 import { PageHeader } from './page-header';
+import { StickyContext, type StickyScroll } from './sticky';
 
 /** How far to pull for the mark to finish its first 120° turn. */
 const PULL_FULL = 80;
 /** The room the pull opens above the content (iOS holds about this much while refreshing). */
 const PULL_AREA = 64;
+/** Room above the content. */
+const CONTENT_TOP = 8;
 /** How close to the end the lists start loading their next page. */
 const END_DISTANCE = 600;
 
@@ -48,6 +50,13 @@ export function useOnScrollEnd(onEnd: () => void) {
 interface ScreenProps {
   title: string;
   subtitle?: React.ReactNode;
+  /**
+   * A toolbar fixed under the header (e.g. the history's month and
+   * filters): the content scrolls below it, never behind it, so only the
+   * screen's background shows around it. `StickyGroup` headings stick
+   * right under it.
+   */
+  sticky?: React.ReactNode;
   actions?: React.ReactNode;
   back?: boolean;
   /** Pull to refresh. */
@@ -72,6 +81,7 @@ interface ScreenProps {
 export function Screen({
   title,
   subtitle,
+  sticky,
   actions,
   back,
   refreshing = false,
@@ -105,16 +115,41 @@ export function Screen({
     };
   }, []);
 
-  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    pull.value = Math.max(0, -contentOffset.y) / PULL_FULL;
-    if (
-      contentOffset.y + layoutMeasurement.height >=
-      contentSize.height - END_DISTANCE
-    ) {
-      listeners.current.forEach((listener) => listener());
-    }
-  };
+  const notifyEnd = React.useCallback(() => {
+    listeners.current.forEach((listener) => listener());
+  }, []);
+
+  // Read on the UI thread, so stuck headings move with the scroll.
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      const { contentOffset, contentSize, layoutMeasurement } = event;
+      scrollY.value = contentOffset.y;
+      pull.value = Math.max(0, -contentOffset.y) / PULL_FULL;
+      if (
+        contentOffset.y + layoutMeasurement.height >=
+        contentSize.height - END_DISTANCE
+      ) {
+        scheduleOnRN(notifyEnd);
+      }
+    },
+  });
+
+  const viewport = React.useRef<HostInstance>(null);
+  const measurers = React.useRef(new Set<() => void>());
+  const stickyScroll = React.useMemo<StickyScroll>(
+    () => ({
+      scrollY,
+      viewport,
+      onBodyLayout: (measure) => {
+        measurers.current.add(measure);
+        return () => {
+          measurers.current.delete(measure);
+        };
+      },
+    }),
+    [scrollY],
+  );
 
   return (
     <TwView className="flex-1">
@@ -122,15 +157,16 @@ export function Screen({
       <TwView className="px-4 pb-2" style={{ paddingTop: insets.top + 8 }}>
         <PageHeader title={title} back={back} />
       </TwView>
-      <View style={{ flex: 1 }}>
-        <TwScrollView
+      {sticky ? <TwView className="px-4 pb-2">{sticky}</TwView> : null}
+      <View ref={viewport} style={{ flex: 1 }}>
+        <TwAnimatedScrollView
           className="flex-1"
           keyboardShouldPersistTaps="handled"
           onScroll={onScroll}
           scrollEventThrottle={16}
           contentContainerClassName={cn('gap-5 px-4', className)}
           contentContainerStyle={{
-            paddingTop: 8,
+            paddingTop: CONTENT_TOP,
             paddingBottom:
               insets.bottom + (withBottomNav ? BOTTOM_NAV_SPACE : 24),
           }}
@@ -183,10 +219,21 @@ export function Screen({
             />
           ) : (
             <ScrollEndContext.Provider value={subscribe}>
-              {children}
+              <StickyContext.Provider value={stickyScroll}>
+                {/* When anything in here changes size, stuck headings
+                    measure again. */}
+                <View
+                  onLayout={() => {
+                    measurers.current.forEach((measure) => measure());
+                  }}
+                  style={{ gap: 20 }}
+                >
+                  {children}
+                </View>
+              </StickyContext.Provider>
             </ScrollEndContext.Provider>
           )}
-        </TwScrollView>
+        </TwAnimatedScrollView>
         {onRefresh ? (
           <View
             pointerEvents="none"

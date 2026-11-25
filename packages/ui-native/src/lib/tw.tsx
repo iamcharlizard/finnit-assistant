@@ -30,6 +30,7 @@ type AnyComponent = React.ComponentType<Record<string, unknown>>;
 const PressableBase = Pressable as AnyComponent;
 const ScrollViewBase = ScrollView as AnyComponent;
 const AnimatedViewBase = Animated.View as AnyComponent;
+const AnimatedScrollViewBase = Animated.ScrollView as AnyComponent;
 
 const viewMapping = { className: 'style' } as const;
 const scrollMapping = {
@@ -67,5 +68,19 @@ export function TwAnimatedView(
     AnimatedViewBase,
     props as Record<string, unknown>,
     viewMapping,
+  ) as React.ReactElement;
+}
+
+/** A Reanimated ScrollView (UI-thread `useAnimatedScrollHandler`) with classes. */
+export function TwAnimatedScrollView(
+  props: AnimatedProps<ScrollViewProps> & {
+    className?: string;
+    contentContainerClassName?: string;
+  },
+): React.ReactElement {
+  return useCssElement(
+    AnimatedScrollViewBase,
+    props as Record<string, unknown>,
+    scrollMapping,
   ) as React.ReactElement;
 }

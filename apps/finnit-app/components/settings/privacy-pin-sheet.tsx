@@ -3,7 +3,6 @@ import { useTranslations } from 'use-intl';
 
 import { requestErrorMessage } from '@finnit/core/graphql/request';
 import { PIN_MAX, PIN_MIN, isValidPin } from '@finnit/core/privacy/pin';
-import { TwView } from '@finnit/ui-native/lib/tw';
 import { Button } from '@finnit/ui-native/components/ui/button';
 import { Input } from '@finnit/ui-native/components/ui/input';
 import { Sheet } from '@finnit/ui-native/components/ui/sheet';
@@ -63,6 +62,8 @@ export function PrivacyPinSheet({ hasPin, onClose, onSaved }: { hasPin: boolean;
       description={t('description', { min: PIN_MIN, max: PIN_MAX })}
       closeLabel={l.t('common.close')}
       className="gap-4"
+      // Always in view, right above the keyboard while typing.
+      footer={<Button label={saving ? t('saving') : t('save')} onPress={submit} disabled={saving} className="w-full" />}
     >
       {hasPin ? field(t('current'), current, setCurrent, true) : null}
       {field(t('new'), pin, setPin, !hasPin)}
@@ -72,9 +73,6 @@ export function PrivacyPinSheet({ hasPin, onClose, onSaved }: { hasPin: boolean;
           {error}
         </Text>
       ) : null}
-      <TwView>
-        <Button label={saving ? t('saving') : t('save')} onPress={submit} disabled={saving} className="w-full" />
-      </TwView>
     </Sheet>
   );
 }

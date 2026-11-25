@@ -326,6 +326,15 @@ export function HistoryFilters({
           }}
           title={t('moreFilters')}
           closeLabel={tc('close')}
+          // Always in view, right above the keyboard while searching.
+          footer={
+            <Button
+              variant="secondary"
+              label={tc('done')}
+              onPress={() => setOpen(false)}
+              className="w-full"
+            />
+          }
         >
           <TwView className="flex-row justify-end">
             <Button
@@ -345,10 +354,12 @@ export function HistoryFilters({
             onValueChange={setTab}
             accessibilityLabel={t('moreFilters')}
           />
-          {/* A steady height, so switching tabs doesn't resize the sheet. */}
+          {/* A steady height, so switching tabs doesn't resize the sheet
+              (shorter only while the keyboard is up). */}
           <ScrollView
-            style={{ height: 380 }}
+            style={{ height: 380, flexShrink: 1 }}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
           >
             {tab === 'accounts' ? (
               <TwView className="gap-0.5">
@@ -556,11 +567,6 @@ export function HistoryFilters({
               </TwView>
             ) : null}
           </ScrollView>
-          <Button
-            variant="secondary"
-            label={tc('done')}
-            onPress={() => setOpen(false)}
-          />
         </Sheet>
       ) : null}
     </TwView>

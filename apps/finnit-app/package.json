@@ -11,7 +11,9 @@
     "start:onboarding": "EXPO_PUBLIC_RESET_ONBOARDING=1 expo start --clear",
     "web": "expo start --web",
     "lint": "expo lint",
-    "build:device": "expo run:ios --device --configuration Release"
+    "prebuild": "expo prebuild --clean",
+    "build:device": "expo run:ios --device",
+    "release:device": "expo run:ios --device --configuration Release"
   },
   "dependencies": {
     "@expo-google-fonts/ubuntu": "^0.4.1",

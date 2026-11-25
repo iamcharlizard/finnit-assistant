@@ -46,7 +46,8 @@ const TYPE_COLORS: Record<DashboardAccount['type'], string> = {
  * The accounts and their balances (those in the total first), each with
  * how it updates: a row opens the account, "Ver todas" opens Cuentas and
  * the title folds the section (remembered on the device), like the
- * home's other sections.
+ * home's other sections. Each account is a card, like the upcoming
+ * payments.
  */
 export function DashboardAccounts({
   accounts,
@@ -69,7 +70,7 @@ export function DashboardAccounts({
         onToggle={toggle}
         action={<TextLink href="/accounts" label={seeAll} />}
       />
-      <Collapsible open={!collapsed}>
+      <Collapsible open={!collapsed} contentStyle={{ gap: 8 }}>
         {accounts.map((account) => {
           const Glyph = ICONS[account.type];
           const detail = [
@@ -96,17 +97,17 @@ export function DashboardAccounts({
                   params: { accountId: account.id },
                 })
               }
-              className="min-h-14 flex-row items-center gap-3 rounded-2xl px-1 py-2 active:bg-accent"
+              className="min-h-11 w-full flex-row items-center gap-3 rounded-2xl border border-glass-border bg-surface p-3 active:bg-accent"
             >
               <TwView
-                className="size-10 items-center justify-center rounded-xl"
+                className="size-12 shrink-0 items-center justify-center rounded-chip"
                 style={{
                   backgroundColor: resolve(
                     account.color ?? TYPE_COLORS[account.type],
                   ),
                 }}
               >
-                <Glyph size={20} color="#ffffff" />
+                <Glyph size={22} color="#ffffff" />
               </TwView>
               <TwView className="min-w-0 flex-1">
                 <Text

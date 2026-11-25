@@ -372,19 +372,7 @@
       "seeAll": "Ver todas",
       "seeAllCount": "Ver todas ({count})",
       "excluded": "No suma al total",
-      "open": "Abrir {name}",
-      "sync": {
-        "manual": "Manual",
-        "auto": "Automática · {ago}",
-        "autoPending": "Automática",
-        "failed": "No se actualizó",
-        "ago": {
-          "now": "hace un momento",
-          "minutes": "hace {count} min",
-          "hours": "hace {count} h",
-          "days": "hace {count} d"
-        }
-      }
+      "open": "Abrir {name}"
     },
     "amounts": {
       "hide": "Ocultar montos",
@@ -882,6 +870,18 @@
       "empty": "Aún no hay periodos con cargos.",
       "bar": "Corte {label}: {total}",
       "openDetail": "Ver detalle"
+    },
+    "sync": {
+      "manual": "Manual",
+      "auto": "Automática · {ago}",
+      "autoPending": "Automática",
+      "failed": "No se actualizó",
+      "ago": {
+        "now": "hace un momento",
+        "minutes": "hace {count} min",
+        "hours": "hace {count} h",
+        "days": "hace {count} d"
+      }
     }
   },
   "recurring": {

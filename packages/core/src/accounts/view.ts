@@ -1,3 +1,4 @@
+import { accountSync, type AccountSync, type SyncConnection } from './sync';
 import type { CardVariant } from '../ui/bank-card';
 
 import type { Localizer } from '../i18n/translator';
@@ -31,13 +32,13 @@ export interface LinkedAccountInfo {
   availableCredit: number | null;
 }
 
-export interface BankConnectionInfo {
+export interface BankConnectionInfo extends SyncConnection {
   institution: string | null;
   accounts: LinkedAccountInfo[];
 }
 
 export const BANK_CONNECTIONS_FIELDS =
-  'institution accounts { accountId name mask creditLimit availableCredit }';
+  'institution status lastSyncedAt accounts { accountId name mask creditLimit availableCredit }';
 
 /** Sections of "Cuentas y tarjetas", in this order. */
 export const ACCOUNT_GROUPS = ['credit', 'debit', 'savings'] as const;
@@ -70,6 +71,8 @@ export interface AccountSummary {
   secondaryColor: string | null;
   /** Imported from a bank connection ("Conectada") or added by hand. */
   linked: boolean;
+  /** How it updates: "Manual", "Automática · hace 2 h", "No se actualizó". */
+  sync: AccountSync;
   archived: boolean;
   /** The user's cash account ("Efectivo"): can't be archived or deleted. */
   defaultCash: boolean;
@@ -121,8 +124,16 @@ export function buildAccounts(
   accounts: ReadonlyArray<ApiAccount>,
   connections: ReadonlyArray<BankConnectionInfo>,
   { locale, t }: Localizer,
-  { showArchived = false }: { showArchived?: boolean } = {},
+  {
+    showArchived = false,
+    now = new Date(),
+  }: {
+    showArchived?: boolean;
+    /** For "hace 2 h" (the last bank update). */
+    now?: Date;
+  } = {},
 ): AccountSummary[] {
+  const l = { locale, t };
   const linked = new Map<
     string,
     LinkedAccountInfo & { institution: string | null }
@@ -197,6 +208,7 @@ export function buildAccounts(
       primaryColor: design?.primaryColor ?? null,
       secondaryColor: design?.secondaryColor ?? null,
       linked: Boolean(bank),
+      sync: accountSync(account.id, connections, now, l),
       archived: account.archived,
       defaultCash: Boolean(account.isDefaultCash),
       includedInTotal: account.includeInTotal !== false,

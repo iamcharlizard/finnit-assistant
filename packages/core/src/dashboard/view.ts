@@ -1,3 +1,8 @@
+import {
+  accountSync,
+  type AccountSync,
+  type SyncConnection,
+} from '../accounts/sync';
 import type { Localizer } from '../i18n/translator';
 import {
   accountLabel,
@@ -49,12 +54,7 @@ const FLOW_FIELDS = 'now before pendingSources';
 export const MONTH_COMPARISON_FIELDS = `income { ${FLOW_FIELDS} } expenses { ${FLOW_FIELDS} }`;
 
 /** A bank connection, for when its accounts were last updated. */
-export interface ApiDashboardConnection {
-  status: 'active' | 'error' | 'revoked';
-  /** ISO date-time of the last successful update. */
-  lastSyncedAt: string | null;
-  accounts: { accountId: string | null }[];
-}
+export type ApiDashboardConnection = SyncConnection;
 export const DASHBOARD_CONNECTION_FIELDS =
   'status lastSyncedAt accounts { accountId }';
 
@@ -110,7 +110,7 @@ export interface DashboardAccount {
    * How it updates: by hand, or from the bank (with when it last did, or
    * that the last try failed). `label`: "Manual", "Automática · hace 2 h".
    */
-  sync: { kind: 'manual' | 'auto' | 'failed'; label: string };
+  sync: AccountSync;
 }
 
 export interface DashboardView {
@@ -293,56 +293,6 @@ function buildStats(
       hint: t('dashboard.stats.pendingHint', { days: UPCOMING_DAYS }),
     },
   ];
-}
-
-/** "hace un momento", "hace 5 min", "hace 2 h", "hace 3 d". */
-function agoLabel(iso: string, now: Date, { t }: Localizer): string {
-  const minutes = Math.max(
-    0,
-    Math.floor((now.getTime() - new Date(iso).getTime()) / 60_000),
-  );
-  if (minutes < 1) return t('dashboard.accounts.sync.ago.now');
-  if (minutes < 60)
-    return t('dashboard.accounts.sync.ago.minutes', { count: minutes });
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24)
-    return t('dashboard.accounts.sync.ago.hours', { count: hours });
-  return t('dashboard.accounts.sync.ago.days', {
-    count: Math.floor(hours / 24),
-  });
-}
-
-/**
- * How an account updates: from a live bank connection (automatic, with
- * when it last did, or that the last try failed) or by hand. An account of
- * a disconnected bank no longer updates on its own: manual.
- */
-export function accountSync(
-  accountId: string,
-  connections: ReadonlyArray<ApiDashboardConnection>,
-  now: Date,
-  l: Localizer,
-): DashboardAccount['sync'] {
-  const { t } = l;
-  const connection = connections.find(
-    (c) =>
-      c.status !== 'revoked' &&
-      c.accounts.some((a) => a.accountId === accountId),
-  );
-  if (!connection) {
-    return { kind: 'manual', label: t('dashboard.accounts.sync.manual') };
-  }
-  if (connection.status === 'error') {
-    return { kind: 'failed', label: t('dashboard.accounts.sync.failed') };
-  }
-  return {
-    kind: 'auto',
-    label: connection.lastSyncedAt
-      ? t('dashboard.accounts.sync.auto', {
-          ago: agoLabel(connection.lastSyncedAt, now, l),
-        })
-      : t('dashboard.accounts.sync.autoPending'),
-  };
 }
 
 /** The "Cuentas" card: those in the total first, the biggest balance first. */

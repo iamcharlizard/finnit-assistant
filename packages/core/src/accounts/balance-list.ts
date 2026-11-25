@@ -32,6 +32,8 @@ export interface AccountBalanceRow {
   nextPayment: string | null;
   archived: boolean;
   includedInTotal: boolean;
+  /** How it updates (a pill): "Manual", "Automática · hace 2 h"… */
+  sync: AccountSummary['sync'];
 }
 
 export interface AccountBalanceGroup {
@@ -55,6 +57,7 @@ export function buildAccountBalanceList(
         .filter(Boolean)
         .join(' · '),
       amount: account.balance,
+      sync: account.sync,
       caption: t(credit ? 'accounts.cardOwed' : 'accounts.cardAvailable'),
       tone: credit
         ? credit.owed > 0

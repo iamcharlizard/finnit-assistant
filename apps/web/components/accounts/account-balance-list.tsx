@@ -5,6 +5,7 @@ import { ChevronRight } from 'lucide-react';
 
 import { Card } from '@finnit/ui/components/ui/card';
 import { Progress } from '@finnit/ui/components/ui/progress';
+import { SyncPill } from '@finnit/ui/components/finance/sync-pill';
 import { cn } from '@finnit/ui/lib/utils';
 
 import type { AccountBalanceGroup } from '@finnit/core/accounts/balance-list';
@@ -61,6 +62,7 @@ export function AccountBalanceList({
                             .filter(Boolean)
                             .join(' · ') || ' '}
                         </span>
+                        <SyncPill sync={row.sync} className="mt-1.5" />
                       </span>
                       <span className="flex shrink-0 flex-col items-end">
                         <span

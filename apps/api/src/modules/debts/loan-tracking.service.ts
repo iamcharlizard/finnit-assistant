@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   AiFeatureKey,
   LoanInterestMode,
+  LoanType,
   OccurrenceMatchSource,
   OccurrenceStatus,
   Prisma,
@@ -27,6 +28,7 @@ import { DEBT_INCLUDE, DebtsService } from './debts.service';
 import {
   balanceOf,
   financedCharges,
+  isLoanContainer,
   isScheduledByCharges,
   totalOwedOf,
 } from './debt-ledger';
@@ -511,24 +513,52 @@ export function withBreakdown(
     paymentFrequency: RecurringFrequency | null;
     includesVat: boolean;
     periodicFee: Prisma.Decimal | number | null;
+    loanType: LoanType | null;
     charges: unknown[];
   } & Parameters<typeof totalOwedOf>[0],
   items: Omit<LoanScheduleItem, 'balance'>[],
 ): LoanScheduleItem[] {
   const fee = debt.periodicFee === null ? 0 : Number(debt.periodicFee);
+  // A purchase financing or personal loan with a single purchase given by
+  // its rate: that purchase's table (its terms are the charge's).
+  const [only] = debt.charges as Array<{
+    principal: Prisma.Decimal | number;
+    interestMode: LoanInterestMode | null;
+    interestRateAnnual: Prisma.Decimal | number | null;
+    installments: number | null;
+    includesVat: boolean;
+  }>;
+  const terms =
+    isLoanContainer(debt) && debt.charges.length === 1 && only
+      ? {
+          principal: only.principal,
+          interestMode: only.interestMode,
+          interestRateAnnual: only.interestRateAnnual,
+          installments: only.installments,
+          includesVat: only.includesVat,
+        }
+      : debt.charges.length === 0
+        ? {
+            principal: debt.principal,
+            interestMode: debt.interestMode,
+            interestRateAnnual: debt.interestRateAnnual,
+            installments: debt.installmentsTotal,
+            includesVat: debt.includesVat,
+          }
+        : null;
   if (
-    debt.interestMode === LoanInterestMode.rate &&
-    debt.interestRateAnnual !== null &&
-    debt.installmentsTotal &&
-    debt.paymentFrequency &&
-    debt.charges.length === 0
+    terms &&
+    terms.interestMode === LoanInterestMode.rate &&
+    terms.interestRateAnnual !== null &&
+    terms.installments &&
+    debt.paymentFrequency
   ) {
     const rows = amortizationSchedule({
-      principal: Number(debt.principal),
-      annualRatePercent: Number(debt.interestRateAnnual),
-      installments: debt.installmentsTotal,
+      principal: Number(terms.principal),
+      annualRatePercent: Number(terms.interestRateAnnual),
+      installments: terms.installments,
       frequency: debt.paymentFrequency,
-      includesVat: debt.includesVat,
+      includesVat: terms.includesVat,
     });
     return items.map((item, i) => {
       const row = rows[i];

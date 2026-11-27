@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { useTranslations } from 'use-intl';
 
+import { budgetCategoryOptions } from '@finnit/core/budgets/options';
+import type { BudgetCategory } from '@finnit/core/budgets/types';
 import { debtErrorMessage, updateLoan } from '@finnit/core/debts/api';
 import { buildLoanUpdate, loanEditFields, loanEditFormOf, validateLoanEdit, type LoanEditErrorCode, type LoanEditForm } from '@finnit/core/debts/loan-edit';
 import { hasErrors } from '@finnit/core/debts/form';
@@ -12,7 +14,9 @@ import { DatePicker } from '@finnit/ui-native/components/ui/date-picker';
 import { Input } from '@finnit/ui-native/components/ui/input';
 import { MoneyInput } from '@finnit/ui-native/components/ui/money-input';
 import { NumberInput } from '@finnit/ui-native/components/ui/number-input';
+import { Select } from '@finnit/ui-native/components/ui/select';
 import { Sheet } from '@finnit/ui-native/components/ui/sheet';
+import { Switch } from '@finnit/ui-native/components/ui/switch';
 import { Text } from '@finnit/ui-native/components/ui/text';
 
 import { useGql } from '@/lib/graphql/runner';
@@ -23,15 +27,19 @@ import { ContactSelect } from './contact-select';
  * Edits a loan's details (the web's details tab in edit mode). Purchase
  * financing and personal loans: only the loan's own data (name, lender);
  * their amounts are edited purchase by purchase. Others: also the amount,
- * number of payments, date and fees (the API recomputes the terms).
+ * number of payments, date, fees (the API recomputes the terms), what it
+ * was for, and whether its deposit still counts in the account.
  */
 export function LoanEditSheet({
   debt,
+  categories,
   today,
   onClose,
   onSaved,
 }: {
   debt: ApiDebt;
+  /** For "¿En qué se usó?" (informative). */
+  categories: BudgetCategory[];
   today: DayKey;
   onClose: () => void;
   onSaved: (changed: boolean) => void;
@@ -44,6 +52,15 @@ export function LoanEditSheet({
   const [errors, setErrors] = React.useState<ReturnType<typeof validateLoanEdit>>({});
   const [saving, setSaving] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const categoryItems = React.useMemo(
+    () =>
+      budgetCategoryOptions(categories, locale).map((o) => ({
+        value: o.value,
+        label: o.label,
+        hint: o.group && o.group !== o.label ? o.group : undefined,
+      })),
+    [categories, locale],
+  );
   const errorText = (code: LoanEditErrorCode | undefined) => (code ? t(`debts.loanEditValidation.${code}`) : undefined);
   const update = (patch: Partial<LoanEditForm>) => {
     setForm((current) => ({ ...current, ...patch }));
@@ -120,6 +137,34 @@ export function LoanEditSheet({
         ) : null}
         {fields.periodicFee ? (
           <MoneyInput label={td('facts.periodicFee')} value={form.periodicFee} onValueChange={(periodicFee) => update({ periodicFee })} error={errorText(errors.periodicFee)} />
+        ) : null}
+        {fields.terms ? (
+          <Select
+            label={td('facts.purpose')}
+            title={td('facts.purpose')}
+            options={categoryItems}
+            value={form.purposeCategoryId || null}
+            onValueChange={(purposeCategoryId) => update({ purposeCategoryId })}
+            placeholder={td('purposePlaceholder')}
+            searchable
+            searchPlaceholder={td('purposeSearch')}
+            emptyLabel={td('noResults')}
+            closeLabel={t('common.close')}
+          />
+        ) : null}
+        {/* Money already spent: turning it off removes the deposit (it can't come back on). */}
+        {fields.terms && debt.destination === 'deposit' && debt.depositAddsToBalance ? (
+          <TwView className="flex-row items-center gap-3">
+            <TwView className="min-w-0 flex-1">
+              <Text className="text-sm">{t('debts.loan.addsToBalance')}</Text>
+              <Text className="text-xs text-on-surface-variant">{td('removeDepositHint')}</Text>
+            </TwView>
+            <Switch
+              checked={form.depositAddsToBalance}
+              onCheckedChange={(depositAddsToBalance) => update({ depositAddsToBalance })}
+              accessibilityLabel={t('debts.loan.addsToBalance')}
+            />
+          </TwView>
         ) : null}
         {fields.terms ? <Text className="text-xs text-on-surface-variant">{td('editHint')}</Text> : null}
         {submitError ? (

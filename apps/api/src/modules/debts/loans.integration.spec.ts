@@ -1865,4 +1865,43 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
     expect(Number(reopened.paidAmount)).toBe(0);
     expect((await debts.findById(loan.id, userId)).remainingBalance).toBe(150);
   });
+
+  it('breaks down a purchase financing with one purchase by rate', async () => {
+    const loan = await loans.create(userId, {
+      name: 'Kueski laptop',
+      kind: DebtKind.loan,
+      loanType: LoanType.purchase_financing,
+      lenderName: 'Kueski Pay',
+      principal: 3_000,
+      interestMode: LoanInterestMode.rate,
+      interestRateAnnual: 60,
+      includesVat: true,
+      installmentsTotal: 3,
+      paymentFrequency: RecurringFrequency.monthly,
+      firstPaymentDate: d('2026-12-10'),
+      startDate: d('2026-11-20'),
+    });
+    const schedule = await tracking.schedule(userId, loan.id);
+    expect(schedule).toHaveLength(3);
+    expect(
+      schedule.every((s) => s.interest != null && s.principal != null),
+    ).toBe(true);
+    expect(
+      Math.round(schedule.reduce((sum, s) => sum + (s.principal ?? 0), 0)),
+    ).toBe(3_000);
+
+    // Two purchases: no single table to read it from.
+    await loans.addCharge(userId, {
+      debtId: loan.id,
+      date: d('2026-11-21'),
+      principal: 500,
+      installments: 2,
+      destination: DebtChargeDestination.purchase,
+    });
+    expect(
+      (await tracking.schedule(userId, loan.id)).every(
+        (s) => s.interest == null,
+      ),
+    ).toBe(true);
+  });
 });

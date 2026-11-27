@@ -11,7 +11,20 @@ import {
 } from '@/components/admin/confirm-dialog';
 import type { BudgetCategory } from '@finnit/core/budgets/types';
 import { debtErrorMessage, deleteDebt } from '@finnit/core/debts/api';
-import { isCardInstallments, type ApiDebt } from '@finnit/core/debts/types';
+import {
+  pendingPayments,
+  type PendingPayment,
+} from '@finnit/core/debts/allocation';
+import { buildLoanDetailView } from '@finnit/core/debts/detail-view';
+import {
+  DEBT_DETAIL_QUERY,
+  type DebtDetailResult,
+} from '@finnit/core/debts/request';
+import {
+  isCardInstallments,
+  isLoanContainer,
+  type ApiDebt,
+} from '@finnit/core/debts/types';
 import type { DebtItem } from '@finnit/core/debts/view';
 import type { DayKey } from '@finnit/core/finance/dates';
 import type { ApiAccount } from '@finnit/core/finance/types';
@@ -58,6 +71,37 @@ export function DebtList({
   }
   const [editing, setEditing] = React.useState<ApiDebt | null>(null);
   const [paying, setPaying] = React.useState<DebtItem | null>(null);
+  // Purchase financing and personal loans: their pending payments, loaded
+  // before opening the dialog so the payment can be split over them.
+  const [pending, setPending] = React.useState<PendingPayment[] | undefined>();
+  const l = useLocalizer();
+
+  async function pay(item: DebtItem) {
+    if (!isLoanContainer(item.debt)) {
+      setPending(undefined);
+      setPaying(item);
+      return;
+    }
+    setBusyId(item.id);
+    try {
+      const data = await gql<DebtDetailResult>(DEBT_DETAIL_QUERY, {
+        id: item.id,
+        debtId: item.id,
+      });
+      const view = buildLoanDetailView(
+        data.debt,
+        data.loanSchedule,
+        { today },
+        l,
+      );
+      setPending(pendingPayments(view.schedule));
+      setPaying(item);
+    } catch (error) {
+      toast.error(debtErrorMessage(error, t));
+    } finally {
+      setBusyId(null);
+    }
+  }
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
   const [busyId, setBusyId] = React.useState<string | null>(null);
 
@@ -117,7 +161,7 @@ export function DebtList({
             key={item.id}
             item={item}
             busy={busyId === item.id}
-            onPay={() => setPaying(item)}
+            onPay={() => void pay(item)}
             // A card purchase is edited on its page (its terms and installments).
             onEdit={() =>
               isCardInstallments(item.debt)
@@ -141,6 +185,7 @@ export function DebtList({
         <PaymentDialog
           debt={paying.debt}
           remainingLabel={paying.remaining}
+          pending={pending}
           accounts={accounts}
           categories={categories}
           today={today}

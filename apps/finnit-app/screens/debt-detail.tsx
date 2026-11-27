@@ -380,6 +380,7 @@ export function DebtDetailScreen() {
           {editingLoan ? (
             <LoanEditSheet
               debt={debt}
+              categories={view.categories}
               today={today}
               onClose={() => setEditingLoan(false)}
               onSaved={(didChange) => {

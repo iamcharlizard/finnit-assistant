@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Info } from 'lucide-react-native';
+import { Info, type LucideIcon } from 'lucide-react-native';
 
 import { TwPressable, TwView } from '../../lib/tw';
 import { Icon } from './icon';
@@ -14,6 +14,9 @@ interface InfoHintProps {
   /** Or a list (e.g. what a payment covers). */
   items?: string[];
   closeLabel?: string;
+  /** Another icon than the info one (e.g. a question mark for a screen's help). */
+  icon?: LucideIcon;
+  iconSize?: number;
   /** The trigger instead of the info icon (e.g. a "+2" chip). */
   children?: React.ReactNode;
 }
@@ -23,7 +26,7 @@ interface InfoHintProps {
  * paragraph. Touch has no hover, so the icon (or `children`) opens a small
  * sheet with the text or the list.
  */
-function InfoHint({ label, text, items, closeLabel, children }: InfoHintProps) {
+function InfoHint({ label, text, items, closeLabel, icon = Info, iconSize = 16, children }: InfoHintProps) {
   const [open, setOpen] = React.useState(false);
   return (
     <>
@@ -34,7 +37,7 @@ function InfoHint({ label, text, items, closeLabel, children }: InfoHintProps) {
         onPress={() => setOpen(true)}
         className="items-center justify-center active:opacity-60"
       >
-        {children ?? <Icon icon={Info} size={16} color="--on-surface-variant" />}
+        {children ?? <Icon icon={icon} size={iconSize} color="--on-surface-variant" />}
       </TwPressable>
       <Sheet open={open} onOpenChange={setOpen} title={label} closeLabel={closeLabel}>
         <TwView className="gap-2 pb-2">

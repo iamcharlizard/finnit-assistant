@@ -1,10 +1,11 @@
 import { useIsFocused, useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, CircleHelp } from 'lucide-react-native';
 
 import { TwPressable } from '@finnit/ui-native/lib/tw';
 import { Avatar } from '@finnit/ui-native/components/ui/avatar';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
+import { InfoHint } from '@finnit/ui-native/components/ui/info-hint';
 import { TopAppBar } from '@finnit/ui-native/components/navigation/top-app-bar';
 import { TourTarget } from '@finnit/ui-native/components/tour/tour-target';
 
@@ -16,13 +17,16 @@ import { avatarSource } from '@/lib/profile/avatar';
  * A screen's heading in the floating top bar, like the web's PageHeader:
  * title, the notifications bell and the avatar (profile menu). `Screen`
  * renders the subtitle and actions itself, in the scrolling content. With `back`, a button before the title goes back.
+ * `help` (what the screen is for) opens from a question mark next to the title.
  */
 export function PageHeader({
   title,
   back,
+  help,
 }: {
   title: string;
   back?: boolean;
+  help?: string;
 }) {
   const router = useRouter();
   const t = useTranslations();
@@ -43,6 +47,11 @@ export function PageHeader({
           >
             <Icon icon={ArrowLeft} size={22} color="--on-background" />
           </TwPressable>
+        ) : null
+      }
+      titleAccessory={
+        help ? (
+          <InfoHint label={title} text={help} icon={CircleHelp} iconSize={20} closeLabel={t('common.close')} />
         ) : null
       }
       notificationCount={unread}

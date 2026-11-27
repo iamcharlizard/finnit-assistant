@@ -178,10 +178,7 @@ function NewDebtForm({
   const [mergeChoice, setMergeChoice] = React.useState<string | null>(null);
   const mergeable = kind === 'purchase_financing' || kind === 'personal';
   React.useEffect(() => {
-    if (!mergeable) {
-      setCandidates([]);
-      return;
-    }
+    if (!mergeable) return;
     let cancelled = false;
     const timer = setTimeout(() => {
       loadMergeCandidates({ loanType: loan.loanType, lenderName: loan.lenderName, lenderContactId: loan.lenderContactId || null }, gql)
@@ -197,7 +194,7 @@ function NewDebtForm({
       clearTimeout(timer);
     };
   }, [mergeable, loan.loanType, loan.lenderName, loan.lenderContactId, gql]);
-  const mergeInto = mergeChoice && mergeChoice !== 'separate' ? mergeChoice : undefined;
+  const mergeInto = mergeable && mergeChoice && mergeChoice !== 'separate' ? mergeChoice : undefined;
 
   async function save(run: () => Promise<string>, name: string) {
     setSaving(true);

@@ -93,14 +93,19 @@ function RecurringCalendar({
                 accessibilityLabel={`${Number(day.slice(8))}, ${labels.eventCount(dayEvents.length)}`}
                 onPress={() => onSelectDay(selected ? null : day)}
                 className={cn(
-                  'flex-1 items-center justify-center gap-1 rounded-xl',
+                  'flex-1 items-center justify-center gap-0.5 rounded-xl',
                   selected ? 'bg-primary-15' : 'active:bg-accent',
-                  day === today && !selected && 'border border-brand-ink',
                 )}
               >
-                <Text weight={day === today ? 'bold' : 'regular'} className="text-sm">
-                  {String(Number(day.slice(8)))}
-                </Text>
+                {/* Today: the number in a filled circle of the main color. */}
+                <TwView className={cn('size-7 items-center justify-center rounded-full', day === today && 'bg-primary')}>
+                  <Text
+                    weight={day === today ? 'bold' : 'regular'}
+                    className={cn('text-sm', day === today && 'text-primary-foreground')}
+                  >
+                    {String(Number(day.slice(8)))}
+                  </Text>
+                </TwView>
                 <TwView className="h-1.5 flex-row gap-0.5">
                   {dayEvents.slice(0, 3).map((event) => (
                     <TwView

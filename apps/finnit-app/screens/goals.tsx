@@ -27,7 +27,7 @@ export function GoalsScreen() {
   return (
     <Screen
       title={t('goals.title')}
-      subtitle={t('goals.subtitle')}
+      help={t('goals.subtitle')}
       actions={view && view.cards.length > 0 ? <Button variant="secondary" size="sm" icon={Plus} label={t('goals.new')} onPress={() => setCreating(true)} /> : undefined}
       loading={loading && !view}
       error={!view ? error : undefined}

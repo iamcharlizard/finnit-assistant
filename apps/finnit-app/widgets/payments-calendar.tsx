@@ -35,13 +35,16 @@ const PaymentsCalendar = (
   'widget';
   const c =
     environment.colorScheme === 'dark' ? props.colors.dark : props.colors.light;
+  // iOS's own margins are off (`contentMarginsDisabled` in app.json): this
+  // smaller one leaves more room for the month and the payments.
+  const MARGIN = 12;
   // Wide cells (there's room across) and rows as tall as the height allows:
   // months that span six weeks get slightly shorter rows to still fit.
   const CELL = 21;
   const sixWeeks = props.weeks.length > 5;
-  const ROW = sixWeeks ? 16 : 18;
+  const ROW = sixWeeks ? 17 : 20;
   // Today's disc may spill a point past a short row (nothing is drawn there).
-  const DISC = sixWeeks ? 17 : 18;
+  const DISC = sixWeeks ? 18 : 19;
   const DAY_SIZE = sixWeeks ? 9 : 10;
   // iOS 26's clear (glass) and tinted home screens draw the widget in one
   // tint over glass and drop its background: colors would be lost, so
@@ -79,6 +82,7 @@ const PaymentsCalendar = (
       <VStack
         spacing={6}
         modifiers={[
+          padding({ all: MARGIN }),
           containerBackground(background, 'widget'),
           widgetURL(props.url),
         ]}
@@ -103,6 +107,7 @@ const PaymentsCalendar = (
       spacing={14}
       alignment="top"
       modifiers={[
+        padding({ all: MARGIN }),
         containerBackground(background, 'widget'),
         widgetURL(props.url),
       ]}

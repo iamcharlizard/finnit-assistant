@@ -56,7 +56,21 @@ export function DebtsScreen() {
   return (
     <Screen
       title={t('title')}
-      subtitle={t('subtitle')}
+      help={t('subtitle')}
+      sticky={
+        view && view.all.debts.length > 0 ? (
+          <Segmented
+            accessibilityLabel={t('title')}
+            options={[
+              { value: 'summary', label: t('tabs.summary') },
+              { value: 'loans', label: t('tabs.loans', { count: loans.length }) },
+              { value: 'other', label: t('tabs.other', { count: others.length }) },
+            ]}
+            value={tab}
+            onValueChange={(next) => setTab(next as Tab)}
+          />
+        ) : undefined
+      }
       actions={<Button size="sm" variant="secondary" icon={Plus} label={t('new')} onPress={() => create(tab === 'other' ? 'card_installments' : 'institutional')} />}
       loading={loading}
       error={error}
@@ -68,16 +82,6 @@ export function DebtsScreen() {
           <EmptyState icon={Landmark} title={t('empty.title')} description={t('empty.description')} />
         ) : (
           <TwView className="gap-5">
-            <Segmented
-              accessibilityLabel={t('title')}
-              options={[
-                { value: 'summary', label: t('tabs.summary') },
-                { value: 'loans', label: t('tabs.loans', { count: loans.length }) },
-                { value: 'other', label: t('tabs.other', { count: others.length }) },
-              ]}
-              value={tab}
-              onValueChange={(next) => setTab(next as Tab)}
-            />
             {tab === 'summary' ? (
               <>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }} snapToInterval={cardWidth + 12} decelerationRate="fast">

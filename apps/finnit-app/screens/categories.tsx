@@ -107,8 +107,10 @@ export function CategoriesScreen() {
   };
 
   return (
-    <Screen title={t('title')} subtitle={t('subtitle')} back withBottomNav={false} loading={loading} error={error} refreshing={refreshing} onRefresh={refresh}>
-      <TwView className="gap-4">
+    <Screen
+      title={t('title')}
+      help={t('subtitle')}
+      sticky={
         <Segmented
           accessibilityLabel={t('title')}
           options={[
@@ -118,6 +120,9 @@ export function CategoriesScreen() {
           value={kind}
           onValueChange={(next) => setKind(next as CategoryKind)}
         />
+      }
+      back withBottomNav={false} loading={loading} error={error} refreshing={refreshing} onRefresh={refresh}>
+      <TwView className="gap-4">
         {groups.map((group) => (
           <TwView key={group.id} className="rounded-card border border-glass-border bg-glass px-4 py-2">
             {row(group, true)}

@@ -3,7 +3,11 @@ import { useQuery } from 'urql';
 import { useTranslations } from 'use-intl';
 import { Landmark } from 'lucide-react-native';
 
-import { buildBudgetCard, budgetOf } from '@finnit/core/budgets/view';
+import {
+  BUDGETS_PATH,
+  buildBudgetCard,
+  budgetOf,
+} from '@finnit/core/budgets/view';
 import {
   DASHBOARD_BUDGET_QUERY,
   DASHBOARD_QUERY,
@@ -21,6 +25,7 @@ import { TwView } from '@finnit/ui-native/lib/tw';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
 
 import { BudgetDashboardCard } from '@/components/budgets/budget-dashboard-card';
+import { HIDDEN_ON_MOBILE } from '@/lib/nav/hidden';
 import { TourTarget } from '@finnit/ui-native/components/tour/tour-target';
 
 import { BalanceSummary } from '@/components/dashboard/balance-summary';
@@ -40,6 +45,9 @@ import { useAmountsVisibility } from '@/lib/privacy/amounts-visibility';
  * the analytics in a sideways row, the accounts, budget, upcoming payments
  * and debts.
  */
+/** The budget card leads to Presupuestos, hidden on mobile for now. */
+const BUDGETS_HIDDEN = HIDDEN_ON_MOBILE.has(BUDGETS_PATH);
+
 export function DashboardScreen() {
   const t = useTranslations('dashboard');
   const tc = useTranslations('common');
@@ -67,6 +75,7 @@ export function DashboardScreen() {
   const [budgetResult, refetchBudget] = useQuery<DashboardBudgetResult>({
     query: DASHBOARD_BUDGET_QUERY,
     variables: { ...month },
+    pause: BUDGETS_HIDDEN,
   });
   const budget = budgetResult.data
     ? budgetOf(budgetResult.data.budgets, month)
@@ -82,7 +91,7 @@ export function DashboardScreen() {
 
   const onRefresh = () => {
     refresh();
-    refetchBudget({ requestPolicy: 'network-only' });
+    if (!BUDGETS_HIDDEN) refetchBudget({ requestPolicy: 'network-only' });
   };
 
   if (view?.isEmpty) {
@@ -132,7 +141,7 @@ export function DashboardScreen() {
               count={view.accountCount}
             />
           ) : null}
-          {budgetCard ? <BudgetDashboardCard card={budgetCard} /> : null}
+          {budgetCard && !BUDGETS_HIDDEN ? <BudgetDashboardCard card={budgetCard} /> : null}
           <DashboardUpcoming rows={view.upcoming} />
           {view.debts ? (
             <DashboardDebts

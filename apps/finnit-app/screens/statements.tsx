@@ -40,7 +40,7 @@ export function StatementsScreen() {
   const open = (id: string) => router.push({ pathname: '/statements/[id]', params: { id } });
 
   return (
-    <Screen title={t('title')} subtitle={t('subtitle')} loading={loading} error={error} refreshing={refreshing} onRefresh={refresh}>
+    <Screen title={t('title')} help={t('subtitle')} loading={loading} error={error} refreshing={refreshing} onRefresh={refresh}>
       {view ? (
         <TwView className="gap-5">
           <StatementUpload

@@ -102,6 +102,16 @@ const VARIANTS: Record<AccountGroupKey, CardVariant[]> = {
   savings: ['virtual', 'platinum'],
 };
 
+/**
+ * The digits a bank puts in an account's name when it sends no mask
+ * ("Explora Banamex **037- MXN" → "037"): three or four after two or more
+ * asterisks. Null when the name has none.
+ */
+export function digitsFromName(name: string | null | undefined): string | null {
+  const match = name?.match(/\*{2,}\s*(\d{3,4})(?!\d)/);
+  return match ? match[1]! : null;
+}
+
 /** "BBVA" from linked data or the account; "•••• •••• •••• 1234". */
 export function maskedNumberOf(
   type: AccountType,
@@ -169,7 +179,12 @@ export function buildAccounts(
   return visible.map((account) => {
     const bank = linked.get(account.id);
     const group = groupOf(account.type);
-    const last4 = account.metadata?.last4 ?? bank?.mask ?? null;
+    // The user's digits, the bank's mask, or the digits in the bank's name.
+    const last4 =
+      account.metadata?.last4 ??
+      bank?.mask ??
+      digitsFromName(bank?.name) ??
+      (bank ? digitsFromName(account.name) : null);
     const isCredit = account.type === 'credit';
     const variants = VARIANTS[group];
     const variant = variants[used[group]++ % variants.length]!;

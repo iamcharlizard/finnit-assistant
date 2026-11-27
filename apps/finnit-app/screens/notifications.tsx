@@ -104,7 +104,7 @@ export function NotificationsScreen() {
   return (
     <Screen
       title={t('title')}
-      subtitle={t('subtitle')}
+      help={t('subtitle')}
       back
       withBottomNav={false}
       loading={loading}

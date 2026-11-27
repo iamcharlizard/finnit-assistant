@@ -49,7 +49,10 @@ export function useOnScrollEnd(onEnd: () => void) {
 
 interface ScreenProps {
   title: string;
+  /** Under the header, scrolling: data about what is shown (a date, a period). */
   subtitle?: React.ReactNode;
+  /** What the screen is for: a question mark next to the title opens it. */
+  help?: string;
   /**
    * A toolbar fixed under the header (e.g. the history's month and
    * filters): the content scrolls below it, never behind it, so only the
@@ -81,6 +84,7 @@ interface ScreenProps {
 export function Screen({
   title,
   subtitle,
+  help,
   sticky,
   actions,
   back,
@@ -155,7 +159,7 @@ export function Screen({
     <TwView className="flex-1">
       {/* The bar stays put; everything under it scrolls (and pulls to refresh). */}
       <TwView className="px-4 pb-2" style={{ paddingTop: insets.top + 8 }}>
-        <PageHeader title={title} back={back} />
+        <PageHeader title={title} back={back} help={help} />
       </TwView>
       {sticky ? <TwView className="px-4 pb-2">{sticky}</TwView> : null}
       <View ref={viewport} style={{ flex: 1 }}>

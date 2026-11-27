@@ -103,7 +103,7 @@ export function BudgetsScreen() {
   return (
     <Screen
       title={t('budgets.title')}
-      subtitle={t('budgets.subtitle')}
+      help={t('budgets.subtitle')}
       loading={!view && result.fetching}
       error={!view ? result.error : undefined}
       refreshing={Boolean(view) && result.fetching}

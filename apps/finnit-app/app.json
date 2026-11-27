@@ -72,7 +72,8 @@
                 "supportedFamilies": [
                   "systemMedium"
                 ],
-                "initialLayout": "widgets/payments-calendar.tsx"
+                "initialLayout": "widgets/payments-calendar.tsx",
+                "contentMarginsDisabled": true
               }
             }
           ]

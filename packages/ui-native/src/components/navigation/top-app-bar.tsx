@@ -12,6 +12,8 @@ interface TopAppBarProps {
   subtitle?: React.ReactNode;
   /** Page actions, under the bar. */
   actions?: React.ReactNode;
+  /** Right after the title, e.g. the screen's help icon. */
+  titleAccessory?: React.ReactNode;
   /** Before the title, e.g. a back button. */
   leading?: React.ReactNode;
   /** Icon buttons before the bell. */
@@ -35,6 +37,7 @@ function TopAppBar({
   subtitle,
   actions,
   leading,
+  titleAccessory,
   tools,
   notificationCount = 0,
   onNotificationsPress,
@@ -50,10 +53,11 @@ function TopAppBar({
             accessibilityRole="header"
             weight="bold"
             numberOfLines={1}
-            className="min-w-0 flex-1 text-title-lg text-brand-ink"
+            className={titleAccessory ? 'min-w-0 shrink text-title-lg text-brand-ink' : 'min-w-0 flex-1 text-title-lg text-brand-ink'}
           >
             {title}
           </Text>
+          {titleAccessory}
         </TwView>
         <TwView className="shrink-0 flex-row items-center gap-1">
           {tools}

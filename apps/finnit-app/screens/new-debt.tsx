@@ -13,6 +13,8 @@ import {
   debtErrorMessage,
   saveCardInstallments,
   saveLoan,
+  loadMergeCandidates,
+  type MergeCandidate,
 } from '@finnit/core/debts/api';
 import {
   newCardInstallmentForm,
@@ -56,6 +58,7 @@ import { ToggleGroup } from '@finnit/ui-native/components/ui/toggle-group';
 
 import { CardInstallmentFields } from '@/components/debts/card-installment-fields';
 import { LoanFields } from '@/components/debts/loan-fields';
+import { MergeSuggestion } from '@/components/debts/merge-suggestion';
 import { OtherDebtFields } from '@/components/debts/other-debt-fields';
 import { useGql } from '@/lib/graphql/runner';
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
@@ -170,12 +173,39 @@ function NewDebtForm({
     }
   }
 
+  // Same lender as a loan already registered: offer to add it there.
+  const [candidates, setCandidates] = React.useState<MergeCandidate[]>([]);
+  const [mergeChoice, setMergeChoice] = React.useState<string | null>(null);
+  const mergeable = kind === 'purchase_financing' || kind === 'personal';
+  React.useEffect(() => {
+    if (!mergeable) {
+      setCandidates([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      loadMergeCandidates({ loanType: loan.loanType, lenderName: loan.lenderName, lenderContactId: loan.lenderContactId || null }, gql)
+        .then((found) => {
+          if (cancelled) return;
+          setCandidates(found);
+          setMergeChoice((choice) => (choice === 'separate' || found.some((c) => c.id === choice) ? choice : null));
+        })
+        .catch(() => !cancelled && setCandidates([]));
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [mergeable, loan.loanType, loan.lenderName, loan.lenderContactId, gql]);
+  const mergeInto = mergeChoice && mergeChoice !== 'separate' ? mergeChoice : undefined;
+
   async function save(run: () => Promise<string>, name: string) {
     setSaving(true);
     setSubmitError(null);
     try {
       const id = await run();
-      toast.success(t('debts.toasts.created', { name }));
+      const joined = candidates.find((c) => c.id === mergeInto);
+      toast.success(joined ? t('debts.merge.joined', { name: joined.name }) : t('debts.toasts.created', { name }));
       emitTransactionsChanged();
       if (params.tx) router.back();
       else router.replace(appHref(`/planning/debts/${id}`));
@@ -203,7 +233,7 @@ function NewDebtForm({
     const found = validateLoanForm(loan, { today, detectedPayments: 0 });
     setLoanErrors(found);
     if (!hasErrors(found))
-      void save(() => saveLoan(loan, null, gql), loan.name.trim());
+      void save(() => saveLoan(loan, null, gql, { mergeIntoDebtId: mergeInto }), loan.name.trim());
   }
 
   const errors =
@@ -293,6 +323,11 @@ function NewDebtForm({
             }}
             accounts={accounts}
             today={today}
+            afterLender={
+              mergeable ? (
+                <MergeSuggestion candidates={candidates} personal={kind === 'personal'} chosen={mergeChoice} onChoose={setMergeChoice} />
+              ) : null
+            }
           />
         )}
 

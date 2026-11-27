@@ -2011,7 +2011,14 @@
         "dateRequired": "Choose the billing date."
       },
       "partial": "Paid {paid} of {amount}",
-      "conceptsMore": "+{count}"
+      "conceptsMore": "+{count}",
+      "tabsShort": {
+        "details": "Details",
+        "amortization": "Schedule",
+        "lentPurchase": "Purchases",
+        "lentPersonal": "Loans",
+        "payments": "Payments"
+      }
     },
     "categories": {
       "institutional": "Banks and lenders",

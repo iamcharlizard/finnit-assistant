@@ -2011,7 +2011,14 @@
         "dateRequired": "Elige la fecha de cobro."
       },
       "partial": "Pagado {paid} de {amount}",
-      "conceptsMore": "+{count}"
+      "conceptsMore": "+{count}",
+      "tabsShort": {
+        "details": "Detalles",
+        "amortization": "Tabla",
+        "lentPurchase": "Compras",
+        "lentPersonal": "Préstamos",
+        "payments": "Pagos"
+      }
     },
     "categories": {
       "institutional": "Bancos y financieras",

@@ -13,6 +13,8 @@ import { TwView } from '@finnit/ui-native/lib/tw';
 import { Button } from '@finnit/ui-native/components/ui/button';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
 import { Segmented } from '@finnit/ui-native/components/ui/segmented';
+import { Switch } from '@finnit/ui-native/components/ui/switch';
+import { Text } from '@finnit/ui-native/components/ui/text';
 
 import { BalanceProjectionChart } from '@/components/debts/insights/balance-projection-chart';
 import { DebtTypeBars } from '@/components/debts/insights/debt-type-bars';
@@ -101,17 +103,33 @@ export function DebtsScreen() {
                 <BalanceProjectionChart points={view.insights.projection} paidOffLabel={view.insights.paidOffLabel} />
               </>
             ) : (
-              <TwView className="gap-3">
-                {(tab === 'loans' ? loans : others).length === 0 ? (
-                  <EmptyState icon={Landmark} title={tab === 'loans' ? t('empty.title') : t('otherEmpty.title')} />
-                ) : (
-                  (tab === 'loans' ? loans : others).map((item) => <DebtCard key={item.id} item={item} onOpen={() => open(item)} />)
-                )}
-              </TwView>
+              <DebtCards items={tab === 'loans' ? loans : others} empty={tab === 'loans' ? t('empty.title') : t('otherEmpty.title')} onOpen={open} />
             )}
           </TwView>
         )
       ) : null}
     </Screen>
+  );
+}
+
+/**
+ * A tab's debt cards. Paid-off ones stay hidden unless "Mostrar liquidadas"
+ * is on (off by default, like the web).
+ */
+function DebtCards({ items, empty, onOpen }: { items: DebtItem[]; empty: string; onOpen: (item: DebtItem) => void }) {
+  const t = useTranslations('debts');
+  const [showPaidOff, setShowPaidOff] = React.useState(false);
+  const paidOff = items.filter((item) => item.paidOff).length;
+  const shown = showPaidOff ? items : items.filter((item) => !item.paidOff);
+  return (
+    <TwView className="gap-3">
+      {paidOff > 0 ? (
+        <TwView className="flex-row items-center justify-end gap-3">
+          <Text className="text-sm text-on-surface-variant">{t('list.showPaidOff', { count: paidOff })}</Text>
+          <Switch checked={showPaidOff} onCheckedChange={setShowPaidOff} accessibilityLabel={t('list.showPaidOff', { count: paidOff })} />
+        </TwView>
+      ) : null}
+      {shown.length === 0 ? <EmptyState icon={Landmark} title={empty} /> : shown.map((item) => <DebtCard key={item.id} item={item} onOpen={() => onOpen(item)} />)}
+    </TwView>
   );
 }

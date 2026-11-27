@@ -35,7 +35,7 @@ import {
 } from '@finnit/core/debts/detail-view';
 import type { LoanDetailData } from '@/lib/debts/load';
 import { cardTermsOf } from '@finnit/core/debts/card-installments';
-import { isCardInstallments } from '@finnit/core/debts/types';
+import { isCardInstallments, isLoanContainer } from '@finnit/core/debts/types';
 import { DEBTS_PATH, LOANS_PATH } from '@finnit/core/debts/view';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
@@ -50,6 +50,7 @@ import { LinkExpenseDialog } from '@/components/loan-links/link-expense-dialog';
 import { UnlinkLoanDialog } from '@/components/loan-links/unlink-loan-dialog';
 import { useTransactionDrawer } from '@/components/transaction-detail/transaction-drawer';
 import { PaymentDialog } from './payment-dialog';
+import { pendingPayments } from '@finnit/core/debts/allocation';
 import { RescheduleDialog } from './reschedule-dialog';
 import { InstallmentEditDialog } from './installment-edit-dialog';
 
@@ -496,6 +497,9 @@ export function LoanDetailScreen({ data }: { data: LoanDetailData }) {
                   amountLabel: paying.row.amountLabel,
                 }
               : undefined
+          }
+          pending={
+            isLoanContainer(debt) ? pendingPayments(view.schedule) : undefined
           }
           accounts={accounts}
           categories={categories}

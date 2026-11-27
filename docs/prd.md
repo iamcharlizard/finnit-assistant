@@ -87,6 +87,7 @@ Checkboxes reflect the **API** state, verified against the code. Per-platform st
 - [x] Loan types (institutional, personal, purchase financing) with terms, payment schedule, payments made before registering (outside totals), charges that grow the loan, and payments from an account.
 - [x] Recurring suggestions can become a loan, prefilled by AI.
 - [x] Loan page: full schedule (paid, open, projected), charges, payments, and bank movements proposed as payments (deterministic matching, AI tie-break, learned merchant pattern).
+- [x] Purchase financing and personal loans as containers of their purchases or amounts (the first one too); payments split across pending payments, paid in part, or free payments to the balance (abonos), warning about shortfall and surplus; same-lender suggestion to join a loan; paid-off loans hidden by default.
 - [x] Debt charts: current vs total debt, debt by type, paid per month (historical apart), projected balance, due in 30/60/90 days, debt load; card MSI plans listed apart and optional in the charts.
 
 ---
@@ -308,7 +309,8 @@ Detailed, verified status per feature and platform: [features.md](./features.md)
 - Screens with real data: dashboard, movements (filters, pagination), movement detail and edit, new movement (expense, income, transfer, receipt scan), accounts (new account: Syncfy or manual), analytics, payments calendar (calendar and summary charts), recurring payments (filters, suggestions), notifications, budgets, debts, goals, simulator, categorize, statements, settings, categories, automatic names.
 - First-run onboarding: welcome slides and a guided tour over the real screens (spotlight and card, `@finnit/ui-native/components/tour`), once per device for new accounts; replay from Settings.
 - iOS home screen widget "Calendario y pagos" (medium): the month's calendar and the payments still to make in due order, built with `expo-widgets`; the app schedules one entry per day and refreshes it on open, after payment changes and in the background; it honors "Ocultar montos".
-- Pending (see `docs/features.md` → App móvil): screenshot import, creating/editing recurring payments, debts and accounts, statement reconciliation, categories and automatic names editors, profile editing; not yet tested signed in on a device.
+- Loan detail with the web's tabs, registering payments (split across pending payments or as abonos), adding and editing purchases, editing the loan, rescheduling a payment; paid-off filter; same-lender merge suggestion.
+- Pending (see `docs/features.md` → App móvil): screenshot import, creating/editing recurring payments, deleting debts, accounts, statement reconciliation, categories and automatic names editors, profile editing; not yet tested signed in on a device.
 
 ### 🟡 **WEB APP (Next.js) — UI with mock data**
 - `apps/web`: Next.js 16 App Router with the same screens as mobile (`/login`, `/dashboard`, `/history`, `/analytics`, `/calendar`, `/cards`, `/settings`), responsive layout (sidebar on desktop, bottom nav on small screens) and light/dark theme.

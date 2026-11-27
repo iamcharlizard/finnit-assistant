@@ -36,7 +36,12 @@ import {
   type AccountEditValues,
   type ManualAccountForm,
 } from '@finnit/core/accounts/form';
-import { buildAccountDetail, buildAccounts, pickAccount } from '@finnit/core/accounts/view';
+import {
+  buildAccountDetail,
+  buildAccounts,
+  digitsFromName,
+  pickAccount,
+} from '@finnit/core/accounts/view';
 
 const es = testLocalizer('es');
 const en = testLocalizer('en');
@@ -208,6 +213,31 @@ describe('buildAccounts', () => {
       primaryColor: '#5B61C2',
       secondaryColor: '#00696E',
     });
+  });
+
+  it('takes the digits from the bank name when it sends no mask', () => {
+    const [card] = buildAccounts(
+      [account({ id: 'explora', type: 'credit', name: 'Explora Banamex **037- MXN' })],
+      [
+        {
+          institution: 'Banamex',
+          accounts: [
+            {
+              accountId: 'explora',
+              name: 'Explora Banamex **037- MXN',
+              mask: null,
+              creditLimit: null,
+              availableCredit: null,
+            },
+          ],
+        },
+      ],
+      es,
+    );
+    assert.equal(card!.last4, '037');
+    assert.equal(card!.maskedNumber, '•••• •••• •••• 037');
+    assert.equal(digitsFromName('Mi Cuenta ·8912'), null);
+    assert.equal(digitsFromName('Priority **729- MXN'), '729');
   });
 
   it('hides archived accounts unless asked', () => {

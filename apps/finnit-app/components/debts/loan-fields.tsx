@@ -38,6 +38,7 @@ import { Text } from '@finnit/ui-native/components/ui/text';
 import { ToggleGroup } from '@finnit/ui-native/components/ui/toggle-group';
 
 import { useLocalizer } from '@/lib/i18n/i18n-provider';
+import { ContactSelect } from './contact-select';
 
 function SwitchRow({
   label,
@@ -79,12 +80,15 @@ export function LoanFields({
   update,
   accounts,
   today,
+  afterLender,
 }: {
   form: LoanForm;
   errors: LoanFormErrors;
   update: (patch: Partial<LoanForm>) => void;
   accounts: ApiAccount[];
   today: DayKey;
+  /** Right under the lender (e.g. "Ya tienes «Kuesi» con Kueski"). */
+  afterLender?: React.ReactNode;
 }) {
   const l = useLocalizer();
   const { t, locale } = l;
@@ -127,14 +131,29 @@ export function LoanFields({
         onChangeText={(name) => update({ name })}
         error={errorText(errors.name)}
       />
-      <Input
-        label={tf(`lender.${form.loanType}`)}
-        value={form.lenderName}
-        maxLength={NAME_MAX}
-        onChangeText={(lenderName) =>
-          update({ lenderName, lenderContactId: '' })
-        }
-      />
+      {form.loanType === 'personal' ? (
+        <ContactSelect
+          label={tf('lender.personal')}
+          value={form.lenderContactId}
+          name={form.lenderName}
+          onChange={(contact) =>
+            update({
+              lenderContactId: contact?.id ?? '',
+              lenderName: contact?.name ?? '',
+            })
+          }
+        />
+      ) : (
+        <Input
+          label={tf(`lender.${form.loanType}`)}
+          value={form.lenderName}
+          maxLength={NAME_MAX}
+          onChangeText={(lenderName) =>
+            update({ lenderName, lenderContactId: '' })
+          }
+        />
+      )}
+      {afterLender}
       {hasDescription(form.loanType) ? (
         <Input
           label={tf(`description.${form.loanType}`)}

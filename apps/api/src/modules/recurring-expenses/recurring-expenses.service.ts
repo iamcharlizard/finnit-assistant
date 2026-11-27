@@ -755,6 +755,9 @@ export class RecurringExpensesService {
           },
         });
       }
+      // What split payments put here stays paid to the loan (it only
+      // lowers the balance now, like a free payment).
+      await tx.debtPaymentAllocation.deleteMany({ where: { occurrenceId } });
       const reopened = await tx.recurringOccurrence.update({
         where: { id: occurrenceId },
         data: {
@@ -762,6 +765,7 @@ export class RecurringExpensesService {
           paidAt: null,
           matchedBy: null,
           transactionId: null,
+          paidAmount: 0,
         },
       });
       if (expense.debtId) await syncDebtStatus(tx, expense.debtId);

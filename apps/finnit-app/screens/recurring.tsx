@@ -138,7 +138,15 @@ export function RecurringScreen() {
   return (
     <Screen
       title={t('pageTitles.recurring')}
-      subtitle={t('recurring.subtitle')}
+      help={t('recurring.subtitle')}
+      sticky={
+        <Segmented
+          accessibilityLabel={t('recurring.tabs.label')}
+          options={RECURRING_TABS.map((value) => ({ value, label: t(`recurring.tabs.${value}`) }))}
+          value={tab}
+          onValueChange={(next: RecurringTab) => router.setParams({ tab: next === 'list' ? undefined : next })}
+        />
+      }
       loading={loading}
       error={error}
       refreshing={refreshing}
@@ -146,13 +154,6 @@ export function RecurringScreen() {
     >
       {view ? (
         <TwView className="gap-5">
-          <Segmented
-            accessibilityLabel={t('recurring.tabs.label')}
-            options={RECURRING_TABS.map((value) => ({ value, label: t(`recurring.tabs.${value}`) }))}
-            value={tab}
-            onValueChange={(next: RecurringTab) => router.setParams({ tab: next === 'list' ? undefined : next })}
-          />
-
           {tab === 'analytics' ? (
             profile.fetching && !profile.data ? (
               <Text className="py-6 text-center text-on-surface-variant">{t('common.loading')}</Text>

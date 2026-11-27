@@ -59,17 +59,24 @@ describe('loan edit form', () => {
 
   it('shows the fields of each kind of loan', () => {
     assert.deepEqual(loanEditFields(yoTePresto), {
+      terms: true,
       installments: true,
       openingFee: true,
       periodicFee: true,
     });
+    // Its amounts are its purchases' (edited apart).
     assert.deepEqual(
       loanEditFields({
         ...yoTePresto,
         loanType: 'personal',
         interestMode: null,
       }),
-      { installments: false, openingFee: false, periodicFee: false },
+      {
+        terms: false,
+        installments: false,
+        openingFee: false,
+        periodicFee: false,
+      },
     );
   });
 
@@ -116,7 +123,14 @@ describe('loan edit form', () => {
     );
   });
 
-  it('clears an unknown date and sends how it was lent', () => {
+  it('clears an unknown date', () => {
+    const form = loanEditFormOf(yoTePresto);
+    assert.deepEqual(buildLoanUpdate({ ...form, startDate: '' }, yoTePresto), {
+      startDate: null,
+    });
+  });
+
+  it('sends only the loan\'s own data of a personal loan', () => {
     const personal = {
       ...yoTePresto,
       loanType: 'personal' as const,
@@ -125,10 +139,16 @@ describe('loan edit form', () => {
     const form = loanEditFormOf(personal);
     assert.deepEqual(
       buildLoanUpdate(
-        { ...form, startDate: '', lendingMethod: 'credit_card' },
+        {
+          ...form,
+          name: 'Préstamo de Ana',
+          startDate: '',
+          lendingMethod: 'credit_card',
+          principal: '1',
+        },
         personal,
       ),
-      { startDate: null, lendingMethod: 'credit_card' },
+      { name: 'Préstamo de Ana' },
     );
   });
 });

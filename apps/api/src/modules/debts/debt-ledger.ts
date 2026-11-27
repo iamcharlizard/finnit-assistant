@@ -1,4 +1,5 @@
 import {
+  DebtChargeDestination,
   DebtStatus,
   LoanType,
   OccurrenceStatus,
@@ -95,7 +96,8 @@ export function financedCharges(debt: {
       });
     }
   }
-  return charges;
+  // By purchase date: each payment lists what it covers in that order.
+  return charges.sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
 /**
@@ -254,6 +256,92 @@ export async function deleteDeposit(tx: Client, transactionId: string) {
 /** Default purchase date of a financed purchase: the day before its first payment. */
 export function defaultPurchaseDate(firstPaymentDate: Date): Date {
   return addDays(toDateOnly(firstPaymentDate), -1);
+}
+
+/**
+ * Purchase financing and personal loans are containers: every purchase or
+ * amount, the first one too, is a DebtCharge; the debt only keeps the
+ * loan's own data (name, lender, frequency, schedule).
+ */
+export function isLoanContainer(debt: { loanType: LoanType | null }) {
+  return (
+    debt.loanType === LoanType.purchase_financing ||
+    debt.loanType === LoanType.personal
+  );
+}
+
+/** Id of the charge holding a container's first amount. */
+export const initialChargeId = (debtId: string) => `initial-${debtId}`;
+
+/**
+ * Moves a container's first amount from the debt to a charge, exactly as
+ * migration 20261128090000_loan_containers does: the charge gets the terms
+ * `financedCharges` derived from the debt, so the balance and the schedule
+ * stay the same. Payments are not touched. No-op for other loans or when
+ * the first amount is 0 (a personal loan started empty).
+ */
+export async function moveInitialAmountToCharge(tx: Client, debtId: string) {
+  const debt = await tx.debt.findUniqueOrThrow({ where: { id: debtId } });
+  if (!isLoanContainer(debt)) return;
+  const total = Number(debt.totalToRepay ?? debt.principal);
+  if (!(Number(debt.principal) > 0 || total > 0)) return;
+  const byCharges = isScheduledByCharges(debt);
+  const installments =
+    byCharges && debt.installmentsTotal && debt.startDate
+      ? debt.installmentsTotal
+      : null;
+  await tx.debt.update({
+    where: { id: debtId },
+    data: {
+      principal: 0,
+      totalToRepay: null,
+      description: null,
+      destination: null,
+      depositAddsToBalance: true,
+      disbursementTransactionId: null,
+      purposeCategoryId: null,
+      lendingMethod: null,
+      ...(byCharges
+        ? {
+            installmentsTotal: null,
+            interestMode: null,
+            interestRateAnnual: null,
+            includesVat: false,
+          }
+        : {}),
+    },
+  });
+  await tx.debtCharge.create({
+    data: {
+      id: initialChargeId(debtId),
+      debtId,
+      date: debt.startDate ?? toDateOnly(debt.createdAt),
+      description: debt.description,
+      principal: debt.principal,
+      totalToRepay: total,
+      installments,
+      installmentsPaid: 0,
+      firstPaymentDate: null,
+      interestMode: installments ? debt.interestMode : null,
+      interestRateAnnual:
+        installments && debt.interestMode === 'rate'
+          ? debt.interestRateAnnual
+          : null,
+      includesVat:
+        Boolean(installments) &&
+        debt.interestMode === 'rate' &&
+        debt.includesVat,
+      destination:
+        debt.destination ??
+        (debt.loanType === LoanType.purchase_financing
+          ? DebtChargeDestination.purchase
+          : DebtChargeDestination.deposit),
+      depositAddsToBalance: debt.depositAddsToBalance,
+      transactionId: debt.disbursementTransactionId,
+      purposeCategoryId: debt.purposeCategoryId,
+      lendingMethod: debt.lendingMethod,
+    },
+  });
 }
 
 export function isPurchaseFinancing(debt: { loanType: LoanType | null }) {

@@ -2,7 +2,7 @@ import { dayKeyOf, isDayKey, type DayKey } from '../finance/dates';
 import { parseAmount } from '../new-entry/form';
 import { MAX_AMOUNT, NAME_MAX } from './form';
 import { MAX_INSTALLMENTS } from './loan-form';
-import type { ApiDebt, LendingMethod } from './types';
+import { isLoanContainer, type ApiDebt, type LendingMethod } from './types';
 
 /**
  * The loan's details tab in edit mode: what can change after it was
@@ -54,6 +54,12 @@ export type LoanEditErrors = Partial<Record<LoanEditField, LoanEditErrorCode>>;
 
 /** Which fields this loan shows. */
 export interface LoanEditFields {
+  /**
+   * Its first amount and what defines it (amount, description, date, how it
+   * was lent, purpose, deposit). False for purchase financing and personal
+   * loans: those belong to each purchase or amount, edited apart.
+   */
+  terms: boolean;
   installments: boolean;
   openingFee: boolean;
   periodicFee: boolean;
@@ -81,10 +87,14 @@ type EditableDebt = Pick<
 
 export function loanEditFields(debt: EditableDebt): LoanEditFields {
   const institutional = debt.loanType === 'institutional';
+  const terms = !isLoanContainer(debt);
   return {
+    terms,
     // A card purchase changes its installments one by one.
     installments:
-      debt.interestMode !== null && debt.loanType !== 'card_installments',
+      terms &&
+      debt.interestMode !== null &&
+      debt.loanType !== 'card_installments',
     openingFee: institutional,
     periodicFee: institutional && debt.interestMode === 'rate',
   };
@@ -129,11 +139,15 @@ export function validateLoanEdit(
   else if (name.length > NAME_MAX) errors.name = 'nameTooLong';
 
   const principal = parseAmount(form.principal);
-  // Personal loans may be 0: their amounts are added later.
-  const min = debt.loanType === 'personal' ? 0 : Number.MIN_VALUE;
-  if (!form.principal.trim()) errors.principal = 'principalRequired';
-  else if (principal === null || principal < min || principal > MAX_AMOUNT)
-    errors.principal = 'principalInvalid';
+  if (fields.terms) {
+    if (!form.principal.trim()) errors.principal = 'principalRequired';
+    else if (
+      principal === null ||
+      principal <= 0 ||
+      principal > MAX_AMOUNT
+    )
+      errors.principal = 'principalInvalid';
+  }
 
   if (fields.installments) {
     const count = parseCount(form.installments);
@@ -144,7 +158,7 @@ export function validateLoanEdit(
       errors.installments = 'installmentsBelowPaid';
   }
 
-  if (isDayKey(form.startDate) && form.startDate > today)
+  if (fields.terms && isDayKey(form.startDate) && form.startDate > today)
     errors.startDate = 'dateInFuture';
 
   if (fields.openingFee) {
@@ -166,15 +180,20 @@ export function buildLoanUpdate(
   const fields = loanEditFields(debt);
   const input: Record<string, unknown> = {};
   if (form.name.trim() !== initial.name) input.name = form.name.trim();
-  if (form.description.trim() !== initial.description)
-    input.description = form.description.trim() || null;
   if (debt.loanType === 'personal') {
     if (form.lenderContactId !== initial.lenderContactId)
       input.lenderContactId = form.lenderContactId || null;
-    if (form.lendingMethod !== initial.lendingMethod)
-      input.lendingMethod = form.lendingMethod || null;
   } else if (form.lenderName.trim() !== initial.lenderName)
     input.lenderName = form.lenderName.trim() || null;
+  // Purchase financing and personal loans: only the loan's own data.
+  if (!fields.terms) return Object.keys(input).length > 0 ? input : null;
+  if (form.description.trim() !== initial.description)
+    input.description = form.description.trim() || null;
+  if (
+    debt.loanType === 'personal' &&
+    form.lendingMethod !== initial.lendingMethod
+  )
+    input.lendingMethod = form.lendingMethod || null;
   const principal = parseAmount(form.principal);
   if (principal !== null && principal !== debt.principal)
     input.principal = principal;

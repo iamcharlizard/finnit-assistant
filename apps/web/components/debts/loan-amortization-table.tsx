@@ -7,6 +7,12 @@ import { CalendarClock, Link2, Pencil, Receipt, Unlink } from 'lucide-react';
 import { Badge } from '@finnit/ui/components/ui/badge';
 import { Button } from '@finnit/ui/components/ui/button';
 import { DataTable, type ColumnDef } from '@finnit/ui/components/ui/data-table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@finnit/ui/components/ui/tooltip';
 
 import { useTableLabels } from '@/components/use-table-labels';
 import type {
@@ -67,19 +73,15 @@ export function LoanAmortizationTable({
   const tl = useTranslations('debts.links');
   const labels = useTableLabels();
 
-  const hasConcept = rows.some((row) => row.concept);
+  const hasConcept = rows.some((row) => row.concepts.length > 0);
 
   const columns = React.useMemo<ColumnDef<ScheduleRow>[]>(() => {
     const concept: ColumnDef<ScheduleRow>[] = hasConcept
       ? [
           {
-            id: 'concept',
-            header: td('columns.concept'),
-            cell: ({ row }) => (
-              <span className="block max-w-64 truncate tabular-nums">
-                {dash(row.original.concept)}
-              </span>
-            ),
+            id: 'concepts',
+            header: td('columns.concepts'),
+            cell: ({ row }) => <Concepts concepts={row.original.concepts} />,
           },
         ]
       : [];
@@ -144,7 +146,17 @@ export function LoanAmortizationTable({
       {
         id: 'amount',
         header: td('columns.payment'),
-        cell: ({ row }) => row.original.amountLabel,
+        cell: ({ row }) =>
+          row.original.partialLabel ? (
+            <span className="flex flex-col items-end leading-tight">
+              <span>{row.original.amountLabel}</span>
+              <span className="text-xs font-normal text-on-surface-variant">
+                {row.original.partialLabel}
+              </span>
+            </span>
+          ) : (
+            row.original.amountLabel
+          ),
         meta: { ...right, cellClassName: 'font-medium' },
       },
       ...breakdown,
@@ -335,5 +347,42 @@ export function LoanAmortizationTable({
       labels={labels}
       className="rounded-card border border-outline bg-surface"
     />
+  );
+}
+
+/**
+ * What a payment covers: the first concept and "+N"; the whole list in a
+ * tooltip (hover or focus).
+ */
+function Concepts({ concepts }: { concepts: string[] }) {
+  const td = useTranslations('debts.detail');
+  if (concepts.length === 0) return <>{dash(null)}</>;
+  const [first, ...rest] = concepts;
+  return (
+    // Radix tooltips need a provider; the page has none of its own.
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="flex max-w-64 items-center gap-1.5 rounded-md text-left tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span className="truncate">{first}</span>
+            {rest.length > 0 ? (
+              <span className="shrink-0 rounded-full bg-muted px-1.5 text-xs text-on-surface-variant">
+                {td('conceptsMore', { count: rest.length })}
+              </span>
+            ) : null}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" align="start">
+          <ul className="flex flex-col gap-0.5 tabular-nums">
+            {concepts.map((concept, i) => (
+              <li key={i}>{concept}</li>
+            ))}
+          </ul>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

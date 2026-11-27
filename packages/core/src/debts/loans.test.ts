@@ -13,7 +13,7 @@ import {
 import {
   buildCandidateRows,
   buildLoanDetailView,
-  installmentsConcept,
+  installmentsConcepts,
   loanOutstanding,
 } from './detail-view';
 import {
@@ -516,14 +516,14 @@ describe('personal loan in installments', () => {
   });
 
   it('names each installment of a payment', () => {
-    assert.equal(
-      installmentsConcept([
+    assert.deepEqual(
+      installmentsConcepts([
         { number: 1, of: 3, amount: 1_000, description: 'Pantalla' },
         { number: 2, of: 12, amount: 50, description: null },
       ]),
-      'Pantalla 01/03 · 02/12',
+      ['Pantalla 01/03', '02/12'],
     );
-    assert.equal(installmentsConcept(null), null);
+    assert.deepEqual(installmentsConcepts(null), []);
   });
 });
 
@@ -731,6 +731,7 @@ describe('loan detail view', () => {
   ): ApiLoanScheduleItem => ({
     dueDate: `${dueDate}T00:00:00.000Z`,
     amount: 888.49,
+    paidAmount: 0,
     status: 'upcoming',
     occurrenceId: `occ-${dueDate}`,
     transactionId: null,
@@ -1033,5 +1034,74 @@ describe('loan detail view', () => {
     assert.equal(row!.key, 'occ:t');
     assert.equal(row!.amountLabel, '$888.49');
     assert.equal(row!.reason, 'text');
+  });
+
+  it('shows only what is the loan\'s for a purchase financing, and every purchase', () => {
+    const charge = (id: string, description: string, principal: number) => ({
+      id,
+      date: '2026-10-02T00:00:00.000Z',
+      description,
+      principal,
+      totalToRepay: principal,
+      installments: 2,
+      installmentsPaid: 0,
+      firstPaymentDate: null,
+      interestMode: null,
+      interestRateAnnual: null,
+      includesVat: false,
+      destination: 'purchase' as const,
+      transactionId: null,
+      depositAccountId: null,
+      depositCountsAsIncome: null,
+      depositAddsToBalance: true,
+      purposeCategoryId: null,
+      lendingMethod: null,
+    });
+    const view = buildLoanDetailView(
+      {
+        ...debt,
+        loanType: 'purchase_financing',
+        principal: 0,
+        totalToRepay: null,
+        installmentsTotal: null,
+        interestRateAnnual: null,
+        interestMode: null,
+        openingFee: null,
+        paymentFrequency: 'semimonthly',
+        charges: [
+          charge('initial-loan', 'Pantalla', 1_200),
+          charge('c2', 'Audífonos', 400),
+        ],
+      },
+      [
+        item('2026-10-15', {
+          amount: 800,
+          paidAmount: 300,
+          installments: [
+            { number: 1, of: 2, amount: 600, description: 'Pantalla' },
+            { number: 1, of: 2, amount: 200, description: 'Audífonos' },
+          ],
+        }),
+      ],
+      { today },
+      es,
+    );
+    assert.deepEqual(
+      view.facts.map((f) => f.key),
+      ['name', 'lender', 'type', 'frequency'],
+    );
+    assert.equal(view.termsLabel, null);
+    // Every purchase is listed and editable, the first one too.
+    assert.deepEqual(
+      view.lent.map((r) => [r.chargeId, r.description]),
+      [
+        ['initial-loan', 'Pantalla'],
+        ['c2', 'Audífonos'],
+      ],
+    );
+    const [row] = view.schedule;
+    assert.deepEqual(row?.concepts, ['Pantalla 01/02', 'Audífonos 01/02']);
+    assert.equal(row?.dueAmount, 500);
+    assert.match(row?.partialLabel ?? '', /300\.00.*800\.00/);
   });
 });

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   AiFeatureKey,
   LoanInterestMode,
+  LoanType,
   OccurrenceMatchSource,
   OccurrenceStatus,
   Prisma,
@@ -27,6 +28,7 @@ import { DEBT_INCLUDE, DebtsService } from './debts.service';
 import {
   balanceOf,
   financedCharges,
+  isLoanContainer,
   isScheduledByCharges,
   totalOwedOf,
 } from './debt-ledger';
@@ -119,6 +121,7 @@ export class LoanTrackingService {
       const item = {
         dueDate: o.dueDate,
         amount: Number(o.expectedAmount),
+        paidAmount: Number(o.paidAmount),
         status: o.status,
         occurrenceId: o.id,
         transactionId: o.transactionId ?? undefined,
@@ -141,6 +144,7 @@ export class LoanTrackingService {
       items.push({
         dueDate: payment.date,
         amount: Number(payment.amount),
+        paidAmount: 0,
         status: OccurrenceStatus.paid,
         isHistorical: true,
         projected: false,
@@ -152,6 +156,7 @@ export class LoanTrackingService {
       const item = {
         dueDate: new Date(time),
         amount,
+        paidAmount: 0,
         status: OccurrenceStatus.paid,
         isHistorical: true,
         projected: false,
@@ -179,7 +184,7 @@ export class LoanTrackingService {
                 i.status === OccurrenceStatus.upcoming ||
                 i.status === OccurrenceStatus.missed,
             )
-            .reduce((sum, i) => sum + i.amount, 0),
+            .reduce((sum, i) => sum + i.amount - i.paidAmount, 0),
       );
       const generated = expense.occurrences.map((o) =>
         (o.originalDueDate ?? o.dueDate).getTime(),
@@ -203,6 +208,7 @@ export class LoanTrackingService {
         items.push({
           dueDate,
           amount: cents(amount),
+          paidAmount: 0,
           status: OccurrenceStatus.upcoming,
           isHistorical: false,
           projected: true,
@@ -214,17 +220,12 @@ export class LoanTrackingService {
     if (byCharge) {
       for (const item of items) {
         // Each row names what it pays: a charge's installments paid before
-        // registering it, the loan's first amount paid before registering
-        // the loan, or the installments still due.
+        // registering it (`paid`), or the installments of that date still
+        // counted as due (also on the loan's own paid-before rows: the first
+        // amount, now a charge, kept those payments as the loan's).
         const due = byCharge
           .get((scheduleDate.get(item) ?? item.dueDate).getTime())
-          ?.filter((d) =>
-            chargeHistory.has(item)
-              ? d.paid
-              : item.isHistorical
-                ? d.chargeId === null
-                : !d.paid,
-          );
+          ?.filter((d) => (chargeHistory.has(item) ? d.paid : !d.paid));
         if (due?.length) {
           item.installments = due.map((d) => ({
             number: d.number,
@@ -512,24 +513,52 @@ export function withBreakdown(
     paymentFrequency: RecurringFrequency | null;
     includesVat: boolean;
     periodicFee: Prisma.Decimal | number | null;
+    loanType: LoanType | null;
     charges: unknown[];
   } & Parameters<typeof totalOwedOf>[0],
   items: Omit<LoanScheduleItem, 'balance'>[],
 ): LoanScheduleItem[] {
   const fee = debt.periodicFee === null ? 0 : Number(debt.periodicFee);
+  // A purchase financing or personal loan with a single purchase given by
+  // its rate: that purchase's table (its terms are the charge's).
+  const [only] = debt.charges as Array<{
+    principal: Prisma.Decimal | number;
+    interestMode: LoanInterestMode | null;
+    interestRateAnnual: Prisma.Decimal | number | null;
+    installments: number | null;
+    includesVat: boolean;
+  }>;
+  const terms =
+    isLoanContainer(debt) && debt.charges.length === 1 && only
+      ? {
+          principal: only.principal,
+          interestMode: only.interestMode,
+          interestRateAnnual: only.interestRateAnnual,
+          installments: only.installments,
+          includesVat: only.includesVat,
+        }
+      : debt.charges.length === 0
+        ? {
+            principal: debt.principal,
+            interestMode: debt.interestMode,
+            interestRateAnnual: debt.interestRateAnnual,
+            installments: debt.installmentsTotal,
+            includesVat: debt.includesVat,
+          }
+        : null;
   if (
-    debt.interestMode === LoanInterestMode.rate &&
-    debt.interestRateAnnual !== null &&
-    debt.installmentsTotal &&
-    debt.paymentFrequency &&
-    debt.charges.length === 0
+    terms &&
+    terms.interestMode === LoanInterestMode.rate &&
+    terms.interestRateAnnual !== null &&
+    terms.installments &&
+    debt.paymentFrequency
   ) {
     const rows = amortizationSchedule({
-      principal: Number(debt.principal),
-      annualRatePercent: Number(debt.interestRateAnnual),
-      installments: debt.installmentsTotal,
+      principal: Number(terms.principal),
+      annualRatePercent: Number(terms.interestRateAnnual),
+      installments: terms.installments,
       frequency: debt.paymentFrequency,
-      includesVat: debt.includesVat,
+      includesVat: terms.includesVat,
     });
     return items.map((item, i) => {
       const row = rows[i];

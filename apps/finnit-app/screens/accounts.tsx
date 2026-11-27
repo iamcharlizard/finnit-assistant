@@ -1,20 +1,20 @@
 import * as React from 'react';
 import { useRouter } from 'expo-router';
 import { useTranslations } from 'use-intl';
-import { Landmark, Plus } from 'lucide-react-native';
+import { Landmark } from 'lucide-react-native';
 
 import { ACCOUNTS_QUERY, type AccountsResult } from '@finnit/core/accounts/request';
 import { buildAccountBalanceList } from '@finnit/core/accounts/balance-list';
 import { buildAccounts } from '@finnit/core/accounts/view';
 import { todayKey } from '@finnit/core/finance/dates';
 import { TwPressable, TwView } from '@finnit/ui-native/lib/tw';
-import { Button } from '@finnit/ui-native/components/ui/button';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
 import { Switch } from '@finnit/ui-native/components/ui/switch';
 import { Text } from '@finnit/ui-native/components/ui/text';
 
 import { AccountCardStack } from '@/components/accounts/account-card-stack';
 import { AddAccountSheet } from '@/components/accounts/add-account-sheet';
+import { AddAccountTile } from '@/components/accounts/add-account-tile';
 import { AccountBalanceList } from '@/components/accounts/account-balance-list';
 import { Screen } from '@/components/shell/screen';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,7 +58,6 @@ export function AccountsScreen() {
   return (
     <Screen
       title={t('accounts.title')}
-      actions={<Button size="icon" variant="secondary" icon={Plus} label={t('accounts.add')} onPress={() => setAdding(true)} />}
       loading={loading}
       error={error}
       refreshing={refreshing}
@@ -94,6 +93,7 @@ export function AccountsScreen() {
               holderName={user?.name ?? ''}
               onSelect={open}
             />
+            <AddAccountTile label={t('accounts.add')} onPress={() => setAdding(true)} />
             {view.archivedCount > 0 ? (
               <TwPressable
                 accessibilityRole="switch"

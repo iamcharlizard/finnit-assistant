@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from 'urql';
@@ -46,6 +46,8 @@ import {
   type CheckField,
 } from '@finnit/core/receipts/prefill';
 import { TwPressable, TwScrollView, TwView } from '@finnit/ui-native/lib/tw';
+import { useKeyboardHeight } from '@finnit/ui-native/lib/use-keyboard-height';
+import { Button } from '@finnit/ui-native/components/ui/button';
 import { EmptyState } from '@finnit/ui-native/components/ui/empty-state';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
 import { Text } from '@finnit/ui-native/components/ui/text';
@@ -86,6 +88,7 @@ export function NewEntryScreen() {
   const router = useRouter();
   const gql = useGql();
   const insets = useSafeAreaInsets();
+  const keyboard = useKeyboardHeight();
   // Shortcuts may fill the form in: "Pagar tarjeta" (a transfer to the card
   // with what is left of its cycle) and "Registrar intereses" (an expense).
   const { action, to, account, amount, category, merchant, due } =
@@ -416,9 +419,7 @@ export function NewEntryScreen() {
         categories={categories}
         errors={entryTried ? validateEntry(entry, today) : {}}
         busy={busy !== null}
-        busyLabel={busyLabel}
         submitError={submitError}
-        onSubmit={submitEntry}
       />
     );
   else if (step.name === 'transfer')
@@ -437,9 +438,7 @@ export function NewEntryScreen() {
           transferTried ? validateTransfer(transfer, accounts, today) : {}
         }
         busy={busy !== null}
-        busyLabel={busyLabel}
         submitError={submitError}
-        onSubmit={submitTransfer}
         cardDueDate={due && /^\d{4}-\d{2}-\d{2}$/.test(due) ? due : undefined}
         onlyCards={step.cards}
       />
@@ -453,48 +452,96 @@ export function NewEntryScreen() {
         onIsThis={(transactionId) =>
           answerDuplicate({ kind: 'isThis', transactionId })
         }
-        onCreateAnyway={() => answerDuplicate({ kind: 'createAnyway' })}
       />
     );
 
-  return (
-    // The scroll view makes room for the keyboard itself (no
-    // KeyboardAvoidingView: inside a sheet it moved the whole sheet).
-    <TwScrollView
-      keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets
-      keyboardDismissMode="interactive"
-      className="flex-1 bg-popover"
-      contentContainerClassName="gap-4 px-5 pt-6"
-      contentContainerStyle={{ paddingBottom: Math.max(24, insets.bottom) }}
-    >
-      <TwView className="flex-row items-center gap-2">
-        {backTarget ? (
-          <TwPressable
-            accessibilityRole="button"
-            accessibilityLabel={
-              backTarget === 'close' ? t('common.close') : t('newEntry.back')
+  // The form's main button, pinned under the scrolling fields: right
+  // above the keyboard while typing.
+  const footerAction =
+    step.name === 'entry'
+      ? {
+          label: busy ? busyLabel : t(`newEntry.submit.${entry.type}`),
+          onPress: () => void submitEntry(),
+        }
+      : step.name === 'transfer'
+        ? {
+            label: busy
+              ? busyLabel
+              : isCardPayment(accounts, transfer.toAccountId)
+                ? t('newEntry.submit.cardPayment')
+                : t('newEntry.submit.transfer'),
+            onPress: () => void submitTransfer(),
+          }
+        : step.name === 'duplicates'
+          ? {
+              label: busy
+                ? t('newEntry.saving')
+                : t('newEntry.duplicates.createAnyway'),
+              onPress: () => answerDuplicate({ kind: 'createAnyway' }),
             }
-            onPress={goBack}
-            className="-ml-2 size-11 items-center justify-center rounded-full active:bg-accent"
+          : null;
+
+  return (
+    <TwView className="flex-1 bg-popover">
+      {/* No KeyboardAvoidingView (inside a sheet it moved the whole sheet):
+        the space under the button grows with the keyboard instead. */}
+      <TwScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        className="flex-1"
+        contentContainerClassName="gap-4 px-5 pt-6"
+        contentContainerStyle={{
+          paddingBottom: footerAction ? 16 : Math.max(24, insets.bottom),
+        }}
+      >
+        <TwView className="flex-row items-center gap-2">
+          {backTarget ? (
+            <TwPressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                backTarget === 'close' ? t('common.close') : t('newEntry.back')
+              }
+              onPress={goBack}
+              className="-ml-2 size-11 items-center justify-center rounded-full active:bg-accent"
+            >
+              <Icon icon={backTarget === 'close' ? X : ArrowLeft} size={22} />
+            </TwPressable>
+          ) : null}
+          <Text
+            accessibilityRole="header"
+            weight="bold"
+            className="flex-1 text-lg"
           >
-            <Icon icon={backTarget === 'close' ? X : ArrowLeft} size={22} />
-          </TwPressable>
+            {title}
+          </Text>
+        </TwView>
+        {step.name === 'kind' ? (
+          <Text className="-mt-2 text-sm text-on-surface-variant">
+            {t('newEntry.description')}
+          </Text>
         ) : null}
-        <Text
-          accessibilityRole="header"
-          weight="bold"
-          className="flex-1 text-lg"
-        >
-          {title}
-        </Text>
-      </TwView>
-      {step.name === 'kind' ? (
-        <Text className="-mt-2 text-sm text-on-surface-variant">
-          {t('newEntry.description')}
-        </Text>
+        {body}
+      </TwScrollView>
+      {footerAction ? (
+        <TwView className="px-5 pt-3">
+          <Button
+            label={footerAction.label}
+            disabled={busy !== null}
+            onPress={footerAction.onPress}
+            className="w-full"
+          />
+        </TwView>
       ) : null}
-      {body}
-    </TwScrollView>
+      <View
+        style={{
+          height:
+            keyboard > 0
+              ? keyboard + 12
+              : footerAction
+                ? Math.max(16, insets.bottom)
+                : 0,
+        }}
+      />
+    </TwView>
   );
 }

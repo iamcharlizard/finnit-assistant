@@ -198,7 +198,7 @@ export function SimulatorScreen() {
     build: (data: SimulatorResult) => buildSimulatorData(data.cashFlowBaseline, today),
   });
   return (
-    <Screen title={t('title')} subtitle={t('subtitle')} loading={loading} error={error} refreshing={refreshing} onRefresh={refresh}>
+    <Screen title={t('title')} help={t('subtitle')} loading={loading} error={error} refreshing={refreshing} onRefresh={refresh}>
       {view ? <Simulator data={view} /> : null}
     </Screen>
   );

@@ -1,5 +1,6 @@
 import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
+import { LoanType } from '@finnit/database';
 import { DebtsService } from './debts.service';
 import {
   Debt,
@@ -48,6 +49,24 @@ export class DebtsResolver {
     @Args() args: DebtInsightsArgs,
   ): Promise<DebtInsights> {
     return this.insightsService.insights(user.id, args);
+  }
+
+  @Query(() => [Debt], {
+    description:
+      'Purchase financing or personal loans still owed with the same lender (institution ignoring accents and case, or contact): where a new purchase or amount could join',
+  })
+  async loanMergeCandidates(
+    @CurrentUser() user: User,
+    @Args('loanType', { type: () => LoanType }) loanType: LoanType,
+    @Args('lenderName', { nullable: true }) lenderName?: string,
+    @Args('lenderContactId', { type: () => ID, nullable: true })
+    lenderContactId?: string,
+  ): Promise<Debt[]> {
+    return this.loans.mergeCandidates(user.id, {
+      loanType,
+      lenderName,
+      lenderContactId,
+    });
   }
 
   @Query(() => [LoanScheduleItem], {

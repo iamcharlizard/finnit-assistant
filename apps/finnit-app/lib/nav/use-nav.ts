@@ -11,6 +11,8 @@ import {
 
 import { useAuth } from '@/contexts/AuthContext';
 
+import { HIDDEN_ON_MOBILE } from './hidden';
+
 /** Screens only the web has (the admin panel). */
 const WEB_ONLY = new Set(['/admin']);
 
@@ -19,7 +21,7 @@ export function useNav() {
   const { user } = useAuth();
   const pathname = usePathname();
   const sections: NavSection[] = visibleSections(user?.role === 'admin', NAV_SECTIONS)
-    .map((section) => ({ ...section, items: section.items.filter((i) => !WEB_ONLY.has(i.href)) }))
+    .map((section) => ({ ...section, items: section.items.filter((i) => !WEB_ONLY.has(i.href) && !HIDDEN_ON_MOBILE.has(i.href)) }))
     .filter((section) => section.items.length > 0);
   const entries = sections.flatMap((section) => section.items.map((entry) => ({ entry, section })));
   const activeHref = activeNavHref(

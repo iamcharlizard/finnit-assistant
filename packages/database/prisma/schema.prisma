@@ -618,16 +618,16 @@ model DuplicateSuggestion {
 /// (unaccent + lower, or ~* for regex) and is materialized in
 /// Transaction.aliasId.
 model MerchantAlias {
-  id                String         @id @default(uuid())
+  id                String           @id @default(uuid())
   userId            String
   matchType         AliasMatchType
-  pattern           String         @db.VarChar(200)
-  displayName       String         @db.VarChar(80)
+  pattern           String           @db.VarChar(200)
+  displayName       String           @db.VarChar(80)
   categoryId        String?
-  isPrivate         Boolean        @default(false)
-  priority          Int            @default(0)
-  active            Boolean        @default(true)
-  isProtected       Boolean        @default(false) // needs the privacy PIN to see its pattern, edit it or see its movements' bank text
+  isPrivate         Boolean          @default(false)
+  priority          Int              @default(0)
+  active            Boolean          @default(true)
+  isProtected       Boolean          @default(false) // needs the privacy PIN to see its pattern, edit it or see its movements' bank text
   // "These go to my account X": a matching synced movement is suggested as
   // a transfer to it (never converted on its own).
   transferAccountId String?
@@ -635,8 +635,8 @@ model MerchantAlias {
   // is recorded that way, whatever sign the bank sent (some banks send
   // money in as money out).
   direction         TransactionType?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   category        Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -785,6 +785,10 @@ model RecurringOccurrence {
   // generated again there; per-date amounts are looked up by it).
   originalDueDate    DateTime?              @db.Date
   expectedAmount     Decimal                @db.Decimal(18, 2)
+  // Loans: what payments split across scheduled payments put here
+  // (DebtPaymentAllocation). Open with 0 < paidAmount < expectedAmount =
+  // paid in part; a payment linked whole (transactionId) leaves it at 0.
+  paidAmount         Decimal                @default(0) @db.Decimal(18, 2)
   status             OccurrenceStatus       @default(upcoming)
   transactionId      String?                @unique
   paidAt             DateTime?
@@ -792,9 +796,10 @@ model RecurringOccurrence {
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
 
-  recurringExpense RecurringExpense      @relation(fields: [recurringExpenseId], references: [id], onDelete: Cascade)
-  transaction      Transaction?          @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  recurringExpense RecurringExpense        @relation(fields: [recurringExpenseId], references: [id], onDelete: Cascade)
+  transaction      Transaction?            @relation(fields: [transactionId], references: [id], onDelete: SetNull)
   importedLines    ImportedTransaction[]
+  allocations      DebtPaymentAllocation[]
 
   @@unique([recurringExpenseId, dueDate])
   @@index([status, dueDate])
@@ -981,7 +986,7 @@ model Debt {
   lenderContact           Contact?          @relation(fields: [lenderContactId], references: [id], onDelete: SetNull)
   recurringExpense        RecurringExpense?
 
-  @@unique([userId, name])
+  // Names may repeat (two "Kueski" purchases kept apart on purpose).
   @@index([userId])
 }
 
@@ -1050,13 +1055,31 @@ model DebtPayment {
   // Historical installment of a charge (its `installmentsPaid`).
   chargeId      String?
 
-  debt        Debt         @relation(fields: [debtId], references: [id], onDelete: Cascade)
-  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Restrict)
-  charge      DebtCharge?  @relation(fields: [chargeId], references: [id], onDelete: SetNull)
+  debt        Debt                    @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  transaction Transaction?            @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  charge      DebtCharge?             @relation(fields: [chargeId], references: [id], onDelete: SetNull)
+  allocations DebtPaymentAllocation[]
 
   @@unique([transactionId])
   @@index([debtId, date])
   @@index([chargeId])
+}
+
+/// How much of a loan payment went to each scheduled payment: one payment
+/// may cover several (or part of one). A payment without allocations of a
+/// personal loan is a free payment (abono) that only lowers the balance.
+model DebtPaymentAllocation {
+  id           String   @id @default(uuid())
+  paymentId    String
+  occurrenceId String
+  amount       Decimal  @db.Decimal(18, 2)
+  createdAt    DateTime @default(now())
+
+  payment    DebtPayment         @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  occurrence RecurringOccurrence @relation(fields: [occurrenceId], references: [id], onDelete: Cascade)
+
+  @@unique([paymentId, occurrenceId])
+  @@index([occurrenceId])
 }
 
 model Notification {

@@ -103,20 +103,21 @@ export function CalendarScreen() {
   return (
     <Screen
       title={t('pageTitles.calendar')}
-      subtitle={t('calendar.subtitle')}
-      loading={active.loading}
-      error={active.error}
-      refreshing={active.refreshing}
-      onRefresh={refresh}
-    >
-      <TwView className="gap-5">
+      help={t('calendar.subtitle')}
+      sticky={
         <Segmented
           accessibilityLabel={t('calendar.tabs.label')}
           options={CALENDAR_TABS.map((value) => ({ value, label: t(`calendar.tabs.${value}`) }))}
           value={tab}
           onValueChange={(next: CalendarTab) => router.setParams({ tab: next === 'calendar' ? undefined : next })}
         />
-
+      }
+      loading={active.loading}
+      error={active.error}
+      refreshing={active.refreshing}
+      onRefresh={refresh}
+    >
+      <TwView className="gap-5">
         {tab === 'calendar' && view ? (
           <TwView className="gap-4">
             <TourTarget id="calendar">

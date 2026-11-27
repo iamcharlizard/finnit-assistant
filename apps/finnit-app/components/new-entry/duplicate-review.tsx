@@ -15,13 +15,11 @@ export function DuplicateReview({
   busy,
   error,
   onIsThis,
-  onCreateAnyway,
 }: {
   matches: SimilarTransaction[];
   busy: boolean;
   error: string | null;
   onIsThis: (transactionId: string) => void;
-  onCreateAnyway: () => void;
 }) {
   const t = useTranslations('newEntry');
   const { locale } = useLocale();
@@ -48,7 +46,6 @@ export function DuplicateReview({
           {error}
         </Text>
       ) : null}
-      <Button label={busy ? t('saving') : t('duplicates.createAnyway')} disabled={busy} onPress={onCreateAnyway} className="w-full" />
     </TwView>
   );
 }

@@ -1,18 +1,9 @@
-import * as React from 'react';
-import {
-  Keyboard,
-  LayoutAnimation,
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-  type KeyboardEvent,
-} from 'react-native';
+import type * as React from 'react';
+import { Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 
+import { useKeyboardHeight } from '../../lib/use-keyboard-height';
 import { cn } from '../../lib/utils';
 import { TwPressable, TwView } from '../../lib/tw';
 import { Icon } from './icon';
@@ -34,31 +25,6 @@ interface SheetProps {
   children: React.ReactNode;
 }
 
-/** The keyboard's height while it shows (0 when hidden), animated like it on iOS. */
-function useKeyboardHeight(): number {
-  const [height, setHeight] = React.useState(0);
-  React.useEffect(() => {
-    const ios = Platform.OS === 'ios';
-    const follow = (next: number) => (event: KeyboardEvent) => {
-      if (ios && event.duration) {
-        LayoutAnimation.configureNext({
-          duration: event.duration,
-          update: { type: LayoutAnimation.Types.keyboard },
-        });
-      }
-      setHeight(next || 0);
-    };
-    const show = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', (event) =>
-      follow(event.endCoordinates.height)(event),
-    );
-    const hide = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', (event) => follow(0)(event));
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
-  return height;
-}
 
 /**
  * A bottom sheet (the web's Sheet side="bottom" / small-screen dialogs):

@@ -160,7 +160,7 @@ export function LoanDetailsTab({
           onChange={(e) => update({ name: e.target.value })}
           error={errorText(errors.name)}
         />
-        {hasDescription(debt.loanType) ? (
+        {fields.terms && hasDescription(debt.loanType) ? (
           <Input
             label={t(`debts.loan.description.${debt.loanType}`)}
             value={form.description}
@@ -190,12 +190,15 @@ export function LoanDetailsTab({
             onChange={(e) => update({ lenderName: e.target.value })}
           />
         )}
-        <MoneyInput
-          label={td('facts.principal')}
-          value={form.principal}
-          onValueChange={(principal) => update({ principal })}
-          error={errorText(errors.principal)}
-        />
+        {/* Purchase financing and personal loans: amounts are per purchase. */}
+        {fields.terms ? (
+          <MoneyInput
+            label={td('facts.principal')}
+            value={form.principal}
+            onValueChange={(principal) => update({ principal })}
+            error={errorText(errors.principal)}
+          />
+        ) : null}
         {fields.installments ? (
           <NumberInput
             label={td('facts.installments')}
@@ -205,18 +208,20 @@ export function LoanDetailsTab({
             error={errorText(errors.installments)}
           />
         ) : null}
-        <DatePicker
-          label={td('startDateOptional')}
-          value={form.startDate || undefined}
-          onChange={(startDate) => update({ startDate: startDate ?? '' })}
-          max={today}
-          locale={locale}
-          placeholder={td('datePlaceholder')}
-          clearable
-          clearLabel={td('clearDate')}
-          error={errorText(errors.startDate)}
-        />
-        {debt.loanType === 'personal' ? (
+        {fields.terms ? (
+          <DatePicker
+            label={td('startDateOptional')}
+            value={form.startDate || undefined}
+            onChange={(startDate) => update({ startDate: startDate ?? '' })}
+            max={today}
+            locale={locale}
+            placeholder={td('datePlaceholder')}
+            clearable
+            clearLabel={td('clearDate')}
+            error={errorText(errors.startDate)}
+          />
+        ) : null}
+        {fields.terms && debt.loanType === 'personal' ? (
           <LendingMethodField
             value={form.lendingMethod}
             onChange={(lendingMethod) => update({ lendingMethod })}
@@ -238,20 +243,24 @@ export function LoanDetailsTab({
             error={errorText(errors.periodicFee)}
           />
         ) : null}
-        <Combobox
-          label={td('facts.purpose')}
-          options={categoryItems}
-          value={form.purposeCategoryId || undefined}
-          onChange={(purposeCategoryId) =>
-            update({ purposeCategoryId: purposeCategoryId ?? '' })
-          }
-          placeholder={td('purposePlaceholder')}
-          searchPlaceholder={td('purposeSearch')}
-          emptyText={td('noResults')}
-          clearable
-        />
+        {fields.terms ? (
+          <Combobox
+            label={td('facts.purpose')}
+            options={categoryItems}
+            value={form.purposeCategoryId || undefined}
+            onChange={(purposeCategoryId) =>
+              update({ purposeCategoryId: purposeCategoryId ?? '' })
+            }
+            placeholder={td('purposePlaceholder')}
+            searchPlaceholder={td('purposeSearch')}
+            emptyText={td('noResults')}
+            clearable
+          />
+        ) : null}
       </div>
-      {debt.destination === 'deposit' && debt.depositAddsToBalance ? (
+      {fields.terms &&
+      debt.destination === 'deposit' &&
+      debt.depositAddsToBalance ? (
         <SwitchField
           label={t('debts.loan.addsToBalance')}
           hint={t('debts.detail.removeDepositHint')}
@@ -261,7 +270,9 @@ export function LoanDetailsTab({
           }
         />
       ) : null}
-      <p className="px-1 text-xs text-on-surface-variant">{td('editHint')}</p>
+      {fields.terms ? (
+        <p className="px-1 text-xs text-on-surface-variant">{td('editHint')}</p>
+      ) : null}
       <div className="flex justify-end gap-2">
         <Button
           type="button"

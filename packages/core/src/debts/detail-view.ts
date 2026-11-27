@@ -8,12 +8,13 @@ import {
 import type { BudgetCategory } from '../budgets/types';
 import type { ApiAccount } from '../finance/types';
 import type { Localizer } from '../i18n/translator';
-import type {
-  ApiDebtDetail,
-  ApiLoanPaymentCandidate,
-  ApiLoanScheduleItem,
-  CandidateReason,
-  DebtDestination,
+import {
+  isLoanContainer,
+  type ApiDebtDetail,
+  type ApiLoanPaymentCandidate,
+  type ApiLoanScheduleItem,
+  type CandidateReason,
+  type DebtDestination,
 } from './types';
 import { formatRate } from './view';
 
@@ -55,10 +56,16 @@ export interface ScheduleRow {
   /** Moved by the user: the date the schedule gave it, with the year. */
   originalDateLabel: string | null;
   /**
-   * Loans scheduled by their charges: what each one is for, with its
-   * installment ("Pantalla 01/03 · Audífonos 02/06"), or null.
+   * Loans scheduled by their charges: what each installment is for
+   * ("Pantalla 01/03", "Audífonos 02/06"); empty otherwise.
    */
-  concept: string | null;
+  concepts: string[];
+  /** Already paid on it by split payments (0 when none). */
+  paidAmount: number;
+  /** Still due: the amount less what is already paid. */
+  dueAmount: number;
+  /** Paid in part: "Pagado $150.00 de $300.00"; null otherwise. */
+  partialLabel: string | null;
   /** Amortization breakdown (loans by rate), or null. */
   principalLabel: string | null;
   interestLabel: string | null;
@@ -333,7 +340,16 @@ export function buildLoanDetailView(
       originalDateLabel: item.originalDueDate
         ? fullDate(dayKeyOf(item.originalDueDate), locale)
         : null,
-      concept: installmentsConcept(item.installments),
+      concepts: installmentsConcepts(item.installments),
+      paidAmount: item.paidAmount ?? 0,
+      dueAmount: roundCents(item.amount - (item.paidAmount ?? 0)),
+      partialLabel:
+        (item.paidAmount ?? 0) > 0 && item.status !== 'paid'
+          ? t('debts.detail.partial', {
+              paid: money(item.paidAmount),
+              amount: money(item.amount),
+            })
+          : null,
       principalLabel: item.principal != null ? money(item.principal) : null,
       interestLabel: item.interest != null ? money(item.interest) : null,
       vatLabel: item.vat != null ? money(item.vat) : null,
@@ -373,8 +389,11 @@ export function buildLoanDetailView(
     historicalPaid: debt.historicalPaid > 0 ? money(debt.historicalPaid) : null,
     paidPercent: Math.min(100, percentOf(paid, debt.totalOwed)),
     interest: interest != null && interest > 0 ? money(interest) : null,
+    // Purchase financing: each purchase has its own payments.
     termsLabel:
-      debt.paymentFrequency && debt.installmentAmount
+      debt.paymentFrequency &&
+      debt.installmentAmount &&
+      debt.loanType !== 'purchase_financing'
         ? debt.installmentsTotal
           ? t('debts.detail.terms', {
               count: debt.installmentsTotal,
@@ -453,18 +472,15 @@ export function buildLoanDetailView(
 
 const twoDigits = (n: number) => String(n).padStart(2, '0');
 
-/** "Pantalla 01/03 · 02/06": each charge's installment in a payment. */
-export function installmentsConcept(
+/** ["Pantalla 01/03", "02/06"]: each charge's installment in a payment. */
+export function installmentsConcepts(
   installments: ApiLoanScheduleItem['installments'],
-): string | null {
-  if (!installments?.length) return null;
-  return installments
-    .map((i) =>
-      [i.description, `${twoDigits(i.number)}/${twoDigits(i.of)}`]
-        .filter(Boolean)
-        .join(' '),
-    )
-    .join(' · ');
+): string[] {
+  return (installments ?? []).map((i) =>
+    [i.description, `${twoDigits(i.number)}/${twoDigits(i.of)}`]
+      .filter(Boolean)
+      .join(' '),
+  );
 }
 
 function lentRows(
@@ -537,6 +553,42 @@ function loanFacts(
   t: Localizer['t'],
 ): DetailFact[] {
   const { money, date, categoryName } = format;
+  // Purchase financing and personal loans: their amounts and terms are
+  // their purchases' (listed apart); only the loan's own data here.
+  if (isLoanContainer(debt)) {
+    return [
+      { key: 'name', label: t('debts.detail.facts.name'), value: debt.name },
+      debt.lenderName
+        ? {
+            key: 'lender',
+            label: t('debts.detail.facts.lender'),
+            value: debt.lenderName,
+          }
+        : null,
+      debt.loanType
+        ? {
+            key: 'type',
+            label: t('debts.detail.facts.type'),
+            value: t(`debts.loanTypes.${debt.loanType}`),
+          }
+        : null,
+      debt.paymentFrequency
+        ? {
+            key: 'frequency',
+            label: t('debts.detail.facts.frequency'),
+            value: t(`debts.loanFrequencies.${debt.paymentFrequency}`),
+          }
+        : null,
+      // A personal loan's agreed payment is the loan's.
+      debt.loanType === 'personal' && debt.installmentAmount
+        ? {
+            key: 'payment',
+            label: t('debts.detail.facts.payment'),
+            value: money(debt.installmentAmount),
+          }
+        : null,
+    ].filter((fact): fact is DetailFact => fact !== null);
+  }
   const label = (
     key:
       | 'name'

@@ -25,6 +25,19 @@ import {
 } from '@finnit/ui/components/ui/toggle-group';
 
 import { ExpensePicker } from '@/components/loan-links/expense-picker';
+import { PaymentAllocation } from './payment-allocation';
+
+import {
+  previewAllocation,
+  type PaymentSurplus,
+  type PendingPayment,
+} from '@finnit/core/debts/allocation';
+import {
+  DEFAULT_CURRENCY,
+  formatMoney,
+  roundCents,
+} from '@finnit/core/finance/money';
+import { parseAmount } from '@finnit/core/new-entry/form';
 
 import { budgetCategoryOptions } from '@finnit/core/budgets/options';
 import type { BudgetCategory } from '@finnit/core/budgets/types';
@@ -61,6 +74,7 @@ export function PaymentDialog({
   debt,
   remainingLabel,
   installment,
+  pending,
   accounts,
   categories,
   today,
@@ -77,6 +91,11 @@ export function PaymentDialog({
     dateLabel: string;
     amountLabel: string;
   };
+  /**
+   * Purchase financing and personal loans: the pending payments it can
+   * cover (the user picks them; none is a payment to the balance).
+   */
+  pending?: PendingPayment[];
   accounts: ApiAccount[];
   categories: BudgetCategory[];
   today: DayKey;
@@ -99,13 +118,32 @@ export function PaymentDialog({
     () => paymentSources(mode, accounts),
     [mode, accounts],
   );
+  // The pending payments it covers: the one it was opened from, else the
+  // oldest; the amount follows them until the user types one.
+  const [chosen, setChosen] = React.useState<string[]>(() =>
+    pending
+      ? installment
+        ? [installment.occurrenceId]
+        : pending.slice(0, 1).map((p) => p.occurrenceId)
+      : [],
+  );
+  const [surplus, setSurplus] = React.useState<PaymentSurplus>('next');
+  const [amountTyped, setAmountTyped] = React.useState(false);
+  const chosenDue = (ids: string[]) =>
+    roundCents(
+      (pending ?? [])
+        .filter((p) => ids.includes(p.occurrenceId))
+        .reduce((sum, p) => sum + p.due, 0),
+    );
   const [form, setForm] = React.useState<PaymentForm>(() =>
     newPaymentForm(
-      installment
-        ? { ...debt, minPaymentAmount: installment.amount }
-        : debt.installmentAmount != null
-          ? { ...debt, minPaymentAmount: debt.installmentAmount }
-          : debt,
+      pending && chosen.length > 0
+        ? { ...debt, minPaymentAmount: chosenDue(chosen) }
+        : installment
+          ? { ...debt, minPaymentAmount: installment.amount }
+          : debt.installmentAmount != null
+            ? { ...debt, minPaymentAmount: debt.installmentAmount }
+            : debt,
       {
         today,
         accountId: sources.length === 1 ? sources[0]!.id : '',
@@ -123,6 +161,20 @@ export function PaymentDialog({
   );
   const errorText = (code: PaymentErrorCode | undefined) =>
     code ? t(`debts.paymentValidation.${code}`) : undefined;
+  const money = (n: number) => formatMoney(n, DEFAULT_CURRENCY, locale);
+  const allocating = Boolean(pending) && mode.kind === 'expense';
+  const amount = parseAmount(form.amount);
+  const preview =
+    allocating && amount !== null
+      ? previewAllocation(amount, pending!, chosen, surplus)
+      : null;
+
+  function choose(ids: string[]) {
+    setChosen(ids);
+    if (!amountTyped && ids.length > 0) {
+      update({ amount: String(chosenDue(ids)) });
+    }
+  }
 
   function update(patch: Partial<PaymentForm>) {
     setForm((current) => ({ ...current, ...patch }));
@@ -168,7 +220,13 @@ export function PaymentDialog({
           description: tf('movementDescription', { name: debt.name }),
         }),
         gql,
-        { occurrenceId: installment?.occurrenceId },
+        allocating
+          ? {
+              occurrenceIds: chosen,
+              // Short or exact: nothing left over to place.
+              surplus,
+            }
+          : { occurrenceId: installment?.occurrenceId },
       );
       exit.after(onSaved)();
     } catch (error) {
@@ -242,10 +300,24 @@ export function PaymentDialog({
                     : tf('expenseNote')}
                 </p>
 
+                {allocating && pending!.length > 0 ? (
+                  <PaymentAllocation
+                    pending={pending!}
+                    chosen={chosen}
+                    onChosenChange={choose}
+                    surplus={surplus}
+                    onSurplusChange={setSurplus}
+                    preview={preview}
+                    money={money}
+                  />
+                ) : null}
                 <MoneyInput
                   label={tf('amount')}
                   value={form.amount}
-                  onValueChange={(value) => update({ amount: value })}
+                  onValueChange={(value) => {
+                    setAmountTyped(true);
+                    update({ amount: value });
+                  }}
                   error={errorText(errors.amount)}
                 />
                 <DatePicker

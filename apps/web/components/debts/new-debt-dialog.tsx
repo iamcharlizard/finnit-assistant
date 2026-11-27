@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from '@finnit/ui/components/ui/dialog';
 import { ContactCombobox } from '@/components/contacts/contact-combobox';
+import { MergeSuggestion } from './merge-suggestion';
 import { LendingMethodField } from './lending-method-field';
 import { useDialogExit } from '@finnit/ui/lib/use-dialog-exit';
 import { Input } from '@finnit/ui/components/ui/input';
@@ -41,6 +42,8 @@ import {
   loadLoanDraft,
   saveCardInstallments,
   saveLoan,
+  loadMergeCandidates,
+  type MergeCandidate,
 } from '@finnit/core/debts/api';
 import {
   hasErrors,
@@ -157,6 +160,47 @@ export function NewDebtDialog({
       categories,
     ),
   );
+  // Same lender as a loan already registered: offer to add it there.
+  const [candidates, setCandidates] = React.useState<MergeCandidate[]>([]);
+  const [mergeChoice, setMergeChoice] = React.useState<string | null>(null);
+  const mergeable =
+    !fingerprint &&
+    isLoanKind(kind) &&
+    (form.loanType === 'purchase_financing' || form.loanType === 'personal');
+  React.useEffect(() => {
+    if (!mergeable) {
+      setCandidates([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      loadMergeCandidates(
+        {
+          loanType: form.loanType,
+          lenderName: form.lenderName,
+          lenderContactId: form.lenderContactId || null,
+        },
+        gql,
+      )
+        .then((found) => {
+          if (cancelled) return;
+          setCandidates(found);
+          setMergeChoice((choice) =>
+            choice === 'separate' || found.some((c) => c.id === choice)
+              ? choice
+              : null,
+          );
+        })
+        .catch(() => !cancelled && setCandidates([]));
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [mergeable, form.loanType, form.lenderName, form.lenderContactId]);
+  const mergeInto =
+    mergeChoice && mergeChoice !== 'separate' ? mergeChoice : undefined;
+
   const [cardForm, setCardForm] = React.useState<CardInstallmentForm>(() =>
     withCardInstallmentChange(
       newCardInstallmentForm(today, cardPrefill),
@@ -353,8 +397,11 @@ export function NewDebtDialog({
     setSaving(true);
     setSubmitError(null);
     try {
-      const id = await saveLoan(form, fingerprint, gql);
-      exit.after(onSaved)(id, form.name.trim());
+      const id = await saveLoan(form, fingerprint, gql, {
+        mergeIntoDebtId: mergeInto,
+      });
+      const joined = candidates.find((c) => c.id === mergeInto);
+      exit.after(onSaved)(id, joined?.name ?? form.name.trim());
     } catch (error) {
       setSubmitError(debtErrorMessage(error, t));
       setSaving(false);
@@ -494,6 +541,15 @@ export function NewDebtDialog({
                     />
                   )}
                 </div>
+
+                {mergeable ? (
+                  <MergeSuggestion
+                    candidates={candidates}
+                    personal={form.loanType === 'personal'}
+                    chosen={mergeChoice}
+                    onChoose={setMergeChoice}
+                  />
+                ) : null}
 
                 {hasDescription(form.loanType) ? (
                   <Input

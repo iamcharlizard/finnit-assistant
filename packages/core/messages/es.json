@@ -1405,7 +1405,8 @@
       "rateDetail": "Anual, ponderada por lo que debes en cada una"
     },
     "list": {
-      "title": "Tus deudas"
+      "title": "Tus deudas",
+      "showPaidOff": "Mostrar liquidadas ({count})"
     },
     "card": {
       "rate": "{rate} anual",
@@ -1497,7 +1498,20 @@
       "categorySearch": "Buscar categoría…",
       "saving": "Registrando…",
       "submit": "Registrar pago",
-      "movementDescription": "Pago de {name}"
+      "movementDescription": "Pago de {name}",
+      "allocation": {
+        "title": "¿Qué pagos cubre?",
+        "hint": "Elige los pagos pendientes que salda. Sin elegir ninguno es un abono al saldo.",
+        "abono": "Abono al saldo (sin pago programado)",
+        "due": "Falta {amount}",
+        "chosen": "Pagos elegidos: {amount}",
+        "exact": "Cubre exactamente los pagos elegidos.",
+        "shortfall": "Faltan {amount}: el pago del {date} queda pagado a medias.",
+        "surplus": "Sobran {amount}. ¿Qué hacemos con ellos?",
+        "surplusNext": "Aplicarlos a los siguientes pagos pendientes",
+        "surplusBalance": "Dejarlos como abono al saldo",
+        "abonoNote": "Se descuenta del saldo sin saldar ningún pago programado."
+      }
     },
     "paymentValidation": {
       "amountRequired": "Escribe el monto.",
@@ -1919,7 +1933,8 @@
         "description": "Descripción",
         "method": "Cómo",
         "purpose": "Para qué",
-        "concept": "Concepto"
+        "concept": "Concepto",
+        "concepts": "Conceptos"
       },
       "summary": {
         "paidTitle": "Avance del préstamo",
@@ -1994,7 +2009,9 @@
         "saved": "Mensualidad guardada",
         "amountRequired": "Escribe un monto mayor que 0.",
         "dateRequired": "Elige la fecha de cobro."
-      }
+      },
+      "partial": "Pagado {paid} de {amount}",
+      "conceptsMore": "+{count}"
     },
     "categories": {
       "institutional": "Bancos y financieras",
@@ -2223,7 +2240,16 @@
       "scheduleAmounts": "Cada mensualidad debe ser mayor que 0.",
       "scheduleBelowPrincipal": "Las mensualidades no alcanzan el monto de la compra."
     },
-    "newKindLabel": "Tipo"
+    "newKindLabel": "Tipo",
+    "merge": {
+      "title": "Ya tienes «{name}» con {lender}",
+      "purchase": "Puedes agregar esta compra ahí para que sus pagos se sumen y lleves un mejor control, o llevarla por separado.",
+      "personal": "Puedes agregar este préstamo ahí para que sus pagos se sumen y lleves un mejor control, o llevarlo por separado.",
+      "add": "Agregar ahí",
+      "separate": "Llevar separado",
+      "joined": "Se agregó a «{name}»",
+      "separateChosen": "Se registrará por separado."
+    }
   },
   "analytics": {
     "emptyTitle": "Aún no hay datos para analizar",

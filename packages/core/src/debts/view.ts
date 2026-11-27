@@ -8,7 +8,7 @@ import {
 } from '../finance/money';
 import type { ApiAccount } from '../finance/types';
 import type { Localizer } from '../i18n/translator';
-import type { ApiDebt, DebtKind } from './types';
+import { isLoanContainer, type ApiDebt, type DebtKind } from './types';
 
 /**
  * What the debts screen shows: totals over the debts still owed and one
@@ -83,6 +83,8 @@ export interface DebtItem {
   paid: string;
   paidPercent: number;
   rate: string | null;
+  /** Purchase financing / personal loan: rates are per purchase (no "Sin tasa"). */
+  container: boolean;
   minPayment: string | null;
   dueLabel: string | null;
   /** The due date is in the past (and the debt isn't paid off). */
@@ -147,6 +149,7 @@ export function buildDebtsView(
         debt.interestRateAnnual != null
           ? formatRate(debt.interestRateAnnual)
           : null,
+      container: isLoanContainer(debt),
       minPayment:
         debt.minPaymentAmount != null ? money(debt.minPaymentAmount) : null,
       dueLabel: due ? longDate(due, today, locale) : null,

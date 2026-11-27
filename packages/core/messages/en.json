@@ -1405,7 +1405,8 @@
       "rateDetail": "Annual, weighted by what you owe on each"
     },
     "list": {
-      "title": "Your debts"
+      "title": "Your debts",
+      "showPaidOff": "Show paid off ({count})"
     },
     "card": {
       "rate": "{rate} a year",
@@ -1497,7 +1498,20 @@
       "categorySearch": "Search categories…",
       "saving": "Recording…",
       "submit": "Record payment",
-      "movementDescription": "Payment to {name}"
+      "movementDescription": "Payment to {name}",
+      "allocation": {
+        "title": "Which payments does it cover?",
+        "hint": "Pick the pending payments it settles. With none picked it is a payment to the balance.",
+        "abono": "Payment to the balance (no scheduled payment)",
+        "due": "{amount} due",
+        "chosen": "Payments picked: {amount}",
+        "exact": "It covers the payments picked exactly.",
+        "shortfall": "{amount} short: the payment of {date} stays paid in part.",
+        "surplus": "{amount} left over. What should we do with it?",
+        "surplusNext": "Apply it to the next pending payments",
+        "surplusBalance": "Keep it as a payment to the balance",
+        "abonoNote": "It lowers the balance without settling any scheduled payment."
+      }
     },
     "paymentValidation": {
       "amountRequired": "Enter the amount.",
@@ -1919,7 +1933,8 @@
         "description": "Description",
         "method": "How",
         "purpose": "What for",
-        "concept": "Item"
+        "concept": "Item",
+        "concepts": "Concepts"
       },
       "summary": {
         "paidTitle": "Loan progress",
@@ -1994,7 +2009,9 @@
         "saved": "Installment saved",
         "amountRequired": "Type an amount above 0.",
         "dateRequired": "Choose the billing date."
-      }
+      },
+      "partial": "Paid {paid} of {amount}",
+      "conceptsMore": "+{count}"
     },
     "categories": {
       "institutional": "Banks and lenders",
@@ -2223,7 +2240,16 @@
       "scheduleAmounts": "Each installment must be above 0.",
       "scheduleBelowPrincipal": "The installments don't cover the purchase."
     },
-    "newKindLabel": "Type"
+    "newKindLabel": "Type",
+    "merge": {
+      "title": "You already have “{name}” with {lender}",
+      "purchase": "You can add this purchase there so its payments add up and are easier to follow, or keep it apart.",
+      "personal": "You can add this loan there so its payments add up and are easier to follow, or keep it apart.",
+      "add": "Add it there",
+      "separate": "Keep it apart",
+      "joined": "Added to “{name}”",
+      "separateChosen": "It will be registered apart."
+    }
   },
   "analytics": {
     "emptyTitle": "No data to analyze yet",

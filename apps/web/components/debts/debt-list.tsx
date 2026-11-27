@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { toast } from '@finnit/ui/components/ui/toaster';
 
@@ -17,6 +17,7 @@ import type { DayKey } from '@finnit/core/finance/dates';
 import type { ApiAccount } from '@finnit/core/finance/types';
 import { gql } from '@/lib/graphql/client';
 import { useLocalizer } from '@/lib/i18n/client';
+import { SwitchField } from '@/components/finance/switch-field';
 import { DebtCard } from './debt-card';
 import { DebtDialog } from './debt-dialog';
 import { PaymentDialog } from './payment-dialog';
@@ -40,6 +41,21 @@ export function DebtList({
 }) {
   const { t } = useLocalizer();
   const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  // Paid-off debts are hidden unless asked for (kept in the URL).
+  const showPaidOff = params.get('paidOff') === '1';
+  const paidOffCount = items.filter((item) => item.paidOff).length;
+  const shown = showPaidOff ? items : items.filter((item) => !item.paidOff);
+  function setShowPaidOff(show: boolean) {
+    const next = new URLSearchParams(params.toString());
+    if (show) next.set('paidOff', '1');
+    else next.delete('paidOff');
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  }
   const [editing, setEditing] = React.useState<ApiDebt | null>(null);
   const [paying, setPaying] = React.useState<DebtItem | null>(null);
   const [confirm, setConfirm] = React.useState<ConfirmRequest | null>(null);
@@ -86,8 +102,17 @@ export function DebtList({
 
   return (
     <>
+      {paidOffCount > 0 ? (
+        <div className="mb-3 flex justify-end">
+          <SwitchField
+            label={t('debts.list.showPaidOff', { count: paidOffCount })}
+            checked={showPaidOff}
+            onCheckedChange={setShowPaidOff}
+          />
+        </div>
+      ) : null}
       <ul className="grid gap-3 @2xl:grid-cols-2 @4xl:grid-cols-3">
-        {items.map((item) => (
+        {shown.map((item) => (
           <DebtCard
             key={item.id}
             item={item}

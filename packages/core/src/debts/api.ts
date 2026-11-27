@@ -25,6 +25,7 @@ import {
   type ApiLoanPaymentCandidate,
   type ApiPayoffProjection,
   type PayoffStrategy,
+  type LoanType,
 } from '@finnit/core/debts/types';
 
 /** Debt mutations and the payoff plan, run from client components. */
@@ -148,8 +149,17 @@ export async function saveLoan(
   form: LoanForm,
   fingerprint: string | null,
   run: GqlRunner,
+  {
+    mergeIntoDebtId,
+  }: {
+    /** "Agregar ahí": add it to that loan instead of creating one. */
+    mergeIntoDebtId?: string;
+  } = {},
 ): Promise<string> {
-  const input = buildLoanInput(form);
+  const input = {
+    ...buildLoanInput(form),
+    ...(mergeIntoDebtId && !fingerprint && { mergeIntoDebtId }),
+  };
   if (fingerprint) {
     const data = await run<{ acceptRecurringSuggestionAsLoan: { id: string } }>(
       ACCEPT_SUGGESTION_AS_LOAN_MUTATION,
@@ -161,6 +171,43 @@ export async function saveLoan(
     input,
   });
   return data.createDebt.id;
+}
+
+export const LOAN_MERGE_CANDIDATES_QUERY = `query LoanMergeCandidates($loanType: LoanType!, $lenderName: String, $lenderContactId: ID) { loanMergeCandidates(loanType: $loanType, lenderName: $lenderName, lenderContactId: $lenderContactId) { id name lenderName loanType remainingBalance } }`;
+
+/** A loan a new purchase or amount could join (same lender). */
+export interface MergeCandidate {
+  id: string;
+  name: string;
+  lenderName: string | null;
+  loanType: LoanType | null;
+  remainingBalance: number;
+}
+
+/**
+ * Purchase financing or personal loans still owed with that institution
+ * (accents and case ignored) or contact; [] for other types or no lender.
+ */
+export async function loadMergeCandidates(
+  {
+    loanType,
+    lenderName,
+    lenderContactId,
+  }: {
+    loanType: LoanType;
+    lenderName?: string | null;
+    lenderContactId?: string | null;
+  },
+  run: GqlRunner,
+): Promise<MergeCandidate[]> {
+  if (loanType !== 'purchase_financing' && loanType !== 'personal') return [];
+  const name = lenderName?.trim() || null;
+  if (!name && !lenderContactId) return [];
+  const data = await run<{ loanMergeCandidates: MergeCandidate[] }>(
+    LOAN_MERGE_CANDIDATES_QUERY,
+    { loanType, lenderName: name, lenderContactId: lenderContactId || null },
+  );
+  return data.loanMergeCandidates;
 }
 
 /** The loan the AI and the detected charges propose for a suggestion. */
@@ -260,7 +307,19 @@ export async function registerDebtPayment(
   debtId: string,
   movement: PaymentMovement,
   run: GqlRunner,
-  { occurrenceId }: { occurrenceId?: string } = {},
+  {
+    occurrenceId,
+    occurrenceIds,
+    surplus,
+  }: {
+    occurrenceId?: string;
+    /**
+     * Purchase financing and personal loans: the pending payments it covers
+     * (split in date order; [] = a payment to the balance, abono).
+     */
+    occurrenceIds?: string[];
+    surplus?: 'next' | 'balance';
+  } = {},
 ): Promise<void> {
   if (movement.kind === 'expense') {
     const { input } = movement;
@@ -271,7 +330,9 @@ export async function registerDebtPayment(
         amount: input.amount,
         date: input.txnDate,
         ...(input.categoryId && { categoryId: input.categoryId }),
-        ...(occurrenceId && { occurrenceId }),
+        ...(occurrenceIds
+          ? { occurrenceIds, surplus: surplus ?? 'balance' }
+          : occurrenceId && { occurrenceId }),
       },
     });
     return;

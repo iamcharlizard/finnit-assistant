@@ -33,6 +33,16 @@ export function isCardInstallments(debt: {
   return debt.loanType === 'card_installments';
 }
 
+/**
+ * Purchase financing and personal loans: every purchase or amount (the
+ * first one too) is a charge; the loan keeps only its own data.
+ */
+export function isLoanContainer(debt: { loanType: LoanType | null }): boolean {
+  return (
+    debt.loanType === 'purchase_financing' || debt.loanType === 'personal'
+  );
+}
+
 /** Loans of the Préstamos tab (card purchases go with the cards). */
 export function isLoanTabDebt(debt: {
   kind: DebtKind;
@@ -230,6 +240,8 @@ export interface ApiLoanScheduleItem {
   fee: number | null;
   /** Left after the payment (principal for loans by rate). */
   balance: number;
+  /** Already paid on an open payment by split payments; 0 otherwise. */
+  paidAmount: number;
   /** Loans scheduled by their charges: the installment of each charge. */
   installments: ApiLoanScheduleInstallment[] | null;
   /** Moved by the user: the date the schedule gave it. */
@@ -245,7 +257,7 @@ export interface ApiLoanScheduleInstallment {
 }
 
 export const LOAN_SCHEDULE_FIELDS =
-  'dueDate amount status occurrenceId transactionId isHistorical projected principal interest vat fee balance originalDueDate installments { number of amount description }';
+  'dueDate amount paidAmount status occurrenceId transactionId isHistorical projected principal interest vat fee balance originalDueDate installments { number of amount description }';
 
 export type CandidateReason = 'history' | 'text' | 'amount' | 'ai';
 

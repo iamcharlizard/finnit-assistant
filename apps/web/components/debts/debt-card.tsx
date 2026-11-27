@@ -74,7 +74,12 @@ export function DebtCard({
   const Icon = TYPE_ICONS[type];
   const color = CATEGORY_COLOR[type];
   const facts = [
-    item.rate ? t('card.rate', { rate: item.rate }) : t('card.noRate'),
+    // Purchase financing / personal loans: each purchase has its own rate.
+    item.rate
+      ? t('card.rate', { rate: item.rate })
+      : item.container
+        ? null
+        : t('card.noRate'),
     item.minPayment ? t('card.minPayment', { amount: item.minPayment }) : null,
     item.accountLabel
       ? t('card.account', { account: item.accountLabel })

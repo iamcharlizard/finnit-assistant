@@ -1,5 +1,6 @@
 import { LoanInterestMode, RecurringFrequency } from '@finnit/database';
 import {
+  allocatePayment,
   amortizationSchedule,
   debtBalance,
   LoanTermsError,
@@ -282,6 +283,76 @@ describe('loan-math', () => {
           payments: [{ amount: 1_500 }],
         }),
       ).toBe(0);
+    });
+  });
+});
+
+describe('allocatePayment', () => {
+  const rows = [
+    { id: 'a', due: 100 },
+    { id: 'b', due: 100 },
+    { id: 'c', due: 100 },
+  ];
+  const next = [
+    { id: 'd', due: 100 },
+    { id: 'e', due: 100 },
+  ];
+
+  it('pays exactly the chosen payments', () => {
+    expect(allocatePayment(300, rows, next, 'balance')).toEqual({
+      allocations: [
+        { id: 'a', amount: 100, settles: true },
+        { id: 'b', amount: 100, settles: true },
+        { id: 'c', amount: 100, settles: true },
+      ],
+      shortfall: 0,
+      surplus: 0,
+    });
+  });
+
+  it('leaves the last one paid in part when it falls short', () => {
+    expect(allocatePayment(250, rows, next, 'balance')).toEqual({
+      allocations: [
+        { id: 'a', amount: 100, settles: true },
+        { id: 'b', amount: 100, settles: true },
+        { id: 'c', amount: 50, settles: false },
+      ],
+      shortfall: 50,
+      surplus: 0,
+    });
+  });
+
+  it('gives what is left to the next payments', () => {
+    const result = allocatePayment(450.5, rows, next, 'next');
+    expect(result.allocations.slice(3)).toEqual([
+      { id: 'd', amount: 100, settles: true },
+      { id: 'e', amount: 50.5, settles: false },
+    ]);
+    expect(result).toMatchObject({ shortfall: 0, surplus: 0 });
+  });
+
+  it('keeps what is left as a payment to the balance', () => {
+    expect(allocatePayment(320, rows, next, 'balance')).toMatchObject({
+      shortfall: 0,
+      surplus: 20,
+    });
+  });
+
+  it('is all to the balance without chosen payments (abono)', () => {
+    expect(allocatePayment(80, [], next, 'balance')).toEqual({
+      allocations: [],
+      shortfall: 0,
+      surplus: 80,
+    });
+  });
+
+  it('counts only what is still due on a payment paid in part', () => {
+    expect(
+      allocatePayment(60, [{ id: 'a', due: 40 }], next, 'balance'),
+    ).toEqual({
+      allocations: [{ id: 'a', amount: 40, settles: true }],
+      shortfall: 0,
+      surplus: 20,
     });
   });
 });

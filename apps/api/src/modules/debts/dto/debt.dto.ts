@@ -55,6 +55,17 @@ registerEnumType(LoanInterestMode, {
     'Which value defines the amount to repay: rate (principal + annual rate, French amortization), total_amount or installment_amount',
 });
 registerEnumType(DebtStatus, { name: 'DebtStatus' });
+
+/** Where a loan payment goes beyond the scheduled payments chosen. */
+export enum DebtPaymentSurplus {
+  next = 'next',
+  balance = 'balance',
+}
+registerEnumType(DebtPaymentSurplus, {
+  name: 'DebtPaymentSurplus',
+  description:
+    'What is left after the chosen scheduled payments: to the next ones, or a free payment to the balance',
+});
 registerEnumType(LendingMethod, {
   name: 'LendingMethod',
   description:
@@ -540,6 +551,15 @@ export class CreateDebtInput {
   @IsString()
   lenderContactId?: string;
 
+  @Field(() => ID, {
+    nullable: true,
+    description:
+      'Purchase financing or personal loan: add this amount to that loan instead of creating one',
+  })
+  @IsOptional()
+  @IsString()
+  mergeIntoDebtId?: string;
+
   @Field(() => RecurringFrequency, { nullable: true })
   @IsOptional()
   @IsEnum(RecurringFrequency)
@@ -913,6 +933,23 @@ export class RecordDebtPaymentInput {
   @IsOptional()
   @IsString()
   occurrenceId?: string;
+
+  @Field(() => [ID], {
+    nullable: true,
+    description:
+      'Purchase financing and personal loans: the scheduled payments it covers, split in their date order (the last may stay paid in part). Empty: a free payment (abono) to the balance',
+  })
+  @IsOptional()
+  @IsString({ each: true })
+  occurrenceIds?: string[];
+
+  @Field(() => DebtPaymentSurplus, {
+    nullable: true,
+    description:
+      'With occurrenceIds: where what is left goes (default balance)',
+  })
+  @IsOptional()
+  surplus?: DebtPaymentSurplus;
 }
 
 @InputType()
@@ -1199,6 +1236,12 @@ export class LoanScheduleItem {
     description: 'Projected payments are upcoming',
   })
   status: OccurrenceStatus;
+
+  @Field(() => Float, {
+    description:
+      'Already paid on an open scheduled payment (payments split across several); 0 otherwise',
+  })
+  paidAmount: number;
 
   @Field(() => ID, {
     nullable: true,

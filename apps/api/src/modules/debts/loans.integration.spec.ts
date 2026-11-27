@@ -38,6 +38,14 @@ import {
 import { syncCategoryCatalog } from '../auth/default-categories';
 
 const d = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
+/** The amount added after creating a loan (not its first one, 'initial-…'). */
+const extra = <T extends { id: string }>(debt: { charges: T[] }) =>
+  debt.charges.find((c) => !c.id.startsWith('initial-'))!;
+/** A container's first amount: purchase financing and personal loans. */
+const initial = <T extends { id: string }>(debt: {
+  id: string;
+  charges: T[];
+}) => debt.charges.find((c) => c.id === `initial-${debt.id}`)!;
 const iso = (date: Date) => date.toISOString().slice(0, 10);
 
 const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
@@ -260,7 +268,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
     expect(grown.totalOwed).toBe(15_000);
     expect(await balance()).toBe(start + 3_000);
 
-    const shrunk = await loans.deleteCharge(userId, grown.charges[0].id);
+    const shrunk = await loans.deleteCharge(userId, extra(grown).id);
     expect(shrunk.remainingBalance).toBe(7_000);
     expect(await balance()).toBe(start - 2_000);
 
@@ -287,7 +295,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       startDate: d('2026-11-01'),
       paymentAccountId: debitId,
     });
-    expect(debt.destination).toBe(DebtChargeDestination.purchase);
+    expect(initial(debt).destination).toBe(DebtChargeDestination.purchase);
 
     const amounts = async () =>
       (
@@ -637,9 +645,11 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       expect(iso(o.dueDate) <= '2027-12-27').toBe(true);
       expect(o.expectedAmount.toNumber()).toBe(shorter.installmentAmount);
     }
-    await expect(
-      loans.update(userId, debt.id, { name: 'Kueski' }),
-    ).rejects.toThrow('already exists');
+    // Names may repeat (two loans with one lender kept apart).
+    expect((await loans.update(userId, debt.id, { name: 'Kueski' })).name).toBe(
+      'Kueski',
+    );
+    await loans.update(userId, debt.id, { name: 'YoTePresto 12' });
 
     await expect(
       loans.create(userId, {
@@ -760,15 +770,12 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       destination: DebtChargeDestination.purchase,
       lendingMethod: LendingMethod.credit_card,
     });
-    expect(lent.charges[0].lendingMethod).toBe(LendingMethod.credit_card);
+    expect(extra(lent).lendingMethod).toBe(LendingMethod.credit_card);
     expect(lent.remainingBalance).toBe(2_000);
-    const dated = await loans.update(userId, byId.id, {
-      startDate: d('2026-06-01'),
-      lendingMethod: LendingMethod.cash,
-    });
-    expect(dated.lendingMethod).toBe(LendingMethod.cash);
-    const undated = await loans.update(userId, byId.id, { startDate: null });
-    expect(undated.startDate).toBeUndefined();
+    // A personal loan's amounts are edited one by one, not on the loan.
+    await expect(
+      loans.update(userId, byId.id, { lendingMethod: LendingMethod.cash }),
+    ).rejects.toThrow(ValidationError);
 
     const moved = await loans.update(userId, byName.id, {
       lenderContactId: ana.id,
@@ -881,7 +888,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       paymentAccountId: account.id,
       purposeCategoryId: electronics,
     });
-    expect(kueski.purposeCategoryId).toBe(electronics);
+    expect(initial(kueski).purposeCategoryId).toBe(electronics);
     const expense = await prisma.recurringExpense.findUniqueOrThrow({
       where: { debtId: kueski.id },
     });
@@ -895,7 +902,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       destination: DebtChargeDestination.purchase,
       purposeCategoryId: electronics,
     });
-    expect(withCharge.charges[0].purposeCategoryId).toBe(electronics);
+    expect(extra(withCharge).purposeCategoryId).toBe(electronics);
 
     // An uncategorized bank movement confirmed as a payment takes the loan's.
     const movement = await prisma.transaction.create({
@@ -1077,7 +1084,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       destination: DebtChargeDestination.purchase,
     });
     expect(added.remainingBalance).toBe(1_000);
-    expect(added.charges[0].installmentsPaid).toBe(2);
+    expect(extra(added).installmentsPaid).toBe(2);
     // Historical: no expense movements.
     expect(await expenses()).toBe(before);
 
@@ -1102,7 +1109,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
     expect(fewer.remainingBalance).toBe(2_000);
 
     // Editing it rewrites them.
-    const edited = await loans.updateCharge(userId, added.charges[0].id, {
+    const edited = await loans.updateCharge(userId, extra(added).id, {
       date: bought,
       principal: 3_000,
       installments: 3,
@@ -1124,7 +1131,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
     ).rejects.toThrow('cannot exceed');
 
     // Removing the charge removes its payments.
-    await loans.deleteCharge(userId, added.charges[0].id);
+    await loans.deleteCharge(userId, extra(added).id);
     expect(await prisma.debtPayment.count({ where: { debtId: loan.id } })).toBe(
       0,
     );
@@ -1144,7 +1151,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       paymentFrequency: RecurringFrequency.semimonthly,
       firstPaymentDate: d('2026-10-15'),
     });
-    expect(loan.description).toBe('Pantalla');
+    expect(initial(loan).description).toBe('Pantalla');
     const added = await loans.addCharge(userId, {
       debtId: loan.id,
       date: d('2026-10-15'),
@@ -1172,7 +1179,7 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
     ]);
 
     // A new date moves its paid-before installments; none stay behind.
-    await loans.updateCharge(userId, added.charges[0].id, {
+    await loans.updateCharge(userId, extra(added).id, {
       date: d('2026-10-20'),
       description: 'Aspiradora',
       principal: 2_400,
@@ -1335,8 +1342,8 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
       destination: DebtChargeDestination.deposit,
       depositAddsToBalance: false,
     });
-    expect(withCharge.charges[0].transactionId).toBeUndefined();
-    expect(withCharge.charges[0].depositAddsToBalance).toBe(false);
+    expect(extra(withCharge).transactionId).toBeUndefined();
+    expect(extra(withCharge).depositAddsToBalance).toBe(false);
     expect(await balance()).toBe(before);
 
     for (const debt of [old, edited, withCharge]) {
@@ -1726,5 +1733,136 @@ const DATABASE_URL = process.env.LOANS_TEST_DATABASE_URL;
         dueDate: d('2027-04-17'),
       }),
     ).rejects.toThrow(ValidationError);
+  });
+
+  it('keeps every amount of a purchase financing as a purchase, and joins a new one when asked', async () => {
+    const terms = {
+      kind: DebtKind.loan,
+      loanType: LoanType.purchase_financing,
+      lenderName: 'DiDi Pay',
+      interestMode: LoanInterestMode.total_amount,
+      paymentFrequency: RecurringFrequency.semimonthly,
+      firstPaymentDate: d('2026-12-15'),
+    };
+    const first = await loans.create(userId, {
+      ...terms,
+      name: 'Didi',
+      description: 'Teclado',
+      principal: 1_000,
+      totalToRepay: 1_000,
+      installmentsTotal: 2,
+      startDate: d('2026-12-01'),
+    });
+    // The loan keeps no amount: its first purchase is one more charge.
+    expect(first.principal).toBe(0);
+    expect(first.charges).toHaveLength(1);
+    expect(initial(first).description).toBe('Teclado');
+    expect(initial(first).totalToRepay).toBe(1_000);
+    expect(first.remainingBalance).toBe(1_000);
+
+    // Same institution, ignoring accents and case.
+    const candidates = await loans.mergeCandidates(userId, {
+      loanType: LoanType.purchase_financing,
+      lenderName: '  didi pay ',
+    });
+    expect(candidates.map((c) => c.id)).toContain(first.id);
+
+    const merged = await loans.create(userId, {
+      ...terms,
+      name: 'Didi',
+      description: 'Audífonos',
+      principal: 400,
+      totalToRepay: 400,
+      installmentsTotal: 2,
+      startDate: d('2026-12-05'),
+      mergeIntoDebtId: first.id,
+    });
+    expect(merged.id).toBe(first.id);
+    expect(merged.charges.map((c) => c.description).sort()).toEqual([
+      'Audífonos',
+      'Teclado',
+    ]);
+    expect(merged.remainingBalance).toBe(1_400);
+
+    // Kept apart on purpose: the same name is allowed.
+    const apart = await loans.create(userId, {
+      ...terms,
+      name: 'Didi',
+      principal: 300,
+      totalToRepay: 300,
+      installmentsTotal: 1,
+    });
+    expect(apart.id).not.toBe(first.id);
+    expect(apart.name).toBe('Didi');
+  });
+
+  it('splits a payment over scheduled payments, part of one, or as a free payment', async () => {
+    const loan = await loans.create(userId, {
+      name: 'Préstamo de Oscar',
+      kind: DebtKind.loan,
+      loanType: LoanType.personal,
+      lenderName: 'Oscar',
+      principal: 0,
+    });
+    await loans.addCharge(userId, {
+      debtId: loan.id,
+      date: d('2026-11-01'),
+      description: 'Lavadora',
+      principal: 900,
+      installments: 3,
+      firstPaymentDate: d('2026-12-01'),
+      destination: DebtChargeDestination.purchase,
+    });
+    const open = () =>
+      prisma.recurringOccurrence.findMany({
+        where: {
+          recurringExpense: { debtId: loan.id },
+          status: { in: [OccurrenceStatus.upcoming, OccurrenceStatus.missed] },
+        },
+        orderBy: { dueDate: 'asc' },
+      });
+    const [december, january] = await open();
+    expect(Number(december.expectedAmount)).toBe(300);
+    expect(january).toBeDefined();
+    const pay = (amount: number, occurrenceIds: string[], surplus?: 'next') =>
+      loans.recordPayment(userId, {
+        debtId: loan.id,
+        accountId: debitId,
+        amount,
+        date: d('2026-11-20'),
+        occurrenceIds,
+        surplus: surplus as never,
+      });
+
+    // A free payment (abono): only the balance goes down.
+    expect((await pay(100, [])).remainingBalance).toBe(800);
+    expect((await open()).every((o) => Number(o.paidAmount) === 0)).toBe(true);
+
+    // One payment over two scheduled ones, short: the second is paid in part.
+    expect((await pay(450, [december.id, january.id])).remainingBalance).toBe(
+      350,
+    );
+    const afterSplit = await open();
+    expect(afterSplit.some((o) => o.id === december.id)).toBe(false);
+    const partial = afterSplit.find((o) => o.id === january.id)!;
+    expect(Number(partial.paidAmount)).toBe(150);
+    const row = (await tracking.schedule(userId, loan.id)).find(
+      (s) => s.occurrenceId === january.id,
+    );
+    expect(row?.paidAmount).toBe(150);
+
+    // What is left over goes to the next ones when asked.
+    const more = await pay(200, [january.id], 'next');
+    expect(more.remainingBalance).toBe(150);
+    expect((await open()).some((o) => o.id === january.id)).toBe(false);
+
+    // Reopening a payment covered by a split one keeps the money as an abono.
+    await recurring.reopenOccurrence(december.id, userId);
+    const reopened = await prisma.recurringOccurrence.findUniqueOrThrow({
+      where: { id: december.id },
+    });
+    expect(reopened.status).toBe(OccurrenceStatus.upcoming);
+    expect(Number(reopened.paidAmount)).toBe(0);
+    expect((await debts.findById(loan.id, userId)).remainingBalance).toBe(150);
   });
 });

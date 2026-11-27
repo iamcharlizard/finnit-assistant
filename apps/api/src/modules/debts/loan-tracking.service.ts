@@ -119,6 +119,7 @@ export class LoanTrackingService {
       const item = {
         dueDate: o.dueDate,
         amount: Number(o.expectedAmount),
+        paidAmount: Number(o.paidAmount),
         status: o.status,
         occurrenceId: o.id,
         transactionId: o.transactionId ?? undefined,
@@ -141,6 +142,7 @@ export class LoanTrackingService {
       items.push({
         dueDate: payment.date,
         amount: Number(payment.amount),
+        paidAmount: 0,
         status: OccurrenceStatus.paid,
         isHistorical: true,
         projected: false,
@@ -152,6 +154,7 @@ export class LoanTrackingService {
       const item = {
         dueDate: new Date(time),
         amount,
+        paidAmount: 0,
         status: OccurrenceStatus.paid,
         isHistorical: true,
         projected: false,
@@ -179,7 +182,7 @@ export class LoanTrackingService {
                 i.status === OccurrenceStatus.upcoming ||
                 i.status === OccurrenceStatus.missed,
             )
-            .reduce((sum, i) => sum + i.amount, 0),
+            .reduce((sum, i) => sum + i.amount - i.paidAmount, 0),
       );
       const generated = expense.occurrences.map((o) =>
         (o.originalDueDate ?? o.dueDate).getTime(),
@@ -203,6 +206,7 @@ export class LoanTrackingService {
         items.push({
           dueDate,
           amount: cents(amount),
+          paidAmount: 0,
           status: OccurrenceStatus.upcoming,
           isHistorical: false,
           projected: true,
@@ -214,17 +218,12 @@ export class LoanTrackingService {
     if (byCharge) {
       for (const item of items) {
         // Each row names what it pays: a charge's installments paid before
-        // registering it, the loan's first amount paid before registering
-        // the loan, or the installments still due.
+        // registering it (`paid`), or the installments of that date still
+        // counted as due (also on the loan's own paid-before rows: the first
+        // amount, now a charge, kept those payments as the loan's).
         const due = byCharge
           .get((scheduleDate.get(item) ?? item.dueDate).getTime())
-          ?.filter((d) =>
-            chargeHistory.has(item)
-              ? d.paid
-              : item.isHistorical
-                ? d.chargeId === null
-                : !d.paid,
-          );
+          ?.filter((d) => (chargeHistory.has(item) ? d.paid : !d.paid));
         if (due?.length) {
           item.installments = due.map((d) => ({
             number: d.number,

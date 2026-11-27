@@ -309,3 +309,60 @@ export function debtBalance(input: BalanceInput): number {
   const paid = input.payments.reduce((sum, p) => sum + p.amount, 0);
   return Math.max(0, cents(owed - paid));
 }
+
+/** An open scheduled payment and what is still due on it. */
+export interface AllocationRow {
+  id: string;
+  due: number;
+}
+
+/** Where what is left after the chosen payments goes. */
+export type PaymentSurplus = 'next' | 'balance';
+
+export interface PaymentAllocation {
+  allocations: { id: string; amount: number; settles: boolean }[];
+  /** Still due on the chosen payments (the last ones stay paid in part). */
+  shortfall: number;
+  /** Not given to any scheduled payment: a free payment to the balance. */
+  surplus: number;
+}
+
+/**
+ * Splits a payment over the scheduled payments the user chose (in their
+ * order), then, with `next`, over the following open ones; whatever is left
+ * only lowers the balance. A payment that falls short leaves the last
+ * reached payment paid in part.
+ */
+export function allocatePayment(
+  amount: number,
+  chosen: AllocationRow[],
+  next: AllocationRow[],
+  surplus: PaymentSurplus,
+): PaymentAllocation {
+  const toCents = (n: number) => Math.round(n * 100);
+  let left = toCents(amount);
+  const allocations: PaymentAllocation['allocations'] = [];
+  const give = (rows: AllocationRow[]) => {
+    for (const row of rows) {
+      const due = toCents(row.due);
+      if (left <= 0 || due <= 0) continue;
+      const part = Math.min(left, due);
+      allocations.push({
+        id: row.id,
+        amount: part / 100,
+        settles: part >= due,
+      });
+      left -= part;
+    }
+  };
+  give(chosen);
+  const owed = chosen.reduce((sum, r) => sum + Math.max(0, toCents(r.due)), 0);
+  const given = allocations.reduce((sum, a) => sum + toCents(a.amount), 0);
+  if (surplus === 'next')
+    give(next.filter((r) => !chosen.some((c) => c.id === r.id)));
+  return {
+    allocations,
+    shortfall: Math.max(0, owed - given) / 100,
+    surplus: left / 100,
+  };
+}

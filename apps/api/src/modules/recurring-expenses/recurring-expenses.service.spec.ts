@@ -430,6 +430,7 @@ describe('RecurringExpensesService', () => {
           paidAt: null,
           matchedBy: null,
           transactionId: null,
+          paidAmount: 0,
         },
       });
     });

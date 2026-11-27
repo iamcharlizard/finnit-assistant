@@ -86,6 +86,11 @@ input AcceptSuggestionAsLoanInput {
 
   """Text that identifies the payments in bank movements"""
   merchantPattern: String
+
+  """
+  Purchase financing or personal loan: add this amount to that loan instead of creating one
+  """
+  mergeIntoDebtId: ID
   minPaymentAmount: Float
   name: String
 
@@ -1070,6 +1075,11 @@ input CreateDebtInput {
 
   """Text that identifies the payments in bank movements"""
   merchantPattern: String
+
+  """
+  Purchase financing or personal loan: add this amount to that loan instead of creating one
+  """
+  mergeIntoDebtId: ID
   minPaymentAmount: Float
   name: String!
 
@@ -1674,6 +1684,22 @@ type EssentialsClassification {
   classified: Int!
 }
 
+"""
+This month so far vs the same days of last month, without what comes every month and has not come yet this month
+"""
+type FlowComparison {
+  """
+  Last month's same days, without monthly sources still to come this month
+  """
+  before: Float!
+
+  """This month, from the 1st to today"""
+  now: Float!
+
+  """Monthly sources still to come this month (left out of before)"""
+  pendingSources: Int!
+}
+
 type Goal {
   createdAt: DateTime!
   currency: String!
@@ -2077,6 +2103,11 @@ input MergeTransactionsInput {
   keepId: ID
   nameFrom: MergeNameFrom! = keep
   transactionId: ID!
+}
+
+type MonthToDateComparison {
+  expenses: FlowComparison!
+  income: FlowComparison!
 }
 
 type MonthlyReport {
@@ -2519,6 +2550,7 @@ enum NotificationStatus {
 """Notification type"""
 enum NotificationType {
   balance_mismatch
+  bank_sync
   budget
   card_due
   card_statement
@@ -2753,6 +2785,11 @@ type Query {
   loanLinkOptions(transactionId: ID!): LoanLinkOptions!
 
   """
+  Purchase financing or personal loans still owed with the same lender (institution ignoring accents and case, or contact): where a new purchase or amount could join
+  """
+  loanMergeCandidates(lenderContactId: ID, lenderName: String, loanType: LoanType!): [Debt!]!
+
+  """
   Bank movements that look like open payments of a loan; confirm them with confirmLoanPayment
   """
   loanPaymentCandidates(debtId: ID!): [LoanPaymentCandidate!]!
@@ -2768,6 +2805,11 @@ type Query {
 
   """Learned merchant → category rules, most recent first"""
   merchantRules: [MerchantRule!]!
+
+  """
+  This month up to today (YYYY-MM-DD) vs the same days of last month, without monthly sources that have not come yet
+  """
+  monthToDateComparison(today: String!): MonthToDateComparison!
   monthlyReport(month: Int!, year: Int!): MonthlyReport!
   notifications(
     after: String

@@ -6,6 +6,7 @@ import {
 import {
   DebtChargeDestination,
   DebtKind,
+  DebtStatus,
   LoanInterestMode,
   LoanType,
   OccurrenceMatchSource,
@@ -53,6 +54,7 @@ import {
   CreateDebtInput,
   Debt,
   MAX_ANNUAL_RATE,
+  DebtPaymentSurplus,
   RecordDebtPaymentInput,
   UpdateDebtChargeInput,
   UpdateLoanInput,
@@ -63,14 +65,16 @@ import {
   createMovement,
   defaultPurchaseDate,
   deleteDeposit,
+  isLoanContainer,
   isPurchaseFinancing,
   isScheduledByCharges,
+  moveInitialAmountToCharge,
   paidInstallments,
   syncChargeHistory,
   syncDebtStatus,
   totalOwedOf,
 } from './debt-ledger';
-import { LoanTermsError, resolveLoanTerms } from './loan-math';
+import { allocatePayment, LoanTermsError, resolveLoanTerms } from './loan-math';
 import {
   defaultSchedule,
   installmentDays,
@@ -138,6 +142,11 @@ export class LoansService {
     input: CreateDebtInput,
     fromSuggestion?: FromSuggestion,
   ): Promise<Debt> {
+    // "Agregar ahí": the new purchase or amount joins a loan already there.
+    if (input.mergeIntoDebtId && !fromSuggestion) {
+      return this.mergeInto(userId, input);
+    }
+
     const loanType = input.loanType;
     let card: CardPlan | null = null;
     if (loanType === LoanType.card_installments) {
@@ -348,6 +357,10 @@ export class LoansService {
       contactId: input.lenderContactId,
       name: input.lenderName,
     });
+    // Debt names may repeat; the schedule's name must not.
+    const scheduleName = rule
+      ? await this.freeScheduleName(userId, name)
+      : name;
 
     const writeDebt = async (tx: Tx) => {
       const debt = await tx.debt.create({
@@ -456,7 +469,7 @@ export class LoansService {
       await this.recurring.createWithHistory(
         userId,
         {
-          name,
+          name: scheduleName,
           kind: isCardInstallments
             ? RecurringExpenseKind.installment
             : RecurringExpenseKind.loan,
@@ -498,6 +511,9 @@ export class LoansService {
     }
 
     await this.prisma.$transaction(async (tx) => {
+      // Purchase financing and personal loans keep their first amount as
+      // one more charge (same balance and schedule).
+      await moveInitialAmountToCharge(tx, debtId!);
       await syncDebtStatus(tx, debtId!);
       // The schedule was generated before the expense was linked to the
       // debt, so purchase financing gets its per-date amounts now.
@@ -823,17 +839,110 @@ export class LoansService {
   ): Promise<string | null> {
     if (debt.recurringExpense || !input.installments) return null;
     if (debt.loanType !== LoanType.personal) return null;
+    return this.freeScheduleName(userId, debt.name);
+  }
+
+  /** `name`, or `name (2)`, `name (3)`… free among the user's recurring expenses. */
+  private async freeScheduleName(userId: string, name: string) {
     const taken = new Set(
       (
         await this.prisma.recurringExpense.findMany({
-          where: { userId, name: { startsWith: debt.name } },
+          where: { userId, name: { startsWith: name } },
           select: { name: true },
         })
       ).map((e) => e.name),
     );
-    let name = debt.name;
-    for (let n = 2; taken.has(name); n++) name = `${debt.name} (${n})`;
-    return name;
+    let free = name;
+    for (let n = 2; taken.has(free); n++) free = `${name} (${n})`;
+    return free;
+  }
+
+  /**
+   * Loans of the same type with the same lender (institution ignoring
+   * accents and case, or the same contact), still owed: where a new
+   * purchase or amount could be added instead of a new loan.
+   */
+  async mergeCandidates(
+    userId: string,
+    input: {
+      loanType: LoanType;
+      lenderName?: string | null;
+      lenderContactId?: string | null;
+    },
+  ): Promise<Debt[]> {
+    if (!isLoanContainer({ loanType: input.loanType })) return [];
+    const name = input.lenderName?.trim();
+    if (!name && !input.lenderContactId) return [];
+    const rows = name
+      ? await this.prisma.$queryRaw<{ id: string }[]>`
+          SELECT "id" FROM "Debt"
+          WHERE "userId" = ${userId} AND "kind" = 'loan'
+            AND "loanType"::text = ${input.loanType}
+            AND "status" = 'active'
+            AND lower(unaccent(trim("lenderName"))) = lower(unaccent(${name}))`
+      : [];
+    const ids = new Set(rows.map((r) => r.id));
+    if (input.lenderContactId) {
+      const byContact = await this.prisma.debt.findMany({
+        where: {
+          userId,
+          kind: DebtKind.loan,
+          loanType: input.loanType,
+          status: DebtStatus.active,
+          lenderContactId: input.lenderContactId,
+        },
+        select: { id: true },
+      });
+      byContact.forEach((d) => ids.add(d.id));
+    }
+    return Promise.all([...ids].map((id) => this.debts.findById(id, userId)));
+  }
+
+  /**
+   * A new loan the user chose to add to one already registered ("Agregar
+   * ahí"): its amount becomes one more purchase or amount of that loan.
+   */
+  private async mergeInto(userId: string, input: CreateDebtInput) {
+    const target = await this.prisma.debt.findFirst({
+      where: { id: input.mergeIntoDebtId!, userId, kind: DebtKind.loan },
+      select: { id: true, loanType: true },
+    });
+    if (!target) throw new NotFoundError('Debt not found');
+    if (!isLoanContainer(target) || target.loanType !== input.loanType) {
+      throw new ValidationError('It can only join a loan of the same type');
+    }
+    const firstPaymentDate = input.firstPaymentDate
+      ? toDateOnly(new Date(input.firstPaymentDate))
+      : null;
+    const date = input.startDate
+      ? toDateOnly(new Date(input.startDate))
+      : firstPaymentDate
+        ? defaultPurchaseDate(firstPaymentDate)
+        : toDateOnly(new Date());
+    return this.addCharge(userId, {
+      debtId: target.id,
+      date,
+      description: input.description?.trim() || input.name?.trim() || undefined,
+      principal: input.principal,
+      installments: input.installmentsTotal ?? undefined,
+      installmentsPaid: input.installmentsPaid ?? undefined,
+      interestMode: input.interestMode ?? undefined,
+      interestRateAnnual: input.interestRateAnnual ?? undefined,
+      includesVat: input.includesVat ?? undefined,
+      totalToRepay: input.totalToRepay ?? undefined,
+      installmentAmount: input.installmentAmount ?? undefined,
+      destination:
+        input.destination ??
+        (target.loanType === LoanType.purchase_financing
+          ? DebtChargeDestination.purchase
+          : DebtChargeDestination.deposit),
+      depositAccountId: input.depositAccountId ?? undefined,
+      depositCountsAsIncome: input.depositCountsAsIncome ?? undefined,
+      depositAddsToBalance: input.depositAddsToBalance ?? undefined,
+      purposeCategoryId: input.purposeCategoryId ?? undefined,
+      lendingMethod: input.lendingMethod ?? undefined,
+      firstPaymentDate: firstPaymentDate ?? undefined,
+    });
   }
 
   /** First due date of a new schedule: the one given, else a month after. */
@@ -965,7 +1074,7 @@ export class LoansService {
       },
       {
         within: async (tx, created) => {
-          await tx.debtPayment.create({
+          const payment = await tx.debtPayment.create({
             data: {
               debtId: debt.id,
               transactionId: created.id,
@@ -973,19 +1082,79 @@ export class LoansService {
               date,
             },
           });
-          await this.debts.payScheduled(
-            tx,
-            debt.id,
-            created.id,
-            date,
-            input.occurrenceId,
-          );
+          if (input.occurrenceIds) {
+            await this.allocate(tx, debt.id, payment.id, input);
+          } else {
+            await this.debts.payScheduled(
+              tx,
+              debt.id,
+              created.id,
+              date,
+              input.occurrenceId,
+            );
+          }
           await syncDebtStatus(tx, debt.id);
         },
       },
     );
 
     return this.debts.findById(debt.id, userId);
+  }
+
+  /**
+   * Splits a payment over the scheduled payments chosen (oldest first), and
+   * with `surplus: next` over the following open ones. Each gets what it
+   * covers (`paidAmount`); those covered in full are paid. What is left only
+   * lowers the balance (a free payment, abono).
+   */
+  private async allocate(
+    tx: Tx,
+    debtId: string,
+    paymentId: string,
+    input: RecordDebtPaymentInput,
+  ) {
+    const ids = new Set(input.occurrenceIds ?? []);
+    const open = await tx.recurringOccurrence.findMany({
+      where: {
+        recurringExpense: { debtId },
+        status: { in: [OccurrenceStatus.upcoming, OccurrenceStatus.missed] },
+      },
+      orderBy: { dueDate: 'asc' },
+    });
+    const byId = new Map(open.map((o) => [o.id, o]));
+    if ([...ids].some((id) => !byId.has(id))) {
+      throw new NotFoundError('Scheduled payment not found');
+    }
+    const row = (o: (typeof open)[number]) => ({
+      id: o.id,
+      due: cents(Number(o.expectedAmount) - Number(o.paidAmount)),
+    });
+    const { allocations } = allocatePayment(
+      input.amount,
+      open.filter((o) => ids.has(o.id)).map(row),
+      open.filter((o) => !ids.has(o.id)).map(row),
+      input.surplus === DebtPaymentSurplus.next ? 'next' : 'balance',
+    );
+    for (const part of allocations) {
+      const occurrence = byId.get(part.id)!;
+      await tx.debtPaymentAllocation.create({
+        data: { paymentId, occurrenceId: part.id, amount: part.amount },
+      });
+      await tx.recurringOccurrence.update({
+        where: { id: part.id },
+        data: {
+          paidAmount: cents(Number(occurrence.paidAmount) + part.amount),
+        },
+      });
+      if (part.settles) {
+        await this.recurring.markPaidInTransaction(
+          tx,
+          part.id,
+          null,
+          OccurrenceMatchSource.manual,
+        );
+      }
+    }
   }
 
   private assertRate(rate?: number | null) {
@@ -1131,13 +1300,23 @@ export class LoansService {
     if (input.name !== undefined && !name) {
       throw new ValidationError('The name cannot be empty');
     }
-    if (name && name !== debt.name) {
-      const taken = await this.prisma.debt.findFirst({
-        where: { userId, name, id: { not: id } },
-        select: { id: true },
-      });
-      if (taken)
-        throw new ConflictError('A debt with this name already exists');
+    // Purchase financing and personal loans: the amounts and terms are
+    // their purchases' (edited one by one); here only the loan's own data.
+    if (
+      isLoanContainer(debt) &&
+      (input.principal !== undefined ||
+        input.installmentsTotal !== undefined ||
+        input.startDate !== undefined ||
+        input.description !== undefined ||
+        input.openingFee !== undefined ||
+        input.periodicFee !== undefined ||
+        input.lendingMethod !== undefined ||
+        input.purposeCategoryId !== undefined ||
+        input.depositAddsToBalance !== undefined)
+    ) {
+      throw new ValidationError(
+        'Edit the amounts of this loan in its purchases or amounts',
+      );
     }
 
     const institutional = debt.loanType === LoanType.institutional;

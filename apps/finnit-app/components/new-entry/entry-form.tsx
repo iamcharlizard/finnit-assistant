@@ -21,7 +21,6 @@ import {
 } from '@finnit/core/new-entry/options';
 import type { CheckField } from '@finnit/core/receipts/prefill';
 import { TwView } from '@finnit/ui-native/lib/tw';
-import { Button } from '@finnit/ui-native/components/ui/button';
 import { DatePicker } from '@finnit/ui-native/components/ui/date-picker';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
 import { Input } from '@finnit/ui-native/components/ui/input';
@@ -76,9 +75,7 @@ export function EntryForm({
   categories,
   errors,
   busy,
-  busyLabel,
   submitError,
-  onSubmit,
   check = [],
 }: {
   /** Fields to double-check after a receipt was read (amber outline). */
@@ -89,9 +86,7 @@ export function EntryForm({
   categories: EntryCategory[];
   errors: EntryErrors;
   busy: boolean;
-  busyLabel: string;
   submitError: string | null;
-  onSubmit: () => void;
 }) {
   const t = useTranslations('newEntry');
   const tc = useTranslations('common');
@@ -233,12 +228,6 @@ export function EntryForm({
           {submitError}
         </Text>
       ) : null}
-      <Button
-        label={busy ? busyLabel : t(`submit.${draft.type}`)}
-        disabled={busy}
-        onPress={onSubmit}
-        className="w-full"
-      />
     </TwView>
   );
 }

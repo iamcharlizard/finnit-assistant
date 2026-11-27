@@ -18,7 +18,6 @@ import {
   transferTargets,
 } from '@finnit/core/new-entry/options';
 import { TwView } from '@finnit/ui-native/lib/tw';
-import { Button } from '@finnit/ui-native/components/ui/button';
 import { DatePicker } from '@finnit/ui-native/components/ui/date-picker';
 import { Icon } from '@finnit/ui-native/components/ui/icon';
 import { Input } from '@finnit/ui-native/components/ui/input';
@@ -50,9 +49,7 @@ export function TransferForm({
   accounts,
   errors,
   busy,
-  busyLabel,
   submitError,
-  onSubmit,
   legs,
   onLegs,
   legPicks,
@@ -74,9 +71,7 @@ export function TransferForm({
   accounts: EntryAccount[];
   errors: TransferErrors;
   busy: boolean;
-  busyLabel: string;
   submitError: string | null;
-  onSubmit: () => void;
 }) {
   const t = useTranslations('newEntry');
   const tc = useTranslations('common');
@@ -250,18 +245,6 @@ export function TransferForm({
           {submitError}
         </Text>
       ) : null}
-      <Button
-        label={
-          busy
-            ? busyLabel
-            : cardPayment
-              ? t('submit.cardPayment')
-              : t('submit.transfer')
-        }
-        disabled={busy}
-        onPress={onSubmit}
-        className="w-full"
-      />
     </TwView>
   );
 }

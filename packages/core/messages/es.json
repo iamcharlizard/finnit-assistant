@@ -56,6 +56,12 @@
       "cards": "Cuentas",
       "calendar": "Calendario"
     },
+    "adminShort": {
+      "adminUsers": "Usuarios",
+      "waitlist": "Espera",
+      "adminAi": "IA",
+      "adminBanks": "Bancos"
+    },
     "collapse": "Contraer menú",
     "expand": "Expandir menú",
     "groupToggle": "Mostrar u ocultar {name}",

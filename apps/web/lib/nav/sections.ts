@@ -31,7 +31,9 @@ import {
 } from '@finnit/core/nav/sections';
 
 export {
+  ADMIN_HOME,
   BOTTOM_NAV_KEYS,
+  adminCanVisit,
   SETTINGS_HREF,
   activeGroupKey,
   activeNavHref,
@@ -89,7 +91,7 @@ export const NAV_SECTIONS: ReadonlyArray<NavSection> = SECTION_DATA.map(
   }),
 );
 
-/** The sections this user sees: no empty ones, admin only for admins. */
+/** The sections this user sees: admins only the panel, others only their finances. */
 export function visibleSections(
   isAdmin: boolean,
   sections: ReadonlyArray<NavSection> = NAV_SECTIONS,

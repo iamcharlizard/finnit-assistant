@@ -2,8 +2,10 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
 import {
+  ADMIN_HOME,
   BOTTOM_NAV_KEYS,
   NAV_SECTIONS,
+  adminCanVisit,
   activeGroupKey,
   activeNavHref,
   isNavGroup,
@@ -16,7 +18,7 @@ import {
 } from '@finnit/core/nav/sidebar';
 
 describe('nav sections', () => {
-  it('hides empty sections and, for non-admins, the admin panel', () => {
+  it('hides empty sections; admins see only the panel, others only their finances', () => {
     const keys = (admin: boolean) => visibleSections(admin).map((s) => s.key);
     assert.deepEqual(keys(false), [
       'home',
@@ -26,7 +28,7 @@ describe('nav sections', () => {
       'planning',
       'analytics',
     ]);
-    assert.deepEqual(keys(true).slice(-2), ['users', 'system']);
+    assert.deepEqual(keys(true), ['users', 'system']);
     const empty = { key: 'planning' as const, items: [] };
     assert.deepEqual(
       visibleSections(true, [...NAV_SECTIONS, empty]).filter(
@@ -79,6 +81,31 @@ describe('nav sections', () => {
     // History and recurring live side by side in "Movimientos".
     const tx = ['/history', '/recurring'];
     assert.equal(activeNavHref(tx, '/recurring'), '/recurring');
+  });
+});
+
+describe('admin accounts', () => {
+  it('stay in the panel, their settings and notifications', () => {
+    for (const path of [
+      ADMIN_HOME,
+      '/admin',
+      '/admin/settings/banks',
+      '/settings',
+      '/settings/',
+      '/notifications',
+    ]) {
+      assert.ok(adminCanVisit(path), path);
+    }
+    for (const path of [
+      '/dashboard',
+      '/history',
+      '/accounts',
+      '/settings/banks',
+      '/settings/categories',
+      '/administrator',
+    ]) {
+      assert.ok(!adminCanVisit(path), path);
+    }
   });
 });
 

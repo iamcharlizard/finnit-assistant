@@ -11,6 +11,7 @@ import {
 } from '@/lib/auth/cookies';
 import { isExpiring } from '@/lib/auth/jwt';
 import { routeDecision } from '@/lib/auth/route-access';
+import { PATHNAME_HEADER } from '@/lib/nav/pathname-header';
 
 /**
  * Runs before every page and /api route:
@@ -54,13 +55,16 @@ export async function proxy(request: NextRequest) {
     response = NextResponse.redirect(login);
   } else if (decision.kind === 'dashboard') {
     response = NextResponse.redirect(new URL('/dashboard', request.url));
-  } else if (renewed) {
-    // Hand the fresh token to this same request, not only to the browser.
-    request.cookies.set(ACCESS_COOKIE, renewed.accessToken);
-    request.cookies.set(REFRESH_COOKIE, renewed.refreshToken);
-    response = NextResponse.next({ request: { headers: request.headers } });
   } else {
-    response = NextResponse.next();
+    if (renewed) {
+      // Hand the fresh token to this same request, not only to the browser.
+      request.cookies.set(ACCESS_COOKIE, renewed.accessToken);
+      request.cookies.set(REFRESH_COOKIE, renewed.refreshToken);
+    }
+    // The path, for layouts that redirect by it (an admin outside the panel).
+    const headers = new Headers(request.headers);
+    headers.set(PATHNAME_HEADER, pathname);
+    response = NextResponse.next({ request: { headers } });
   }
 
   if (renewed) {

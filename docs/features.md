@@ -253,7 +253,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 |---|---|---|---|---|
 | Usuario maestro | ✅ | — | — | Se crea una vez por ambiente con `create-master` ([deployment.md](./deployment.md)). No se le puede quitar el rol ni desactivar. |
 | Administradores | ✅ | — | ✅ | `role: admin`. Solo el maestro nombra o quita administradores. |
-| Navegación del panel | — | — | ✅ | En el sidebar (solo admins): **Usuarios** › Activos (`/admin/users`), Lista de espera (`/admin/waitlist`); **Configuración global** › Inteligencia artificial (`/admin/settings/ai`), Bancos (`/admin/settings/banks`). Lo que afecta a toda la plataforma va en Configuración global. |
+| Navegación del panel | — | — | ✅ | Una cuenta admin solo opera el panel: no ve las secciones de finanzas ni "Nuevo movimiento", y cualquier otra pantalla la manda a `/admin/users` (salvo Ajustes, con solo perfil y apariencia, y notificaciones). En el sidebar: **Usuarios** › Activos (`/admin/users`), Lista de espera (`/admin/waitlist`); **Configuración global** › Inteligencia artificial (`/admin/settings/ai`), Bancos (`/admin/settings/banks`). Lo que afecta a toda la plataforma va en Configuración global. |
 | Dar y quitar acceso a usuarios | ✅ | — | ✅ | `/admin/users`: alta con contraseña opcional, asignar o quitar contraseña, desligar Google, desactivar y reactivar. No se borran usuarios. |
 | Modelos de IA | ✅ | — | ✅ | `/admin/settings/ai`: activar, predeterminado, orden, alta y baja. |
 | Funcionalidades de IA | ✅ | — | ✅ | `aiFeatures` / `updateAiFeature`: hoy solo "Leer estados de cuenta en PDF"; se enciende o apaga, con modelo propio y respaldos opcionales. |

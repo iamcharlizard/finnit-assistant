@@ -44,7 +44,7 @@ export interface NavEntry {
 export interface NavSection<E extends NavEntry = NavEntry> {
   key: NavSectionKey;
   items: E[];
-  /** Only admins see it. */
+  /** Part of the admin panel: only admins see it, and admins see only these. */
   adminOnly?: boolean;
 }
 
@@ -108,6 +108,21 @@ export function isAdminHref(href: string): boolean {
   return href === '/admin' || href.startsWith('/admin/');
 }
 
+/** Where an admin lands: their account only runs the panel. */
+export const ADMIN_HOME = '/admin/users';
+
+/**
+ * Pages an admin account may open: the panel, its own settings (profile and
+ * appearance) and notifications. Everything else is a normal user's
+ * finances, and sends them to ADMIN_HOME.
+ */
+export function adminCanVisit(pathname: string): boolean {
+  const path = pathname.replace(/\/+$/, '') || '/';
+  return (
+    isAdminHref(path) || path === SETTINGS_HREF || path === '/notifications'
+  );
+}
+
 /** Whether a section shows as a group (a submenu) rather than one link. */
 export function isNavGroup(section: Pick<NavSection, 'items'>): boolean {
   return section.items.length > 1;
@@ -126,13 +141,16 @@ export function activeGroupKey(
   );
 }
 
-/** The sections this user sees: no empty ones, admin only for admins. */
+/**
+ * The sections this user sees, without empty ones: an admin sees only the
+ * admin panel, everyone else only their finances.
+ */
 export function visibleSections<S extends NavSection<NavEntry>>(
   isAdmin: boolean,
   sections: ReadonlyArray<S>,
 ): S[] {
   return sections.filter(
-    (s) => s.items.length > 0 && (isAdmin || !s.adminOnly),
+    (s) => s.items.length > 0 && Boolean(s.adminOnly) === isAdmin,
   );
 }
 

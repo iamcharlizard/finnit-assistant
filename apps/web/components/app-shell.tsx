@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { TopAppBar } from '@finnit/ui/components/navigation/top-app-bar';
@@ -13,6 +13,7 @@ import {
   HeaderChromeContext,
   type HeaderChrome,
 } from '@/components/header-chrome';
+import { AdminBottomNav } from '@/components/navigation/admin-bottom-nav';
 import { AppBottomNav } from '@/components/navigation/app-bottom-nav';
 import { AppSideNav } from '@/components/navigation/app-side-nav';
 import { ProfileMenu } from '@/components/navigation/profile-menu';
@@ -29,7 +30,9 @@ import { useSessionUser } from '@/components/session-provider';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { TransactionDrawerProvider } from '@/components/transaction-detail/transaction-drawer';
 import {
+  ADMIN_HOME,
   SETTINGS_HREF,
+  adminCanVisit,
   activeGroupKey,
   activeNavHref,
   visibleSections,
@@ -56,10 +59,14 @@ export function AppShell({
   const user = useSessionUser();
   const t = useTranslations('pageTitles');
   const tu = useTranslations('ui');
-  const sections = React.useMemo(
-    () => visibleSections(user.role === 'admin'),
-    [user.role],
-  );
+  // An admin account only runs the panel: its sections, no "+".
+  const admin = user.role === 'admin';
+  const sections = React.useMemo(() => visibleSections(admin), [admin]);
+  const router = useRouter();
+  // The app layout redirects on full loads; this covers client navigation.
+  React.useEffect(() => {
+    if (admin && !adminCanVisit(pathname)) router.replace(ADMIN_HOME);
+  }, [admin, pathname, router]);
   const activeHref = activeNavHref(
     sections.flatMap((s) => s.items.map((i) => i.href)),
     pathname,
@@ -106,7 +113,7 @@ export function AppShell({
         <AppSideNav
           sections={sections}
           activeHref={activeHref}
-          onAddClick={() => handleAdd()}
+          onAddClick={admin ? undefined : () => handleAdd()}
           collapsed={sidebar.collapsed}
           onToggle={sidebar.toggle}
           openGroups={groups.open}
@@ -150,13 +157,21 @@ export function AppShell({
           </NewEntryProvider>
         </HeaderChromeContext.Provider>
 
-        <AppBottomNav
-          sections={sections}
-          activeHref={activeHref}
-          onAdd={handleAdd}
-          withCardPayment={hasCreditCard}
-          className="lg:hidden"
-        />
+        {admin ? (
+          <AdminBottomNav
+            sections={sections}
+            activeHref={activeHref}
+            className="lg:hidden"
+          />
+        ) : (
+          <AppBottomNav
+            sections={sections}
+            activeHref={activeHref}
+            onAdd={handleAdd}
+            withCardPayment={hasCreditCard}
+            className="lg:hidden"
+          />
+        )}
         <NewEntrySheet
           open={adding !== null}
           onOpenChange={(open) => {

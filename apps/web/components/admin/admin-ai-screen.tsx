@@ -29,7 +29,7 @@ import { AiModelRow, type AiModelChange } from './ai-model-row';
 import { ConfirmDialog, type ConfirmRequest } from './confirm-dialog';
 import { CreateAiModelDialog } from './create-ai-model-dialog';
 
-/** /admin/ai: what each AI feature may do and the model catalog. */
+/** /admin/settings/ai: what each AI feature may do and the model catalog. */
 export function AdminAiScreen() {
   const t = useTranslations();
   const [features, setFeatures] = React.useState<AiFeature[]>([]);

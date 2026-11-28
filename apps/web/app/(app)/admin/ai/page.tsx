@@ -1,13 +1,6 @@
-import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
-import { AdminAiScreen } from '@/components/admin/admin-ai-screen';
-
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations();
-  return { title: t('pageTitles.adminAi') };
-}
-
-export default function AdminAiPage() {
-  return <AdminAiScreen />;
+/** The old route of the AI settings, now under "Configuración global". */
+export default function OldAdminAiPage() {
+  redirect('/admin/settings/ai');
 }

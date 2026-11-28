@@ -87,6 +87,15 @@ export class BankConnection {
   @Field({ nullable: true })
   lastSyncedAt?: Date;
 
+  @Field({
+    description:
+      'The user paused it: no scheduled or manual sync until they resume',
+  })
+  syncPaused: boolean;
+
+  @Field({ nullable: true })
+  syncPausedAt?: Date;
+
   @Field(() => [LinkedBankAccount])
   accounts: LinkedBankAccount[];
 

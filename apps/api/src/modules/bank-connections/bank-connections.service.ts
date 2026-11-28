@@ -26,6 +26,7 @@ import { addDays, toDateOnly } from '../recurring-expenses/schedule.util';
 import { localToday } from '../../common/utils/local-date.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { syncNoticeTexts } from './sync-notice';
+import { GlobalSettingsService } from '../global-settings/global-settings.service';
 import { SyncReviewService } from './sync-review.service';
 import { CardInstallmentsService } from '../debts/card-installments.service';
 import {
@@ -112,7 +113,16 @@ export class BankConnectionsService {
     private readonly notifications: NotificationsService,
     private readonly syncReview: SyncReviewService,
     private readonly cardInstallments: CardInstallmentsService,
+    private readonly globalSettings: GlobalSettingsService,
   ) {}
+
+  /** Whether an admin left bank sync on ("Configuración global"). */
+  async isSyncAvailable(): Promise<boolean> {
+    return (
+      this.syncfy.isConfigured &&
+      (await this.globalSettings.isBankSyncEnabled())
+    );
+  }
 
   /**
    * After a sync: possible transfers, categories from the user's history
@@ -141,7 +151,7 @@ export class BankConnectionsService {
   }
 
   async connectSession(userId: string): Promise<BankConnectSession> {
-    this.requireConfigured();
+    await this.requireAvailable();
     const providerUserId = await this.ensureProviderUser(userId);
     return {
       provider: BankProvider.syncfy,
@@ -156,7 +166,7 @@ export class BankConnectionsService {
     userId: string,
     idCredential: string,
   ): Promise<BankSyncResult> {
-    this.requireConfigured();
+    await this.requireAvailable();
     const providerUserId = await this.ensureProviderUser(userId);
     const token = await this.syncfy.createSession(providerUserId);
     const credential = (await this.syncfy.listCredentials(token)).find(
@@ -318,8 +328,14 @@ export class BankConnectionsService {
       initialImportFor?: string;
     },
   ): Promise<BankSyncResult> {
-    this.requireConfigured();
+    await this.requireAvailable();
     const connection = await this.getRow(id, userId);
+    // Linking an account still imports its history; anything else waits.
+    if (connection.syncPausedAt && !options.initialImportFor) {
+      throw new ValidationError(
+        'This bank connection is paused; resume it to sync',
+      );
+    }
     if (this.syncing.has(id)) {
       throw new ConflictError('This bank connection is already syncing');
     }
@@ -419,11 +435,12 @@ export class BankConnectionsService {
 
   /** Daily job: refresh and import every active Syncfy connection, one by one. */
   async syncAll(): Promise<{ synced: number; failed: number }> {
-    if (!this.syncfy.isConfigured) return { synced: 0, failed: 0 };
+    if (!(await this.isSyncAvailable())) return { synced: 0, failed: 0 };
     const connections = await this.prisma.bankConnection.findMany({
       where: {
         provider: BankProvider.syncfy,
         status: { not: BankConnectionStatus.revoked },
+        syncPausedAt: null,
       },
       select: { id: true },
     });
@@ -1048,9 +1065,41 @@ export class BankConnectionsService {
     }
   }
 
+  /**
+   * "Pausar sincronización" on one connection: while paused, neither the
+   * scheduled job nor "Sincronizar ahora" touch it.
+   */
+  async setPaused(
+    userId: string,
+    id: string,
+    paused: boolean,
+  ): Promise<BankConnection> {
+    const row = await this.prisma.bankConnection.findFirst({
+      where: { id, userId },
+      select: { syncPausedAt: true },
+    });
+    if (!row) throw new NotFoundError('Bank connection not found');
+    if (paused !== Boolean(row.syncPausedAt)) {
+      await this.prisma.bankConnection.update({
+        where: { id },
+        data: { syncPausedAt: paused ? new Date() : null },
+      });
+    }
+    return this.get(id, userId);
+  }
+
   private requireConfigured() {
     if (!this.syncfy.isConfigured) {
       throw new ValidationError('Bank sync is not configured on this server');
+    }
+  }
+
+  private async requireAvailable() {
+    this.requireConfigured();
+    if (!(await this.globalSettings.isBankSyncEnabled())) {
+      throw new ValidationError(
+        'Bank sync is turned off for now; try again later',
+      );
     }
   }
 
@@ -1101,6 +1150,8 @@ export class BankConnectionsService {
       lastStatusCode: row.lastStatusCode ?? undefined,
       errorMessage: row.errorMessage ?? undefined,
       lastSyncedAt: row.lastSyncedAt ?? undefined,
+      syncPaused: row.syncPausedAt !== null,
+      syncPausedAt: row.syncPausedAt ?? undefined,
       createdAt: row.createdAt,
       accounts: row.linkedAccounts.map((linked) => ({
         id: linked.id,

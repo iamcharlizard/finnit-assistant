@@ -11,6 +11,8 @@ export interface BankConnectionView {
   status: 'active' | 'error' | 'revoked';
   errorMessage: string | null;
   lastSyncedAt: string | null;
+  /** The user paused it ("Pausar sincronización"). */
+  syncPaused: boolean;
   accounts: {
     id: string;
     name: string | null;
@@ -21,20 +23,33 @@ export interface BankConnectionView {
   }[];
 }
 
+export interface BankConnectionsData {
+  connections: BankConnectionView[];
+  /** False while an admin has bank sync turned off. */
+  syncAvailable: boolean;
+}
+
 /** The user's bank connections, for server components. */
-export async function fetchBankConnections(): Promise<BankConnectionView[]> {
+export async function fetchBankConnections(): Promise<BankConnectionsData> {
   const token = (await cookies()).get(ACCESS_COOKIE)?.value;
-  const result = await apiGraphql<{ bankConnections: BankConnectionView[] }>(
+  const result = await apiGraphql<{
+    bankConnections: BankConnectionView[];
+    bankSyncAvailable: boolean;
+  }>(
     `query BankConnections {
       bankConnections {
-        id institution status errorMessage lastSyncedAt
+        id institution status errorMessage lastSyncedAt syncPaused
         accounts { id name mask type balance accountId }
       }
+      bankSyncAvailable
     }`,
     {},
     token,
   );
   if (!result.data)
     throw new Error(result.errors?.[0]?.message ?? 'Could not load banks');
-  return result.data.bankConnections;
+  return {
+    connections: result.data.bankConnections,
+    syncAvailable: result.data.bankSyncAvailable,
+  };
 }

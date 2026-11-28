@@ -28,8 +28,9 @@
       "accounts": "Cuentas y tarjetas",
       "planning": "Planeación",
       "analytics": "Análisis",
-      "admin": "Administración",
-      "calendar": "Calendario"
+      "calendar": "Calendario",
+      "users": "Usuarios",
+      "system": "Configuración global"
     },
     "items": {
       "dashboard": "Inicio",
@@ -37,14 +38,17 @@
       "recurring": "Recurrentes",
       "cards": "Cuentas y tarjetas",
       "analytics": "Análisis",
-      "admin": "Administración",
       "categorize": "Clasificar",
       "budgets": "Presupuestos",
       "debts": "Deudas",
       "goals": "Metas",
       "simulator": "Simulador",
       "statements": "Estados de cuenta",
-      "calendar": "Calendario"
+      "calendar": "Calendario",
+      "adminUsers": "Activos",
+      "waitlist": "Lista de espera",
+      "adminAi": "Inteligencia artificial",
+      "adminBanks": "Bancos"
     },
     "short": {
       "dashboard": "Inicio",
@@ -70,8 +74,8 @@
     "banks": "Bancos conectados",
     "connectBank": "Conectar banco",
     "admin": "Administración",
-    "adminUsers": "Usuarios · Administración",
-    "adminAi": "IA · Administración",
+    "adminUsers": "Usuarios activos",
+    "adminAi": "Inteligencia artificial",
     "login": "Iniciar sesión",
     "aliases": "Nombres automáticos",
     "budgets": "Presupuestos",
@@ -81,8 +85,9 @@
     "notifications": "Notificaciones",
     "categories": "Categorías",
     "privacyReset": "Nuevo PIN de privacidad",
-    "adminWaitlist": "Lista de espera · Administración",
-    "calendar": "Calendario de pagos"
+    "adminWaitlist": "Lista de espera",
+    "calendar": "Calendario de pagos",
+    "adminBanks": "Sincronización bancaria"
   },
   "newEntry": {
     "title": "Nuevo movimiento",
@@ -2294,8 +2299,6 @@
     "banks": "Bancos",
     "connectedBanks": "Bancos conectados",
     "connectedBanksDescription": "Importa tus movimientos automáticamente",
-    "admin": "Administración",
-    "adminDescription": "Usuarios con acceso y modelos de IA",
     "security": "Seguridad",
     "biometrics": "Biometría",
     "appearance": "Apariencia",
@@ -2336,7 +2339,12 @@
     "imported": "{count, plural, one {Importamos # movimiento nuevo.} other {Importamos # movimientos nuevos.}}",
     "upToDate": "Todo al día. Pedimos datos nuevos a tu banco; llegarán en la próxima sincronización.",
     "syncing": "Sincronizando…",
-    "syncNow": "Sincronizar ahora"
+    "syncNow": "Sincronizar ahora",
+    "paused": "En pausa",
+    "pause": "Pausar sincronización",
+    "resume": "Reanudar sincronización",
+    "pausedNotice": "Pausaste este banco: no lo sincronizamos hasta que lo reanudes. Tus movimientos ya importados se quedan.",
+    "unavailable": "La sincronización con bancos está apagada por ahora. Tus movimientos ya importados siguen aquí; volverán a llegar los nuevos en cuanto se encienda."
   },
   "bankConnect": {
     "consent": {
@@ -2413,12 +2421,6 @@
   },
   "admin": {
     "title": "Administración",
-    "tabsLabel": "Secciones de administración",
-    "tabs": {
-      "users": "Usuarios",
-      "ai": "IA",
-      "waitlist": "Lista de espera"
-    },
     "users": {
       "loading": "Cargando usuarios…",
       "count": "{count, plural, one {# usuario} other {# usuarios}}",
@@ -2629,6 +2631,16 @@
         "locale": "Idioma",
         "joinedAt": "Fecha"
       }
+    },
+    "banks": {
+      "cardTitle": "Sincronización con bancos",
+      "cardDescription": "Afecta a todos los usuarios. Apagada, Finnit no sincroniza ningún banco (ni las corridas de las 7:00 y 15:00 ni \"Sincronizar ahora\") y nadie puede conectar uno nuevo. Los movimientos ya importados se quedan.",
+      "switchLabel": "Sincronizar bancos",
+      "on": "Encendida",
+      "off": "Apagada",
+      "offNotice": "Los usuarios ven un aviso en Bancos conectados mientras esté apagada.",
+      "lastChange": "Último cambio: {date} por {name}",
+      "lastChangeNoName": "Último cambio: {date}"
     }
   },
   "ui": {

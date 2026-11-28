@@ -23,6 +23,7 @@ import { RecurringExpensesModule } from './recurring-expenses/recurring-expenses
 import { StatementsModule } from './statements/statements.module';
 import { AiModule } from './ai/ai.module';
 import { AdminModule } from './admin/admin.module';
+import { GlobalSettingsModule } from './global-settings/global-settings.module';
 import { BankConnectionsModule } from './bank-connections/bank-connections.module';
 import { CategorizationModule } from './categorization/categorization.module';
 import { PrivacyModule } from './privacy/privacy.module';
@@ -72,6 +73,7 @@ function envFlag(name: string, fallback: boolean): boolean {
     StatementsModule,
     AiModule,
     AdminModule,
+    GlobalSettingsModule,
     BankConnectionsModule,
     CategorizationModule,
     PrivacyModule,

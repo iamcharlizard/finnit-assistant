@@ -320,9 +320,10 @@ model User {
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt
 
-  invitedBy      User?       @relation("UserInvitations", fields: [invitedById], references: [id], onDelete: SetNull)
-  invitedUsers   User[]      @relation("UserInvitations")
-  aiFeatureEdits AiFeature[]
+  invitedBy           User?            @relation("UserInvitations", fields: [invitedById], references: [id], onDelete: SetNull)
+  invitedUsers        User[]           @relation("UserInvitations")
+  aiFeatureEdits      AiFeature[]
+  globalSettingsEdits GlobalSettings[]
 
   accounts          Account[]
   categories        Category[]
@@ -1115,6 +1116,7 @@ model BankConnection {
   lastPullRequestedAt DateTime? // last time we asked the provider to refresh from the bank
   transactionsCursor  DateTime? // provider dt_refresh already imported
   errorMessage        String?
+  syncPausedAt        DateTime? // the user paused it: no sync (scheduled or manual) until they resume
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 
@@ -1288,6 +1290,17 @@ model AiFeature {
 
   aiModel   AiModel? @relation(fields: [aiModelId], references: [id], onDelete: SetNull)
   updatedBy User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+}
+
+/// Settings for the whole platform, edited by admins in "Configuración
+/// global". One row (id = 1, enforced by a check constraint).
+model GlobalSettings {
+  id              Int      @id @default(1)
+  bankSyncEnabled Boolean  @default(true) // off: no bank syncs or new connections for anyone
+  updatedById     String?
+  updatedAt       DateTime @updatedAt
+
+  updatedBy User? @relation(fields: [updatedById], references: [id], onDelete: SetNull)
 }
 
 /// A receipt photo (feature 14): extracted fields wait for the user to

@@ -9,10 +9,15 @@ import {
   History,
   House,
   Landmark,
+  Mail,
+  RefreshCw,
   PiggyBank,
   Repeat,
-  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
   Target,
+  UserCheck,
+  Users,
   type LucideIcon,
 } from 'lucide-react-native';
 
@@ -31,10 +36,15 @@ export const NAV_ITEM_ICONS: Record<NavItemKey, LucideIcon> = {
   goals: Target,
   simulator: Calculator,
   analytics: ChartLine,
-  admin: ShieldCheck,
+  adminUsers: UserCheck,
+  waitlist: Mail,
+  adminAi: Sparkles,
+  adminBanks: RefreshCw,
 };
 
 export const NAV_GROUP_ICONS: Partial<Record<NavSectionKey, LucideIcon>> = {
   transactions: ArrowLeftRight,
   planning: ClipboardList,
+  users: Users,
+  system: SlidersHorizontal,
 };

@@ -9,10 +9,15 @@ import {
   History,
   House,
   Landmark,
+  Mail,
+  RefreshCw,
   PiggyBank,
   Repeat,
-  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
   Target,
+  UserCheck,
+  Users,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -50,13 +55,18 @@ const ITEM_ICONS: Record<NavItemKey, LucideIcon> = {
   goals: Target,
   simulator: Calculator,
   analytics: ChartLine,
-  admin: ShieldCheck,
+  adminUsers: UserCheck,
+  waitlist: Mail,
+  adminAi: Sparkles,
+  adminBanks: RefreshCw,
 };
 
 /** Groups' own icons (their submenu button). */
 const GROUP_ICONS: Partial<Record<NavSectionKey, LucideIcon>> = {
   transactions: ArrowLeftRight,
   planning: ClipboardList,
+  users: Users,
+  system: SlidersHorizontal,
 };
 
 export interface NavEntry extends NavEntryData {

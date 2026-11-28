@@ -16,7 +16,8 @@ export type NavSectionKey =
   | 'calendar'
   | 'planning'
   | 'analytics'
-  | 'admin';
+  | 'users'
+  | 'system';
 
 export type NavItemKey =
   | 'dashboard'
@@ -30,7 +31,10 @@ export type NavItemKey =
   | 'goals'
   | 'simulator'
   | 'analytics'
-  | 'admin';
+  | 'adminUsers'
+  | 'waitlist'
+  | 'adminAi'
+  | 'adminBanks';
 
 export interface NavEntry {
   key: NavItemKey;
@@ -80,12 +84,29 @@ export const NAV_SECTIONS: ReadonlyArray<NavSection> = [
     key: 'analytics',
     items: [{ key: 'analytics', href: '/analytics' }],
   },
+  // The admin panel: people, then platform-wide settings.
   {
-    key: 'admin',
+    key: 'users',
     adminOnly: true,
-    items: [{ key: 'admin', href: '/admin' }],
+    items: [
+      { key: 'adminUsers', href: '/admin/users' },
+      { key: 'waitlist', href: '/admin/waitlist' },
+    ],
+  },
+  {
+    key: 'system',
+    adminOnly: true,
+    items: [
+      { key: 'adminAi', href: '/admin/settings/ai' },
+      { key: 'adminBanks', href: '/admin/settings/banks' },
+    ],
   },
 ];
+
+/** Screens of the admin panel (web only). */
+export function isAdminHref(href: string): boolean {
+  return href === '/admin' || href.startsWith('/admin/');
+}
 
 /** Whether a section shows as a group (a submenu) rather than one link. */
 export function isNavGroup(section: Pick<NavSection, 'items'>): boolean {

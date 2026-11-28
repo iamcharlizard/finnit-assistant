@@ -16,7 +16,6 @@ import {
   Tags,
   Text,
   Type,
-  UserCog,
 } from 'lucide-react';
 
 import { ProfileCard } from '@finnit/ui/components/settings/profile-card';
@@ -132,30 +131,6 @@ export function SettingsScreen() {
           </SettingRow>
         </Link>
       </SettingsSection>
-
-      {user.role === 'admin' ? (
-        <SettingsSection
-          title={t('admin')}
-          icon={UserCog}
-          iconColor="var(--accent-neon)"
-        >
-          <Link
-            href="/admin"
-            className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-          >
-            <SettingRow
-              label={t('admin')}
-              description={t('adminDescription')}
-              icon={UserCog}
-            >
-              <ChevronRight
-                aria-hidden
-                className="size-4 text-on-surface-variant"
-              />
-            </SettingRow>
-          </Link>
-        </SettingsSection>
-      ) : null}
 
       <SettingsSection
         title={t('security')}

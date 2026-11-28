@@ -200,7 +200,8 @@ Belvo dejó de ofrecer datos bancarios de México (solo Brasil), por eso se usa 
 | Ligar cuentas del banco a cuentas de Finnit | ✅ | ⏳ | ✅ | `linkBankAccount` (existente o nueva); importa 90 días. Saldo, límite y crédito disponible desde el banco. |
 | Importar movimientos y crear transacciones | ✅ | ⏳ | ⏳ | Incremental, sin duplicados; ignora autorizaciones pendientes y conversiones a meses sin intereses. |
 | Conciliación banco ↔ estado de cuenta PDF | ✅ | — | — | El estado de cuenta empata los movimientos ya importados del banco (probado: 105 de 105). |
-| Sincronización automática | ✅ | — | ✅ | 7:00 y 15:00 (CDMX); pide al banco datos nuevos como máximo cada 20 h. Manual: `syncBankConnection` (web: botón "Sincronizar ahora" en Ajustes → Bancos conectados). |
+| Sincronización automática | ✅ | — | ✅ | 7:00 y 15:00 (CDMX); pide al banco datos nuevos como máximo cada 20 h. Manual: `syncBankConnection` (web: botón "Sincronizar ahora" en Ajustes → Bancos conectados). Un admin la apaga para todos en Configuración global → Bancos (`globalSettings` / `updateGlobalSettings`; `bankSyncAvailable` para avisar a los usuarios). |
+| Pausar la sincronización de un banco | ✅ | ⏳ | ✅ | `setBankConnectionPaused` (`BankConnection.syncPausedAt`): pausado, no se sincroniza (programada ni manual) hasta reanudarlo; ligar una cuenta sí importa su historial. Web: "Pausar / Reanudar sincronización" en Bancos conectados. Móvil: aún no lista las conexiones. |
 | Conciliación semanal guiada | ⏳ | ⏳ | ⏳ | Modelos `ReconciliationSession/Item` sin API. |
 
 ### 10. Flujo de caja y proyecciones
@@ -240,7 +241,7 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 |---|---|---|---|---|
 | Subir PDF del estado de cuenta (almacenado en S3) | ✅ | ⏳ | ✅ | `POST /statements` (multipart, máx. 10 MB, deduplica por hash). Bucket privado; descarga solo del dueño en `GET /statements/:id/file`. |
 | Extracción: parser Banamex + IA para otros formatos | ✅ | — | — | Parser local `banamex_v1` (tarjeta titular y digital, mensualidades MSI, pagos y devoluciones), verificado con un estado real. Otros bancos: lectura con IA. Valida saldo anterior + cargos − abonos = saldo al corte. |
-| Catálogo de modelos de IA (Anthropic, OpenAI, Gemini) | ✅ | ⏳ | ⏳ | `aiModels`: activos/desactivados, predeterminado y orden de respaldo; solo administradores lo modifican, desde el panel (`/admin/ai`). Llaves por proveedor en variables de entorno. |
+| Catálogo de modelos de IA (Anthropic, OpenAI, Gemini) | ✅ | ⏳ | ⏳ | `aiModels`: activos/desactivados, predeterminado y orden de respaldo; solo administradores lo modifican, desde el panel (`/admin/settings/ai`). Llaves por proveedor en variables de entorno. |
 | Revisión y confirmación de movimientos importados | ✅ | ⏳ | ✅ | `statementImport`, `updateStatementLine` (ignorar, categoría, ligar a mano), `confirmStatementImport`, `reprocessStatementImport`. Web: `/statements` y `/statements/[id]` con totales, diferencia y líneas. |
 | Conciliación con transacciones y gastos recurrentes | ✅ | ⏳ | ⏳ | No duplica compras ya registradas (mismo monto, ±3 días); marca pagados los recurrentes por patrón de comercio (±10 días, ±15% o ±50% si el monto es variable). |
 | Resumen del mes de la tarjeta vs total a pagar | ✅ | ⏳ | 🟡 | `cardMonthSummary`: total a pagar, recurrentes esperados vs cobrados, cargos nuevos. Web: Tarjetas muestra recurrentes esperados y cobrados, saldo al corte, pago mínimo y pago para no generar intereses. |
@@ -252,10 +253,12 @@ Compromisos periódicos (semanal, quincenal, mensual, anual…) agrupados por ti
 |---|---|---|---|---|
 | Usuario maestro | ✅ | — | — | Se crea una vez por ambiente con `create-master` ([deployment.md](./deployment.md)). No se le puede quitar el rol ni desactivar. |
 | Administradores | ✅ | — | ✅ | `role: admin`. Solo el maestro nombra o quita administradores. |
+| Navegación del panel | — | — | ✅ | En el sidebar (solo admins): **Usuarios** › Activos (`/admin/users`), Lista de espera (`/admin/waitlist`); **Configuración global** › Inteligencia artificial (`/admin/settings/ai`), Bancos (`/admin/settings/banks`). Lo que afecta a toda la plataforma va en Configuración global. |
 | Dar y quitar acceso a usuarios | ✅ | — | ✅ | `/admin/users`: alta con contraseña opcional, asignar o quitar contraseña, desligar Google, desactivar y reactivar. No se borran usuarios. |
-| Modelos de IA | ✅ | — | ✅ | `/admin/ai`: activar, predeterminado, orden, alta y baja. |
+| Modelos de IA | ✅ | — | ✅ | `/admin/settings/ai`: activar, predeterminado, orden, alta y baja. |
 | Funcionalidades de IA | ✅ | — | ✅ | `aiFeatures` / `updateAiFeature`: hoy solo "Leer estados de cuenta en PDF"; se enciende o apaga, con modelo propio y respaldos opcionales. |
 | Lista de espera | ✅ | — | ✅ | `/admin/waitlist`: correos, origen (utm) e idioma (`waitlistEntries`, solo admins). |
+| Sincronización bancaria (global) | ✅ | — | ✅ | `/admin/settings/banks`: un interruptor para todos los usuarios (`GlobalSettings`, una fila); guarda quién lo cambió y cuándo. |
 
 ### 15. Pantalla de pagos recurrentes y sugerencias *(nuevo)*
 

@@ -227,6 +227,8 @@ src/
 
 **Pattern:** Resolver → Service → PrismaService
 
+`PrismaService` comes from the global `PrismaModule` (`src/services/prisma.module.ts`, imported once in `AppModule`). Never list it in a feature module's `providers`: each listing creates another PrismaClient (own pool, ~30 MB of Prisma's query schema), and 27 of them took the API past its 512 MB limit.
+
 ### Database Package (`packages/database/`)
 
 - Schema: `prisma/schema.prisma`

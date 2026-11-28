@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaService } from '../../services/prisma.service';
 import { AiModule } from '../ai/ai.module';
 import { OcrModule } from '../ocr/ocr.module';
 import { StatementsModule } from '../statements/statements.module';
@@ -12,6 +11,6 @@ import { ScreenshotsService } from './screenshots.service';
 @Module({
   imports: [AiModule, OcrModule, StatementsModule, StorageModule],
   controllers: [ScreenshotsController],
-  providers: [ScreenshotsService, ScreenshotsResolver, PrismaService],
+  providers: [ScreenshotsService, ScreenshotsResolver],
 })
 export class ScreenshotsModule {}

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaService } from '../../services/prisma.service';
 import { AiModule } from '../ai/ai.module';
 import { CategorizationModule } from '../categorization/categorization.module';
 import { OcrModule } from '../ocr/ocr.module';
@@ -19,6 +18,6 @@ import { ReceiptsService } from './receipts.service';
     TransactionsModule,
   ],
   controllers: [ReceiptsController],
-  providers: [ReceiptsService, ReceiptsResolver, PrismaService],
+  providers: [ReceiptsService, ReceiptsResolver],
 })
 export class ReceiptsModule {}

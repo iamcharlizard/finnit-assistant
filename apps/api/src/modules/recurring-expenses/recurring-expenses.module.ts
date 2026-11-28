@@ -6,7 +6,6 @@ import { RecurringLinksResolver } from './recurring-links.resolver';
 import { RecurringLinksService } from './recurring-links.service';
 import { RecurringSuggestionsService } from './suggestions/recurring-suggestions.service';
 import { RecurringSuggestionsResolver } from './suggestions/recurring-suggestions.resolver';
-import { PrismaService } from '../../services/prisma.service';
 import { AiModule } from '../ai/ai.module';
 import { RecurringEssentialsResolver } from './essentials/recurring-essentials.resolver';
 import { RecurringEssentialsService } from './essentials/recurring-essentials.service';
@@ -23,7 +22,6 @@ import { RecurringEssentialsService } from './essentials/recurring-essentials.se
     RecurringSuggestionsResolver,
     RecurringEssentialsService,
     RecurringEssentialsResolver,
-    PrismaService,
   ],
   exports: [RecurringExpensesService, RecurringSuggestionsService],
 })

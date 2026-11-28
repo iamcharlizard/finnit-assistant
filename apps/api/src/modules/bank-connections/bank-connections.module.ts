@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaService } from '../../services/prisma.service';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { StatementsModule } from '../statements/statements.module';
 import { TransfersModule } from '../transfers/transfers.module';
@@ -29,7 +28,6 @@ import { SyncfyClient } from './syncfy/syncfy.client';
     SyncReviewResolver,
     BankConnectionsResolver,
     BankConnectionsScheduler,
-    PrismaService,
   ],
 })
 export class BankConnectionsModule {}

@@ -123,7 +123,8 @@ export function AppSideNav({
 }: {
   sections: ReadonlyArray<NavSection>;
   activeHref: string | null;
-  onAddClick: () => void;
+  /** "Nuevo movimiento"; without it (admins) the button is not shown. */
+  onAddClick?: () => void;
   /** The user's choice from lg up. */
   collapsed: boolean;
   onToggle: () => void;
@@ -391,21 +392,23 @@ export function AppSideNav({
             </button>
           </div>
 
-          <RowTooltip collapsed={collapsed} label={t('newTransaction')}>
-            <button
-              type="button"
-              onClick={onAddClick}
-              className={cn(
-                // A 44px circle collapsed, a pill expanded. The 3px margin and
-                // 12px padding keep the icon where the other rows have theirs.
-                'ml-[3px] flex h-11 w-[calc(100%-3px)] shrink-0 items-center gap-2 overflow-hidden rounded-full bg-primary pr-4 pl-3 text-sm font-medium text-primary-foreground outline-none transition-[width,opacity] duration-300 hover:opacity-90 focus-visible:ring-[3px] focus-visible:ring-ring/50 rail-collapsed:w-11 rail-collapsed:pr-0',
-                EASE,
-              )}
-            >
-              <Plus aria-hidden className="size-5 shrink-0" />
-              <RowLabel>{t('newTransaction')}</RowLabel>
-            </button>
-          </RowTooltip>
+          {onAddClick ? (
+            <RowTooltip collapsed={collapsed} label={t('newTransaction')}>
+              <button
+                type="button"
+                onClick={onAddClick}
+                className={cn(
+                  // A 44px circle collapsed, a pill expanded. The 3px margin and
+                  // 12px padding keep the icon where the other rows have theirs.
+                  'ml-[3px] flex h-11 w-[calc(100%-3px)] shrink-0 items-center gap-2 overflow-hidden rounded-full bg-primary pr-4 pl-3 text-sm font-medium text-primary-foreground outline-none transition-[width,opacity] duration-300 hover:opacity-90 focus-visible:ring-[3px] focus-visible:ring-ring/50 rail-collapsed:w-11 rail-collapsed:pr-0',
+                  EASE,
+                )}
+              >
+                <Plus aria-hidden className="size-5 shrink-0" />
+                <RowLabel>{t('newTransaction')}</RowLabel>
+              </button>
+            </RowTooltip>
+          ) : null}
 
           <nav
             aria-label={t('mainNavigation')}

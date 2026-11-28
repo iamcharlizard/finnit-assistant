@@ -40,11 +40,11 @@ const EASE = 'ease-[cubic-bezier(0.32,0.72,0,1)]';
  * A round tab. On phones, icon only (the name is for screen readers); on
  * tablets in portrait (md), a larger circle with the name under the icon.
  */
-const TAB =
+export const TAB =
   'relative z-10 flex size-14 shrink-0 flex-col items-center justify-center gap-1 rounded-full outline-none transition-[color,transform] duration-200 active:scale-90 focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-reduce:transition-none motion-reduce:active:scale-100 md:size-[76px]';
 
-const TAB_ICON = 'size-7 md:size-6';
-const TAB_LABEL =
+export const TAB_ICON = 'size-7 md:size-6';
+export const TAB_LABEL =
   'sr-only text-[10px] leading-none font-medium whitespace-nowrap md:not-sr-only';
 
 /*

@@ -37,6 +37,9 @@ export function SettingsScreen() {
   const t = useTranslations('settings');
   const tu = useTranslations('ui.profile');
   const [editingProfile, setEditingProfile] = React.useState(false);
+  // An admin account only runs the panel: no banks, movements, privacy PIN
+  // or movement notifications; just its profile and appearance.
+  const admin = user.role === 'admin';
   const [toggles, setToggles] = React.useState({
     biometrics: true,
     transactions: true,
@@ -58,100 +61,104 @@ export function SettingsScreen() {
         avatarLabel={(name) => tu('avatar', { name })}
       />
 
-      <SettingsSection
-        title={t('banks')}
-        icon={Landmark}
-        iconColor="var(--brand)"
-      >
-        <Link
-          href="/settings/banks"
-          className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-        >
-          <SettingRow
-            label={t('connectedBanks')}
-            description={t('connectedBanksDescription')}
+      {admin ? null : (
+        <>
+          <SettingsSection
+            title={t('banks')}
             icon={Landmark}
+            iconColor="var(--brand)"
           >
-            <ChevronRight
-              aria-hidden
-              className="size-4 text-on-surface-variant"
-            />
-          </SettingRow>
-        </Link>
-      </SettingsSection>
+            <Link
+              href="/settings/banks"
+              className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+            >
+              <SettingRow
+                label={t('connectedBanks')}
+                description={t('connectedBanksDescription')}
+                icon={Landmark}
+              >
+                <ChevronRight
+                  aria-hidden
+                  className="size-4 text-on-surface-variant"
+                />
+              </SettingRow>
+            </Link>
+          </SettingsSection>
 
-      <SettingsSection
-        title={t('movements')}
-        icon={Tags}
-        iconColor="var(--highlight)"
-      >
-        <Link
-          href="/settings/categories"
-          className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-        >
-          <SettingRow
-            label={t('categories')}
-            description={t('categoriesDescription')}
-            icon={Shapes}
-          >
-            <ChevronRight
-              aria-hidden
-              className="size-4 text-on-surface-variant"
-            />
-          </SettingRow>
-        </Link>
-        <Link
-          href="/settings/aliases"
-          className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-        >
-          <SettingRow
-            label={t('aliases')}
-            description={t('aliasesDescription')}
-            icon={Text}
-          >
-            <ChevronRight
-              aria-hidden
-              className="size-4 text-on-surface-variant"
-            />
-          </SettingRow>
-        </Link>
-        <Link
-          href="/history?review=1"
-          className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-        >
-          <SettingRow
-            label={t('categorize')}
-            description={t('categorizeDescription')}
+          <SettingsSection
+            title={t('movements')}
             icon={Tags}
+            iconColor="var(--highlight)"
           >
-            <ChevronRight
-              aria-hidden
-              className="size-4 text-on-surface-variant"
-            />
-          </SettingRow>
-        </Link>
-      </SettingsSection>
+            <Link
+              href="/settings/categories"
+              className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+            >
+              <SettingRow
+                label={t('categories')}
+                description={t('categoriesDescription')}
+                icon={Shapes}
+              >
+                <ChevronRight
+                  aria-hidden
+                  className="size-4 text-on-surface-variant"
+                />
+              </SettingRow>
+            </Link>
+            <Link
+              href="/settings/aliases"
+              className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+            >
+              <SettingRow
+                label={t('aliases')}
+                description={t('aliasesDescription')}
+                icon={Text}
+              >
+                <ChevronRight
+                  aria-hidden
+                  className="size-4 text-on-surface-variant"
+                />
+              </SettingRow>
+            </Link>
+            <Link
+              href="/history?review=1"
+              className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+            >
+              <SettingRow
+                label={t('categorize')}
+                description={t('categorizeDescription')}
+                icon={Tags}
+              >
+                <ChevronRight
+                  aria-hidden
+                  className="size-4 text-on-surface-variant"
+                />
+              </SettingRow>
+            </Link>
+          </SettingsSection>
 
-      <SettingsSection
-        title={t('security')}
-        icon={ShieldCheck}
-        iconColor="var(--tertiary)"
-      >
-        <SettingRow
-          label={t('biometrics')}
-          icon={Fingerprint}
-          controlId="biometrics"
-        >
-          <Switch
-            id="biometrics"
-            checked={toggles.biometrics}
-            onCheckedChange={(v) =>
-              setToggles((s) => ({ ...s, biometrics: v }))
-            }
-          />
-        </SettingRow>
-        <PrivacySettings />
-      </SettingsSection>
+          <SettingsSection
+            title={t('security')}
+            icon={ShieldCheck}
+            iconColor="var(--tertiary)"
+          >
+            <SettingRow
+              label={t('biometrics')}
+              icon={Fingerprint}
+              controlId="biometrics"
+            >
+              <Switch
+                id="biometrics"
+                checked={toggles.biometrics}
+                onCheckedChange={(v) =>
+                  setToggles((s) => ({ ...s, biometrics: v }))
+                }
+              />
+            </SettingRow>
+            <PrivacySettings />
+          </SettingsSection>
+        </>
+      )}
 
       <SettingsSection
         title={t('appearance')}
@@ -167,38 +174,40 @@ export function SettingsScreen() {
         </SettingRow>
       </SettingsSection>
 
-      <SettingsSection
-        title={t('notifications')}
-        icon={BellRing}
-        iconColor="#6c72cb"
-      >
-        <SettingRow
-          label={t('transactions')}
-          description={t('transactionsDescription')}
-          controlId="tx-notif"
+      {admin ? null : (
+        <SettingsSection
+          title={t('notifications')}
+          icon={BellRing}
+          iconColor="#6c72cb"
         >
-          <Switch
-            id="tx-notif"
-            checked={toggles.transactions}
-            onCheckedChange={(v) =>
-              setToggles((s) => ({ ...s, transactions: v }))
-            }
-          />
-        </SettingRow>
-        <SettingRow
-          label={t('weeklySummary')}
-          description={t('weeklySummaryDescription')}
-          controlId="weekly"
-        >
-          <Switch
-            id="weekly"
-            checked={toggles.weeklySummary}
-            onCheckedChange={(v) =>
-              setToggles((s) => ({ ...s, weeklySummary: v }))
-            }
-          />
-        </SettingRow>
-      </SettingsSection>
+          <SettingRow
+            label={t('transactions')}
+            description={t('transactionsDescription')}
+            controlId="tx-notif"
+          >
+            <Switch
+              id="tx-notif"
+              checked={toggles.transactions}
+              onCheckedChange={(v) =>
+                setToggles((s) => ({ ...s, transactions: v }))
+              }
+            />
+          </SettingRow>
+          <SettingRow
+            label={t('weeklySummary')}
+            description={t('weeklySummaryDescription')}
+            controlId="weekly"
+          >
+            <Switch
+              id="weekly"
+              checked={toggles.weeklySummary}
+              onCheckedChange={(v) =>
+                setToggles((s) => ({ ...s, weeklySummary: v }))
+              }
+            />
+          </SettingRow>
+        </SettingsSection>
+      )}
 
       <form action={signOut} className="mt-4 flex flex-col">
         <Button

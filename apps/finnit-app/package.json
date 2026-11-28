@@ -3,17 +3,13 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "expo start",
+    "start": "node scripts/app.mjs start",
+    "ios": "node scripts/app.mjs ios",
+    "release": "node scripts/app.mjs release",
     "android": "expo run:android",
-    "ios": "expo run:ios",
-    "ios:device": "expo run:ios --device",
-    "ios:onboarding": "EXPO_PUBLIC_RESET_ONBOARDING=1 expo run:ios",
-    "start:onboarding": "EXPO_PUBLIC_RESET_ONBOARDING=1 expo start --clear",
     "web": "expo start --web",
     "lint": "expo lint",
-    "prebuild": "expo prebuild --clean",
-    "build:device": "expo run:ios --device",
-    "release:device": "expo run:ios --device --configuration Release"
+    "prebuild": "expo prebuild --clean"
   },
   "dependencies": {
     "@expo-google-fonts/ubuntu": "^0.4.1",

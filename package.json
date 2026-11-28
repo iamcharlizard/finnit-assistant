@@ -21,6 +21,7 @@
     "db:generate": "turbo run db:generate --filter=@finnit/database",
     "db:seed": "turbo run db:seed --filter=@finnit/database",
     "db:pull": "pnpm --filter @finnit/database run db:pull",
+    "db:promote": "pnpm --filter @finnit/database run db:promote",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"

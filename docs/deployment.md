@@ -390,6 +390,26 @@ Qué hace:
 
 Para volver a un respaldo local: `pnpm db:pull --restore backups/local/<archivo>.dump`. Antes de reemplazar la base, también respalda la actual.
 
+## Copiar testing a producción
+
+`pnpm db:promote` reemplaza la base de producción por una copia de la de testing. Usa el mismo `packages/database/.env.remote` que `db:pull`.
+
+1. Compara las dos bases sin copiar nada: `pnpm db:promote --check`. Muestra tamaño, usuarios, movimientos y última migración de cada una, y las migraciones que solo tiene una de ellas.
+2. Copia: `pnpm db:promote`. Pide escribir `production` para confirmar; no tiene `--yes`.
+3. Reinicia la API de producción en Dokploy.
+
+Qué hace:
+
+- Si testing tiene migraciones que producción no tiene, se detiene: el código de producción correría sobre un esquema más nuevo. Lo ideal es desplegar `main` con esas migraciones antes; `--allow-newer-schema` lo permite de todos modos. Las migraciones que solo tiene producción se aplican cuando su API reinicia.
+- Respalda producción en la Mac: `packages/database/backups/production/production-before-promote-<fecha>.dump` (ignorado por git; son datos reales).
+- Restaura testing en una base nueva dentro del contenedor de producción (`<base>_incoming_<fecha>`), con producción funcionando. Si falla, la borra y producción queda intacta. Si las dos bases están en el mismo servidor SSH, la copia va de contenedor a contenedor sin pasar por la Mac.
+- Revisa la copia (migraciones y usuarios iguales a testing) y la cambia por nombre: producción pasa a `<base>_before_<fecha>`, que se queda en el servidor, y la copia toma su nombre. Las conexiones a producción se cierran un momento.
+- Apaga IPv6 mientras habla con el servidor, como `db:pull` (`--keep-ipv6` lo deja).
+
+Producción queda con los usuarios, contraseñas, conexiones bancarias y archivos de testing. Los archivos viven en el bucket S3 de cada ambiente, así que las filas copiadas pueden apuntar a llaves que el bucket de producción no tiene. Si los secretos JWT son distintos, los usuarios vuelven a iniciar sesión.
+
+Para volver atrás: `pnpm db:promote --list` muestra las bases guardadas junto a producción y `pnpm db:promote --rollback <base>_before_<fecha>` regresa una. La producción del momento se guarda como `<base>_rolledback_<fecha>`. Las bases guardadas no se borran solas: cuando ya no hagan falta, `DROP DATABASE "<nombre>";` dentro del contenedor de producción.
+
 ## Rollback
 
 - **Código:** cada despliegue publica `sha-<commit>`. En Dokploy cambia la imagen a `ghcr.io/iamcharlizard/finnit-api:sha-<commit anterior>` y pulsa *Deploy*. Para volver al flujo automático, regresa la imagen a `:latest` (production) o `:testing` (testing).

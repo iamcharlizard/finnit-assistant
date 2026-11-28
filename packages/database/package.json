@@ -23,6 +23,7 @@
     "db:backup": "psql $DATABASE_URL -f scripts/backup.sql",
     "db:rollback": "psql $DATABASE_URL -f scripts/rollback.sql",
     "db:pull": "bash scripts/db-pull.sh",
+    "db:promote": "bash scripts/db-promote.sh",
     "dev": "tsup src/* --watch",
     "format": "prisma format",
     "lint": "eslint . --max-warnings 0",

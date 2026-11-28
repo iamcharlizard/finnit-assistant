@@ -483,6 +483,12 @@ export function NewEntryScreen() {
 
   return (
     <TwView className="flex-1 bg-popover">
+      {/* react-native-screens looks for a form sheet's ScrollView along the
+        first-child path and, finding it here (not a direct child, with the
+        footer next to it), forces it to the screen's frame and moves the
+        fields out of view. This empty first child ends that search; the
+        layout below needs no correction. */}
+      <View collapsable={false} />
       {/* No KeyboardAvoidingView (inside a sheet it moved the whole sheet):
         the space under the button grows with the keyboard instead. */}
       <TwScrollView

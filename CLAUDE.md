@@ -265,6 +265,7 @@ pnpm turbo run db:validate --filter=@finnit/database      # Validate schema
 pnpm turbo run db:backup --filter=@finnit/database        # Backup via psql
 pnpm turbo run db:rollback --filter=@finnit/database      # Run rollback.sql
 pnpm db:pull <production|testing>                         # Replace the local DB with a copy of an environment over SSH (backs up local first; IPv6 off meanwhile; docs/deployment.md)
+pnpm db:promote [--check|--list|--rollback <db>]         # Replace production's DB with a copy of testing's (backup to the Mac, restore beside it, swap by rename; docs/deployment.md)
 pnpm turbo run studio --filter=@finnit/database           # Prisma Studio (port 5555)
 ```
 

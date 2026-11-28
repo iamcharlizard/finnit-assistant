@@ -586,6 +586,10 @@ type BankConnection {
   lastSyncedAt: DateTime
   provider: BankProvider!
   status: BankConnectionStatus!
+
+  """The user paused it: no scheduled or manual sync until they resume"""
+  syncPaused: Boolean!
+  syncPausedAt: DateTime
 }
 
 enum BankConnectionStatus {
@@ -1572,6 +1576,14 @@ type DebtPayment {
   transactionId: String
 }
 
+"""
+What is left after the chosen scheduled payments: to the next ones, or a free payment to the balance
+"""
+enum DebtPaymentSurplus {
+  balance
+  next
+}
+
 type DebtPayoffProjection {
   currentBalance: Float!
   debtId: String!
@@ -1698,6 +1710,14 @@ type FlowComparison {
 
   """Monthly sources still to come this month (left out of before)"""
   pendingSources: Int!
+}
+
+"""Admin only. Settings for the whole platform ("Configuración global")"""
+type GlobalSettings {
+  """Bank syncs (scheduled and manual) and new bank connections are allowed"""
+  bankSyncEnabled: Boolean!
+  updatedAt: DateTime
+  updatedByName: String
 }
 
 type Goal {
@@ -1939,6 +1959,11 @@ type LoanScheduleItem {
 
   """Moved by the user: the date the schedule gave it"""
   originalDueDate: DateTime
+
+  """
+  Already paid on an open scheduled payment (payments split across several); 0 otherwise
+  """
+  paidAmount: Float!
 
   """Loans by rate: principal repaid by this payment"""
   principal: Float
@@ -2403,6 +2428,11 @@ type Mutation {
   """
   setAccountBalance(input: SetAccountBalanceInput!): Account!
 
+  """
+  "Pausar sincronización": paused, the connection is not synced (scheduled or manual) until resumed; its movements stay
+  """
+  setBankConnectionPaused(id: ID!, paused: Boolean!): BankConnection!
+
   """Sets the billing terms of one of the user's credit accounts"""
   setCreditCardTerms(accountId: ID!, input: CreditCardTermsInput!): Account!
 
@@ -2491,6 +2521,11 @@ type Mutation {
 
   """Edits money added to a loan; its installments and deposit follow it"""
   updateDebtCharge(id: ID!, input: UpdateDebtChargeInput!): Debt!
+
+  """
+  Admin only. Changes platform-wide settings (e.g. turns bank sync off for everyone)
+  """
+  updateGlobalSettings(input: UpdateGlobalSettingsInput!): GlobalSettings!
   updateGoal(id: ID!, input: UpdateGoalInput!): Goal!
 
   """
@@ -2659,6 +2694,11 @@ type Query {
     provider: AiProvider
   ): [AiModel!]!
   bankConnections: [BankConnection!]!
+
+  """
+  False while an admin has bank sync turned off (or it is not configured): syncing and connecting banks fail until it is back
+  """
+  bankSyncAvailable: Boolean!
   budget(id: String!): Budget!
   budgetAlerts: [BudgetAlert!]!
   budgetSummary(month: Float!, year: Float!): BudgetSummary!
@@ -2749,6 +2789,9 @@ type Query {
 
   """Possible duplicates waiting for the user"""
   duplicateSuggestions(after: String, first: Int = 20): DuplicateSuggestionConnection!
+
+  """Admin only. Platform-wide settings"""
+  globalSettings: GlobalSettings!
   goal(id: String!): Goal!
 
   """Newest first"""
@@ -3038,6 +3081,14 @@ input RecordDebtPaymentInput {
 
   """Scheduled payment it pays; default: the oldest open one"""
   occurrenceId: String
+
+  """
+  Purchase financing and personal loans: the scheduled payments it covers, split in their date order (the last may stay paid in part). Empty: a free payment (abono) to the balance
+  """
+  occurrenceIds: [ID!]
+
+  """With occurrenceIds: where what is left goes (default balance)"""
+  surplus: DebtPaymentSurplus
 }
 
 type RecurringAccountTotal {
@@ -4040,6 +4091,10 @@ input UpdateDebtInput {
   """What the money was for; null or "" clears it"""
   purposeCategoryId: String
   startDate: DateTime
+}
+
+input UpdateGlobalSettingsInput {
+  bankSyncEnabled: Boolean
 }
 
 input UpdateGoalInput {

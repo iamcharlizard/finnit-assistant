@@ -22,6 +22,26 @@ export class BankConnectionsResolver {
     return this.banks.list(user.id);
   }
 
+  @Query(() => Boolean, {
+    description:
+      'False while an admin has bank sync turned off (or it is not configured): syncing and connecting banks fail until it is back',
+  })
+  async bankSyncAvailable(): Promise<boolean> {
+    return this.banks.isSyncAvailable();
+  }
+
+  @Mutation(() => BankConnection, {
+    description:
+      '"Pausar sincronización": paused, the connection is not synced (scheduled or manual) until resumed; its movements stay',
+  })
+  async setBankConnectionPaused(
+    @CurrentUser() user: User,
+    @Args('id', { type: () => ID }) id: string,
+    @Args('paused') paused: boolean,
+  ): Promise<BankConnection> {
+    return this.banks.setPaused(user.id, id, paused);
+  }
+
   @Mutation(() => BankConnectSession, {
     description:
       'Short-lived Syncfy session for @finnit/bank-connect (or the widget fallback). When the connection succeeds, call registerBankConnection with its id_credential.',

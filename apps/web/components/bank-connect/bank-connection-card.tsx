@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { AlertCircle, Landmark, RefreshCw } from 'lucide-react';
+import { AlertCircle, Landmark, Pause, Play, RefreshCw } from 'lucide-react';
 
 import { Badge } from '@finnit/ui/components/ui/badge';
 import { Button } from '@finnit/ui/components/ui/button';
@@ -11,7 +11,12 @@ import { GlassCard } from '@finnit/ui/components/ui/glass-card';
 import { BodyMd, TitleLg } from '@finnit/ui/components/ui/typography';
 
 import type { BankConnectionView } from '@/lib/bank-connect/connections';
-import { dayKeyOf, longDate, timeOf, todayKey } from '@finnit/core/finance/dates';
+import {
+  dayKeyOf,
+  longDate,
+  timeOf,
+  todayKey,
+} from '@finnit/core/finance/dates';
 import { gql, requestErrorMessage } from '@/lib/graphql/client';
 import type { Locale } from '@finnit/core/i18n/locales';
 
@@ -24,13 +29,18 @@ function syncedAt(iso: string, locale: Locale): string {
 
 export function BankConnectionCard({
   connection,
+  syncAvailable,
 }: {
   connection: BankConnectionView;
+  /** False while an admin has bank sync turned off: no syncing. */
+  syncAvailable: boolean;
 }) {
   const router = useRouter();
   const t = useTranslations();
   const locale = useLocale();
   const [syncing, setSyncing] = React.useState(false);
+  const [pausing, setPausing] = React.useState(false);
+  const paused = connection.syncPaused;
   const [message, setMessage] = React.useState<string | null>(null);
   const linked = connection.accounts.filter((a) => a.accountId).length;
 
@@ -53,6 +63,22 @@ export function BankConnectionCard({
       setMessage(requestErrorMessage(error, t));
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function setPaused(value: boolean) {
+    setPausing(true);
+    setMessage(null);
+    try {
+      await gql(
+        'mutation PauseBank($id: ID!, $paused: Boolean!) { setBankConnectionPaused(id: $id, paused: $paused) { id syncPaused } }',
+        { id: connection.id, paused: value },
+      );
+      router.refresh();
+    } catch (error) {
+      setMessage(requestErrorMessage(error, t));
+    } finally {
+      setPausing(false);
     }
   }
 
@@ -80,14 +106,25 @@ export function BankConnectionCard({
               .join(' · ')}
           </BodyMd>
         </div>
-        <Badge variant={connection.status === 'active' ? 'success' : 'expense'}>
-          {connection.status === 'active'
-            ? t('banks.active')
-            : t('banks.needsAttention')}
-        </Badge>
+        {paused ? (
+          <Badge variant="muted">{t('banks.paused')}</Badge>
+        ) : (
+          <Badge
+            variant={connection.status === 'active' ? 'success' : 'expense'}
+          >
+            {connection.status === 'active'
+              ? t('banks.active')
+              : t('banks.needsAttention')}
+          </Badge>
+        )}
       </div>
 
-      {connection.errorMessage ? (
+      {paused ? (
+        <p className="text-[13px] text-on-surface-variant">
+          {t('banks.pausedNotice')}
+        </p>
+      ) : null}
+      {connection.errorMessage && !paused ? (
         <p className="flex gap-2 text-[13px] text-expense">
           <AlertCircle aria-hidden className="mt-0.5 size-4 shrink-0" />
           {connection.errorMessage}
@@ -99,16 +136,32 @@ export function BankConnectionCard({
         </p>
       ) : null}
 
-      <Button
-        variant="outline"
-        size="sm"
-        className="self-end"
-        disabled={syncing}
-        onClick={() => void sync()}
-      >
-        <RefreshCw className={syncing ? 'size-4 animate-spin' : 'size-4'} />
-        {syncing ? t('banks.syncing') : t('banks.syncNow')}
-      </Button>
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={pausing || syncing}
+          onClick={() => void setPaused(!paused)}
+        >
+          {paused ? (
+            <Play aria-hidden className="size-4" />
+          ) : (
+            <Pause aria-hidden className="size-4" />
+          )}
+          {paused ? t('banks.resume') : t('banks.pause')}
+        </Button>
+        {paused ? null : (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={syncing || pausing || !syncAvailable}
+            onClick={() => void sync()}
+          >
+            <RefreshCw className={syncing ? 'size-4 animate-spin' : 'size-4'} />
+            {syncing ? t('banks.syncing') : t('banks.syncNow')}
+          </Button>
+        )}
+      </div>
     </GlassCard>
   );
 }

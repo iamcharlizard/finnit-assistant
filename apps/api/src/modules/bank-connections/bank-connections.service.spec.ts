@@ -20,6 +20,7 @@ import { BankConnectionsService } from './bank-connections.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CardInstallmentsService } from '../debts/card-installments.service';
 import { SyncReviewService } from './sync-review.service';
+import { GlobalSettingsService } from '../global-settings/global-settings.service';
 import {
   SyncfyClient,
   SyncfyCredential,
@@ -41,6 +42,7 @@ const connectionRow = (overrides: Record<string, unknown> = {}) => ({
   lastPullRequestedAt: null,
   transactionsCursor: new Date('2026-10-10T00:00:00Z'),
   errorMessage: null,
+  syncPausedAt: null,
   createdAt: new Date('2026-10-01'),
   updatedAt: new Date('2026-10-01'),
   ...overrides,
@@ -86,6 +88,7 @@ describe('BankConnectionsService', () => {
   let materializer: DeepMockProxy<LineMaterializerService>;
   let notifications: DeepMockProxy<NotificationsService>;
   let syncReview: DeepMockProxy<SyncReviewService>;
+  let globalSettings: DeepMockProxy<GlobalSettingsService>;
   let service: BankConnectionsService;
 
   beforeEach(() => {
@@ -106,6 +109,8 @@ describe('BankConnectionsService', () => {
     });
     notifications = mockDeep<NotificationsService>();
     syncReview = mockDeep<SyncReviewService>();
+    globalSettings = mockDeep<GlobalSettingsService>();
+    globalSettings.isBankSyncEnabled.mockResolvedValue(true);
     service = new BankConnectionsService(
       prisma,
       syncfy,
@@ -114,6 +119,7 @@ describe('BankConnectionsService', () => {
       notifications,
       syncReview,
       mockDeep<CardInstallmentsService>(),
+      globalSettings,
     );
   });
 
@@ -163,6 +169,101 @@ describe('BankConnectionsService', () => {
       await service.connectSession(userId);
       expect(syncfy.listUsers).not.toHaveBeenCalled();
       expect(syncfy.createSession).toHaveBeenCalledWith('sy-user-1');
+    });
+  });
+
+  describe('bank sync turned off in Configuración global', () => {
+    beforeEach(() => globalSettings.isBankSyncEnabled.mockResolvedValue(false));
+
+    it('reports it as unavailable', async () => {
+      await expect(service.isSyncAvailable()).resolves.toBe(false);
+    });
+
+    it('refuses to connect, register or sync, without calling Syncfy', async () => {
+      arrangeSync();
+      await expect(service.connectSession(userId)).rejects.toThrow(
+        ValidationError,
+      );
+      await expect(service.register(userId, 'cred-1')).rejects.toThrow(
+        ValidationError,
+      );
+      await expect(
+        service.sync('conn-1', userId, { requestRefresh: true }),
+      ).rejects.toThrow(ValidationError);
+      expect(syncfy.createSession).not.toHaveBeenCalled();
+    });
+
+    it('the scheduled job syncs nothing', async () => {
+      await expect(service.syncAll()).resolves.toEqual({
+        synced: 0,
+        failed: 0,
+      });
+      expect(prisma.bankConnection.findMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('a paused connection', () => {
+    const paused = { syncPausedAt: new Date('2026-11-27T12:00:00Z') };
+
+    it('is not synced by hand', async () => {
+      arrangeSync({ connection: paused });
+      await expect(
+        service.sync('conn-1', userId, { requestRefresh: true }),
+      ).rejects.toThrow(ValidationError);
+      expect(syncfy.createSession).not.toHaveBeenCalled();
+    });
+
+    it('still imports the history of an account being linked', async () => {
+      arrangeSync({ connection: paused });
+      await service.sync('conn-1', userId, {
+        requestRefresh: false,
+        initialImportFor: 'linked-1',
+      });
+      expect(syncfy.createSession).toHaveBeenCalled();
+    });
+
+    it('is left out of the scheduled job', async () => {
+      prisma.bankConnection.findMany.mockResolvedValue([]);
+      await service.syncAll();
+      expect(prisma.bankConnection.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ syncPausedAt: null }),
+        }),
+      );
+    });
+
+    it("pauses and resumes only the user's own connection", async () => {
+      prisma.bankConnection.findFirst.mockResolvedValueOnce(null);
+      await expect(service.setPaused(userId, 'conn-x', true)).rejects.toThrow(
+        NotFoundError,
+      );
+
+      prisma.bankConnection.findFirst
+        .mockResolvedValueOnce({ syncPausedAt: null } as never)
+        .mockResolvedValueOnce({
+          ...connectionRow(paused),
+          linkedAccounts: [],
+        } as never);
+      const result = await service.setPaused(userId, 'conn-1', true);
+      expect(prisma.bankConnection.update).toHaveBeenCalledWith({
+        where: { id: 'conn-1' },
+        data: { syncPausedAt: expect.any(Date) },
+      });
+      expect(result.syncPaused).toBe(true);
+
+      prisma.bankConnection.update.mockClear();
+      prisma.bankConnection.findFirst
+        .mockResolvedValueOnce(paused as never)
+        .mockResolvedValueOnce({
+          ...connectionRow(),
+          linkedAccounts: [],
+        } as never);
+      const resumed = await service.setPaused(userId, 'conn-1', false);
+      expect(prisma.bankConnection.update).toHaveBeenCalledWith({
+        where: { id: 'conn-1' },
+        data: { syncPausedAt: null },
+      });
+      expect(resumed.syncPaused).toBe(false);
     });
   });
 

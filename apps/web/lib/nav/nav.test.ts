@@ -16,7 +16,7 @@ import {
 } from '@finnit/core/nav/sidebar';
 
 describe('nav sections', () => {
-  it('hides empty sections and, for non-admins, Administración', () => {
+  it('hides empty sections and, for non-admins, the admin panel', () => {
     const keys = (admin: boolean) => visibleSections(admin).map((s) => s.key);
     assert.deepEqual(keys(false), [
       'home',
@@ -26,7 +26,7 @@ describe('nav sections', () => {
       'planning',
       'analytics',
     ]);
-    assert.equal(keys(true).at(-1), 'admin');
+    assert.deepEqual(keys(true).slice(-2), ['users', 'system']);
     const empty = { key: 'planning' as const, items: [] };
     assert.deepEqual(
       visibleSections(true, [...NAV_SECTIONS, empty]).filter(
@@ -36,13 +36,15 @@ describe('nav sections', () => {
     );
   });
 
-  it('groups movements and planning, each with its own icon', () => {
+  it('groups movements, planning and the admin panel, each with its own icon', () => {
     const groups = NAV_SECTIONS.filter(isNavGroup);
     assert.deepEqual(
       groups.map((g) => [g.key, g.items.map((i) => i.key)]),
       [
         ['transactions', ['history', 'recurring', 'statements']],
         ['planning', ['budgets', 'debts', 'goals', 'simulator']],
+        ['users', ['adminUsers', 'waitlist']],
+        ['system', ['adminAi', 'adminBanks']],
       ],
     );
     for (const group of groups) assert.ok(group.icon, group.key);
@@ -55,6 +57,11 @@ describe('nav sections', () => {
   it('knows the group of the current page', () => {
     assert.equal(activeGroupKey(NAV_SECTIONS, '/recurring'), 'transactions');
     assert.equal(activeGroupKey(NAV_SECTIONS, '/planning/debts'), 'planning');
+    assert.equal(activeGroupKey(NAV_SECTIONS, '/admin/waitlist'), 'users');
+    assert.equal(
+      activeGroupKey(NAV_SECTIONS, '/admin/settings/banks'),
+      'system',
+    );
     assert.equal(activeGroupKey(NAV_SECTIONS, '/dashboard'), null);
     assert.equal(activeGroupKey(NAV_SECTIONS, null), null);
   });
@@ -102,7 +109,9 @@ describe('page titles', () => {
   it('picks the specific route before the dynamic one', () => {
     assert.equal(pageTitleKey('/settings/banks/connect'), 'connectBank');
     assert.equal(pageTitleKey('/settings/aliases'), 'aliases');
-    assert.equal(pageTitleKey('/admin/users'), 'admin');
+    assert.equal(pageTitleKey('/admin/users'), 'adminUsers');
+    assert.equal(pageTitleKey('/admin/settings/banks'), 'adminBanks');
+    assert.equal(pageTitleKey('/admin/other'), 'admin');
     assert.equal(pageTitleKey('/calendar'), 'calendar');
     assert.equal(pageTitleKey('/accounts'), 'cards');
     assert.equal(pageTitleKey('/nowhere'), 'app');

@@ -5,6 +5,7 @@ import { StatementsModule } from '../statements/statements.module';
 import { TransfersModule } from '../transfers/transfers.module';
 import { CategorizationModule } from '../categorization/categorization.module';
 import { DebtsModule } from '../debts/debts.module';
+import { GlobalSettingsModule } from '../global-settings/global-settings.module';
 import { SyncReviewService } from './sync-review.service';
 import { SyncReviewResolver } from './sync-review.resolver';
 import { BankConnectionsResolver } from './bank-connections.resolver';
@@ -19,6 +20,7 @@ import { SyncfyClient } from './syncfy/syncfy.client';
     TransfersModule,
     CategorizationModule,
     DebtsModule,
+    GlobalSettingsModule,
   ],
   providers: [
     { provide: SyncfyClient, useFactory: () => new SyncfyClient() },

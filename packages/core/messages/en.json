@@ -28,8 +28,9 @@
       "accounts": "Accounts & cards",
       "planning": "Planning",
       "analytics": "Analytics",
-      "admin": "Administration",
-      "calendar": "Calendar"
+      "calendar": "Calendar",
+      "users": "Users",
+      "system": "Global settings"
     },
     "items": {
       "dashboard": "Home",
@@ -37,14 +38,17 @@
       "recurring": "Recurring",
       "cards": "Accounts & cards",
       "analytics": "Analytics",
-      "admin": "Administration",
       "categorize": "Categorize",
       "budgets": "Budgets",
       "debts": "Debts",
       "goals": "Goals",
       "simulator": "Simulator",
       "statements": "Statements",
-      "calendar": "Calendar"
+      "calendar": "Calendar",
+      "adminUsers": "Active",
+      "waitlist": "Waitlist",
+      "adminAi": "Artificial intelligence",
+      "adminBanks": "Banks"
     },
     "short": {
       "dashboard": "Home",
@@ -70,8 +74,8 @@
     "banks": "Connected banks",
     "connectBank": "Connect bank",
     "admin": "Administration",
-    "adminUsers": "Users · Administration",
-    "adminAi": "AI · Administration",
+    "adminUsers": "Active users",
+    "adminAi": "Artificial intelligence",
     "login": "Sign in",
     "aliases": "Automatic names",
     "budgets": "Budgets",
@@ -81,8 +85,9 @@
     "notifications": "Notifications",
     "categories": "Categories",
     "privacyReset": "New privacy PIN",
-    "adminWaitlist": "Waitlist · Admin",
-    "calendar": "Payments calendar"
+    "adminWaitlist": "Waitlist",
+    "calendar": "Payments calendar",
+    "adminBanks": "Bank sync"
   },
   "newEntry": {
     "title": "New transaction",
@@ -2294,8 +2299,6 @@
     "banks": "Banks",
     "connectedBanks": "Connected banks",
     "connectedBanksDescription": "Import your transactions automatically",
-    "admin": "Administration",
-    "adminDescription": "Users with access and AI models",
     "security": "Security",
     "biometrics": "Biometrics",
     "appearance": "Appearance",
@@ -2336,7 +2339,12 @@
     "imported": "{count, plural, one {We imported # new transaction.} other {We imported # new transactions.}}",
     "upToDate": "All up to date. We asked your bank for new data; it will arrive with the next sync.",
     "syncing": "Syncing…",
-    "syncNow": "Sync now"
+    "syncNow": "Sync now",
+    "paused": "Paused",
+    "pause": "Pause sync",
+    "resume": "Resume sync",
+    "pausedNotice": "You paused this bank: we won't sync it until you resume it. Transactions already imported stay.",
+    "unavailable": "Bank sync is turned off for now. Your imported transactions are still here; new ones will arrive again as soon as it is back on."
   },
   "bankConnect": {
     "consent": {
@@ -2413,12 +2421,6 @@
   },
   "admin": {
     "title": "Administration",
-    "tabsLabel": "Administration sections",
-    "tabs": {
-      "users": "Users",
-      "ai": "AI",
-      "waitlist": "Waitlist"
-    },
     "users": {
       "loading": "Loading users…",
       "count": "{count, plural, one {# user} other {# users}}",
@@ -2629,6 +2631,16 @@
         "locale": "Language",
         "joinedAt": "Date"
       }
+    },
+    "banks": {
+      "cardTitle": "Bank sync",
+      "cardDescription": "Applies to every user. Off, Finnit syncs no bank (neither the 7:00 and 15:00 runs nor \"Sync now\") and nobody can connect a new one. Transactions already imported stay.",
+      "switchLabel": "Sync banks",
+      "on": "On",
+      "off": "Off",
+      "offNotice": "While it is off, users see a notice in Connected banks.",
+      "lastChange": "Last change: {date} by {name}",
+      "lastChangeNoName": "Last change: {date}"
     }
   },
   "ui": {

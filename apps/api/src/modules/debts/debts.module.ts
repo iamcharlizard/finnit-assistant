@@ -10,7 +10,6 @@ import { LoanLinksService } from './loan-links.service';
 import { CardInstallmentsService } from './card-installments.service';
 import { CardInstallmentsResolver } from './card-installments.resolver';
 import { AiModule } from '../ai/ai.module';
-import { PrismaService } from '../../services/prisma.service';
 import { RecurringExpensesModule } from '../recurring-expenses/recurring-expenses.module';
 import { TransactionsModule } from '../transactions/transactions.module';
 
@@ -31,7 +30,6 @@ import { TransactionsModule } from '../transactions/transactions.module';
     LoanLinksResolver,
     CardInstallmentsService,
     CardInstallmentsResolver,
-    PrismaService,
   ],
   exports: [DebtsService, CardInstallmentsService],
 })

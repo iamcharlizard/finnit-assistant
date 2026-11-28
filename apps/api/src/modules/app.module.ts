@@ -30,7 +30,7 @@ import { PrivacyModule } from './privacy/privacy.module';
 import { ReceiptsModule } from './receipts/receipts.module';
 import { ScreenshotsModule } from './screenshots/screenshots.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
-import { PrismaService } from '../services/prisma.service';
+import { PrismaModule } from '../services/prisma.module';
 import { HealthController } from '../controllers/health.controller';
 import { THROTTLER_OPTIONS } from '../common/throttling/throttling';
 
@@ -55,6 +55,7 @@ function envFlag(name: string, fallback: boolean): boolean {
     }),
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot(THROTTLER_OPTIONS),
+    PrismaModule,
     AuthModule,
     UsersModule,
     AccountsModule,
@@ -82,6 +83,5 @@ function envFlag(name: string, fallback: boolean): boolean {
     WaitlistModule,
   ],
   controllers: [HealthController],
-  providers: [PrismaService],
 })
 export class AppModule {}

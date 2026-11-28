@@ -3,7 +3,6 @@ import { TransactionsResolver } from './transactions.resolver';
 import { TransactionsService } from './transactions.service';
 import { TransferDirectionLoader } from './transfer-direction.loader';
 import { AttachmentsController } from './attachments.controller';
-import { PrismaService } from '../../services/prisma.service';
 import { StorageModule } from '../storage/storage.module';
 import { CategorizationModule } from '../categorization/categorization.module';
 import { PrivacyModule } from '../privacy/privacy.module';
@@ -21,7 +20,6 @@ import { DuplicatesModule } from '../duplicates/duplicates.module';
     TransactionsResolver,
     TransactionsService,
     TransferDirectionLoader,
-    PrismaService,
   ],
   exports: [TransactionsService],
 })

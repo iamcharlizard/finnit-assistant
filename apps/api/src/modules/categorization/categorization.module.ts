@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaService } from '../../services/prisma.service';
 import { AiModule } from '../ai/ai.module';
 import { PrivacyModule } from '../privacy/privacy.module';
 import { CategorizationResolver } from './categorization.resolver';
@@ -19,7 +18,6 @@ import { MerchantRulesService } from './merchant-rules.service';
     MerchantRulesService,
     CategorizationService,
     CategorizationResolver,
-    PrismaService,
   ],
   exports: [
     MerchantAliasesService,
